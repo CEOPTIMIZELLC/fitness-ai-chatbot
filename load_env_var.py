@@ -19,3 +19,7 @@ class postgresBase:
         os.environ["POSTRGRES_DATABASE"] = environment_variable_retrieve("POSTRGRES_DATABASE")
         os.environ["POSTRGRES_USER"] = environment_variable_retrieve("POSTRGRES_USER")
         os.environ["POSTRGRES_PASSWORD"] = environment_variable_retrieve("POSTRGRES_PASSWORD")
+
+class ai_credentials:
+    def __init__(self):
+        os.environ["LANGUAGE_MODEL"] = environment_variable_retrieve("LANGUAGE_MODEL")
