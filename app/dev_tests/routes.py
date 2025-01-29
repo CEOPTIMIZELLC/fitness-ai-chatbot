@@ -4,9 +4,11 @@ from flask_cors import CORS
 
 #from ..models import Users, Fitness, User_Fitness, Exercises, Exercise_Fitness
 
-from .. import db
+from .. import db, TABLE_NAMES_CACHE
 
 from . import dev_tests
+
+from ..helper_functions.table_names_cache import retrieve_table_names
 
 
 from ..auth.routes import register
@@ -34,6 +36,7 @@ def recreate_db():
 def get_table_names():
     from sqlalchemy import inspect
     inspector = inspect(db.engine)  # Create an inspector bound to the engine
+    #return TABLE_NAMES_CACHE
     return inspector.get_table_names()
 
 # Database initialization
@@ -52,5 +55,8 @@ def initialize_db():
         and 'gender' in request.form
         and 'goal' in request.form):
         register()
+    
+    global TABLE_NAMES_CACHE
+    TABLE_NAMES_CACHE = retrieve_table_names()
 
     return "Database CREATED!"
