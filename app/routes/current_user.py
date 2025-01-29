@@ -7,7 +7,7 @@ import psycopg2
 
 from .. import db, login_manager
 
-from . import current_user as cur_user
+from . import current_user_bp as cur_user
 
 
 # ----------------------------------------- User Info -----------------------------------------

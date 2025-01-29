@@ -7,7 +7,7 @@ import psycopg2
 
 from .. import db
 
-from . import auth
+from . import auth_bp as auth
 
 
 # ----------------------------------------- Auth -----------------------------------------

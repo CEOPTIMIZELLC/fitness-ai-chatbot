@@ -31,13 +31,13 @@ def create_app():
 
 def register_blueprints(app):
     with app.app_context():
-        from .auth import auth as auth_bp
+        from .routes import auth_bp
         app.register_blueprint(auth_bp)
         
-        from .current_user import current_user as current_user_bp
+        from .routes import current_user_bp
         app.register_blueprint(current_user_bp, url_prefix='/current-user')
 
-        from .dev_tests import dev_tests as dev_tests_bp
+        from .routes import dev_tests_bp
         app.register_blueprint(dev_tests_bp, url_prefix='/dev_tests')
 
 def register_error_handlers(app):

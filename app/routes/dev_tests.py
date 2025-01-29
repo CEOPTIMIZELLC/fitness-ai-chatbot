@@ -6,12 +6,13 @@ from flask_cors import CORS
 
 from .. import db, TABLE_NAMES_CACHE
 
-from . import dev_tests
+from . import dev_tests_bp as dev_tests
 
 from ..helper_functions.table_names_cache import retrieve_table_names
 
+from .auth import register
 
-from ..auth.routes import register
+#from ..auth.routes import register
 
 
 # ----------------------------------------- Dev Tests -----------------------------------------
