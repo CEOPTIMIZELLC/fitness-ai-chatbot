@@ -28,6 +28,14 @@ def recreate_db():
     drop_db()
     create_db()
 
+
+# Get all table names in the database
+@dev_tests.route('/retrieve_table_names', methods=['GET','POST'])
+def get_table_names():
+    from sqlalchemy import inspect
+    inspector = inspect(db.engine)  # Create an inspector bound to the engine
+    return inspector.get_table_names()
+
 # Database initialization
 @dev_tests.route('/init_db', methods=['GET','POST'])
 def initialize_db():

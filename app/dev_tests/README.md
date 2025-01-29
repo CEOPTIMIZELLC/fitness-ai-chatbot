@@ -1,6 +1,13 @@
 # Dev Tests
 Endpoints regarding the initialization of the database and data to be stored within.
 
+
+## Retrieve Table Names
+- Retrieves the names of all tables in the database.
+```
+[GET, POST] /dev_tests/retrieve_table_names
+```
+
 ## Restart database
 - Restarts the database and adds the following:
     - Four users **(to be implemented later)**
