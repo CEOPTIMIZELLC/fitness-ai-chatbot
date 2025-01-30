@@ -5,9 +5,6 @@ from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
 
-# Global variable to store table names
-TABLE_NAMES_CACHE = []
-
 bcrypt = Bcrypt()
 db = SQLAlchemy()
 
@@ -23,10 +20,8 @@ def create_app():
     login_manager.init_app(app)
 
     register_blueprints(app)
-    with app.app_context():
-        from .helper_functions.table_names_cache import retrieve_table_names
-        global TABLE_NAMES_CACHE
-        TABLE_NAMES_CACHE = retrieve_table_names()
+    initialize_schema_record(app)
+
     return app
 
 def register_blueprints(app):
@@ -39,6 +34,11 @@ def register_blueprints(app):
 
         from .routes import dev_tests_bp
         app.register_blueprint(dev_tests_bp, url_prefix='/dev_tests')
+
+def initialize_schema_record(app):
+    with app.app_context():
+        from .helper_functions.table_names_cache import retrieve_table_names
+        app.table_schema = retrieve_table_names()
 
 def register_error_handlers(app):
     with app.app_context():

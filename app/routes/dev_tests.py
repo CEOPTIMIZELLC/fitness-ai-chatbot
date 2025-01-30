@@ -1,19 +1,18 @@
 from random import randrange
-from flask import request, jsonify, redirect, url_for
+from flask import request, jsonify, redirect, url_for, current_app
 from flask_cors import CORS
+
+import json
 
 #from ..models import Users, Fitness, User_Fitness, Exercises, Exercise_Fitness
 
-from .. import db, TABLE_NAMES_CACHE
+from .. import db
 
 from . import dev_tests_bp as dev_tests
 
 from ..helper_functions.table_names_cache import retrieve_table_names
 
 from .auth import register
-
-#from ..auth.routes import register
-
 
 # ----------------------------------------- Dev Tests -----------------------------------------
 
@@ -40,6 +39,11 @@ def get_table_names():
     #return TABLE_NAMES_CACHE
     return inspector.get_table_names()
 
+# Get all table names in the database
+@dev_tests.route('/retrieve_table_schema', methods=['GET','POST'])
+def get_table_name_schema():
+    return current_app.table_schema
+
 # Database initialization
 @dev_tests.route('/init_db', methods=['GET','POST'])
 def initialize_db():
@@ -57,7 +61,6 @@ def initialize_db():
         and 'goal' in request.form):
         register()
     
-    global TABLE_NAMES_CACHE
-    TABLE_NAMES_CACHE = retrieve_table_names()
+    current_app.table_schema = retrieve_table_names()
 
     return "Database CREATED!"
