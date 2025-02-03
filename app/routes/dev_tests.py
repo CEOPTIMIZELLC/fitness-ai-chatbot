@@ -41,7 +41,7 @@ def get_table_names():
 
 # Get all table names in the database
 @dev_tests.route('/retrieve_table_schema', methods=['GET','POST'])
-def get_table_name_schema():
+def get_table_schema():
     return current_app.table_schema
 
 # Database initialization
