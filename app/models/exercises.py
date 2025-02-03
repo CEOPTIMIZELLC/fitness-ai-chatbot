@@ -32,6 +32,12 @@ class Exercise_Library(db.Model):
         nullable=False, 
         comment='E.g., {"reps": 10, "time": 30, "weight": 50}')
     
+    # Relationships
+    equipment = db.relationship(
+        "Exercise_Equipment",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
+    
     def to_dict(self):
         return {
             "id": self.id,
