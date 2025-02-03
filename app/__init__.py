@@ -20,7 +20,8 @@ def create_app():
     login_manager.init_app(app)
 
     register_blueprints(app)
-    initialize_schema_record(app)
+    initialize_database(app, db)
+    #initialize_schema_record(app)
 
     return app
 
@@ -35,10 +36,19 @@ def register_blueprints(app):
         from .routes import dev_tests_bp
         app.register_blueprint(dev_tests_bp, url_prefix='/dev_tests')
 
+def initialize_database(app, db):
+    with app.app_context():
+        db.create_all()
+
+        # Initialize the record of the schema.
+        from .helper_functions.table_names_cache import retrieve_table_names
+        app.table_schema = retrieve_table_names(db)
+
+
 def initialize_schema_record(app):
     with app.app_context():
         from .helper_functions.table_names_cache import retrieve_table_names
-        app.table_schema = retrieve_table_names()
+        app.table_schema = retrieve_table_names(db)
 
 def register_error_handlers(app):
     with app.app_context():

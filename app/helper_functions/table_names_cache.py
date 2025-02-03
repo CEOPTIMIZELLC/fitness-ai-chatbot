@@ -1,4 +1,3 @@
-from .. import db
 from sqlalchemy import inspect
 
 import json
@@ -36,7 +35,7 @@ def stringify_schema(schema_info):
     return schema_text
 
 # Retrieve the names of every table in the database.
-def retrieve_table_names():
+def retrieve_table_names(db):
     inspector = inspect(db.engine)  # Create an inspector bound to the engine
 
     tables = inspector.get_table_names()

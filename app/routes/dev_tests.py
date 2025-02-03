@@ -61,6 +61,6 @@ def initialize_db():
         and 'goal' in request.form):
         register()
     
-    current_app.table_schema = retrieve_table_names()
+    current_app.table_schema = retrieve_table_names(db)
 
     return "Database CREATED!"
