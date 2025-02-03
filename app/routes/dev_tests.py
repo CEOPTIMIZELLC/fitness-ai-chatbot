@@ -10,7 +10,7 @@ from .. import db
 
 from . import dev_tests_bp as dev_tests
 
-from ..helper_functions.table_names_cache import retrieve_table_names
+from ..helper_functions.table_schema_cache import retrieve_table_schema
 
 from .auth import register
 
@@ -61,6 +61,6 @@ def initialize_db():
         and 'goal' in request.form):
         register()
     
-    current_app.table_schema = retrieve_table_names(db)
+    current_app.table_schema = retrieve_table_schema(db)
 
     return "Database CREATED!"

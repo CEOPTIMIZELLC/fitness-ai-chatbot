@@ -73,6 +73,12 @@ Endpoints regarding the initialization of the database and data to be stored wit
 [GET, POST] /dev_tests/retrieve_table_names
 ```
 
+## Retrieve Table Schema
+- Retrieves the schema of the database.
+```
+[GET, POST] /dev_tests/retrieve_table_schema
+```
+
 ## Restart database
 - Restarts the database and adds the following:
     - Four users **(to be implemented later)**

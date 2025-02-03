@@ -41,14 +41,14 @@ def initialize_database(app, db):
         db.create_all()
 
         # Initialize the record of the schema.
-        from .helper_functions.table_names_cache import retrieve_table_names
-        app.table_schema = retrieve_table_names(db)
+        from .helper_functions.table_schema_cache import retrieve_table_schema
+        app.table_schema = retrieve_table_schema(db)
 
 
 def initialize_schema_record(app):
     with app.app_context():
-        from .helper_functions.table_names_cache import retrieve_table_names
-        app.table_schema = retrieve_table_names(db)
+        from .helper_functions.table_schema_cache import retrieve_table_schema
+        app.table_schema = retrieve_table_schema(db)
 
 def register_error_handlers(app):
     with app.app_context():
