@@ -2,9 +2,11 @@ from .users import Users
 from .exercises import Exercise_Library
 from .equipment import Equipment_Library
 from .injuries import Injury_Library
+from .mesocycles import Mesocycle_Info
 
 __all__ = ["Users",
            "Exercise_Library", 
            "Equipment_Library",
-           "Injury_Library"
+           "Injury_Library",
+           "Mesocycle_Info"
            ] 
