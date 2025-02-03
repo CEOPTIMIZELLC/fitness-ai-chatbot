@@ -19,6 +19,12 @@ class Injury_Library(db.Model):
         nullable=False,
         comment='E.g., {"mild": "2 weeks", "moderate": "4 weeks", "severe": "8 weeks"}')
     
+    # Relationships
+    users = db.relationship(
+        "User_Injuries",
+        back_populates = "injuries",
+        cascade="all, delete-orphan")
+    
     def to_dict(self):
         return {
             "id": self.id,
