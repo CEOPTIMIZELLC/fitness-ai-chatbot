@@ -61,6 +61,33 @@ def initialize_db():
         and 'gender' in request.form
         and 'goal' in request.form):
         register()
+
+    # Populate equipment.
+    from app.existing_data.equipment import equipment
+    db.session.add_all(equipment)
+    db.session.commit()
+
+    from app.existing_data.measurements import measurements, equipment_measurements
+    db.session.add_all(measurements)
+    db.session.commit()
+    db.session.add_all(equipment_measurements)
+    db.session.commit()
+
+    from app.existing_data.training_equipment import user_training_constraints, user_training_available_equipment, user_training_equipment_measurements
+    db.session.add_all(user_training_constraints)
+    db.session.commit()
+    db.session.add_all(user_training_available_equipment)
+    db.session.commit()
+    db.session.add_all(user_training_equipment_measurements)
+    db.session.commit()
+
+    from app.existing_data.injuries import injuries, serverities, injury_severities
+    db.session.add_all(injuries)
+    db.session.commit()
+    db.session.add_all(serverities)
+    db.session.commit()
+    db.session.add_all(injury_severities)
+    db.session.commit()
     
     current_app.table_schema = retrieve_table_schema(db)
 
@@ -128,28 +155,32 @@ def test_sql_reader():
     except:
         pass
 
-
+    '''
     user_question_1 = "Create a new order for Spaghetti Carbonara."
     result_1 = sql_app.invoke({"question": user_question_1, "attempts": 0})
     print("Result:", result_1["query_result"])
+    print("")
 
     user_question_2 = "Tell me a joke."
     result_2 = sql_app.invoke({"question": user_question_2, "attempts": 0})
     print("Result:", result_2["query_result"])
+    print("")
 
     user_question_3 = "Show me my orders"
     result_3 = sql_app.invoke({"question": user_question_3, "attempts": 0})
     print("Result:", result_3["query_result"])
+    print("")
+    '''
 
 
-    user_question_1 = "Create a new order for Spaghetti Carbonara."
+    user_question_1 = "Create a new user injury for my mild Headache. The doctor said it should be "
     result_1 = sql_app.invoke({"question": user_question_1, "attempts": 0})
     print("Result:", result_1["query_result"])
+    print("")
 
-    user_question_2 = "Tell me a joke."
-    result_2 = sql_app.invoke({"question": user_question_2, "attempts": 0})
-    print("Result:", result_2["query_result"])
-
-    user_question_3 = "Show me my orders"
+    user_question_3 = "Show me my injuries"
     result_3 = sql_app.invoke({"question": user_question_3, "attempts": 0})
     print("Result:", result_3["query_result"])
+    print("")
+
+    return "Successful Test"
