@@ -14,12 +14,12 @@ class Injury_Library(db.Model):
         nullable=False,
         comment='E.g., Sprained Ankle, Shoulder Strain')
     
-    severity = db.Column(
-        JSONB,
-        nullable=False,
-        comment='E.g., {"mild": "2 weeks", "moderate": "4 weeks", "severe": "8 weeks"}')
-    
     # Relationships
+    severity = db.relationship(
+        "Injury_Severity",
+        back_populates = "injuries",
+        cascade="all, delete-orphan")    
+    
     users = db.relationship(
         "User_Injuries",
         back_populates = "injuries",
