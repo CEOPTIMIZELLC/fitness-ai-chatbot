@@ -11,7 +11,7 @@ from app import db
 
 from . import dev_tests_bp as dev_tests
 
-from ..helper_functions.table_schema_cache import retrieve_table_schema
+from ..helper_functions.table_schema_cache import get_database_schema
 from ..helper_functions.sql import sql_app 
 
 from .auth import register
@@ -41,7 +41,7 @@ def get_table_names():
     return inspector.get_table_names()
 
 # Get all table names in the database
-@dev_tests.route('/retrieve_table_schema', methods=['GET','POST'])
+@dev_tests.route('/retrieve_db_schema', methods=['GET','POST'])
 def get_table_schema():
     return current_app.table_schema
 
@@ -89,7 +89,7 @@ def initialize_db():
     db.session.add_all(injury_severities)
     db.session.commit()
     
-    current_app.table_schema = retrieve_table_schema(db)
+    current_app.table_schema = get_database_schema(db)
 
     return "Database CREATED!"
 
@@ -143,44 +143,84 @@ def read_table():
 
     return state
 
-
-
-# Table Reader
-@dev_tests.route('/test_sql_reader', methods=['GET'])
-def test_sql_reader():
-    from IPython.display import Image, display
-
-    try:
-        display(Image(sql_app.get_graph(xray=True).draw_mermaid_png()))
-    except:
-        pass
-
-    '''
-    user_question_1 = "Create a new order for Spaghetti Carbonara."
+# Testing for the SQL to add and check injuries.
+@dev_tests.route('/test_injury_sql', methods=['GET'])
+def test_injury_sql():
+    results = {}
+    user_question_1 = "Create a new user injury for my mild Headache."
     result_1 = sql_app.invoke({"question": user_question_1, "attempts": 0})
+    results["result_1"] = result_1["query_result"]
     print("Result:", result_1["query_result"])
     print("")
-
-    user_question_2 = "Tell me a joke."
+    
+    user_question_2 = "Create a new user injury for my moderate Sprained Ankle."
     result_2 = sql_app.invoke({"question": user_question_2, "attempts": 0})
+    results["result_2"] = result_2["query_result"]
     print("Result:", result_2["query_result"])
-    print("")
-
-    user_question_3 = "Show me my orders"
-    result_3 = sql_app.invoke({"question": user_question_3, "attempts": 0})
-    print("Result:", result_3["query_result"])
-    print("")
-    '''
-
-
-    user_question_1 = "Create a new user injury for my mild Headache. The doctor said it should be "
-    result_1 = sql_app.invoke({"question": user_question_1, "attempts": 0})
-    print("Result:", result_1["query_result"])
     print("")
 
     user_question_3 = "Show me my injuries"
     result_3 = sql_app.invoke({"question": user_question_3, "attempts": 0})
+    results["result_3"] = result_3["query_result"]
     print("Result:", result_3["query_result"])
     print("")
 
-    return "Successful Test"
+    user_question_4 = "Create a new user injury for my moderate Headache."
+    result_4 = sql_app.invoke({"question": user_question_4, "attempts": 0})
+    results["result_4"] = result_4["query_result"]
+    print("Result:", result_4["query_result"])
+    print("")
+    
+    user_question_5 = "Create a new user injury for my mild Sprained Ankle."
+    result_5 = sql_app.invoke({"question": user_question_5, "attempts": 0})
+    results["result_5"] = result_5["query_result"]
+    print("Result:", result_5["query_result"])
+    print("")
+
+    user_question_6 = "Show me my injuries"
+    result_6 = sql_app.invoke({"question": user_question_6, "attempts": 0})
+    results["result_6"] = result_6["query_result"]
+    print("Result:", result_6["query_result"])
+    print("")
+
+    return results
+
+
+
+
+
+# Testing for the SQL to add and check training equipment.
+@dev_tests.route('/test_training_equipment_sql', methods=['GET'])
+def test_training_equipment_sql():
+    results = {}
+    user_question_1 = "Create a new user training equipment for my new barbell that weighs 4 kilograms and is 15 centimeters long."
+    result_1 = sql_app.invoke({"question": user_question_1, "attempts": 0})
+    results["result_1"] = result_1["query_result"]
+    print("Result:", result_1["query_result"])
+    print("")
+    
+    user_question_2 = "Create a new user training equipment for my new treadmill that is 20 centimeters long."
+    result_2 = sql_app.invoke({"question": user_question_2, "attempts": 0})
+    results["result_2"] = result_2["query_result"]
+    print("Result:", result_2["query_result"])
+    print("")
+
+    user_question_3 = "Show me my training equipment."
+    result_3 = sql_app.invoke({"question": user_question_3, "attempts": 0})
+    results["result_3"] = result_3["query_result"]
+    print("Result:", result_3["query_result"])
+    print("")
+
+    user_question_4 = "Create a new user training equipment for my new treadmill."
+    result_4 = sql_app.invoke({"question": user_question_4, "attempts": 0})
+    results["result_4"] = result_4["query_result"]
+    print("Result:", result_4["query_result"])
+    print("")
+
+    user_question_5 = "Show me my training equipment."
+    result_5 = sql_app.invoke({"question": user_question_5, "attempts": 0})
+    results["result_5"] = result_5["query_result"]
+    print("Result:", result_5["query_result"])
+    print("")
+
+    return results

@@ -76,7 +76,7 @@ Endpoints regarding the initialization of the database and data to be stored wit
 ## Retrieve Table Schema
 - Retrieves the schema of the database.
 ```
-[GET, POST] /dev_tests/retrieve_table_schema
+[GET, POST] /dev_tests/retrieve_db_schema
 ```
 
 ## Restart database
