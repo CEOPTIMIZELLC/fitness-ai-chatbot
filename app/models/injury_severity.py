@@ -9,7 +9,7 @@ class Injury_Severity(db.Model):
     severity_id = db.Column(db.Integer, db.ForeignKey("severity_library.id"), primary_key=True)
     
     estimated_time_to_recovery = db.Column(
-        db.String(50),
+        db.Interval,
         nullable=False,
         comment='E.g., {"2 weeks", "4 weeks", "8 weeks"}')
     
@@ -25,5 +25,5 @@ class Injury_Severity(db.Model):
         return {
             "injury_name": self.injuries.name,
             "severity_name": self.severity.name,
-            "estimated_time_to_recovery": self.estimated_time_to_recovery
+            "estimated_time_to_recovery": str(self.estimated_time_to_recovery)
         }

@@ -18,7 +18,7 @@ class Injury_Library(db.Model):
     severity = db.relationship(
         "Injury_Severity",
         back_populates = "injuries",
-        cascade="all, delete-orphan")    
+        cascade="all, delete-orphan")
     
     users = db.relationship(
         "User_Injuries",

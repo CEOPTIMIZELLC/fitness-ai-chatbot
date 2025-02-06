@@ -18,6 +18,11 @@ class Severity_Library(db.Model):
         "Injury_Severity",
         back_populates = "severity",
         cascade="all, delete-orphan")
+
+    users = db.relationship(
+        "User_Injuries",
+        back_populates = "severity",
+        cascade="all, delete-orphan")
     
     def to_dict(self):
         return {

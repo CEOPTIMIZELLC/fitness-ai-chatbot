@@ -21,7 +21,6 @@ def create_app():
 
     register_blueprints(app)
     initialize_database(app, db)
-    #initialize_schema_record(app)
 
     return app
 
@@ -41,14 +40,9 @@ def initialize_database(app, db):
         db.create_all()
 
         # Initialize the record of the schema.
-        from .helper_functions.table_schema_cache import retrieve_table_schema
-        app.table_schema = retrieve_table_schema(db)
+        from .helper_functions.table_schema_cache import get_database_schema
+        app.table_schema = get_database_schema(db)
 
-
-def initialize_schema_record(app):
-    with app.app_context():
-        from .helper_functions.table_schema_cache import retrieve_table_schema
-        app.table_schema = retrieve_table_schema(db)
 
 def register_error_handlers(app):
     with app.app_context():

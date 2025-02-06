@@ -53,3 +53,36 @@ def retrieve_table_schema(db):
     schema_text = stringify_schema(schema_info)
     
     return {"schema_info": schema_info, "foreign_keys": foreign_keys, "schema_text": schema_text}
+
+
+def get_database_schema(db):
+    inspector = inspect(db.engine)
+    schema = ""
+    for table_name in inspector.get_table_names():
+        schema += f"Table: {table_name}\n"
+
+        # Get primary keys
+        primary_keys = set(inspector.get_pk_constraint(table_name)["constrained_columns"])
+
+        # Get foreign keys
+        foreign_keys_map = {}
+        for fk in inspector.get_foreign_keys(table_name):
+            for column, referred_column in zip(fk["constrained_columns"], fk["referred_columns"]):
+                foreign_keys_map[column] = f"{fk['referred_table']}.{referred_column}"
+        
+        for column in inspector.get_columns(table_name):
+            col_name = column["name"]
+            col_type = str(column["type"])
+
+            # Check for primary key
+            if col_name in primary_keys:
+                col_type += ", Primary Key"
+
+            # Check for foreign key
+            if col_name in foreign_keys_map:
+                col_type += f", Foreign Key to {foreign_keys_map[col_name]}"
+
+            schema += f"- {col_name}: {col_type}\n"
+        schema += "\n"
+    print("Retrieved database schema.")
+    return schema
