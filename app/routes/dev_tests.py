@@ -67,28 +67,10 @@ def initialize_db():
     db.session.add_all(equipment)
     db.session.commit()
 
-    from app.existing_data.measurements import measurements, equipment_measurements
-    db.session.add_all(measurements)
-    db.session.commit()
-    db.session.add_all(equipment_measurements)
+    from app.existing_data.user_equipment import user_equipment
+    db.session.add_all(user_equipment)
     db.session.commit()
 
-    from app.existing_data.training_equipment import user_training_constraints, user_training_available_equipment, user_training_equipment_measurements
-    db.session.add_all(user_training_constraints)
-    db.session.commit()
-    db.session.add_all(user_training_available_equipment)
-    db.session.commit()
-    db.session.add_all(user_training_equipment_measurements)
-    db.session.commit()
-
-    from app.existing_data.injuries import injuries, serverities, injury_severities
-    db.session.add_all(injuries)
-    db.session.commit()
-    db.session.add_all(serverities)
-    db.session.commit()
-    db.session.add_all(injury_severities)
-    db.session.commit()
-    
     current_app.table_schema = get_database_schema(db)
 
     return "Database CREATED!"
@@ -143,63 +125,18 @@ def read_table():
 
     return state
 
-# Testing for the SQL to add and check injuries.
-@dev_tests.route('/test_injury_sql', methods=['GET'])
-def test_injury_sql():
-    results = {}
-    user_question_1 = "Create a new user injury for my mild Headache."
-    result_1 = sql_app.invoke({"question": user_question_1, "attempts": 0})
-    results["result_1"] = result_1["query_result"]
-    print("Result:", result_1["query_result"])
-    print("")
-    
-    user_question_2 = "Create a new user injury for my moderate Sprained Ankle."
-    result_2 = sql_app.invoke({"question": user_question_2, "attempts": 0})
-    results["result_2"] = result_2["query_result"]
-    print("Result:", result_2["query_result"])
-    print("")
-
-    user_question_3 = "Show me my injuries"
-    result_3 = sql_app.invoke({"question": user_question_3, "attempts": 0})
-    results["result_3"] = result_3["query_result"]
-    print("Result:", result_3["query_result"])
-    print("")
-
-    user_question_4 = "Create a new user injury for my moderate Headache."
-    result_4 = sql_app.invoke({"question": user_question_4, "attempts": 0})
-    results["result_4"] = result_4["query_result"]
-    print("Result:", result_4["query_result"])
-    print("")
-    
-    user_question_5 = "Create a new user injury for my mild Sprained Ankle."
-    result_5 = sql_app.invoke({"question": user_question_5, "attempts": 0})
-    results["result_5"] = result_5["query_result"]
-    print("Result:", result_5["query_result"])
-    print("")
-
-    user_question_6 = "Show me my injuries"
-    result_6 = sql_app.invoke({"question": user_question_6, "attempts": 0})
-    results["result_6"] = result_6["query_result"]
-    print("Result:", result_6["query_result"])
-    print("")
-
-    return results
-
-
-
-
 
 # Testing for the SQL to add and check training equipment.
-@dev_tests.route('/test_training_equipment_sql', methods=['GET'])
-def test_training_equipment_sql():
+@dev_tests.route('/test_equipment_sql', methods=['GET'])
+def test_equipment_sql():
     results = {}
-    user_question_1 = "Create a new user training equipment for my new barbell that weighs 4 kilograms and is 15 centimeters long."
+    user_question_1 = "Create a new user equipment for my new barbell that weighs 4 kilograms."
     result_1 = sql_app.invoke({"question": user_question_1, "attempts": 0})
     results["result_1"] = result_1["query_result"]
     print("Result:", result_1["query_result"])
     print("")
     
-    user_question_2 = "Create a new user training equipment for my new treadmill that is 20 centimeters long."
+    user_question_2 = "Create a new user equipment for my new treadmill that is 20 centimeters long."
     result_2 = sql_app.invoke({"question": user_question_2, "attempts": 0})
     results["result_2"] = result_2["query_result"]
     print("Result:", result_2["query_result"])
