@@ -115,7 +115,7 @@ class CheckRelevance(BaseModel):
 def check_relevance(state: AgentState):
     question = state["question"]
     schema = get_database_schema()
-    schema = current_app.table_schema["schema_text"]
+    schema = current_app.table_schema
     print(f"Checking relevance of the question: {question}")
     system = """You are an assistant that determines whether a given question is related to the following database schema.
 
@@ -148,7 +148,7 @@ def convert_nl_to_sql(state: AgentState):
     question = state["question"]
     current_user = state["current_user"]
     schema = get_database_schema()
-    schema = current_app.table_schema["schema_text"]
+    schema = current_app.table_schema
     print(f"Converting question to SQL for user '{current_user}': {question}")
     system = """You are an assistant that converts natural language questions into SQL queries based on the following schema:
 
