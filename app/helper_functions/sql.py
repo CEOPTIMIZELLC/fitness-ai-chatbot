@@ -4,20 +4,19 @@
 # %%
 # sql_agent.py
 
-import os
-from dotenv import load_dotenv
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from sqlalchemy import text, inspect
+from sqlalchemy import text
 from langgraph.graph import StateGraph, END
 from flask_login import current_user
+from flask import current_app
 
 from app import db
 from app.models import Users
-from flask import current_app
+from app.helper_functions.table_schema_cache import get_database_schema
 
 
 class AgentState(TypedDict):
@@ -29,54 +28,6 @@ class AgentState(TypedDict):
     attempts: int
     relevance: str
     sql_error: bool
-
-def get_foreign_keys(inspector, table_name):
-    foreign_keys_map = {}
-    for fk in inspector.get_foreign_keys(table_name):
-        for column, referred_column in zip(fk["constrained_columns"], fk["referred_columns"]):
-            foreign_keys_map[column] = f"{fk['referred_table']}.{referred_column}"
-    return foreign_keys_map
-
-def get_database_schema():
-    inspector = inspect(db.engine)
-    schema = ""
-    for table_name in inspector.get_table_names():
-        schema += f"Table: {table_name}\n"
-
-        # Get primary and foreign keys
-        primary_keys = set(inspector.get_pk_constraint(table_name)["constrained_columns"])
-        foreign_keys_map = get_foreign_keys(inspector=inspector, table_name=table_name)
-        
-        for column in inspector.get_columns(table_name):
-            col_name = column["name"]
-            col_type = str(column["type"])
-
-            # Check for primary key
-            if col_name in primary_keys:
-                col_type += ", Primary Key"
-
-            # Check for foreign key
-            if col_name in foreign_keys_map:
-                col_type += f", Foreign Key to {foreign_keys_map[col_name]}"
-
-            # Check for if the column is nullable.
-            if column["nullable"]:
-                col_type += ", Nullable"
-            else:
-                col_type += ", Not Nullable"
-
-            # Check for if autoincremented.
-            if column["autoincrement"]:
-                col_type += ", Autoincrements"
-
-            # Check for default value.
-            elif column["default"]:
-                col_type += f", Default value of {str(column["default"])}"
-
-            schema += f"- {col_name}: {col_type}\n"
-        schema += "\n"
-    print("Retrieved database schema.")
-    return schema
 
 class GetCurrentUser(BaseModel):
     current_user: str = Field(
@@ -114,7 +65,7 @@ class CheckRelevance(BaseModel):
 
 def check_relevance(state: AgentState):
     question = state["question"]
-    schema = get_database_schema()
+    schema = get_database_schema(db)
     schema = current_app.table_schema
     print(f"Checking relevance of the question: {question}")
     system = """You are an assistant that determines whether a given question is related to the following database schema.
@@ -147,7 +98,7 @@ class ConvertToSQL(BaseModel):
 def convert_nl_to_sql(state: AgentState):
     question = state["question"]
     current_user = state["current_user"]
-    schema = get_database_schema()
+    schema = get_database_schema(db)
     schema = current_app.table_schema
     print(f"Converting question to SQL for user '{current_user}': {question}")
     system = """You are an assistant that converts natural language questions into SQL queries based on the following schema:
