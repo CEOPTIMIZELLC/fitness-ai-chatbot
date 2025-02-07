@@ -13,20 +13,19 @@ class Equipment_Library(db.Model):
         nullable=False,
         comment='E.g., Barbell, Dumbbell, Resistance Band')
     
+    unit_of_measurement = db.Column(
+        db.String(50),
+        nullable=False,
+        comment='E.g., kilograms, centimeters')
+    
     # Relationships
     exercises = db.relationship(
         "Exercise_Equipment",
         back_populates = "equipment",
         cascade="all, delete-orphan")
 
-    measurements = db.relationship(
-        "Equipment_Measurements",
-        back_populates = "equipment",
-        cascade="all, delete-orphan")
-        
-
-    training_available_equipment = db.relationship(
-        "User_Training_Available_Equipment",
+    users = db.relationship(
+        "User_Equipment",
         back_populates = "equipment",
         cascade="all, delete-orphan")
 

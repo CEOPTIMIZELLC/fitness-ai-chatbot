@@ -53,13 +53,8 @@ class Users(db.Model, UserMixin):
         return bcrypt.check_password_hash(self.password_hash, password)
     
     # Relationships
-    injuries = db.relationship(
-        "User_Injuries",
-        back_populates = "users",
-        cascade="all, delete-orphan")
-    
-    training_constraints = db.relationship(
-        "User_Training_Constraints",
+    equipment = db.relationship(
+        "User_Equipment",
         back_populates = "users",
         cascade="all, delete-orphan")
 
