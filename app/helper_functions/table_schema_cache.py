@@ -20,6 +20,13 @@ def get_database_schema(db):
         primary_keys = set(inspector.get_pk_constraint(table_name)["constrained_columns"])
         foreign_keys_map = get_foreign_keys(inspector=inspector, table_name=table_name)
         
+        '''
+        # Get the comment for the table if it exists.
+        table_comment = inspector.get_table_comment(table_name)
+        if table_comment["text"]:
+            schema += f"Comment: {table_comment["text"]}\n"
+        '''
+        
         for column in inspector.get_columns(table_name):
             col_name = column["name"]
             col_type = str(column["type"])
@@ -45,6 +52,11 @@ def get_database_schema(db):
             # Check for default value.
             elif column["default"]:
                 col_type += f", Default value of {str(column["default"])}"
+            '''
+            # Check for if comment.
+            if column["comment"]:
+                col_type += f", Comment: {str(column["comment"])}"
+            '''
 
             schema += f"- {col_name}: {col_type}\n"
         schema += "\n"
