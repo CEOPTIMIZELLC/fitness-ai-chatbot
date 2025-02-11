@@ -2,6 +2,10 @@ from app import db
 
 # The table of equipment that a exercise currently or previously has.
 class Exercise_Equipment(db.Model):
+    """The equipment that is required to perform an exercise."""
+    __table_args__ = {
+        'comment': "The equipment that is required to perform an exercise."
+    }
     # Fields
     __tablename__ = "exercise_equipment"
 
