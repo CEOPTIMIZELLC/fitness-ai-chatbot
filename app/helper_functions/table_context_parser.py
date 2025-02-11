@@ -22,6 +22,7 @@ from app.helper_functions.table_schema_cache import get_database_schema
 
 class AgentState(TypedDict):
     question: str
+    subjects: str
     query_result: str
     current_user: str
     relevance: str
@@ -90,6 +91,7 @@ Respond with only "relevant" or "not_relevant".
 
 
 def irrelevant_question(state: AgentState):
+    state["subjects"] = "No subjects"
     state["query_result"] = "Question is irrelevant."
     print(f"{state['query_result']}")
     return state
@@ -184,8 +186,32 @@ def regenerate_query(state: AgentState):
     print(f"Rewritten question: {state['question']}")
     return state
 
-class TableNames(BaseModel):
+class TableTagging(BaseModel):
     """Tag the piece of text with particular info."""
+    subjects: List[str] = Field(description="sentiment of text, should be `equipment`, `exercises`, or `users`")
+
+def tag_table_question(state: AgentState):
+    question = state["question"]
+    current_user = state["current_user"]
+    print(f"Tagging context for user '{current_user}': {question}")
+
+    system = "Think carefully, and then tag the text as instructed"
+    convert_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system),
+            ("human", "Question: {question}"),
+        ]
+    )
+    llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
+    structured_llm = llm.with_structured_output(TableTagging)
+    tag_generator = convert_prompt | structured_llm
+    result = tag_generator.invoke({"question": question})
+    state["subjects"] = result.subjects
+    print(f"Table names: {state['subjects']}")
+    return state
+
+class TableNames(BaseModel):
+    """Information to extract."""
     tables: List[str] = Field(description="the names of the tables from the schema that should be used")
 
 def retrieve_table_names(state: AgentState):
@@ -222,7 +248,7 @@ Provide only the tagging without any explanations.
 
 def relevance_router(state: AgentState):
     if state["relevance"].lower() == "relevant":
-        return "retrieve_table_names"
+        return "tag_table_question"
     else:
         return "irrelevant_question"
 
@@ -234,6 +260,7 @@ workflow.add_node("tag_question", tag_question)
 workflow.add_node("extract_information", extract_information)
 workflow.add_node("regenerate_query", regenerate_query)
 workflow.add_node("irrelevant_question", irrelevant_question)
+workflow.add_node("tag_table_question", tag_table_question)
 workflow.add_node("retrieve_table_names", retrieve_table_names)
 
 workflow.add_edge("get_current_user", "check_relevance")
@@ -242,12 +269,13 @@ workflow.add_conditional_edges(
     "check_relevance",
     relevance_router,
     {
-        "retrieve_table_names": "retrieve_table_names",
+        "tag_table_question": "tag_table_question",
         "irrelevant_question": "irrelevant_question",
     },
 )
 
 workflow.add_edge("irrelevant_question", END)
+workflow.add_edge("tag_table_question", "retrieve_table_names")
 workflow.add_edge("retrieve_table_names", END)
 
 workflow.set_entry_point("get_current_user")
