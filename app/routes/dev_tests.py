@@ -12,7 +12,8 @@ from app import db
 from . import dev_tests_bp as dev_tests
 
 from ..helper_functions.table_schema_cache import get_database_schema
-from ..helper_functions.sql import sql_app 
+from ..helper_functions.sql import sql_app
+from ..helper_functions.table_context_parser import context_retriever_app
 
 from .auth import register
 
@@ -156,6 +157,44 @@ def test_equipment_sql():
 
     user_question_5 = "Show me my training equipment."
     result_5 = sql_app.invoke({"question": user_question_5, "attempts": 0})
+    results["result_5"] = result_5["query_result"]
+    print("Result:", result_5["query_result"])
+    print("")
+
+    return results
+
+
+
+# Testing for the SQL to add and check training equipment.
+@dev_tests.route('/test_equipment_context', methods=['GET'])
+def test_equipment_sql_context():
+    results = {}
+    user_question_1 = "Create a new user equipment for my new barbell that weighs 4 kilograms."
+    result_1 = context_retriever_app.invoke({"question": user_question_1, "attempts": 0})
+    results["result_1"] = result_1["query_result"]
+    print("Result:", result_1["query_result"])
+    print("")
+    
+    user_question_2 = "Show me my training equipment."
+    result_2 = context_retriever_app.invoke({"question": user_question_2, "attempts": 0})
+    results["result_2"] = result_2["query_result"]
+    print("Result:", result_2["query_result"])
+    print("")
+
+    user_question_3 = "Am I able to do any weight lifting?."
+    result_3 = context_retriever_app.invoke({"question": user_question_3, "attempts": 0})
+    results["result_3"] = result_3["query_result"]
+    print("Result:", result_3["query_result"])
+    print("")
+
+    user_question_4 = "Do I have the equipment available for me to do weight lifting?."
+    result_4 = context_retriever_app.invoke({"question": user_question_4, "attempts": 0})
+    results["result_4"] = result_4["query_result"]
+    print("Result:", result_4["query_result"])
+    print("")
+
+    user_question_5 = "What exercises can I do?."
+    result_5 = context_retriever_app.invoke({"question": user_question_5, "attempts": 0})
     results["result_5"] = result_5["query_result"]
     print("Result:", result_5["query_result"])
     print("")
