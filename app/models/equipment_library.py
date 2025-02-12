@@ -33,5 +33,5 @@ class Equipment_Library(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "equipment_measure": self.equipment_measure
+            "unit_of_measurement": self.unit_of_measurement
         }
