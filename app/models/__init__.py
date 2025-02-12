@@ -1,3 +1,4 @@
+from app import db
 from .equipment_library import Equipment_Library
 from .exercise_equipment import Exercise_Equipment
 from .exercise_library import Exercise_Library
@@ -11,3 +12,8 @@ __all__ = [
     "User_Equipment",
     "Users"
     ] 
+
+tables_dict = {table.__tablename__: table for table in db.Model.__subclasses__()}
+
+def table_object(table_name):
+    return tables_dict.get(table_name)

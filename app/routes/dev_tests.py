@@ -8,6 +8,7 @@ import json
 #from app.models import Users, Fitness, User_Fitness, Exercises, Exercise_Fitness
 
 from app import db
+from app.models import table_object
 
 from . import dev_tests_bp as dev_tests
 
@@ -120,11 +121,18 @@ def read_table():
     if table_name not in get_table_names():
         return jsonify({"status": "error", "message": f"Table with name '{table_name}' does not exist."}), 400
 
+    '''
     state = {"sql_query": f"SELECT * FROM {table_name}"}
-
     execute_sql(state)
-
     return state
+    '''
+
+    query_result = db.session.query(table_object(table_name=table_name)).all()
+    result = []
+    for elem in query_result: 
+        result.append(elem.to_dict())
+    print(result)
+    return {"status": "success", "results": result}, 200
 
 
 # Testing for the SQL to add and check training equipment.
