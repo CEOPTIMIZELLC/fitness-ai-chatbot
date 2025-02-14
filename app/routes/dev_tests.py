@@ -12,11 +12,11 @@ from app.models import table_object
 
 from . import dev_tests_bp as dev_tests
 
-from ..helper_functions.table_schema_cache import get_database_schema
-from ..helper_functions.sql import sql_app
-from ..helper_functions.table_context_parser import context_retriever_app
+from app.helper_functions.table_schema_cache import get_database_schema
+from app.helper_functions.sql import sql_app
+from app.helper_functions.table_context_parser import context_retriever_app
 
-from .auth import register
+from app.routes.auth import register
 
 # ----------------------------------------- Dev Tests -----------------------------------------
 
