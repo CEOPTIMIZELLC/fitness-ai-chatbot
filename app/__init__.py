@@ -35,6 +35,9 @@ def register_blueprints(app):
         from .routes import dev_tests_bp
         app.register_blueprint(dev_tests_bp, url_prefix='/dev_tests')
 
+        from .routes import database_manipulation_bp
+        app.register_blueprint(database_manipulation_bp, url_prefix='/database_manipulation')
+
 def initialize_database(app, db):
     with app.app_context():
         db.create_all()
