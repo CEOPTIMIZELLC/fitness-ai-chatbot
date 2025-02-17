@@ -1,4 +1,4 @@
-# Crumbs Backend App
+# Fitness AI Chatbot Backend App
 Application folder for the backend of the Fitness AI Chatbot. 
 
 ## Models
