@@ -1,5 +1,5 @@
 from random import randrange
-from flask import request, jsonify, redirect, url_for, current_app
+from flask import request, jsonify, redirect, url_for, current_app, Blueprint
 from flask_cors import CORS
 from sqlalchemy import text
 
@@ -10,7 +10,7 @@ import json
 from app import db
 from app.models import table_object
 
-from . import dev_tests_bp as dev_tests
+bp = Blueprint('dev_tests', __name__)
 
 from app.helper_functions.table_schema_cache import get_database_schema
 from app.helper_functions.sql import sql_app
@@ -22,7 +22,7 @@ from app.helper_functions.cp_pulp_equipment_test import Main as cp_pulp_equipmen
 # ----------------------------------------- Dev Tests -----------------------------------------
 
 # Testing for the SQL to add and check training equipment.
-@dev_tests.route('/test_equipment_sql', methods=['GET'])
+@bp.route('/test_equipment_sql', methods=['GET'])
 def test_equipment_sql():
     results = {}
     user_question_1 = "Create a new user equipment for my new barbell that weighs 4 kilograms."
@@ -60,7 +60,7 @@ def test_equipment_sql():
 
 
 # Testing for the SQL to add and check training equipment.
-@dev_tests.route('/test_equipment_context', methods=['GET'])
+@bp.route('/test_equipment_context', methods=['GET'])
 def test_equipment_sql_context():
     results = {}
     
@@ -116,7 +116,7 @@ def test_equipment_sql_context():
 
 
 # Testing for constrain programming.
-@dev_tests.route('/test_cp_pulp', methods=['GET'])
+@bp.route('/test_cp_pulp', methods=['GET'])
 def test_cp_pulp():
     results = {}
     
@@ -128,7 +128,7 @@ def test_cp_pulp():
     return results
 
 # Testing for constrain programming.
-@dev_tests.route('/test_cp_pulp_equipment', methods=['GET'])
+@bp.route('/test_cp_pulp_equipment', methods=['GET'])
 def test_cp_pulp_equipment():
     results = {}
     

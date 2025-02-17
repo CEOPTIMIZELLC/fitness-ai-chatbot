@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, Blueprint
 from flask_login import current_user, login_required
 from flask_cors import CORS
 
@@ -7,19 +7,19 @@ import psycopg2
 
 from app import db, login_manager
 
-from . import current_user_bp as cur_user
+bp = Blueprint('current_user', __name__)
 
 
 # ----------------------------------------- User Info -----------------------------------------
 #Use Flask-Login to get current user
-@cur_user.route('/', methods=['GET'])
+@bp.route('/', methods=['GET'])
 @login_required
 def get_current_user():
     if current_user.is_authenticated:
         return jsonify(current_user.to_dict()), 200
     return jsonify({"status": "error", "message": "User not authenticated"}), 401
 
-@cur_user.route('/', methods=['PATCH'])
+@bp.route('/', methods=['PATCH'])
 @login_required
 def patch_current_user():
     if 'first_name' in request.form:
@@ -35,7 +35,7 @@ def patch_current_user():
     return jsonify(current_user.to_dict()), 200
 
 # Update account email.
-@cur_user.route('/change_email', methods=['PUT', 'PATCH'])
+@bp.route('/change_email', methods=['PUT', 'PATCH'])
 @login_required
 def change_email():
     if ('new_email' in request.form 
@@ -64,7 +64,7 @@ def change_email():
     return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
 
 # Update account password.
-@cur_user.route('/change_password', methods=['PUT','PATCH'])
+@bp.route('/change_password', methods=['PUT','PATCH'])
 @login_required
 def change_password():
     if ('password' in request.form 

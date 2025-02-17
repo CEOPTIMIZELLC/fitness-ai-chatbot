@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, Blueprint
 from flask_login import current_user, login_user, login_required, logout_user
 from flask_cors import CORS
 
@@ -7,11 +7,10 @@ import psycopg2
 
 from app import db
 
-from . import auth_bp as auth
-
+bp = Blueprint('auth', __name__)
 
 # ----------------------------------------- Auth -----------------------------------------
-@auth.route('/register', methods=['GET','POST'])
+@bp.route('/register', methods=['GET','POST'])
 def register():
     if (request.method == 'POST' 
         and 'email' in request.form 
@@ -57,7 +56,7 @@ def register():
         return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
     return jsonify({"status": "error", "message": "GET is not valid for this route."}), 400
 
-@auth.route('/login', methods=['POST'])
+@bp.route('/login', methods=['POST'])
 def login():
     if current_user.is_authenticated:
         return jsonify({"status": "error", "message": "You are already logged in!"}), 400
@@ -76,14 +75,14 @@ def login():
             return jsonify({"status": "success", "message": "Welcome back!"}), 200
     return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
 
-@auth.route('/logout', methods=['GET', 'POST'])
+@bp.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
     logout_user()
     return jsonify({"status": "success", "message": "Logged out."}), 200
 
 # Delete users based on id.
-@auth.route('/delete_account', methods=['DELETE'])
+@bp.route('/delete_account', methods=['DELETE'])
 @login_required
 def delete_user():
     if ('password' in request.form):

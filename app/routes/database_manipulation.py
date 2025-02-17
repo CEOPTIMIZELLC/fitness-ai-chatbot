@@ -1,5 +1,5 @@
 from random import randrange
-from flask import request, jsonify, current_app
+from flask import request, jsonify, current_app, Blueprint
 from flask_cors import CORS
 from sqlalchemy import text
 
@@ -10,7 +10,7 @@ import json
 from app import db
 from app.models import table_object
 
-from . import database_manipulation_bp as database_manipulation
+bp = Blueprint('database_manipulation', __name__)
 
 from app.helper_functions.table_schema_cache import get_database_schema
 
@@ -34,19 +34,19 @@ def recreate_db():
 
 
 # Get all table names in the database
-@database_manipulation.route('/retrieve_table_names', methods=['GET','POST'])
+@bp.route('/retrieve_table_names', methods=['GET','POST'])
 def get_table_names():
     from sqlalchemy import inspect
     inspector = inspect(db.engine)  # Create an inspector bound to the engine
     return inspector.get_table_names()
 
 # Get all table names in the database
-@database_manipulation.route('/retrieve_db_schema', methods=['GET','POST'])
+@bp.route('/retrieve_db_schema', methods=['GET','POST'])
 def get_table_schema():
     return current_app.table_schema
 
 # Database initialization
-@database_manipulation.route('/init_db', methods=['GET','POST'])
+@bp.route('/init_db', methods=['GET','POST'])
 def initialize_db():
     
     drop_db()
@@ -141,7 +141,7 @@ def execute_sql(state):
     return state
 
 # Table Reader
-@database_manipulation.route('/read_table', methods=['GET'])
+@bp.route('/read_table', methods=['GET'])
 def read_table():
     if 'table_name' not in request.form:
         return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
@@ -165,7 +165,7 @@ def read_table():
     return {"status": "success", "results": result}, 200
 
 # Table Reader
-@database_manipulation.route('/read_table_sql_names', methods=['GET'])
+@bp.route('/read_table_sql_names', methods=['GET'])
 def read_table_sql_names():
     if 'table_name' not in request.form:
         return jsonify({"status": "error", "message": "Please fill out the form!"}), 400

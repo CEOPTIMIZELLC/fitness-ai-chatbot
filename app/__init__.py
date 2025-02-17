@@ -26,17 +26,20 @@ def create_app():
 
 def register_blueprints(app):
     with app.app_context():
-        from .routes import auth_bp
-        app.register_blueprint(auth_bp)
+        from .routes import auth
+        app.register_blueprint(auth.bp)
         
-        from .routes import current_user_bp
-        app.register_blueprint(current_user_bp, url_prefix='/current-user')
+        from .routes import current_user
+        app.register_blueprint(current_user.bp, url_prefix='/current-user')
 
-        from .routes import dev_tests_bp
-        app.register_blueprint(dev_tests_bp, url_prefix='/dev_tests')
+        from .routes import dev_tests
+        app.register_blueprint(dev_tests.bp, url_prefix='/dev_tests')
 
-        from .routes import database_manipulation_bp
-        app.register_blueprint(database_manipulation_bp, url_prefix='/database_manipulation')
+        from .routes import database_manipulation
+        app.register_blueprint(database_manipulation.bp, url_prefix='/database_manipulation')
+
+        from .routes import exercises
+        app.register_blueprint(exercises.bp, url_prefix='/exercises')
 
 def initialize_database(app, db):
     with app.app_context():
