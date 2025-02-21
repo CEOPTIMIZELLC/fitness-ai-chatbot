@@ -188,7 +188,7 @@ def regenerate_query(state: AgentState):
 
 class TableTagging(BaseModel):
     """Tag the piece of text with particular info."""
-    subjects: List[str] = Field(description="sentiment of text, should be `equipment`, `exercises`, or `users`")
+    subjects: List[str] = Field(description="subject of text, should be `equipment`, `exercises`, or `users`")
 
 def tag_table_question(state: AgentState):
     question = state["question"]
@@ -227,6 +227,8 @@ def retrieve_table_names(state: AgentState):
 
 The current user is '{current_user}'. Ensure that all query-related data is scoped to this user.
 
+If the name of a something is given that fits into a category of table, then that should be tagged (e.g., tagging the 'exercise_library' if running is mentioned in the context of being an exercise).
+
 Provide only the tagging without any explanations.
 
 .
@@ -248,7 +250,7 @@ Provide only the tagging without any explanations.
 
 def relevance_router(state: AgentState):
     if state["relevance"].lower() == "relevant":
-        return "tag_table_question"
+        return "retrieve_table_names"
     else:
         return "irrelevant_question"
 
@@ -269,7 +271,7 @@ workflow.add_conditional_edges(
     "check_relevance",
     relevance_router,
     {
-        "tag_table_question": "tag_table_question",
+        "retrieve_table_names": "retrieve_table_names",
         "irrelevant_question": "irrelevant_question",
     },
 )
