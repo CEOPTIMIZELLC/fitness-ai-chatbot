@@ -62,7 +62,11 @@ def initialize_db():
         and 'goal' in request.form):
         register()
 
-    # Populate equipment.
+    # Populate items.
+    from app.existing_data.goals import goals
+    db.session.add_all(goals)
+    db.session.commit()
+
     from app.existing_data.equipment import equipment
     db.session.add_all(equipment)
     db.session.commit()
