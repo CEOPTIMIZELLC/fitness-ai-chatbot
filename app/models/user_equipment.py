@@ -2,6 +2,9 @@ from app import db
 
 class User_Equipment(db.Model):
     """Equipment available to a user during a training period."""
+    __table_args__ = {
+        'comment': "The equipment that a user has to be able to perform exercises."
+    }
 
     # Fields
     __tablename__ = "user_equipment"

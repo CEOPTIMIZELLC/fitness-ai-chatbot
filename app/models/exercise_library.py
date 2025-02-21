@@ -3,6 +3,9 @@ from app import db
 # The exercises that exist.
 class Exercise_Library(db.Model):
     # Fields
+    __table_args__ = {
+        'comment': "The library of exercises that exists."
+    }
     __tablename__ = "exercise_library"
     id = db.Column(db.Integer, primary_key=True)
 

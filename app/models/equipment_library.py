@@ -3,6 +3,9 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 # The equipment that exist.
 class Equipment_Library(db.Model):
+    __table_args__ = {
+        'comment': "The library of equipment that exists."
+    }
     # Fields
     __tablename__ = "equipment_library"
     id = db.Column(db.Integer, primary_key=True)
