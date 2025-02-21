@@ -20,12 +20,12 @@ def get_database_schema(db):
         primary_keys = set(inspector.get_pk_constraint(table_name)["constrained_columns"])
         foreign_keys_map = get_foreign_keys(inspector=inspector, table_name=table_name)
         
-        '''
+        
         # Get the comment for the table if it exists.
         table_comment = inspector.get_table_comment(table_name)
         if table_comment["text"]:
             schema += f"Comment: {table_comment["text"]}\n"
-        '''
+        
         
         for column in inspector.get_columns(table_name):
             col_name = column["name"]
