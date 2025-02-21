@@ -67,27 +67,27 @@ def test_equipment_sql_context():
     user_question_1 = "Create a new user equipment for my new barbell that weighs 4 kilograms."
     result_1 = context_retriever_app.invoke({"question": user_question_1, "attempts": 0})
     results["result_1"] = {
-        "subjects": result_1["subjects"], 
+        #"subjects": result_1["subjects"], 
         "results": result_1["query_result"]}
-    print("Subjects:", result_1["subjects"])
+    #print("Subjects:", result_1["subjects"])
     print("Result:", result_1["query_result"])
     print("")
     
     user_question_2 = "Show me my training equipment."
     result_2 = context_retriever_app.invoke({"question": user_question_2, "attempts": 0})
     results["result_2"] = {
-        "subjects": result_2["subjects"], 
+        #"subjects": result_2["subjects"], 
         "results": result_2["query_result"]}
-    print("Subjects:", result_2["subjects"])
+    #print("Subjects:", result_2["subjects"])
     print("Result:", result_2["query_result"])
     print("")
 
     user_question_3 = "Show me if I am able to do weight lifting."
     result_3 = context_retriever_app.invoke({"question": user_question_3, "attempts": 0})
     results["result_3"] = {
-        "subjects": result_3["subjects"], 
+        #"subjects": result_3["subjects"], 
         "results": result_3["query_result"]}
-    print("Subjects:", result_3["subjects"])
+    #print("Subjects:", result_3["subjects"])
     print("Result:", result_3["query_result"])
     print("")
     
@@ -95,18 +95,18 @@ def test_equipment_sql_context():
     user_question_4 = "Do I have the equipment available for me to do weight lifting?"
     result_4 = context_retriever_app.invoke({"question": user_question_4, "attempts": 0})
     results["result_4"] = {
-        "subjects": result_4["subjects"], 
+        #"subjects": result_4["subjects"], 
         "results": result_4["query_result"]}
-    print("Subjects:", result_4["subjects"])
+    #print("Subjects:", result_4["subjects"])
     print("Result:", result_4["query_result"])
     print("")
 
     user_question_5 = "Show me if I have the equipment available to do weight lifting."
     result_5 = context_retriever_app.invoke({"question": user_question_5, "attempts": 0})
     results["result_5"] = {
-        "subjects": result_5["subjects"], 
+        #"subjects": result_5["subjects"], 
         "results": result_5["query_result"]}
-    print("Subjects:", result_5["subjects"])
+    #print("Subjects:", result_5["subjects"])
     print("Result:", result_5["query_result"])
     print("")
 
