@@ -52,8 +52,6 @@ def get_current_user(state: AgentState):
     except Exception as e:
         state["current_user"] = "Error retrieving user"
         print(f"Error retrieving user: {str(e)}")
-    finally:
-        db.session.close()
     return state
 
 # State to retrieve possible goal types.
@@ -112,16 +110,40 @@ Respond only with {goal_types}.
     print(f"Relevance determined: {state['goal_class']}")
     return state
 
-def end_max_iterations(state: AgentState):
-    state["query_result"] = "Please try again."
-    print("Maximum attempts reached. Ending the workflow.")
-    return state
+def goal_type_to_id(state: AgentState):
+    print("Retrieving the ID of the goal class.")
 
-def check_attempts_router(state: AgentState):
-    if state["attempts"] < 3:
-        return "convert_to_sql"
-    else:
-        return "end_max_iterations"
+    if not current_user.goal:
+        state["goal_id"] = "Goal ID not found"
+        print("No goal provided for goal type.")
+        return state
+
+    try:
+        goal_id = (
+            db.session.query(
+                Goal_Library.id
+            )
+            .filter(
+                Goal_Library.name.ilike(f'%{state["goal_class"]}%')
+            )
+            .first()
+        )
+        # Set the goal and goal id for the user if one is present.
+        if goal_id:
+            state["goal_id"] = goal_id.id
+            print(current_user.to_dict())
+            current_user.goal = state["goal_class"]
+            current_user.goal_id = state["goal_id"]
+            print(current_user.to_dict())
+            db.session.commit()
+            print(f"Current goal id is: {state['goal_id']}")
+        else:
+            state["goal_id"] = "Goal not found"
+            print("Goal not found in the database.")
+    except Exception as e:
+        state["goal_id"] = "Error retrieving goal"
+        print(f"Error retrieving goal: {str(e)}")
+    return state
 
 
 workflow = StateGraph(AgentState)
@@ -129,32 +151,13 @@ workflow = StateGraph(AgentState)
 workflow.add_node("get_current_user", get_current_user)
 workflow.add_node("retrieve_goal_types", retrieve_goal_types)
 workflow.add_node("goal_classification", goal_classification)
-workflow.add_node("end_max_iterations", end_max_iterations)
+workflow.add_node("goal_type_to_id", goal_type_to_id)
 
 workflow.add_edge("get_current_user", "retrieve_goal_types")
 workflow.add_edge("retrieve_goal_types", "goal_classification")
-'''
-workflow.add_conditional_edges(
-    "goal_classification",
-    goal_class_router,
-    {
-        "convert_to_sql": "convert_to_sql",
-        "generate_funny_response": "generate_funny_response",
-    },
-)
+workflow.add_edge("goal_classification", "goal_type_to_id")
 
-workflow.add_conditional_edges(
-    "regenerate_query",
-    check_attempts_router,
-    {
-        "convert_to_sql": "convert_to_sql",
-        "max_iterations": "end_max_iterations",
-    },
-)
-'''
-
-workflow.add_edge("goal_classification", END)
-workflow.add_edge("end_max_iterations", END)
+workflow.add_edge("goal_type_to_id", END)
 
 workflow.set_entry_point("get_current_user")
 
