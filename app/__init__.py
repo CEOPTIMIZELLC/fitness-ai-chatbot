@@ -44,6 +44,9 @@ def register_blueprints(app):
         from .routes import goals
         app.register_blueprint(goals.bp, url_prefix='/goals')
 
+        from .routes import phases
+        app.register_blueprint(phases.bp, url_prefix='/phases')
+
 def initialize_database(app, db):
     with app.app_context():
         db.create_all()
