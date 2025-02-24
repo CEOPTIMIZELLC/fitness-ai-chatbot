@@ -25,7 +25,7 @@ def read_goal(goal_id):
         return jsonify({"status": "error", "message": "Goal " + goal_id + " not found."}), 404
     return jsonify(goal.to_dict()), 200
 
-# Testing for the SQL to add and check training equipment.
+# Testing for goal classification.
 @bp.route('/goal_classification', methods=['GET'])
 def goal_classification():
     results = {}
