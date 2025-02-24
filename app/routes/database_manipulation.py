@@ -52,16 +52,6 @@ def initialize_db():
     drop_db()
     create_db()
 
-    if ('email' in request.form 
-        and 'password' in request.form 
-        and 'password_confirm' in request.form
-        and 'first_name' in request.form
-        and 'last_name' in request.form
-        and 'age' in request.form
-        and 'gender' in request.form
-        and 'goal' in request.form):
-        register()
-
     # Populate items.
     from app.existing_data.goals import goals
     db.session.add_all(goals)
@@ -79,16 +69,26 @@ def initialize_db():
     db.session.add_all(equipment)
     db.session.commit()
 
-    from app.existing_data.user_equipment import user_equipment
-    db.session.add_all(user_equipment)
-    db.session.commit()
-
     from app.existing_data.exercises import exercises
     db.session.add_all(exercises)
     db.session.commit()
 
     from app.existing_data.exercise_equipment import exercise_equipment
     db.session.add_all(exercise_equipment)
+    db.session.commit()
+
+    if ('email' in request.form 
+        and 'password' in request.form 
+        and 'password_confirm' in request.form
+        and 'first_name' in request.form
+        and 'last_name' in request.form
+        and 'age' in request.form
+        and 'gender' in request.form
+        and 'goal' in request.form):
+        register()
+    
+    from app.existing_data.user_equipment import user_equipment
+    db.session.add_all(user_equipment)
     db.session.commit()
 
     current_app.table_schema = get_database_schema(db)
