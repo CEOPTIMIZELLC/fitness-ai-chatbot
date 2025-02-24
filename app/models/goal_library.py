@@ -12,6 +12,11 @@ class Goal_Library(db.Model):
         nullable=False, 
         comment='E.g., Fat Loss Goal, Hypertrophy Goal, General Sports Performance Goal')
     
+    # Relationships
+    users = db.relationship(
+        "Users",
+        back_populates = "goals")
+    
     def to_dict(self):
         return {
             "id": self.id,

@@ -18,8 +18,13 @@ class Users(db.Model, UserMixin):
 
     goal = db.Column(
         TEXT, 
-        nullable=False, 
+        nullable=True, 
         comment='General fitness goal (e.g., Strength, Endurance)')
+    
+    goal_id = db.Column(
+        db.Integer, 
+        db.ForeignKey("goal_library.id", ondelete='SET NULL'), 
+        nullable=True)
     
     start_date = db.Column(
         db.Date, 
@@ -57,6 +62,11 @@ class Users(db.Model, UserMixin):
         "User_Equipment",
         back_populates = "users",
         cascade="all, delete-orphan")
+    
+    goals = db.relationship(
+        "Goal_Library",
+        back_populates = "users",
+        passive_deletes=True)
 
     def to_dict(self):
         return {
@@ -67,6 +77,7 @@ class Users(db.Model, UserMixin):
             "age": self.age,
             "gender": self.gender,
             "goal": self.goal,
+            "goal_id": self.goal_id,
             "start_date": self.start_date
     
         }
