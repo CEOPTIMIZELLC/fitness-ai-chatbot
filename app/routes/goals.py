@@ -22,46 +22,51 @@ from app.agents.goals import goal_app
 def goal_classification():
     results = {}
     
-    user_goal_1 = "Create a new user equipment for my new barbell that weighs 4 kilograms."
-    result_1 = goal_app.invoke({"new_goal": user_goal_1, "attempts": 0})
+    user_goal = "Create a new user equipment for my new barbell that weighs 4 kilograms."
+    result_temp = goal_app.invoke({"new_goal": user_goal, "attempts": 0})
     results["result_1"] = {
-        "new_goal": user_goal_1,
-        "results": result_1["goal_class"]}
-    print("Result:", result_1["goal_class"])
+        "new_goal": user_goal,
+        "goal_classification": result_temp["goal_class"],
+        "goal_id": result_temp["goal_id"]}
+    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
 
     
-    user_goal_2 = "I would like to do a push up."
-    result_2 = goal_app.invoke({"new_goal": user_goal_2, "attempts": 0})
+    user_goal = "I would like to do a push up."
+    result_temp = goal_app.invoke({"new_goal": user_goal, "attempts": 0})
     results["result_2"] = {
-        "new_goal": user_goal_2,
-        "results": result_2["goal_class"]}
-    print("Result:", result_2["goal_class"])
+        "new_goal": user_goal,
+        "goal_classification": result_temp["goal_class"],
+        "goal_id": result_temp["goal_id"]}
+    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
 
-    user_goal_3 = "I would like to be ready for the soccer championship."
-    result_3 = goal_app.invoke({"new_goal": user_goal_3, "attempts": 0})
+    user_goal = "I would like to be ready for the soccer championship."
+    result_temp = goal_app.invoke({"new_goal": user_goal, "attempts": 0})
     results["result_3"] = {
-        "new_goal": user_goal_3,
-        "results": result_3["goal_class"]}
-    print("Result:", result_3["goal_class"])
+        "new_goal": user_goal,
+        "goal_classification": result_temp["goal_class"],
+        "goal_id": result_temp["goal_id"]}
+    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
     
 
-    user_goal_4 = "Am I ready for the soccker championship this year?"
-    result_4 = goal_app.invoke({"new_goal": user_goal_4, "attempts": 0})
+    user_goal = "Am I ready for the soccker championship this year?"
+    result_temp = goal_app.invoke({"new_goal": user_goal, "attempts": 0})
     results["result_4"] = {
-        "new_goal": user_goal_4,
-        "results": result_4["goal_class"]}
-    print("Result:", result_4["goal_class"])
+        "new_goal": user_goal,
+        "goal_classification": result_temp["goal_class"],
+        "goal_id": result_temp["goal_id"]}
+    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
 
-    user_goal_5 = "I would like to weight 100 pounds."
-    result_5 = goal_app.invoke({"new_goal": user_goal_5, "attempts": 0})
+    user_goal = "I would like to weight 100 pounds."
+    result_temp = goal_app.invoke({"new_goal": user_goal, "attempts": 0})
     results["result_5"] = {
-        "new_goal": user_goal_5,
-        "results": result_5["goal_class"]}
-    print("Result:", result_5["goal_class"])
+        "new_goal": user_goal,
+        "goal_classification": result_temp["goal_class"],
+        "goal_id": result_temp["goal_id"]}
+    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
     
     return results

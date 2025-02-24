@@ -25,6 +25,7 @@ class AgentState(TypedDict):
     current_user: str
     attempts: int
     goal_class: str
+    goal_id: int
     sql_error: bool
 
 class GetCurrentUser(BaseModel):
