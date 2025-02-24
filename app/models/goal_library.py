@@ -27,8 +27,14 @@ class Goal_Library(db.Model):
         cascade="all, delete-orphan")
     
     def to_dict(self):
+        phase_requirements=[]
+        phases = self.phases
+        for phase in phases:
+            phase_requirements.append(phase.to_dict())
+
         return {
             "id": self.id,
-            "name": self.name
+            "name": self.name,
+            "phase_requirements": phase_requirements
         }
     
