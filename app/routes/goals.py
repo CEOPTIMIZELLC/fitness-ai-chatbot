@@ -1,21 +1,29 @@
-from random import randrange
-from flask import request, jsonify, redirect, url_for, current_app, Blueprint
-from flask_cors import CORS
-from sqlalchemy import text
+from flask import request, jsonify, Blueprint
 
-import json
-
-#from app.models import Users, Fitness, User_Fitness, Exercises, Exercise_Fitness
-
-from app import db
-from app.models import table_object
+from app.models import Goal_Library
 
 bp = Blueprint('goals', __name__)
 
 from app.agents.goals import goal_app
 
-# ----------------------------------------- Goal Tests -----------------------------------------
+# ----------------------------------------- Goals -----------------------------------------
 
+# Retrieve goals
+@bp.route('/', methods=['GET'])
+def get_goal_list():
+    goals = Goal_Library.query.all()
+    result = []
+    for goal in goals:
+        result.append(goal.to_dict())
+    return jsonify({"status": "success", "goals": result}), 200
+
+# Show goals based on id.
+@bp.route('/<goal_id>', methods=['GET'])
+def read_goal(goal_id):
+    goal = Goal_Library.query.filter_by(id=goal_id).first()
+    if not goal:
+        return jsonify({"status": "error", "message": "Goal " + goal_id + " not found."}), 404
+    return jsonify(goal.to_dict()), 200
 
 # Testing for the SQL to add and check training equipment.
 @bp.route('/goal_classification', methods=['GET'])
@@ -69,5 +77,5 @@ def goal_classification():
     print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
     
-    return results
+    return jsonify(results), 200
 
