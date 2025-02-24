@@ -1,8 +1,11 @@
 from app import db
 
-# The exercises that exist.
+# The goals that exist.
 class Goal_Library(db.Model):
     # Fields
+    __table_args__ = {
+        'comment': "The categories of that a goal may fall in to."
+    }
     __tablename__ = "goal_library"
     id = db.Column(db.Integer, primary_key=True)
 
