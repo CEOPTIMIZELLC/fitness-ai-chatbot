@@ -20,7 +20,7 @@ from app.models import Users, Goal_Library
 
 
 class AgentState(TypedDict):
-    question: str
+    new_goal: str
     goal_types: list
     current_user: str
     attempts: int
@@ -74,12 +74,12 @@ class GoalClassification(BaseModel):
     )
 
 def goal_classification(state: AgentState):
-    question = state["question"]
+    new_goal = state["new_goal"]
     goal_types = state["goal_types"]
 
     goal_types_stringified = ", ".join(f'"{s}"' for s in goal_types)
 
-    print(f"Checking classification of the following goal: {question}")
+    print(f"Checking classification of the following goal: {new_goal}")
     system = """You are an assistant that determines what goal type a given goal falls into of the following types:
 
 Goal Types:
@@ -95,7 +95,7 @@ Example: "I would like to only weight 100 lbs." would be a "fat loss goal".
 
 Respond only with {goal_types}. 
 """.format(goal_types=goal_types_stringified)
-    human = f"Question: {question}"
+    human = f"New_goal: {new_goal}"
     check_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system),
@@ -131,10 +131,8 @@ def goal_type_to_id(state: AgentState):
         # Set the goal and goal id for the user if one is present.
         if goal_id:
             state["goal_id"] = goal_id.id
-            print(current_user.to_dict())
-            current_user.goal = state["question"]
+            current_user.goal = state["new_goal"]
             current_user.goal_id = state["goal_id"]
-            print(current_user.to_dict())
             db.session.commit()
             print(f"Current goal id is: {state['goal_id']}")
         else:

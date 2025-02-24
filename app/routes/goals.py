@@ -22,44 +22,44 @@ from app.agents.goals import goal_app
 def goal_classification():
     results = {}
     
-    user_question_1 = "Create a new user equipment for my new barbell that weighs 4 kilograms."
-    result_1 = goal_app.invoke({"question": user_question_1, "attempts": 0})
+    user_goal_1 = "Create a new user equipment for my new barbell that weighs 4 kilograms."
+    result_1 = goal_app.invoke({"new_goal": user_goal_1, "attempts": 0})
     results["result_1"] = {
-        "question": user_question_1,
+        "new_goal": user_goal_1,
         "results": result_1["goal_class"]}
     print("Result:", result_1["goal_class"])
     print("")
 
     
-    user_question_2 = "I would like to do a push up."
-    result_2 = goal_app.invoke({"question": user_question_2, "attempts": 0})
+    user_goal_2 = "I would like to do a push up."
+    result_2 = goal_app.invoke({"new_goal": user_goal_2, "attempts": 0})
     results["result_2"] = {
-        "question": user_question_2,
+        "new_goal": user_goal_2,
         "results": result_2["goal_class"]}
     print("Result:", result_2["goal_class"])
     print("")
 
-    user_question_3 = "I would like to be ready for the soccer championship."
-    result_3 = goal_app.invoke({"question": user_question_3, "attempts": 0})
+    user_goal_3 = "I would like to be ready for the soccer championship."
+    result_3 = goal_app.invoke({"new_goal": user_goal_3, "attempts": 0})
     results["result_3"] = {
-        "question": user_question_3,
+        "new_goal": user_goal_3,
         "results": result_3["goal_class"]}
     print("Result:", result_3["goal_class"])
     print("")
     
 
-    user_question_4 = "Am I ready for the soccker championship this year?"
-    result_4 = goal_app.invoke({"question": user_question_4, "attempts": 0})
+    user_goal_4 = "Am I ready for the soccker championship this year?"
+    result_4 = goal_app.invoke({"new_goal": user_goal_4, "attempts": 0})
     results["result_4"] = {
-        "question": user_question_4,
+        "new_goal": user_goal_4,
         "results": result_4["goal_class"]}
     print("Result:", result_4["goal_class"])
     print("")
 
-    user_question_5 = "I would like to weight 100 pounds."
-    result_5 = goal_app.invoke({"question": user_question_5, "attempts": 0})
+    user_goal_5 = "I would like to weight 100 pounds."
+    result_5 = goal_app.invoke({"new_goal": user_goal_5, "attempts": 0})
     results["result_5"] = {
-        "question": user_question_5,
+        "new_goal": user_goal_5,
         "results": result_5["goal_class"]}
     print("Result:", result_5["goal_class"])
     print("")
