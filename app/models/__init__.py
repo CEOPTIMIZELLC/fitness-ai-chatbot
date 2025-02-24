@@ -3,6 +3,8 @@ from .equipment_library import Equipment_Library
 from .exercise_equipment import Exercise_Equipment
 from .exercise_library import Exercise_Library
 from .goal_library import Goal_Library
+from .goal_phase_requirements import Goal_Phase_Requirements
+from .phase_library import Phase_Library
 from .user_equipment import User_Equipment
 from .users import Users
 
@@ -11,6 +13,8 @@ __all__ = [
     "Exercise_Equipment",
     "Exercise_Library",
     "Goal_Library",
+    "Goal_Phase_Requirements",
+    "Phase_Library",
     "User_Equipment",
     "Users"
     ] 

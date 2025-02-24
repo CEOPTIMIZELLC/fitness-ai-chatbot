@@ -25,6 +25,12 @@ class Phase_Library(db.Model):
         nullable=False, 
         comment='The maximum number of weeks that the phase can last.')
     
+    # Relationships
+    goals = db.relationship(
+        "Goal_Phase_Requirements",
+        back_populates = "phases",
+        cascade="all, delete-orphan")
+    
     def to_dict(self):
         return {
             "id": self.id,

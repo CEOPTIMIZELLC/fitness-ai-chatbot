@@ -71,6 +71,10 @@ def initialize_db():
     db.session.add_all(phases)
     db.session.commit()
 
+    from app.existing_data.goal_phase_requirements import goal_phase_requirements
+    db.session.add_all(goal_phase_requirements)
+    db.session.commit()
+
     from app.existing_data.equipment import equipment
     db.session.add_all(equipment)
     db.session.commit()

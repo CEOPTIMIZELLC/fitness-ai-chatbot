@@ -20,6 +20,12 @@ class Goal_Library(db.Model):
         "Users",
         back_populates = "goals")
     
+    # Relationships
+    phases = db.relationship(
+        "Goal_Phase_Requirements",
+        back_populates = "goals",
+        cascade="all, delete-orphan")
+    
     def to_dict(self):
         return {
             "id": self.id,
