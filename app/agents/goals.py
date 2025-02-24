@@ -134,7 +134,7 @@ def goal_type_to_id(state: AgentState):
             current_user.goal = state["new_goal"]
             current_user.goal_id = state["goal_id"]
             db.session.commit()
-            print(f"Current goal id is: {state['goal_id']}")
+            print(f"Goal set to: {state['new_goal']}. Current goal id is: {state['goal_id']}")
         else:
             state["goal_id"] = "Goal not found"
             print("Goal not found in the database.")
