@@ -132,7 +132,7 @@ def goal_type_to_id(state: AgentState):
         if goal_id:
             state["goal_id"] = goal_id.id
             print(current_user.to_dict())
-            current_user.goal = state["goal_class"]
+            current_user.goal = state["question"]
             current_user.goal_id = state["goal_id"]
             print(current_user.to_dict())
             db.session.commit()
