@@ -15,12 +15,12 @@ class Phase_Library(db.Model):
         nullable=False, 
         comment='E.g., Stabilization Endurance, Strength Endurance, Hypertrophy, Maximal Strength, Power')
     
-    phase_weeks_duration_minimum = db.Column(
+    phase_duration_minimum_in_weeks = db.Column(
         db.Integer, 
         nullable=False, 
         comment='The minimum number of weeks that the phase can last.')
     
-    phase_weeks_duration_maximum = db.Column(
+    phase_duration_maximum_in_weeks = db.Column(
         db.Integer, 
         nullable=False, 
         comment='The maximum number of weeks that the phase can last.')
@@ -35,7 +35,7 @@ class Phase_Library(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "phase_weeks_duration_minimum": self.phase_weeks_duration_minimum,
-            "phase_weeks_duration_maximum": self.phase_weeks_duration_maximum
+            "phase_duration_minimum_in_weeks": self.phase_duration_minimum_in_weeks,
+            "phase_duration_maximum_in_weeks": self.phase_duration_maximum_in_weeks
         }
     
