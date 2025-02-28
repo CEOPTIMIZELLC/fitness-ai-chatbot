@@ -42,6 +42,7 @@ class User_Macrocycles(db.Model):
     
     def to_dict(self):
         return {
+            "id": self.id,
             "user_id": self.user_id,
             "goal_name": self.goals.name,
             "goal": self.goal,
