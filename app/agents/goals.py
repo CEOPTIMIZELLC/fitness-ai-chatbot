@@ -11,63 +11,15 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from sqlalchemy import text
 from langgraph.graph import StateGraph, END
-from flask_login import current_user
 from flask import current_app
-
-from app import db
-from app.models import Users, Goal_Library
-#from app.helper_functions.table_schema_cache import get_database_schema
-
 
 class AgentState(TypedDict):
     new_goal: str
     goal_types: list
-    current_user: str
     attempts: int
     goal_class: str
     goal_id: int
     sql_error: bool
-
-class GetCurrentUser(BaseModel):
-    current_user: str = Field(
-        description="The name of the current user based on the provided user ID."
-    )
-
-def get_current_user(state: AgentState):
-    print("Retrieving the current user based on user ID.")
-    user_id = current_user.id
-    
-    if not user_id:
-        state["current_user"] = "User not found"
-        print("No user ID provided in the configuration.")
-        return state
-
-    try:
-        user = db.session.query(Users).filter(Users.id == int(user_id)).first()
-        if user:
-            state["current_user"] = user.first_name
-            print(f"Current user set to: {state['current_user']}")
-        else:
-            state["current_user"] = "User not found"
-            print("User not found in the database.")
-    except Exception as e:
-        state["current_user"] = "Error retrieving user"
-        print(f"Error retrieving user: {str(e)}")
-    return state
-
-# State to retrieve possible goal types.
-def retrieve_goal_types(state: AgentState):
-    goals = (
-        db.session.query(
-            Goal_Library.name
-        )
-        .group_by(Goal_Library.name)
-        .all()
-    )
-
-    state["goal_types"] = [goal.name.lower() for goal in goals]
-    return state
-
 
 class GoalClassification(BaseModel):
     goal_class: str = Field(
@@ -78,7 +30,7 @@ def goal_classification(state: AgentState):
     new_goal = state["new_goal"]
     goal_types = state["goal_types"]
 
-    goal_types_stringified = ", ".join(f'"{s}"' for s in goal_types)
+    goal_types_stringified = ", ".join(f'"{s["name"]}"' for s in goal_types)
 
     print(f"Checking classification of the following goal: {new_goal}")
     system = """You are an assistant that determines what goal type a given goal falls into of the following types:
@@ -113,29 +65,20 @@ Respond only with {goal_types}.
 
 def goal_type_to_id(state: AgentState):
     print("Retrieving the ID of the goal class.")
-
-    if not current_user.goal:
-        state["goal_id"] = "Goal ID not found"
-        print("No goal provided for goal type.")
-        return state
+    goal_types = state["goal_types"]
+    goal_class = state["goal_class"]
 
     try:
-        goal_id = (
-            db.session.query(
-                Goal_Library.id
-            )
-            .filter(
-                Goal_Library.name.ilike(f'%{state["goal_class"]}%')
-            )
-            .first()
+        # Retrieve the id of the corresponding goal type.
+        goal_id = next(
+            (item for item in goal_types if item["name"] == goal_class), 
+            None
         )
+        
         # Set the goal and goal id for the user if one is present.
         if goal_id:
-            state["goal_id"] = goal_id.id
-            current_user.goal = state["new_goal"]
-            current_user.goal_id = state["goal_id"]
-            db.session.commit()
-            print(f"Goal set to: {state['new_goal']}. Current goal id is: {state['goal_id']}")
+            state["goal_id"] = goal_id["id"]
+            print(f"Goal id is: {state['goal_id']}")
         else:
             state["goal_id"] = "Goal not found"
             print("Goal not found in the database.")
@@ -144,20 +87,16 @@ def goal_type_to_id(state: AgentState):
         print(f"Error retrieving goal: {str(e)}")
     return state
 
+def create_goal_classification_graph():
+    workflow = StateGraph(AgentState)
 
-workflow = StateGraph(AgentState)
+    workflow.add_node("goal_classification", goal_classification)
+    workflow.add_node("goal_type_to_id", goal_type_to_id)
 
-workflow.add_node("get_current_user", get_current_user)
-workflow.add_node("retrieve_goal_types", retrieve_goal_types)
-workflow.add_node("goal_classification", goal_classification)
-workflow.add_node("goal_type_to_id", goal_type_to_id)
+    workflow.add_edge("goal_classification", "goal_type_to_id")
 
-workflow.add_edge("get_current_user", "retrieve_goal_types")
-workflow.add_edge("retrieve_goal_types", "goal_classification")
-workflow.add_edge("goal_classification", "goal_type_to_id")
+    workflow.add_edge("goal_type_to_id", END)
 
-workflow.add_edge("goal_type_to_id", END)
+    workflow.set_entry_point("goal_classification")
 
-workflow.set_entry_point("get_current_user")
-
-goal_app = workflow.compile()
+    return workflow.compile()
