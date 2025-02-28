@@ -77,7 +77,7 @@ class Users(db.Model, UserMixin):
     macrocycles = db.relationship(
         "User_Macrocycles",
         back_populates = "users",
-        passive_deletes=True)
+        cascade="all, delete-orphan")
 
     def to_dict(self):
         return {

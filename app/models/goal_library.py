@@ -18,7 +18,8 @@ class Goal_Library(db.Model):
     # Relationships
     macrocycles = db.relationship(
         "User_Macrocycles",
-        back_populates = "goals")
+        back_populates = "goals",
+        cascade="all, delete-orphan")
     
     # Relationships
     phases = db.relationship(
