@@ -16,8 +16,8 @@ class Goal_Library(db.Model):
         comment='E.g., Fat Loss Goal, Hypertrophy Goal, General Sports Performance Goal')
     
     # Relationships
-    users = db.relationship(
-        "Users",
+    macrocycles = db.relationship(
+        "User_Macrocycles",
         back_populates = "goals")
     
     # Relationships

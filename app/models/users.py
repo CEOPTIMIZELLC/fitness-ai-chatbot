@@ -3,6 +3,9 @@ from flask_login import UserMixin
 from app import user_validate
 
 from sqlalchemy.dialects.postgresql import TEXT, JSONB
+from sqlalchemy.ext.hybrid import hybrid_property
+
+from .user_macrocycles import User_Macrocycles
 
 class Users(db.Model, UserMixin):
     __tablename__ = "users"
@@ -20,11 +23,6 @@ class Users(db.Model, UserMixin):
         TEXT, 
         nullable=True, 
         comment='General fitness goal (e.g., Strength, Endurance)')
-    
-    goal_id = db.Column(
-        db.Integer, 
-        db.ForeignKey("goal_library.id", ondelete='SET NULL'), 
-        nullable=True)
     
     start_date = db.Column(
         db.Date, 
@@ -57,14 +55,27 @@ class Users(db.Model, UserMixin):
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
     
+    # Current Macrocycle Goal ID
+    @hybrid_property
+    def current_macrocycle(self):
+        from datetime import date
+        today = date.today()
+        active_macrocycle = (
+            User_Macrocycles.query.filter(
+                User_Macrocycles.start_date <= today, 
+                User_Macrocycles.end_date >= today
+            ).order_by(User_Macrocycles.id.desc()
+            ).first())
+        return active_macrocycle
+    
     # Relationships
     equipment = db.relationship(
         "User_Equipment",
         back_populates = "users",
         cascade="all, delete-orphan")
     
-    goals = db.relationship(
-        "Goal_Library",
+    macrocycles = db.relationship(
+        "User_Macrocycles",
         back_populates = "users",
         passive_deletes=True)
 
@@ -77,9 +88,7 @@ class Users(db.Model, UserMixin):
             "age": self.age,
             "gender": self.gender,
             "goal": self.goal,
-            "goal_id": self.goal_id,
             "start_date": self.start_date
-    
         }
 
 # User loader for flask-login

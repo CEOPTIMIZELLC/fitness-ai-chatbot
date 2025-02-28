@@ -33,8 +33,7 @@ def register():
             last_name = request.form.get("last_name").strip().capitalize(),
             age = request.form.get("age"),
             gender = request.form.get("gender").strip().lower(),
-            goal = request.form.get("goal"),
-            goal_id = 4)
+            goal = request.form.get("goal"))
 
         # Validate and set email
         email_flag = new_user.set_email(email)

@@ -6,6 +6,7 @@ from .goal_library import Goal_Library
 from .goal_phase_requirements import Goal_Phase_Requirements
 from .phase_library import Phase_Library
 from .user_equipment import User_Equipment
+from .user_macrocycles import User_Macrocycles
 from .users import Users
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "Goal_Phase_Requirements",
     "Phase_Library",
     "User_Equipment",
+    "User_Macrocycles",
     "Users"
     ] 
 

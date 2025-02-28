@@ -2,7 +2,7 @@ from flask import request, jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Goal_Library
+from app.models import Goal_Library, User_Macrocycles
 
 bp = Blueprint('goals', __name__)
 
@@ -28,7 +28,7 @@ def retrieve_goal_types():
     ]
 
 # Retrieve goals
-@bp.route('/', methods=['GET'])
+@bp.route('/dev', methods=['GET'])
 def get_goal_list():
     goals = Goal_Library.query.all()
     result = []
@@ -36,13 +36,37 @@ def get_goal_list():
         result.append(goal.to_dict())
     return jsonify({"status": "success", "goals": result}), 200
 
-# Show goals based on id.
-@bp.route('/<goal_id>', methods=['GET'])
-def read_goal(goal_id):
-    goal = Goal_Library.query.filter_by(id=goal_id).first()
-    if not goal:
-        return jsonify({"status": "error", "message": "Goal " + goal_id + " not found."}), 404
-    return jsonify(goal.to_dict()), 200
+
+# Retrieve current user's goals
+@bp.route('/', methods=['GET'])
+@login_required
+def get_user_goal():
+    user_macros = current_user.macrocycles
+    result = []
+    for goal in user_macros:
+        result.append(goal.to_dict())
+    return jsonify({"status": "success", "goals": result}), 200
+
+
+# Retrieve current user's goals
+@bp.route('/current', methods=['GET'])
+@login_required
+def get_user_current_goal():
+    user_macro = current_user.current_macrocycle
+    return jsonify({"status": "success", "goals": user_macro.to_dict()}), 200
+
+
+
+def new_macrocycle(goal_id, new_goal):
+    new_macro = User_Macrocycles(user_id=current_user.id, goal_id=goal_id, goal=new_goal)
+    db.session.add(new_macro)
+    db.session.commit()
+
+def alter_macrocycle(goal_id, new_goal):
+    user_macro = current_user.current_macrocycle
+    user_macro.goal = new_goal
+    user_macro.goal_id = goal_id
+    db.session.commit()
 
 # Change the current user's goal.
 @bp.route('/change_goal', methods=['POST', 'PATCH'])
@@ -53,13 +77,11 @@ def change_goal():
     if not data:
         return jsonify({"status": "error", "message": "Invalid request"}), 400
     
-    # Ensure that a goal has been provided.
     if ('goal' not in data):
         return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
     
     # There are only so many types a goal can be classified as, with all of them being stored.
     goal_types = retrieve_goal_types()
-
     goal_app = create_goal_classification_graph()
 
     # Invoke with new goal and possible goal types.
@@ -72,9 +94,11 @@ def change_goal():
     
     # Change the current user's goal and the goal type if a new one can be assigned.
     if state["goal_id"]:
-        current_user.goal = state["new_goal"]
-        current_user.goal_id = state["goal_id"]
-        db.session.commit()
+        # Add a new goal if posting.
+        if (request.method == 'POST'):
+            new_macrocycle(state["goal_id"], state["new_goal"])
+        else:
+            alter_macrocycle(state["goal_id"], state["new_goal"])
 
     return jsonify({
         "new_goal": state["new_goal"],

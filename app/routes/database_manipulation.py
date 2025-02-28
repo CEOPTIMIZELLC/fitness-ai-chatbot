@@ -87,9 +87,13 @@ def initialize_db():
         and 'goal' in request.form):
         register()
     
-    from app.existing_data.user_equipment import user_equipment
-    db.session.add_all(user_equipment)
-    db.session.commit()
+        from app.existing_data.user_macrocycles import user_macrocycles
+        db.session.add_all(user_macrocycles)
+        db.session.commit()
+
+        from app.existing_data.user_equipment import user_equipment
+        db.session.add_all(user_equipment)
+        db.session.commit()
 
     current_app.table_schema = get_database_schema(db)
 

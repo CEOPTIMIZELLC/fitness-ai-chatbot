@@ -38,8 +38,11 @@ def mesocycle_phases():
         "parameters": {},
         "constraints": {}
     }
+
+    user_macro = current_user.current_macrocycle
+
     config["parameters"]["macrocycle_weeks"] = 26
-    config["parameters"]["goal_type"] = current_user.goal_id
+    config["parameters"]["goal_type"] = user_macro.goal_id
 
     possible_phases = (
         db.session.query(
@@ -53,7 +56,7 @@ def mesocycle_phases():
         .join(Goal_Phase_Requirements, Goal_Phase_Requirements.phase_id == Phase_Library.id)
         .join(Goal_Library, Goal_Library.id == Goal_Phase_Requirements.goal_id)
         .filter(
-            Goal_Library.id == current_user.goal_id
+            Goal_Library.id == user_macro.goal_id
         )
         .all()
     )
