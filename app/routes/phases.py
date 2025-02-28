@@ -137,7 +137,6 @@ def phase_classification_test():
             }
         
         config["parameters"]["possible_phases"] = possible_phases_dict
-        print(json.dumps(possible_phases_dict, indent=4))
 
         result = phase_main(parameter_input=config)
         for x, y in result.items():
