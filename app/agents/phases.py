@@ -23,7 +23,8 @@ class State(TypedDict):
     constraints: dict
     opt_model: any
     solution: any
-    output: str
+    formatted: str
+    output: list
     logs: str
     relaxation_attempts: list
     current_attempt: dict  # Include reasoning and impact
@@ -83,6 +84,7 @@ def setup_params_node(state: State, config=None) -> dict:
         "constraints": constraints,
         "opt_model": None,
         "solution": None,
+        "formatted": "",
         "output": "",
         "logs": "Parameters and constraints initialized\n",
         "relaxation_attempts": [],
@@ -339,6 +341,8 @@ def format_solution_node(state: State, config=None) -> dict:
             formatted += f"Expected Impact: {attempt.expected_impact}\n"
         formatted += f"Timestamp: {attempt.timestamp}\n"
     
+    final_output = []
+
     if solution is None:
         formatted += "\nNo valid schedule found even with relaxed constraints.\n"
     else:
@@ -348,9 +352,13 @@ def format_solution_node(state: State, config=None) -> dict:
         formatted += "\nFinal Training Schedule:\n"
         formatted += "-" * 40 + "\n"
         
-        for week, phase_type in enumerate(schedule):
+        for meso, phase_type in enumerate(schedule):
             phase_name = phase_names[phase_type]
-            formatted += f"Week {week + 1}: {phase_name} (Time spent in goal phase: +{4 if phases[phase_name]["is_goal_phase"] else 0} weeks)\n"
+            final_output.append({
+                "name": phase_name,
+                "duration": 4
+            })
+            formatted += f"Mesocycle {meso + 1}: {phase_name} (Time spent in goal phase: +{4 if phases[phase_name]["is_goal_phase"] else 0} weeks)\n"
         
         formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
         
@@ -358,9 +366,8 @@ def format_solution_node(state: State, config=None) -> dict:
         formatted += "\nFinal Constraint Status:\n"
         for constraint, active in state["constraints"].items():
             formatted += f"- {constraint}: {'Active' if active else 'Relaxed'}\n"
-        
-        #formatted = "You did it."
-    return {"output": formatted}
+
+    return {"formatted": formatted, "output": final_output}
 
 # Build the graph
 from langgraph.graph import StateGraph, START, END
@@ -408,6 +415,7 @@ def Main(parameter_input=None):
         "constraints": {},
         "opt_model": None,
         "solution": None,
+        "formatted": "",
         "output": "",
         "logs": "",
         "relaxation_attempts": [],
@@ -419,7 +427,7 @@ def Main(parameter_input=None):
         initial_state["parameter_input"] = parameter_input
 
     result = graph.invoke(initial_state)
-    return {"output": result["output"], "solution": result["solution"]}
+    return {"formatted": result["formatted"], "output": result["output"], "solution": result["solution"]}
 
 if __name__ == "__main__":
     Main()
