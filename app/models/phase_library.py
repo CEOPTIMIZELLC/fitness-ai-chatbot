@@ -30,6 +30,11 @@ class Phase_Library(db.Model):
         "Goal_Phase_Requirements",
         back_populates = "phases",
         cascade="all, delete-orphan")
+
+    mesocycles = db.relationship(
+        "User_Mesocycles",
+        back_populates = "phases",
+        cascade="all, delete-orphan")
     
     def to_dict(self):
         return {

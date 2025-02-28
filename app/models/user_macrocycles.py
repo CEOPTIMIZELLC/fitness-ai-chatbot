@@ -40,6 +40,11 @@ class User_Macrocycles(db.Model):
         "Goal_Library",
         back_populates = "macrocycles")
     
+    mesocycles = db.relationship(
+        "User_Mesocycles",
+        back_populates = "macrocycles",
+        cascade="all, delete-orphan")
+    
     def to_dict(self):
         return {
             "id": self.id,
