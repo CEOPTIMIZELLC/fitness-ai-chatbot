@@ -5,7 +5,6 @@ from app.models import Phase_Library
 
 bp = Blueprint('phases', __name__)
 
-from app.agents.cp_pulp_phases import Main as cp_pulp_phase_main
 from app.agents.phases import Main as phase_main
 
 # ----------------------------------------- Phases -----------------------------------------
@@ -78,10 +77,9 @@ def mesocycle_phases():
     return result
 
 
-@login_required
 # Testing for the parameter programming for mesocycle labeling.
-@bp.route('/phase_classification', methods=['GET'])
-def phase_classification():
+@bp.route('/phase_classification_test', methods=['GET'])
+def phase_classification_test():
     import json
 
     from app import db
@@ -124,8 +122,6 @@ def phase_classification():
             .all()
         )
 
-        print(possible_phases)
-
         possible_phases_dict = {}
 
         for possible_phase in possible_phases:
@@ -141,10 +137,13 @@ def phase_classification():
         print(json.dumps(possible_phases_dict, indent=4))
 
         result = phase_main(parameter_input=config)
+        for x, y in result.items():
+            print(x, ":", y)
         test_results.append({
             "macrocycle_weeks": config["parameters"]["macrocycle_weeks"], 
             "goal_id": goal.id,
             "result": result
         })
+        print("----------------------")
 
     return test_results
