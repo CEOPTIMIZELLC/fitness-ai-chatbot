@@ -27,16 +27,6 @@ def retrieve_goal_types():
         for goal in goals
     ]
 
-# Retrieve goals
-@bp.route('/dev', methods=['GET'])
-def get_goal_list():
-    goals = Goal_Library.query.all()
-    result = []
-    for goal in goals:
-        result.append(goal.to_dict())
-    return jsonify({"status": "success", "goals": result}), 200
-
-
 # Retrieve current user's goals
 @bp.route('/', methods=['GET'])
 @login_required
@@ -56,7 +46,6 @@ def get_user_current_goal():
     return jsonify({"status": "success", "goals": user_macro.to_dict()}), 200
 
 
-
 def new_macrocycle(goal_id, new_goal):
     new_macro = User_Macrocycles(user_id=current_user.id, goal_id=goal_id, goal=new_goal)
     db.session.add(new_macro)
@@ -69,7 +58,7 @@ def alter_macrocycle(goal_id, new_goal):
     db.session.commit()
 
 # Change the current user's goal.
-@bp.route('/change_goal', methods=['POST', 'PATCH'])
+@bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def change_goal():
     # Input is a json.
@@ -94,11 +83,7 @@ def change_goal():
     
     # Change the current user's goal and the goal type if a new one can be assigned.
     if state["goal_id"]:
-        # Add a new goal if posting.
-        if (request.method == 'POST'):
-            new_macrocycle(state["goal_id"], state["new_goal"])
-        else:
-            alter_macrocycle(state["goal_id"], state["new_goal"])
+        alter_macrocycle(state["goal_id"], state["new_goal"])
 
     return jsonify({
         "new_goal": state["new_goal"],
