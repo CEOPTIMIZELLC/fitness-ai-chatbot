@@ -15,6 +15,11 @@ class User_Mesocycles(db.Model):
     macrocycle_id = db.Column(db.Integer, db.ForeignKey("user_macrocycles.id"), nullable=False)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
 
+    order = db.Column(
+        db.Integer, 
+        nullable=False,
+        comment='The order of the mesocycle for the current macrocycle.')
+
     start_date = db.Column(
         db.Date, 
         default=db.func.current_timestamp(), 
@@ -39,6 +44,7 @@ class User_Mesocycles(db.Model):
     def to_dict(self):
         return {
             "macrocycle_id": self.macrocycle_id,
+            "order": self.order,
             "phase_name": self.phases.name,
             "start_date": self.start_date,
             "end_date": self.end_date
