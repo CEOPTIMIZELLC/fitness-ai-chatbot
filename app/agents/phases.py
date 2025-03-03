@@ -39,22 +39,27 @@ def setup_params_node(state: State, config=None) -> dict:
         "macrocycle_weeks": 20,
         "possible_phases": {
             "stabilization endurance": {
+                "id": 1,
                 "required_phase": True,
                 "is_goal_phase": True
             },
             "strength endurance": {
+                "id": 2,
                 "required_phase": True,
                 "is_goal_phase": False
             },
             "hypertrophy": {
+                "id": 3,
                 "required_phase": True,
                 "is_goal_phase": False
             },
             "maximal strength": {
+                "id": 4,
                 "required_phase": True,
                 "is_goal_phase": True
             },
             "power": {
+                "id": 5,
                 "required_phase": True,
                 "is_goal_phase": False
             }
@@ -356,6 +361,7 @@ def format_solution_node(state: State, config=None) -> dict:
             phase_name = phase_names[phase_type]
             final_output.append({
                 "name": phase_name,
+                "id": phases[phase_name]["id"],
                 "duration": 4
             })
             formatted += f"Mesocycle {meso + 1}: {phase_name} (Time spent in goal phase: +{4 if phases[phase_name]["is_goal_phase"] else 0} weeks)\n"

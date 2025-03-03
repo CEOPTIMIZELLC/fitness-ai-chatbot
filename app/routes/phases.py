@@ -1,7 +1,8 @@
 from flask import request, jsonify, Blueprint
 from flask_login import current_user, login_required
 
-from app.models import Phase_Library
+from app import db
+from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, User_Mesocycles
 
 bp = Blueprint('phases', __name__)
 
@@ -31,8 +32,6 @@ def read_phase(phase_id):
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def mesocycle_phases():
-    from app import db
-    from app.models import Goal_Library, Goal_Phase_Requirements
 
     config = {
         "parameters": {},
@@ -65,6 +64,7 @@ def mesocycle_phases():
 
     for possible_phase in possible_phases:
         possible_phases_dict[possible_phase.name.lower()] = {
+            "id": possible_phase.id,
             "phase_duration_minimum_in_weeks": possible_phase.phase_duration_minimum_in_weeks,
             "phase_duration_maximum_in_weeks": possible_phase.phase_duration_maximum_in_weeks,
             "required_phase": True if possible_phase.required_phase == "required" else False,
@@ -77,6 +77,33 @@ def mesocycle_phases():
 
     result = phase_main(parameter_input=config)
 
+    print(result["formatted"])
+
+    phases_output = result["output"]
+
+    # Convert output to form that may be stored.
+
+    from datetime import timedelta
+    user_phases = []
+    order = 1
+    mesocycle_start_date = user_macro.start_date
+    for phase in phases_output:
+        new_phase = User_Mesocycles(
+            macrocycle_id = user_macro.id,
+            phase_id = phase["id"],
+            order = order,
+            start_date = mesocycle_start_date,
+            end_date = mesocycle_start_date + timedelta(weeks=phase["duration"])
+        )
+        user_phases.append(new_phase)
+
+        # Set startdate of next phase to be at the end of the current one.
+        mesocycle_start_date +=timedelta(weeks=phase["duration"])
+        order += 1
+    
+    db.session.add_all(user_phases)
+    db.session.commit()
+
     return result
 
 
@@ -84,9 +111,6 @@ def mesocycle_phases():
 @bp.route('/phase_classification_test', methods=['GET'])
 def phase_classification_test():
     import json
-
-    from app import db
-    from app.models import Goal_Library, Goal_Phase_Requirements
 
     test_results = []
 
