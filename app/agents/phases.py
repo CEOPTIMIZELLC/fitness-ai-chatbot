@@ -5,6 +5,7 @@ from langchain_openai import ChatOpenAI
 from datetime import datetime
 from typing import Set, List, Optional
 from dotenv import load_dotenv
+from datetime import timedelta
 
 from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
 
@@ -43,26 +44,36 @@ def setup_params_node(state: State, config=None) -> dict:
         "possible_phases": {
             "stabilization endurance": {
                 "id": 1,
+                "phase_duration_minimum_in_weeks": timedelta(weeks=4),
+                "phase_duration_maximum_in_weeks": timedelta(weeks=6),
                 "required_phase": True,
                 "is_goal_phase": True
             },
             "strength endurance": {
                 "id": 2,
+                "phase_duration_minimum_in_weeks": timedelta(weeks=4),
+                "phase_duration_maximum_in_weeks": timedelta(weeks=4),
                 "required_phase": True,
                 "is_goal_phase": False
             },
             "hypertrophy": {
                 "id": 3,
+                "phase_duration_minimum_in_weeks": timedelta(weeks=4),
+                "phase_duration_maximum_in_weeks": timedelta(weeks=4),
                 "required_phase": True,
                 "is_goal_phase": False
             },
             "maximal strength": {
                 "id": 4,
+                "phase_duration_minimum_in_weeks": timedelta(weeks=4),
+                "phase_duration_maximum_in_weeks": timedelta(weeks=4),
                 "required_phase": True,
                 "is_goal_phase": True
             },
             "power": {
                 "id": 5,
+                "phase_duration_minimum_in_weeks": timedelta(weeks=4),
+                "phase_duration_maximum_in_weeks": timedelta(weeks=4),
                 "required_phase": True,
                 "is_goal_phase": False
             }
