@@ -43,6 +43,7 @@ def mesocycle_phases():
     config["parameters"]["macrocycle_weeks"] = 26
     config["parameters"]["goal_type"] = user_macro.goal_id
 
+    # Retrieve all possible phases that can be selected.
     possible_phases = (
         db.session.query(
             Phase_Library.id,
@@ -60,6 +61,7 @@ def mesocycle_phases():
         .all()
     )
 
+    # Convert the phases to a dictionary form.
     possible_phases_dict = {}
 
     for possible_phase in possible_phases:
@@ -72,7 +74,6 @@ def mesocycle_phases():
             "is_goal_phase": possible_phase.is_goal_phase,
         }
     
-    #config["possible_phases"] = possible_phases
     config["parameters"]["possible_phases"] = possible_phases_dict
 
     result = phase_main(parameter_input=config)
