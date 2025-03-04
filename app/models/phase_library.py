@@ -40,7 +40,7 @@ class Phase_Library(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "phase_duration_minimum_in_weeks": self.phase_duration_minimum_in_weeks,
-            "phase_duration_maximum_in_weeks": self.phase_duration_maximum_in_weeks
+            "phase_duration_minimum_in_weeks": self.phase_duration_minimum_in_weeks.days//7,
+            "phase_duration_maximum_in_weeks": self.phase_duration_maximum_in_weeks.days//7
         }
     
