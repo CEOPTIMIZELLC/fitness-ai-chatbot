@@ -16,7 +16,7 @@ from app.helper_functions.table_schema_cache import get_database_schema
 from app.helper_functions.sql import sql_app
 from app.helper_functions.table_context_parser import context_retriever_app
 
-from app.helper_functions.cp_pulp import Main as cp_pulp_main
+from app.agents.cp_pulp import Main as cp_pulp_main
 from app.helper_functions.cp_pulp_equipment_test import Main as cp_pulp_equipment_test_main
 
 # ----------------------------------------- Dev Tests -----------------------------------------
