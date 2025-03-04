@@ -74,7 +74,7 @@ def setup_params_node(state: State, config=None) -> dict:
         "no_consecutive_same_phase": True,          # No consecutive phases of the same type.
         #"phase_within_min_max": True,               # The duration of a phase may only be a number of weeks between the minimum and maximum weeks allowed.
         "phase_1_is_stab_end": True,                # The first phase for a macrocycle is stabilization endurance.
-        "str_end_after_stab_end": True,             # The phase after stabilization endurance must be strength endurance.
+        "phase_2_is_str_end": True,                 # The second phase for a macrocycle is strength endurance.
         "no_6_phases_without_stab_end": True,       # If it has been 6 phases without going to stabilization endurance, go to stabilization endurance.
         "only_use_required_phases": True,           # A mesocycle may only be a phase that is labeled as "required".
         "use_all_required_phases": True,            # At least one mesocycle should be given each phase that is labeled as "required".
@@ -145,20 +145,10 @@ def build_opt_model_node(state: State, config=None) -> dict:
         model.Add(mesocycles[0] == phase_names.index("stabilization endurance"))
         state["logs"] += "- First phase is stabilization endurance applied.\n"
 
-    # Constraint: Strength endurance follows stabilization endurance
-    if constraints["str_end_after_stab_end"]:
-        stab_end_index = phase_names.index("stabilization endurance")
-        str_end_index = phase_names.index("strength endurance")
-
-        for i in range(num_mesocycles - 1):
-            # Create a boolean variable that is true if mesocycles[i] is stab_end_index
-            is_stab_end = model.NewBoolVar(f'is_stab_end_{i}')
-            model.Add(mesocycles[i] == stab_end_index).OnlyEnforceIf(is_stab_end)
-            model.Add(mesocycles[i] != stab_end_index).OnlyEnforceIf(is_stab_end.Not())
-
-            # Enforce that mesocycles[i + 1] must be strength endurance if is_stab_end is true
-            model.Add(mesocycles[i + 1] == str_end_index).OnlyEnforceIf(is_stab_end)
-        state["logs"] += "- Strength endurance must follow stabilization endurance.\n"
+    # Constraint: First phase is strength endurance
+    if constraints["phase_2_is_str_end"]:
+        model.Add(mesocycles[1] == phase_names.index("strength endurance"))
+        state["logs"] += "- Second phase is strength endurance applied.\n"
 
     # Constraint: Only use required phases
     if constraints["only_use_required_phases"]:
@@ -207,7 +197,7 @@ def analyze_infeasibility_node(state: State, config=None) -> dict:
     available_constraints = """
 - no_consecutive_same_phase: Prevents consecutive phases of the same type.
 - phase_1_is_stab_end: Forces the first phase of a macrocycle to be a stabilization endurance phase.
-- str_end_after_stab_end: Forces the phase after a stabilization endurance phase to be a strength endurance phase.
+- phase_2_is_str_end: Forces the second phase of a macrocycle to be a strength endurance phase.
 - no_6_phases_without_stab_end: Prevents 6 months from passing without a stabilization endurance phase.
 - only_use_required_phases: Prevents mesocycles from being given a phase that isn't required.
 - use_all_required_phases: Forces all required phases to be assigned at lease once in a macrocycle.
