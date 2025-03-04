@@ -5,6 +5,9 @@ from langchain_openai import ChatOpenAI
 from datetime import datetime
 from typing import Set, List, Optional
 from dotenv import load_dotenv
+
+from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
+
 _ = load_dotenv()
 
 class RelaxationAttempt:
@@ -198,34 +201,10 @@ def build_opt_model_node(state: State, config=None) -> dict:
 
 def analyze_infeasibility_node(state: State, config=None) -> dict:
     """Use LLM to analyze solver logs and suggest constraints to relax."""
-    model = ChatOpenAI(temperature=0)
-    
     # Prepare history of what's been tried
-    history = []
-    for attempt in state["relaxation_attempts"]:
-        result = "successful" if attempt.result_feasible else "unsuccessful"
-        history.append(
-            f"Relaxed {attempt.constraints_relaxed}: {result}\n"
-            f"Reasoning: {attempt.reasoning}\n"
-            f"Impact: {attempt.expected_impact}\n"
-        )
-    
-    prompt = f"""Given the optimization problem state, suggest which constraints to relax.
+    history = retrieve_relaxation_history(state["relaxation_attempts"])
 
-Current active constraints: {state['constraints']}
-
-Previously attempted relaxations:
-{chr(10).join(history) if history else "No previous attempts"}
-
-Solver logs: {state['logs']}
-
-Important considerations:
-1. We want to relax as few constraints as possible!!! Aim for 1 only!
-2. Avoid suggesting combinations that have already failed
-3. Consider relaxing multiple constraints only if single relaxations haven't worked
-4. Consider that we want to maximize the objective function as much as possible when you choose what to relax
-
-Available constraints:
+    available_constraints = """
 - no_consecutive_same_phase: Prevents consecutive phases of the same type.
 - phase_1_is_stab_end: Forces the first phase of a macrocycle to be a stabilization endurance phase.
 - str_end_after_stab_end: Forces the phase after a stabilization endurance phase to be a strength endurance phase.
@@ -233,38 +212,9 @@ Available constraints:
 - only_use_required_phases: Prevents mesocycles from being given a phase that isn't required.
 - use_all_required_phases: Forces all required phases to be assigned at lease once in a macrocycle.
 - maximize_goal_phase: Objective to maximize the amount of time spend in the goal phase.
-
-Return your response as a dictionary:
-{{
-    'constraints_to_relax': ['constraint_name1'],  # List of constraints to try relaxing
-    'reasoning': 'explanation',   # Why relaxing this constraint would lead to better optimization of the objective function than the others
-    'expected_impact': 'impact'   # Expected effect on training quality
-}}
 """
 
-    response = model.invoke(prompt)
-    suggestion = eval(response.content)
-    
-    # Store LLM's analysis
-    state["logs"] += "\nLLM Analysis:\n"
-    state["logs"] += f"Suggested relaxations: {suggestion['constraints_to_relax']}\n"
-    state["logs"] += f"Reasoning: {suggestion['reasoning']}\n"
-    state["logs"] += f"Expected Impact: {suggestion['expected_impact']}\n"
-    
-    # Reset all constraints to active
-    for constraint in state["constraints"]:
-        state["constraints"][constraint] = True
-    
-    # Apply suggested relaxations
-    for constraint in suggestion['constraints_to_relax']:
-        state["constraints"][constraint] = False
-    
-    # Update current attempt info
-    state["current_attempt"] = {
-        "constraints": set(suggestion['constraints_to_relax']),
-        "reasoning": suggestion['reasoning'],
-        "expected_impact": suggestion['expected_impact']
-    }
+    state = analyze_infeasibility(state, history, available_constraints)
     
     return {
         "constraints": state["constraints"],
