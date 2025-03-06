@@ -10,6 +10,32 @@ from app.agents.phases import Main as phase_main
 
 # ----------------------------------------- Phases -----------------------------------------
 
+def delete_old_user_phases(macrocycle_id):
+    db.session.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
+    print("Successfully deleted")
+
+# Retrieve the phase types and their corresponding constraints for a goal.
+def retrieve_phase_constraints_for_goal(goal_id):
+    # Retrieve all possible phases that can be selected.
+    possible_phases = (
+        db.session.query(
+            Phase_Library.id,
+            Phase_Library.name,
+            Phase_Library.phase_duration_minimum_in_weeks,
+            Phase_Library.phase_duration_maximum_in_weeks,
+            Goal_Phase_Requirements.required_phase,
+            Goal_Phase_Requirements.is_goal_phase,
+        )
+        .join(Goal_Phase_Requirements, Goal_Phase_Requirements.phase_id == Phase_Library.id)
+        .join(Goal_Library, Goal_Library.id == Goal_Phase_Requirements.goal_id)
+        .filter(
+            Goal_Library.id == goal_id
+        )
+        .all()
+    )
+
+    return possible_phases
+
 # Retrieve phases
 @bp.route('/', methods=['GET'])
 @login_required
@@ -42,26 +68,13 @@ def mesocycle_phases():
 
     user_macro = current_user.current_macrocycle
 
+    delete_old_user_phases(user_macro.id)
+
     config["parameters"]["macrocycle_allowed_weeks"] = 26
     config["parameters"]["goal_type"] = user_macro.goal_id
 
     # Retrieve all possible phases that can be selected.
-    possible_phases = (
-        db.session.query(
-            Phase_Library.id,
-            Phase_Library.name,
-            Phase_Library.phase_duration_minimum_in_weeks,
-            Phase_Library.phase_duration_maximum_in_weeks,
-            Goal_Phase_Requirements.required_phase,
-            Goal_Phase_Requirements.is_goal_phase,
-        )
-        .join(Goal_Phase_Requirements, Goal_Phase_Requirements.phase_id == Phase_Library.id)
-        .join(Goal_Library, Goal_Library.id == Goal_Phase_Requirements.goal_id)
-        .filter(
-            Goal_Library.id == user_macro.goal_id
-        )
-        .all()
-    )
+    possible_phases = retrieve_phase_constraints_for_goal(int(user_macro.goal_id))
 
     # Convert the phases to a dictionary form.
     possible_phases_dict = {}
@@ -133,22 +146,7 @@ def phase_classification_test():
 
     # Test for all goals that exist.
     for goal in goals:
-        possible_phases = (
-            db.session.query(
-                Phase_Library.id,
-                Phase_Library.name,
-                Phase_Library.phase_duration_minimum_in_weeks,
-                Phase_Library.phase_duration_maximum_in_weeks,
-                Goal_Phase_Requirements.required_phase,
-                Goal_Phase_Requirements.is_goal_phase,
-            )
-            .join(Goal_Phase_Requirements, Goal_Phase_Requirements.phase_id == Phase_Library.id)
-            .join(Goal_Library, Goal_Library.id == Goal_Phase_Requirements.goal_id)
-            .filter(
-                Goal_Library.id == int(goal.id)
-            )
-            .all()
-        )
+        possible_phases = retrieve_phase_constraints_for_goal(int(goal.id))
 
         possible_phases_dict = {}
 
@@ -165,8 +163,8 @@ def phase_classification_test():
         config["parameters"]["possible_phases"] = possible_phases_dict
 
         result = phase_main(parameter_input=config)
-        for x, y in result.items():
-            print(x, ":", y)
+        print(str(goal.id))
+        print(result["formatted"])
         test_results.append({
             "macrocycle_allowed_weeks": config["parameters"]["macrocycle_allowed_weeks"], 
             "goal_id": goal.id,
