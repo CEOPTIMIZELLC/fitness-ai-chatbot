@@ -42,7 +42,7 @@ def mesocycle_phases():
 
     user_macro = current_user.current_macrocycle
 
-    config["parameters"]["macrocycle_weeks"] = 26
+    config["parameters"]["macrocycle_allowed_weeks"] = 26
     config["parameters"]["goal_type"] = user_macro.goal_id
 
     # Retrieve all possible phases that can be selected.
@@ -119,7 +119,7 @@ def phase_classification_test():
         "parameters": {},
         "constraints": {}
     }
-    config["parameters"]["macrocycle_weeks"] = 26
+    config["parameters"]["macrocycle_allowed_weeks"] = 26
 
     # Retrieve all possible goals.
     #goals = (db.session.query(Goal_Library.id).group_by(Goal_Library.id).all())
@@ -168,7 +168,7 @@ def phase_classification_test():
         for x, y in result.items():
             print(x, ":", y)
         test_results.append({
-            "macrocycle_weeks": config["parameters"]["macrocycle_weeks"], 
+            "macrocycle_allowed_weeks": config["parameters"]["macrocycle_allowed_weeks"], 
             "goal_id": goal.id,
             "result": result
         })
