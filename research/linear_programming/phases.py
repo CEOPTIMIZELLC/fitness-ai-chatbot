@@ -31,7 +31,7 @@ class State(TypedDict):
 def setup_params_node(state: State, config=None) -> dict:
     """Initialize optimization parameters and constraints."""
     parameters = {
-        "macrocycle_weeks": 20,
+        "macrocycle_allowed_weeks": 20,
         "possible_phases": {
             "stabilization endurance": {
                 "required_phase": True,
@@ -166,11 +166,11 @@ def build_opt_model_node(state: State, config=None) -> dict:
     constraints = state["constraints"]
     model = cp_model.CpModel()
 
-    macrocycle_weeks = parameters["macrocycle_weeks"]
+    macrocycle_allowed_weeks = parameters["macrocycle_allowed_weeks"]
     phases = parameters["possible_phases"]
 
     # Define variables
-    num_mesocycles = macrocycle_weeks // 4
+    num_mesocycles = macrocycle_allowed_weeks // 4
     phase_names = list(phases.keys())
     phase_indices = range(len(phase_names))
     mesocycles = [model.NewIntVar(0, len(phase_names) - 1, f'mesocycle_{i}') for i in range(num_mesocycles)]
