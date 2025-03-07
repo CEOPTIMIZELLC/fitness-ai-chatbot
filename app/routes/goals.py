@@ -83,7 +83,11 @@ def change_goal():
     
     # Change the current user's goal and the goal type if a new one can be assigned.
     if state["goal_id"]:
-        alter_macrocycle(state["goal_id"], state["new_goal"])
+        # Add a new goal if posting.
+        if (request.method == 'POST'):
+            new_macrocycle(state["goal_id"], state["new_goal"])
+        else:
+            alter_macrocycle(state["goal_id"], state["new_goal"])
 
     return jsonify({
         "new_goal": state["new_goal"],
