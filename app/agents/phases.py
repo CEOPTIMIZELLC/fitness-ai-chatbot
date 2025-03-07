@@ -158,6 +158,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
                 # Ensures that if a state is chosen (used_vars[i][j] is True), then:
                 # The corresponding state_vars[i] must match the index j.
                 model.Add(mesocycle_vars[i] == j).OnlyEnforceIf(used_vars[i][j])
+                model.Add(mesocycle_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
 
                 # The duration_vars[i] must be within the allowed range.
                 model.Add(duration_vars[i] >= phases[phase]["phase_duration_minimum_in_weeks"]).OnlyEnforceIf(used_vars[i][j])
