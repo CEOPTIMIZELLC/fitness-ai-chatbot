@@ -46,6 +46,18 @@ def get_user_mesocycles():
         result.append(user_mesocycle.to_dict())
     return jsonify({"status": "success", "phases": result}), 200
 
+# Retrieve phases
+@bp.route('/current', methods=['GET'])
+@login_required
+def get_user_current_mesocycles():
+    #user_mesocycles = User_Mesocycles.query.join(User_Macrocycles).filter_by(user_id=current_user.id).all()
+    result = []
+    user_mesocycles = current_user.current_macrocycle.mesocycles
+    for user_mesocycle in user_mesocycles:
+        result.append(user_mesocycle.to_dict())
+    return jsonify({"status": "success", "phases": result}), 200
+
+
 # Show phases based on id.
 @bp.route('/<phase_id>', methods=['GET'])
 @login_required
