@@ -147,10 +147,8 @@ def build_opt_model_node(state: State, config=None) -> dict:
             for j in range(len(phase_names))
         ] 
         for i in range(num_mesocycles)]
-    
-    goal_time_terms = []
 
-    # Apply active constraints
+    # Apply active constraints ======================================
     state["logs"] += "\nBuilding model with constraints:\n"
 
     # Constraint: The duration of a phase may only be a number of weeks between the minimum and maximum weeks allowed.
@@ -171,6 +169,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
 
     # Constraint: No consecutive phases
     if constraints["no_consecutive_same_phase"]:
+        # For each mesocycle in the macrocycle make sure that the mesocycle at the current index isn't the same as the mesocyle at the next index.
         for i in range(num_mesocycles - 1):
             model.Add(mesocycle_vars[i] != mesocycle_vars[i + 1])
         state["logs"] += "- No consecutive phase of the same type applied.\n"
@@ -179,14 +178,22 @@ def build_opt_model_node(state: State, config=None) -> dict:
     if constraints["no_6_phases_without_stab_end"]:
         stab_end_index = phase_names.index("stabilization endurance")
         
+        # The following is a sliding window of 6 phases that ensures that at least one will be stabilization endurance.
         for i in range(num_mesocycles - 5):  # Ensure we have a window of 6
-            stab_end_in_window = [model.NewBoolVar(f'stab_end_{j}') for j in range(i, i + 6)]
+            # Boolean variables for the window, indicating whether phase j in the 6 phase window is stabilization endurance.
+            stab_end_in_window = [
+                model.NewBoolVar(f'stab_end_{j}') 
+                for j in range(i, i + 6)]
             
+            # For each phase in the window
             for j, var in zip(range(i, i + 6), stab_end_in_window):
+                # Ensures that, if the phase in the window is stabilization endurance:
+                # then the mesocycle at the corresponding index will be set to stabilization endurance.
                 model.Add(mesocycle_vars[j] == stab_end_index).OnlyEnforceIf(var)
                 model.Add(mesocycle_vars[j] != stab_end_index).OnlyEnforceIf(var.Not())
             
-            model.AddBoolOr(stab_end_in_window)  # Ensures at least one is True
+            # Ensures that at least one of the phases in the window will be stabilization endurance.
+            model.AddBoolOr(stab_end_in_window)
         state["logs"] += "- No 6 phases without stabilization endurance applied.\n"
 
     # Constraint: First phase is stabilization endurance
@@ -201,7 +208,10 @@ def build_opt_model_node(state: State, config=None) -> dict:
 
     # Constraint: Only use required phases
     if constraints["only_use_required_phases"]:
+        # Retrieves the index of all required phases.
         required_phases = [i for i, phase in enumerate(phase_names) if phases[phase]["required_phase"]]
+        
+        # Ensures that only required phases will be used at any mesocycle in the macrocycle.
         for mesocycle in mesocycle_vars:
             model.AddAllowedAssignments([mesocycle], [(phase,) for phase in required_phases])
         state["logs"] += "- Only use required phases applied.\n"
@@ -224,40 +234,27 @@ def build_opt_model_node(state: State, config=None) -> dict:
             model.AddBoolOr(phase_in_mesocycles)
         state["logs"] += "- Use every required phase at least once applied.\n"
 
-    # Creates goal_time, which will hold the total time spent in goal states.
-    # For each state that is a goal, a helper variable goal_contrib is created to store its contribution.
-    # AddMultiplicationEquality(goal_contrib, [duration_vars[i], used_vars[i][j]]) ensures that:
-    # If a goal state is used, its duration contributes to goal_time.
-    # If the state is not used, it contributes 0.
-    # The sum of all contributions is assigned to goal_time.
-
     # Objective: Maximize time spent on goal phases
     if constraints["maximize_goal_phase"]:
-        '''
-        goal_phases = [i for i, phase in enumerate(phase_names) if phases[phase]["is_goal_phase"]]
-        objective = model.NewIntVar(0, num_mesocycles, 'objective')
-        goal_phase_count = [model.NewBoolVar(f'goal_phase_{i}') for i in range(num_mesocycles)]
-        for i in range(num_mesocycles):
-            goal_phase_indicator = model.NewBoolVar(f'goal_phase_indicator_{i}')
-            model.AddAllowedAssignments([mesocycle_vars[i]], [[phase] for phase in goal_phases]).OnlyEnforceIf(goal_phase_indicator)
-            model.Add(goal_phase_count[i] == goal_phase_indicator)
-        model.Add(objective == sum(goal_phase_count))
-        model.Maximize(objective)
-        '''
-        # Define goal time calculation
+        # List of contributions to goal time.
+        goal_time_terms = []
+
+        # Creates goal_time, which will hold the total time spent in goal states.
         goal_time = model.NewIntVar(0, macrocycle_allowed_weeks, 'goal_time')
         for i in range(num_mesocycles):
             for j, phase in enumerate(phases):
                 if phases[phase]["is_goal_phase"]:
+                    # Helper variable to store phase's contribution.
                     goal_contrib = model.NewIntVar(0, macrocycle_allowed_weeks, f'goal_contrib_{i}_{j}')
+
+                    # If a goal state is used, its duration contributes to goal_time.
                     model.AddMultiplicationEquality(goal_contrib, [duration_vars[i], used_vars[i][j]])
                     goal_time_terms.append(goal_contrib)
+        
         model.Add(goal_time == sum(goal_time_terms))
         
         # Maximize goal time
         model.Maximize(goal_time)
-
-
 
         state["logs"] += "- Maximizing time spent on the goal phases.\n"
 
