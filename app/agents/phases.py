@@ -161,7 +161,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
 
                 # The duration_vars[i] must be within the allowed range.
                 model.Add(duration_vars[i] >= phases[phase]["phase_duration_minimum_in_weeks"]).OnlyEnforceIf(used_vars[i][j])
-                model.Add(duration_vars[i] <= phases[phase]["phase_duration_maximum_in_weeks"]).OnlyEnforceIf(used_vars[i][j])        
+                model.Add(duration_vars[i] <= phases[phase]["phase_duration_maximum_in_weeks"]).OnlyEnforceIf(used_vars[i][j])
         state["logs"] += "- Phase duration within min and max allowed weeks applied.\n"
 
     # Ensure total time does not exceed the macrocycle_allowed_weeks
@@ -216,7 +216,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
             model.AddAllowedAssignments([mesocycle], [(phase,) for phase in required_phases])
         state["logs"] += "- Only use required phases applied.\n"
 
-    # Constraint: Only all required phases at least once
+    # Constraint: Use all required phases at least once
     if constraints["use_all_required_phases"]:
         required_phase_indices = [i for i, phase in enumerate(phase_names) if phases[phase]["required_phase"]]
         
@@ -292,7 +292,7 @@ def solve_model_node(state: State, config=None) -> dict:
     phase_names = list(phases.keys())
 
     solver = cp_model.CpSolver()
-    #solver.parameters.log_search_progress = True
+    solver.parameters.log_search_progress = True
     status = solver.Solve(model)
     
     state["logs"] += f"\nSolver status: {status}\n"
@@ -362,7 +362,7 @@ def format_solution_node(state: State, config=None) -> dict:
         formatted += f"Constraints relaxed: {attempt.constraints_relaxed}\n"
         formatted += f"Result: {'Feasible' if attempt.result_feasible else 'Infeasible'}\n"
         if macrocycle_allowed_weeks is not None:
-            formatted += f"Total Weeks Alloed: {macrocycle_allowed_weeks}\n"
+            formatted += f"Total Weeks Allowed: {macrocycle_allowed_weeks}\n"
         if attempt.total_weeks_goal is not None:
             formatted += f"Total Goal Time in Weeks: {attempt.total_weeks_goal}\n"
         if attempt.total_weeks_time is not None:
