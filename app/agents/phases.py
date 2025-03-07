@@ -293,7 +293,7 @@ def solve_model_node(state: State, config=None) -> dict:
     phase_names = list(phases.keys())
 
     solver = cp_model.CpSolver()
-    solver.parameters.log_search_progress = True
+    #solver.parameters.log_search_progress = True
     status = solver.Solve(model)
     
     state["logs"] += f"\nSolver status: {status}\n"
