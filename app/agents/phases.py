@@ -158,7 +158,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
                 # Ensures that if a state is chosen (used_vars[i][j] is True), then:
                 # The corresponding state_vars[i] must match the index j.
                 model.Add(mesocycle_vars[i] == j).OnlyEnforceIf(used_vars[i][j])
-                model.Add(mesocycle_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
+                #model.Add(mesocycle_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
 
                 # The duration_vars[i] must be within the allowed range.
                 model.Add(duration_vars[i] >= phases[phase]["phase_duration_minimum_in_weeks"]).OnlyEnforceIf(used_vars[i][j])
@@ -351,6 +351,8 @@ def format_solution_node(state: State, config=None) -> dict:
     macrocycle_allowed_weeks = state["parameters"]["macrocycle_allowed_weeks"]
     phases = state["parameters"]["possible_phases"]
     phase_names = list(phases.keys())
+    longest_string_size = len(max(phase_names, key=len))
+
     
     formatted = "Optimization Results:\n"
     formatted += "=" * 50 + "\n\n"
@@ -392,7 +394,7 @@ def format_solution_node(state: State, config=None) -> dict:
                 "id": phases[phase_name]["id"],
                 "duration": phase_duration
             })
-            formatted += f"Mesocycle {meso + 1}: {phase_name} (Duration: {phase_duration} weeks, Time spent in goal phase: +{phase_duration if phases[phase_name]["is_goal_phase"] else 0} weeks)\n"
+            formatted += f"Mesocycle {meso + 1}: \t{phase_name:<{longest_string_size+3}} (Duration: {phase_duration} weeks; Goal Duration: +{phase_duration if phases[phase_name]["is_goal_phase"] else 0} weeks)\n"
         
         formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
         formatted += f"Total Time: {solution['total_weeks_time']} weeks\n"
