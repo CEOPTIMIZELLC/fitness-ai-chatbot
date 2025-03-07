@@ -144,7 +144,20 @@ def phase_classification_test():
         "parameters": {},
         "constraints": {}
     }
-    config["parameters"]["macrocycle_allowed_weeks"] = 26
+    config["parameters"]["macrocycle_allowed_weeks"] = 43
+
+    # Test with default test values.
+
+    result = phase_main(parameter_input=config)
+    print("TESTING")
+    print(result["formatted"])
+    test_results.append({
+        "macrocycle_allowed_weeks": config["parameters"]["macrocycle_allowed_weeks"], 
+        "goal_id": 0,
+        "result": result
+    })
+    print("----------------------")
+    
 
     # Retrieve all possible goals.
     #goals = (db.session.query(Goal_Library.id).group_by(Goal_Library.id).all())
