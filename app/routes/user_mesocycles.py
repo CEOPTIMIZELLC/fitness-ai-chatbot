@@ -94,8 +94,8 @@ def mesocycle_phases():
     for possible_phase in possible_phases:
         possible_phases_dict[possible_phase.name.lower()] = {
             "id": possible_phase.id,
-            "phase_duration_minimum_in_weeks": possible_phase.phase_duration_minimum_in_weeks.days // 7,
-            "phase_duration_maximum_in_weeks": possible_phase.phase_duration_maximum_in_weeks.days // 7,
+            "element_minimum": possible_phase.phase_duration_minimum_in_weeks.days // 7,
+            "element_maximum": possible_phase.phase_duration_maximum_in_weeks.days // 7,
             "required_phase": True if possible_phase.required_phase == "required" else False,
             #"required_phase": possible_phase.required_phase,
             "is_goal_phase": possible_phase.is_goal_phase,
@@ -178,8 +178,8 @@ def phase_classification_test():
         for possible_phase in possible_phases:
             possible_phases_dict[possible_phase.name.lower()] = {
                 "id": possible_phase.id,
-                "phase_duration_minimum_in_weeks": possible_phase.phase_duration_minimum_in_weeks.days // 7,
-                "phase_duration_maximum_in_weeks": possible_phase.phase_duration_maximum_in_weeks.days // 7,
+                "element_minimum": possible_phase.phase_duration_minimum_in_weeks.days // 7,
+                "element_maximum": possible_phase.phase_duration_maximum_in_weeks.days // 7,
                 "required_phase": True if possible_phase.required_phase == "required" else False,
                 #"required_phase": possible_phase.required_phase,
                 "is_goal_phase": possible_phase.is_goal_phase,
