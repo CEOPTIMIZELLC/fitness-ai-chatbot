@@ -48,7 +48,7 @@ def setup_params_node(state: State, config=None) -> dict:
                 "phase_duration_minimum_in_weeks": 4,
                 "phase_duration_maximum_in_weeks": 6,
                 "required_phase": True,
-                "is_goal_phase": True
+                "is_goal_phase": False
             },
             "strength endurance": {
                 "id": 2,
@@ -62,21 +62,21 @@ def setup_params_node(state: State, config=None) -> dict:
                 "phase_duration_minimum_in_weeks": 3,
                 "phase_duration_maximum_in_weeks": 5,
                 "required_phase": True,
-                "is_goal_phase": False
+                "is_goal_phase": True
             },
             "maximal strength": {
                 "id": 4,
                 "phase_duration_minimum_in_weeks": 4,
                 "phase_duration_maximum_in_weeks": 4,
-                "required_phase": True,
-                "is_goal_phase": True
+                "required_phase": False,
+                "is_goal_phase": False
             },
             "power": {
                 "id": 5,
                 "phase_duration_minimum_in_weeks": 2,
                 "phase_duration_maximum_in_weeks": 6,
                 "required_phase": True,
-                "is_goal_phase": False
+                "is_goal_phase": True
             }
         }
     }
@@ -128,17 +128,18 @@ def build_opt_model_node(state: State, config=None) -> dict:
     # Define variables =====================================
 
     # Upper bound on number of mesocycles (greedy estimation)
-    num_mesocycles = macrocycle_allowed_weeks // min(phase["phase_duration_minimum_in_weeks"] for phase in phases.values())
+    min_mesocycles = macrocycle_allowed_weeks // max(phase["phase_duration_maximum_in_weeks"] for phase in phases.values())
+    max_mesocycles = macrocycle_allowed_weeks // min(phase["phase_duration_minimum_in_weeks"] for phase in phases.values())
 
     # Integer variable representing the phase chosen at mesocycle i.
     mesocycle_vars = [
-        model.NewIntVar(0, len(phase_names) - 1, f'mesocycle_{i}') 
-        for i in range(num_mesocycles)]
+        model.NewIntVar(-1, len(phase_names) - 1, f'mesocycle_{i}') 
+        for i in range(max_mesocycles)]
     
     # Integer variable representing the duration of the phase in mesocycle i.
     duration_vars = [
         model.NewIntVar(0, macrocycle_allowed_weeks, f'duration_{i}') 
-        for i in range(num_mesocycles)]
+        for i in range(max_mesocycles)]
 
     # Boolean variables indicating whether phase j is used at mesocycle i.
     used_vars = [
@@ -146,19 +147,43 @@ def build_opt_model_node(state: State, config=None) -> dict:
             model.NewBoolVar(f'mesocycle_{i}_is_phase_{j}') 
             for j in range(len(phase_names))
         ] 
-        for i in range(num_mesocycles)]
+        for i in range(max_mesocycles)]
+
+    # Boolean variables indicating whether mesocycle i is active.
+    active_mesocycle_vars = [
+        model.NewBoolVar(f'mesocycle_{i}_is_active') 
+        for i in range(max_mesocycles)]
+
+    # Introduce dynamic selection variables
+    num_mesocycles_used = model.NewIntVar(min_mesocycles, max_mesocycles, 'num_mesocycles_used')
+
+    # Ensure that deactivation is done from the back to the front.
+    for i in range(max_mesocycles - 1):
+        # A mesocycle must be active if the mesocycle ahead of it is active.
+        model.Add(active_mesocycle_vars[i] >= active_mesocycle_vars[i + 1])
+    
+    # Add constraints to deactivated phases.
+    for i in range(max_mesocycles):
+        # If a phase is active, it will have a valid phase type. Otherwise, it will be given an invalid phase type.
+        model.Add(mesocycle_vars[i] >= 0).OnlyEnforceIf(active_mesocycle_vars[i])
+        model.Add(mesocycle_vars[i] == -1).OnlyEnforceIf(active_mesocycle_vars[i].Not())
+
+        # If a phase is active, then its duration MUST be greater than 0. Otherwise it is 0.
+        model.Add(duration_vars[i] >= 1).OnlyEnforceIf(active_mesocycle_vars[i])
+        model.Add(duration_vars[i] == 0).OnlyEnforceIf(active_mesocycle_vars[i].Not())
+    
 
     # Apply active constraints ======================================
     state["logs"] += "\nBuilding model with constraints:\n"
 
     # Constraint: The duration of a phase may only be a number of weeks between the minimum and maximum weeks allowed.
     if constraints["phase_within_min_max"]:
-        for i in range(num_mesocycles):
+        for i in range(max_mesocycles):
             for j, phase in enumerate(phases):
                 # Ensures that if a state is chosen (used_vars[i][j] is True), then:
                 # The corresponding state_vars[i] must match the index j.
                 model.Add(mesocycle_vars[i] == j).OnlyEnforceIf(used_vars[i][j])
-                #model.Add(mesocycle_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
+                model.Add(mesocycle_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
 
                 # The duration_vars[i] must be within the allowed range.
                 model.Add(duration_vars[i] >= phases[phase]["phase_duration_minimum_in_weeks"]).OnlyEnforceIf(used_vars[i][j])
@@ -166,13 +191,14 @@ def build_opt_model_node(state: State, config=None) -> dict:
         state["logs"] += "- Phase duration within min and max allowed weeks applied.\n"
 
     # Ensure total time does not exceed the macrocycle_allowed_weeks
+    model.Add(num_mesocycles_used == sum(active_mesocycle_vars))
     model.Add(sum(duration_vars) <= macrocycle_allowed_weeks)
 
     # Constraint: No consecutive phases
     if constraints["no_consecutive_same_phase"]:
         # For each mesocycle in the macrocycle make sure that the mesocycle at the current index isn't the same as the mesocyle at the next index.
-        for i in range(num_mesocycles - 1):
-            model.Add(mesocycle_vars[i] != mesocycle_vars[i + 1])
+        for i in range(max_mesocycles - 1):
+            model.Add(mesocycle_vars[i] != mesocycle_vars[i + 1]).OnlyEnforceIf(active_mesocycle_vars[i], active_mesocycle_vars[i + 1])
         state["logs"] += "- No consecutive phase of the same type applied.\n"
     
     # Constraint: No 6 phases without stabilization endurance
@@ -180,22 +206,27 @@ def build_opt_model_node(state: State, config=None) -> dict:
         stab_end_index = phase_names.index("stabilization endurance")
         
         # The following is a sliding window of 6 phases that ensures that at least one will be stabilization endurance.
-        for i in range(num_mesocycles - 5):  # Ensure we have a window of 6
+        for i in range(max_mesocycles - 5):  # Ensure we have a window of 6
             # Boolean variables for the window, indicating whether phase j in the 6 phase window is stabilization endurance.
+            active_window = [
+                active_mesocycle_vars[j]
+                for j in range(i, i + 6)]
             stab_end_in_window = [
                 model.NewBoolVar(f'stab_end_{j}') 
                 for j in range(i, i + 6)]
             
             # For each phase in the window
-            for j, var in zip(range(i, i + 6), stab_end_in_window):
+            for j, phase_is_stab_end, phase_is_active in zip(range(i, i + 6), stab_end_in_window, active_window):
                 # Ensures that, if the phase in the window is stabilization endurance:
                 # then the mesocycle at the corresponding index will be set to stabilization endurance.
-                model.Add(mesocycle_vars[j] == stab_end_index).OnlyEnforceIf(var)
-                model.Add(mesocycle_vars[j] != stab_end_index).OnlyEnforceIf(var.Not())
+                model.Add(mesocycle_vars[j] == stab_end_index).OnlyEnforceIf(phase_is_stab_end, phase_is_active)
+                model.Add(mesocycle_vars[j] != stab_end_index).OnlyEnforceIf(phase_is_stab_end.Not())
             
             # Ensures that at least one of the phases in the window will be stabilization endurance.
             model.AddBoolOr(stab_end_in_window)
         state["logs"] += "- No 6 phases without stabilization endurance applied.\n"
+
+    
 
     # Constraint: First phase is stabilization endurance
     if constraints["phase_1_is_stab_end"]:
@@ -211,6 +242,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
     if constraints["only_use_required_phases"]:
         # Retrieves the index of all required phases.
         required_phases = [i for i, phase in enumerate(phase_names) if phases[phase]["required_phase"]]
+        required_phases.append(-1)
         
         # Ensures that only required phases will be used at any mesocycle in the macrocycle.
         for mesocycle in mesocycle_vars:
@@ -225,9 +257,9 @@ def build_opt_model_node(state: State, config=None) -> dict:
             # Create an array of Boolean variables indicating whether this phase appears in each mesocycle
             phase_in_mesocycles = [
                 model.NewBoolVar(f'phase_{phase_index}_in_mesocycle_{i}') 
-                for i in range(num_mesocycles)]
+                for i in range(max_mesocycles)]
             
-            for i in range(num_mesocycles):
+            for i in range(max_mesocycles):
                 model.Add(mesocycle_vars[i] == phase_index).OnlyEnforceIf(phase_in_mesocycles[i])
                 model.Add(mesocycle_vars[i] != phase_index).OnlyEnforceIf(phase_in_mesocycles[i].Not())
 
@@ -242,14 +274,14 @@ def build_opt_model_node(state: State, config=None) -> dict:
 
         # Creates goal_time, which will hold the total time spent in goal states.
         goal_time = model.NewIntVar(0, macrocycle_allowed_weeks, 'goal_time')
-        for i in range(num_mesocycles):
+        for i in range(max_mesocycles):
             for j, phase in enumerate(phases):
                 if phases[phase]["is_goal_phase"]:
                     # Helper variable to store phase's contribution.
                     goal_contrib = model.NewIntVar(0, macrocycle_allowed_weeks, f'goal_contrib_{i}_{j}')
 
                     # If a goal state is used, its duration contributes to goal_time.
-                    model.AddMultiplicationEquality(goal_contrib, [duration_vars[i], used_vars[i][j]])
+                    model.AddMultiplicationEquality(goal_contrib, [duration_vars[i], used_vars[i][j], active_mesocycle_vars[i]])
                     goal_time_terms.append(goal_contrib)
         
         model.Add(goal_time == sum(goal_time_terms))
@@ -260,7 +292,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
         state["logs"] += "- Maximizing time spent on the goal phases.\n"
 
 
-    return {"opt_model": (model, mesocycle_vars, duration_vars, used_vars)}
+    return {"opt_model": (model, mesocycle_vars, duration_vars, used_vars, active_mesocycle_vars)}
 
 def analyze_infeasibility_node(state: State, config=None) -> dict:
     """Use LLM to analyze solver logs and suggest constraints to relax."""
@@ -287,7 +319,7 @@ def analyze_infeasibility_node(state: State, config=None) -> dict:
 
 def solve_model_node(state: State, config=None) -> dict:
     """Solve model and record relaxation attempt results."""
-    model, mesocycle_vars, duration_vars, used_vars = state["opt_model"]
+    model, mesocycle_vars, duration_vars, used_vars, active_mesocycle_vars = state["opt_model"]
 
     phases = state["parameters"]["possible_phases"]
     phase_names = list(phases.keys())
@@ -304,16 +336,20 @@ def solve_model_node(state: State, config=None) -> dict:
         total_weeks_time = 0
         schedule = []
         for i in range(len(mesocycle_vars)):
-            phase_type = solver.Value(mesocycle_vars[i])
-            phase_name = phase_names[phase_type]
-            phase_duration = solver.Value(duration_vars[i])
-            
-            # Sum of all mesocycle_vars.
-            total_weeks_time += phase_duration
-            
-            schedule.append((phase_type, phase_duration))
-            if phases[phase_name]["is_goal_phase"]:
-                total_weeks_goal += phase_duration
+            # Ensure that the mesocycle is active
+            if solver.Value(active_mesocycle_vars[i]):
+                phase_type = solver.Value(mesocycle_vars[i])
+                phase_name = phase_names[phase_type]
+                phase_duration = solver.Value(duration_vars[i])
+                
+                # Sum of all mesocycle_vars.
+                total_weeks_time += phase_duration
+                
+                schedule.append((phase_type, phase_duration))
+                if phases[phase_name]["is_goal_phase"]:
+                    total_weeks_goal += phase_duration
+            else:
+                schedule.append((-1, 0))
         solution = {
             "schedule": schedule,
             "total_weeks_goal": total_weeks_goal,
@@ -388,13 +424,18 @@ def format_solution_node(state: State, config=None) -> dict:
         formatted += "-" * 40 + "\n"
         
         for meso, (phase_type, phase_duration) in enumerate(schedule):
-            phase_name = phase_names[phase_type]
-            final_output.append({
-                "name": phase_name,
-                "id": phases[phase_name]["id"],
-                "duration": phase_duration
-            })
-            formatted += f"Mesocycle {meso + 1}: \t{phase_name:<{longest_string_size+3}} (Duration: {phase_duration} weeks; Goal Duration: +{phase_duration if phases[phase_name]["is_goal_phase"] else 0} weeks)\n"
+            # Only append if the phase exists.
+            if phase_type != -1:
+                phase_name = phase_names[phase_type]
+                final_output.append({
+                    "name": phase_name,
+                    "id": phases[phase_name]["id"],
+                    "duration": phase_duration
+                })
+                formatted += f"Mesocycle {meso + 1}: \t{phase_name:<{longest_string_size+3}} (Duration: {phase_duration} weeks; Goal Duration: +{phase_duration if phases[phase_name]["is_goal_phase"] else 0} weeks)\n"
+            else:
+                phase_name = "Inactive"
+                formatted += f"Mesocycle {meso + 1}: \t{phase_name:<{longest_string_size+3}} (Duration: {phase_duration} weeks; Goal Duration: - weeks)\n"
         
         formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
         formatted += f"Total Time: {solution['total_weeks_time']} weeks\n"
