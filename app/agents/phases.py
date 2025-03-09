@@ -361,8 +361,6 @@ def solve_model_node(state: State, config=None) -> dict:
                 schedule.append((phase_type, phase_duration))
                 if phases[phase_name]["is_goal_phase"]:
                     total_weeks_goal += phase_duration
-            else:
-                schedule.append((-1, 0))
         solution = {
             "schedule": schedule,
             "total_weeks_goal": total_weeks_goal,
@@ -437,19 +435,13 @@ def format_solution_node(state: State, config=None) -> dict:
         formatted += "-" * 40 + "\n"
         
         for meso, (phase_type, phase_duration) in enumerate(schedule):
-            # Only append if the phase exists.
-            if phase_type != -1:
-                phase_name = phase_names[phase_type]
-                final_output.append({
-                    "name": phase_name,
-                    "id": phases[phase_name]["id"],
-                    "duration": phase_duration
-                })
-                formatted += f"Mesocycle {meso + 1}: \t{phase_name:<{longest_string_size+3}} (Duration: {phase_duration} weeks; Goal Duration: +{phase_duration if phases[phase_name]["is_goal_phase"] else 0} weeks)\n"
-            else:
-                phase_name = "Inactive"
-                formatted += f"Mesocycle {meso + 1}: \t{phase_name:<{longest_string_size+3}} (Duration: {phase_duration} weeks; Goal Duration: - weeks)\n"
-        
+            phase_name = phase_names[phase_type]
+            final_output.append({
+                "name": phase_name,
+                "id": phases[phase_name]["id"],
+                "duration": phase_duration
+            })
+            formatted += f"Mesocycle {meso + 1}: \t{phase_name:<{longest_string_size+3}} (Duration: {phase_duration} weeks; Goal Duration: +{phase_duration if phases[phase_name]["is_goal_phase"] else 0} weeks)\n"        
         formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
         formatted += f"Total Time: {solution['total_weeks_time']} weeks\n"
         
