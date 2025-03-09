@@ -90,6 +90,7 @@ def setup_params_node(state: State, config=None) -> dict:
         "no_6_phases_without_stab_end": True,       # If it has been 6 phases without going to stabilization endurance, go to stabilization endurance.
         "only_use_required_phases": True,           # A mesocycle may only be a phase that is labeled as "required".
         "use_all_required_phases": True,            # At least one mesocycle should be given each phase that is labeled as "required".
+        "maximize_phases": True,                    # Objective function constraint
         "maximize_goal_phase": True                 # Objective function constraint
     }
 
@@ -283,11 +284,22 @@ def build_opt_model_node(state: State, config=None) -> dict:
                     # If a goal state is used, its duration contributes to goal_time.
                     model.AddMultiplicationEquality(goal_contrib, [duration_vars[i], used_vars[i][j], active_mesocycle_vars[i]])
                     goal_time_terms.append(goal_contrib)
-        
+
         model.Add(goal_time == sum(goal_time_terms))
-        
-        # Maximize goal time
-        model.Maximize(goal_time)
+
+
+        # Secondary Objective: Maximize time spent in phases
+        if constraints["maximize_phases"]:
+            # Define total time used in all phases
+            total_time = model.NewIntVar(0, macrocycle_allowed_weeks, 'total_time')
+            model.Add(total_time == sum(duration_vars))
+
+            # Define weighted objective
+            model.Maximize(1000 * goal_time + total_time)  # Prioritize goal_time first, then total_time
+            
+        else:
+            # Maximize goal time
+            model.Maximize(goal_time)
 
         state["logs"] += "- Maximizing time spent on the goal phases.\n"
 
@@ -307,7 +319,8 @@ def analyze_infeasibility_node(state: State, config=None) -> dict:
 - no_6_phases_without_stab_end: Prevents 6 months from passing without a stabilization endurance phase.
 - only_use_required_phases: Prevents mesocycle_vars from being given a phase that isn't required.
 - use_all_required_phases: Forces all required phases to be assigned at lease once in a macrocycle.
-- maximize_goal_phase: Objective to maximize the amount of time spend in the goal phase.
+- maximize_phases: Secondary objective to maximize the amount of time spent in phases in general.
+- maximize_goal_phase: Objective to maximize the amount of time spent in the goal phase.
 """
 
     state = analyze_infeasibility(state, history, available_constraints)
