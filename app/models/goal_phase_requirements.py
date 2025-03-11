@@ -17,7 +17,7 @@ class Goal_Phase_Requirements(db.Model):
         comment='How required the phase is for the goal. E.g., required, optional, unlikely.')
 
     is_goal_phase = db.Column(
-        db.Boolean(50),
+        db.Boolean,
         nullable=False, 
         comment='Whether or not the phase is the desired goal phase that should be maximized.')
 
