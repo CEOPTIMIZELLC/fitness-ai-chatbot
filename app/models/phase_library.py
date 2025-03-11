@@ -36,6 +36,11 @@ class Phase_Library(db.Model):
         back_populates = "phases",
         cascade="all, delete-orphan")
     
+    phase_components = db.relationship(
+        "Phase_Components",
+        back_populates = "phases",
+        cascade="all, delete-orphan")
+    
     def to_dict(self):
         return {
             "id": self.id,
