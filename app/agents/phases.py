@@ -383,12 +383,12 @@ def format_solution_node(state: State, config=None) -> dict:
         formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
         formatted += f"Total Time Used: {solution['total_weeks_time']} weeks\n"
         formatted += f"Total Time Allowed: {macrocycle_allowed_weeks} weeks\n"
-        '''
+        
         # Show final constraint status
         formatted += "\nFinal Constraint Status:\n"
         for constraint, active in state["constraints"].items():
             formatted += f"- {constraint}: {'Active' if active else 'Relaxed'}\n"
-        '''
+        
 
     return {"formatted": formatted, "output": final_output}
 
