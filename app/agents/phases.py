@@ -145,6 +145,8 @@ def build_opt_model_node(state: State, config=None) -> dict:
     if constraints["phase_within_min_max"]:
         model = entry_within_min_max(model = model, 
                                      items = phases, 
+                                     minimum_key="element_minimum", 
+                                     maximum_key="element_maximum",
                                      entry_vars = mesocycle_vars, 
                                      number_of_entries = max_mesocycles, 
                                      used_vars = used_vars, 
