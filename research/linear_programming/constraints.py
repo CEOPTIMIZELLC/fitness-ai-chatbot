@@ -9,11 +9,11 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
     # Add constraints to deactivated items.
     for i in range(number_of_entries):
         # If a item is active, it will have a valid item type. Otherwise, it will be given an invalid item type.
-        model.Add(entry_vars[i] >= 1).OnlyEnforceIf(active_entry_vars[i])
-        model.Add(entry_vars[i] == 0).OnlyEnforceIf(active_entry_vars[i].Not())
+        model.Add(entry_vars[i] >= 0).OnlyEnforceIf(active_entry_vars[i])
+        model.Add(entry_vars[i] == -1).OnlyEnforceIf(active_entry_vars[i].Not())
 
         # If a item is active, then its duration MUST be greater than 0. Otherwise it is 0.
-        model.Add(duration_vars[i] >= 0).OnlyEnforceIf(active_entry_vars[i])
+        model.Add(duration_vars[i] >= 1).OnlyEnforceIf(active_entry_vars[i])
         model.Add(duration_vars[i] == 0).OnlyEnforceIf(active_entry_vars[i].Not())
     
     return model
@@ -30,8 +30,8 @@ def entry_within_min_max(model, items, entry_vars, number_of_entries, used_vars,
             model.Add(entry_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
 
             # The duration_vars[i] must be within the allowed range.
-            model.Add(duration_vars[i] >= item["element_minimum"]).OnlyEnforceIf(used_vars[i][j])
-            model.Add(duration_vars[i] <= item["element_maximum"]).OnlyEnforceIf(used_vars[i][j])
+            model.Add(duration_vars[i] >= items[item]["element_minimum"]).OnlyEnforceIf(used_vars[i][j])
+            model.Add(duration_vars[i] <= items[item]["element_maximum"]).OnlyEnforceIf(used_vars[i][j])
     return model
 
 # For each entry, add a constraint stating that it can't be the same item as the next entry.

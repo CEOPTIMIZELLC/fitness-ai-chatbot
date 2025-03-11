@@ -28,9 +28,8 @@ def retrieve_phase_constraints_for_goal(goal_id):
         )
         .join(Goal_Phase_Requirements, Goal_Phase_Requirements.phase_id == Phase_Library.id)
         .join(Goal_Library, Goal_Library.id == Goal_Phase_Requirements.goal_id)
-        .filter(
-            Goal_Library.id == goal_id
-        )
+        .filter(Goal_Library.id == goal_id)
+        .order_by(Phase_Library.id.asc())
         .all()
     )
 
@@ -88,20 +87,28 @@ def mesocycle_phases():
     # Retrieve all possible phases that can be selected.
     possible_phases = retrieve_phase_constraints_for_goal(int(user_macro.goal_id))
 
-    # Convert the phases to a dictionary form.
-    possible_phases_dict = {}
+    # Convert the phases to a list form.
+    possible_phases_list = [{
+            "id": 0,
+            "name": "Inactive",
+            "element_minimum": 0,
+            "element_maximum": 0,
+            "required_phase": False,
+            "is_goal_phase": False,
+        }]
 
     for possible_phase in possible_phases:
-        possible_phases_dict[possible_phase.name.lower()] = {
+        possible_phases_list.append({
             "id": possible_phase.id,
+            "name": possible_phase.name.lower(),
             "element_minimum": possible_phase.phase_duration_minimum_in_weeks.days // 7,
             "element_maximum": possible_phase.phase_duration_maximum_in_weeks.days // 7,
             "required_phase": True if possible_phase.required_phase == "required" else False,
             #"required_phase": possible_phase.required_phase,
             "is_goal_phase": possible_phase.is_goal_phase,
-        }
+        })
     
-    config["parameters"]["possible_phases"] = possible_phases_dict
+    config["parameters"]["possible_phases"] = possible_phases_list
 
     result = phase_main(parameter_input=config)
 
@@ -165,6 +172,7 @@ def phase_classification_test():
         db.session.query(Goal_Library.id)
         .join(Goal_Phase_Requirements, Goal_Library.id == Goal_Phase_Requirements.goal_id)  # Adjust column names as necessary
         .group_by(Goal_Library.id)
+        .order_by(Goal_Library.id.asc())
         .all()
     )
 
@@ -173,19 +181,27 @@ def phase_classification_test():
     for goal in goals:
         possible_phases = retrieve_phase_constraints_for_goal(int(goal.id))
 
-        possible_phases_dict = {}
+        possible_phases_list = [{
+                "id": 0,
+                "name": "Inactive",
+                "element_minimum": 0,
+                "element_maximum": 0,
+                "required_phase": False,
+                "is_goal_phase": False,
+            }]
 
         for possible_phase in possible_phases:
-            possible_phases_dict[possible_phase.name.lower()] = {
+            possible_phases_list.append({
                 "id": possible_phase.id,
+                "name": possible_phase.name.lower(),
                 "element_minimum": possible_phase.phase_duration_minimum_in_weeks.days // 7,
                 "element_maximum": possible_phase.phase_duration_maximum_in_weeks.days // 7,
                 "required_phase": True if possible_phase.required_phase == "required" else False,
                 #"required_phase": possible_phase.required_phase,
                 "is_goal_phase": possible_phase.is_goal_phase,
-            }
+            })
         
-        config["parameters"]["possible_phases"] = possible_phases_dict
+        config["parameters"]["possible_phases"] = possible_phases_list
 
         result = phase_main(parameter_input=config)
         print(str(goal.id))
