@@ -47,6 +47,9 @@ def register_blueprints(app):
         from .routes import phases
         app.register_blueprint(phases.bp, url_prefix='/phases')
 
+        from .routes import phase_components
+        app.register_blueprint(phase_components.bp, url_prefix='/phase_components')
+
         from .routes import user_mesocycles
         app.register_blueprint(user_mesocycles.bp, url_prefix='/user_mesocycles')
 
