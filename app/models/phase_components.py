@@ -10,7 +10,7 @@ class Phase_Components(db.Model):
     __tablename__ = "phase_components"
     id = db.Column(db.Integer, primary_key=True)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey("phase_components_library.id"), nullable=False)
+    component_id = db.Column(db.Integer, db.ForeignKey("phase_component_library.id"), nullable=False)
     subcomponent_id = db.Column(db.Integer, db.ForeignKey("phase_subcomponents_library.id"), nullable=False)
 
     sub_component = db.Column(
@@ -97,7 +97,7 @@ class Phase_Components(db.Model):
         back_populates = "phase_components")
     
     components = db.relationship(
-        "Phase_Components_Library",
+        "Phase_Component_Library",
         back_populates = "phase_components")
     
     subcomponents = db.relationship(
