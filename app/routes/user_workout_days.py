@@ -73,16 +73,7 @@ def workout_day_initializer():
 
     delete_old_user_workout_days(user_microcycle.id)
 
-    import json
-
-    print((user_microcycle.to_dict()))
-    print(user_microcycle.mesocycles.to_dict())
-    print(user_microcycle.duration.days)
-    print(user_microcycle.start_date)
-
     weekday_number = user_microcycle.start_date.weekday()
-    weekday_name_full = user_microcycle.start_date.strftime('%A')
-    weekday_name_abbr = user_microcycle.start_date.strftime('%a')
 
     microcycle_weekdays = []
 
@@ -90,12 +81,6 @@ def workout_day_initializer():
     for i in range(user_microcycle.duration.days):
         # Calculate the current number using modulo to handle the circular nature
         microcycle_weekdays.append((weekday_number + i) % 7)
-
-    print(microcycle_weekdays)
-
-    print(f"Weekday number (Monday is 0): {weekday_number}")
-    print(f"Weekday name (full): {weekday_name_full}")
-    print(f"Weekday name (abbreviated): {weekday_name_abbr}")
 
     config["parameters"]["microcycle_weekdays"] = microcycle_weekdays
 
@@ -108,11 +93,9 @@ def workout_day_initializer():
 
     config["parameters"]["phase_components"] = possible_phase_components_list
 
-    #print(json.dumps(possible_phase_components_list, indent=4))
-
     result = []
     result = phase_component_main(parameter_input=config)
-    #print(result["formatted"])
+    print(result["formatted"])
     phase_components_output = result["output"]
 
     user_workdays = []
