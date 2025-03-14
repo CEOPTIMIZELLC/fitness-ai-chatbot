@@ -28,7 +28,7 @@ def register_blueprints(app):
     with app.app_context():
         from .routes import auth
         app.register_blueprint(auth.bp)
-        
+
         from .routes import current_user
         app.register_blueprint(current_user.bp, url_prefix='/current-user')
 
@@ -52,6 +52,9 @@ def register_blueprints(app):
 
         from .routes import user_mesocycles
         app.register_blueprint(user_mesocycles.bp, url_prefix='/user_mesocycles')
+
+        from .routes import user_microcycles
+        app.register_blueprint(user_microcycles.bp, url_prefix='/user_microcycles')
 
 def initialize_database(app, db):
     with app.app_context():
