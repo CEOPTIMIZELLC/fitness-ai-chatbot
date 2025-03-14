@@ -24,7 +24,7 @@ class User_Macrocycles(db.Model):
         default=db.func.current_timestamp(), 
         nullable=False,
         comment='Date that the macrocycle should start.')
-    
+
     end_date = db.Column(
         db.Date, 
         default=db.func.current_timestamp() + timedelta(weeks=26), 
@@ -35,16 +35,16 @@ class User_Macrocycles(db.Model):
     users = db.relationship(
         "Users",
         back_populates = "macrocycles")
-    
+
     goals = db.relationship(
         "Goal_Library",
         back_populates = "macrocycles")
-    
+
     mesocycles = db.relationship(
         "User_Mesocycles",
         back_populates = "macrocycles",
         cascade="all, delete-orphan")
-    
+
     def to_dict(self):
         return {
             "id": self.id,

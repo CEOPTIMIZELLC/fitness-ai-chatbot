@@ -16,17 +16,18 @@ class Goal_Library(db.Model):
         comment='E.g., Fat Loss Goal, Hypertrophy Goal, General Sports Performance Goal')
     
     # Relationships
-    macrocycles = db.relationship(
-        "User_Macrocycles",
-        back_populates = "goals",
-        cascade="all, delete-orphan")
-    
-    # Relationships
     phases = db.relationship(
         "Goal_Phase_Requirements",
         back_populates = "goals",
         cascade="all, delete-orphan")
-    
+
+    macrocycles = db.relationship(
+        "User_Macrocycles",
+        back_populates = "goals",
+        cascade="all, delete-orphan")
+
+    # Relationships
+
     def to_dict(self):
         phase_requirements=[]
         phases = self.phases

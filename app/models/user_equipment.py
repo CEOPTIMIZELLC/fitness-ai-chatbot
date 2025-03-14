@@ -12,16 +12,16 @@ class User_Equipment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     equipment_id = db.Column(db.Integer, db.ForeignKey("equipment_library.id"), nullable=False)
     measurement = db.Column(db.Integer, nullable=False)
-    
+
     # Relationships
     users = db.relationship(
         "Users",
         back_populates = "equipment")
-    
+
     equipment = db.relationship(
         "Equipment_Library",
         back_populates = "users")
-    
+
     def to_dict(self):
         return {
             "id": self.id,

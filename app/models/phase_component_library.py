@@ -95,15 +95,15 @@ class Phase_Components_Library(db.Model):
     phases = db.relationship(
         "Phase_Library",
         back_populates = "phase_components")
-    
+
     components = db.relationship(
         "Phase_Components_Component_Library",
         back_populates = "phase_components")
-    
+
     subcomponents = db.relationship(
         "Phase_Components_Subcomponent_Library",
         back_populates = "phase_components")
-    
+
     def to_dict(self):
         return {
             "id": self.id,

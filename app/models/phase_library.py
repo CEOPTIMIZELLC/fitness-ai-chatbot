@@ -14,18 +14,23 @@ class Phase_Library(db.Model):
         unique=True, 
         nullable=False, 
         comment='E.g., Stabilization Endurance, Strength Endurance, Hypertrophy, Maximal Strength, Power')
-    
+
     phase_duration_minimum_in_weeks = db.Column(
         db.Interval,
         nullable=False, 
         comment='The minimum number of weeks that the phase can last. E.g., {"2 weeks", "4 weeks", "8 weeks"}')
-    
+
     phase_duration_maximum_in_weeks = db.Column(
         db.Interval, 
         nullable=False, 
         comment='The maximum number of weeks that the phase can last. E.g., {"2 weeks", "4 weeks", "8 weeks"}')
-    
+
     # Relationships
+    phase_components = db.relationship(
+        "Phase_Component_Library",
+        back_populates = "phases",
+        cascade="all, delete-orphan")
+
     goals = db.relationship(
         "Goal_Phase_Requirements",
         back_populates = "phases",
@@ -35,12 +40,7 @@ class Phase_Library(db.Model):
         "User_Mesocycles",
         back_populates = "phases",
         cascade="all, delete-orphan")
-    
-    phase_components = db.relationship(
-        "Phase_Component_Library",
-        back_populates = "phases",
-        cascade="all, delete-orphan")
-    
+
     def to_dict(self):
         return {
             "id": self.id,
