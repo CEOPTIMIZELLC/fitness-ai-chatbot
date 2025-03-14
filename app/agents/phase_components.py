@@ -5,6 +5,7 @@ from typing import Set, List, Optional
 from dotenv import load_dotenv
 from datetime import timedelta
 
+from app.agents.constraints import create_optional_intvar, create_spread_intvar, duration_within_allowed_time, use_workout_required_components, use_microcycle_required_components, frequency_within_min_max
 
 #        \{\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*"phase_id": 5,\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n
 phase_components_example = {
@@ -93,44 +94,6 @@ def setup_params_node(state: State, config=None) -> dict:
             "expected_impact": None
         }
     }
-
-
-def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_active=1, value_if_inactive=0):
-    # Enforce entry = 0 if the activator is off.
-    model.Add(entry == value_if_inactive).OnlyEnforceIf(activator.Not())
-
-    # Enforce min <= entry <= max if the activator is on
-    model.Add(entry >= min_if_active).OnlyEnforceIf(activator)
-    model.Add(entry <= max_if_active).OnlyEnforceIf(activator)
-    return model
-
-
-# Method for the creation of what is essentially an optional variable. 
-# This was created to reduce repetition of code
-def create_optional_intvar(model, name_of_entry_var, activator, min_if_active=0, max_if_active=1, value_if_inactive=0):
-    var_entry = model.NewIntVar(value_if_inactive, max_if_active, name_of_entry_var)
-    model = constrain_active_entry(model, entry=var_entry, activator=activator, 
-                                   min_if_active=min_if_active, max_if_active=max_if_active, 
-                                   value_if_inactive=value_if_inactive)
-    return model, var_entry
-
-
-
-def create_spread_intvar(model, entry_vars, entry_var_name, active_entry_vars, max_value_allowed):
-    min_entry_var = model.NewIntVar(0, max_value_allowed, f"min_{entry_var_name}")
-    max_entry_var = model.NewIntVar(0, max_value_allowed, f"max_{entry_var_name}")
-
-    # Ensure min_entry_var <= all entry_vars
-    # Ensure max_exercise_var >= all entry_vars
-    for entry_vars_i, active_entry_vars_i in zip(entry_vars, active_entry_vars):
-        for entry_var_j, active_entry_vars_j in zip(entry_vars_i, active_entry_vars_i):
-            model.Add(min_entry_var <= entry_var_j).OnlyEnforceIf(active_entry_vars_j)
-            model.Add(max_entry_var >= entry_var_j).OnlyEnforceIf(active_entry_vars_j)
-
-    # Minimize the spread
-    spread_var = model.NewIntVar(0, max_value_allowed, f"{entry_var_name}_spread")
-    model.Add(spread_var == max_entry_var - min_entry_var)
-    return model, spread_var
 
 
 def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_components):
@@ -259,66 +222,6 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
     return (model, workout_availability, active_workday_vars, active_phase_components, 
             seconds_per_exercise, exercise_vars, reps_vars, sets_vars, rest_vars, bodypart_vars, duration_vars)
 
-# Constraint: The duration of a day may only be a number of hours between the allowed time.
-def duration_within_allowed_time(model, duration_vars, workout_availability):
-    # Each day
-    for duration_vars_for_day, workout_availability_for_day in zip(duration_vars, workout_availability):
-        # Ensure total time does not exceed the macrocycle_allowed_weeks
-        model.Add(sum(duration_vars_for_day) <= workout_availability_for_day)
-    return model
-
-# Constraint: Force all phase components required in every workout to be included at least once.
-def use_workout_required_components(model, required_phase_components, active_phase_components, active_workday_vars):
-    # Each required phase component
-    for required_component_index in required_phase_components:
-        # Each day
-        for active_phase_component, active_workday in zip(active_phase_components, active_workday_vars):
-            # Set the active indicator for the phase to active on each active day
-            model.Add(active_phase_component[required_component_index] == True).OnlyEnforceIf(active_workday)
-    return model
-
-# Constraint: Force all phase components required in every microcycle to be included at least once.
-def use_microcycle_required_components(model, required_phase_components, active_phase_components):
-    # Each required phase component
-    for required_component_index in required_phase_components:
-        active_window = []
-        # Each day
-        for active_phase_component in active_phase_components:
-            # Add the corresponding indicator for phase component activity to the list to be checked
-            active_window.append(active_phase_component[required_component_index])
-        model.AddBoolOr(active_window)
-    return model
-
-# Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
-def frequency_within_min_max(model, phase_components, active_phase_components):
-    # Boolean variables indicating whether the phase component has been used at least once in the microcycle
-    used_phase_components = [
-        model.NewBoolVar(f'phase_component_{i}_is_active') 
-        for i in range(len(phase_components))]
-
-    # Each required phase component
-    for phase_component_index, phase_component in enumerate(phase_components):
-        active_window = []
-
-        # Each day
-        for active_phase_component in active_phase_components:
-            # Add the corresponding indicator for phase component activity to the list to be checked
-            active_window.append(active_phase_component[phase_component_index])
-
-        # Ensure that the phase component has been used more than once
-        model.Add(sum(active_window) == 0).OnlyEnforceIf(used_phase_components[phase_component_index].Not())
-
-        # Constrain to be between the minimum and maximum allowed (if one exists)
-        if phase_component["frequency_per_microcycle_min"]:
-            model.Add(sum(active_window) >= phase_component["frequency_per_microcycle_min"]).OnlyEnforceIf(used_phase_components[phase_component_index])
-        if phase_component["frequency_per_microcycle_max"]:
-            model.Add(sum(active_window) <= phase_component["frequency_per_microcycle_max"]).OnlyEnforceIf(used_phase_components[phase_component_index])
-    return model
-
-
-
-
-
 def build_opt_model_node(state: State, config=None) -> dict:
     """Build the optimization model with active constraints."""
     parameters = state["parameters"]
@@ -339,7 +242,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
     if constraints["duration_within_allowed_time"]:
         model = duration_within_allowed_time(model=model, 
                                              duration_vars=duration_vars, 
-                                             workout_availability=workout_availability)
+                                             availability=workout_availability)
         state["logs"] += "- Sum of phase component duration within maximum allowed time for a day.\n"
 
     # Constraint: Force all phase components required in every workout to be included at least once.

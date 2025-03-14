@@ -121,3 +121,103 @@ def use_all_required_items(model, required_items, entry_vars, number_of_entries)
         # Ensure that at least one of these Boolean variables is true
         model.AddBoolOr(item_in_entries)
     return model
+
+
+def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_active=1, value_if_inactive=0):
+    # Enforce entry = 0 if the activator is off.
+    model.Add(entry == value_if_inactive).OnlyEnforceIf(activator.Not())
+
+    # Enforce min <= entry <= max if the activator is on
+    model.Add(entry >= min_if_active).OnlyEnforceIf(activator)
+    model.Add(entry <= max_if_active).OnlyEnforceIf(activator)
+    return model
+
+
+# Method for the creation of what is essentially an optional variable. 
+# This was created to reduce repetition of code
+def create_optional_intvar(model, name_of_entry_var, activator, min_if_active=0, max_if_active=1, value_if_inactive=0):
+    var_entry = model.NewIntVar(value_if_inactive, max_if_active, name_of_entry_var)
+    model = constrain_active_entry(model, entry=var_entry, activator=activator, 
+                                   min_if_active=min_if_active, max_if_active=max_if_active, 
+                                   value_if_inactive=value_if_inactive)
+    return model, var_entry
+
+
+# Create an intvar for an optional spread variable to try for later minimization.
+def create_spread_intvar(model, entry_vars, entry_var_name, active_entry_vars, max_value_allowed):
+    min_entry_var = model.NewIntVar(0, max_value_allowed, f"min_{entry_var_name}")
+    max_entry_var = model.NewIntVar(0, max_value_allowed, f"max_{entry_var_name}")
+
+    # Ensure min_entry_var <= all entry_vars
+    # Ensure max_exercise_var >= all entry_vars
+    for entry_vars_i, active_entry_vars_i in zip(entry_vars, active_entry_vars):
+        for entry_var_j, active_entry_vars_j in zip(entry_vars_i, active_entry_vars_i):
+            model.Add(min_entry_var <= entry_var_j).OnlyEnforceIf(active_entry_vars_j)
+            model.Add(max_entry_var >= entry_var_j).OnlyEnforceIf(active_entry_vars_j)
+
+    # Minimize the spread
+    spread_var = model.NewIntVar(0, max_value_allowed, f"{entry_var_name}_spread")
+    model.Add(spread_var == max_entry_var - min_entry_var)
+    return model, spread_var
+
+
+
+
+
+
+
+# Constraint: The duration of a day may only be a number of hours between the allowed time.
+def duration_within_allowed_time(model, duration_vars, availability):
+    # Each day
+    for duration_vars_for_day, availability_for_day in zip(duration_vars, availability):
+        # Ensure total time does not exceed the macrocycle_allowed_weeks
+        model.Add(sum(duration_vars_for_day) <= availability_for_day)
+    return model
+
+# Constraint: Force all phase components required in every workout to be included at least once.
+def use_workout_required_components(model, required_phase_components, active_phase_components, active_workday_vars):
+    # Each required phase component
+    for required_component_index in required_phase_components:
+        # Each day
+        for active_phase_component, active_workday in zip(active_phase_components, active_workday_vars):
+            # Set the active indicator for the phase to active on each active day
+            model.Add(active_phase_component[required_component_index] == True).OnlyEnforceIf(active_workday)
+    return model
+
+# Constraint: Force all phase components required in every microcycle to be included at least once.
+def use_microcycle_required_components(model, required_phase_components, active_phase_components):
+    # Each required phase component
+    for required_component_index in required_phase_components:
+        active_window = []
+        # Each day
+        for active_phase_component in active_phase_components:
+            # Add the corresponding indicator for phase component activity to the list to be checked
+            active_window.append(active_phase_component[required_component_index])
+        model.AddBoolOr(active_window)
+    return model
+
+# Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
+def frequency_within_min_max(model, phase_components, active_phase_components):
+    # Boolean variables indicating whether the phase component has been used at least once in the microcycle
+    used_phase_components = [
+        model.NewBoolVar(f'phase_component_{i}_is_active') 
+        for i in range(len(phase_components))]
+
+    # Each required phase component
+    for phase_component_index, phase_component in enumerate(phase_components):
+        active_window = []
+
+        # Each day
+        for active_phase_component in active_phase_components:
+            # Add the corresponding indicator for phase component activity to the list to be checked
+            active_window.append(active_phase_component[phase_component_index])
+
+        # Ensure that the phase component has been used more than once
+        model.Add(sum(active_window) == 0).OnlyEnforceIf(used_phase_components[phase_component_index].Not())
+
+        # Constrain to be between the minimum and maximum allowed (if one exists)
+        if phase_component["frequency_per_microcycle_min"]:
+            model.Add(sum(active_window) >= phase_component["frequency_per_microcycle_min"]).OnlyEnforceIf(used_phase_components[phase_component_index])
+        if phase_component["frequency_per_microcycle_max"]:
+            model.Add(sum(active_window) <= phase_component["frequency_per_microcycle_max"]).OnlyEnforceIf(used_phase_components[phase_component_index])
+    return model
