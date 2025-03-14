@@ -50,6 +50,7 @@ class User_Microcycles(db.Model):
     def to_dict(self):
         total_duration = self.duration
         return {
+            "id": self.id,
             "mesocycle_id": self.mesocycle_id,
             "order": self.order,
             "start_date": self.start_date,

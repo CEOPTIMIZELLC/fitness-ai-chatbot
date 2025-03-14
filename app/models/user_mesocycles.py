@@ -55,6 +55,7 @@ class User_Mesocycles(db.Model):
     def to_dict(self):
         total_duration = self.duration
         return {
+            "id": self.id,
             "macrocycle_id": self.macrocycle_id,
             "order": self.order,
             "phase_id": self.phase_id,

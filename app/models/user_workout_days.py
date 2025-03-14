@@ -49,6 +49,7 @@ class User_Workout_Days(db.Model):
 
     def to_dict(self):
         return {
+            "id": self.id,
             "microcycle_id": self.microcycle_id,
             "phase_component_id": self.phase_component_id,
             "phase_component_subcomponent": self.phase_components.sub_component,
