@@ -56,6 +56,9 @@ def register_blueprints(app):
         from .routes import user_microcycles
         app.register_blueprint(user_microcycles.bp, url_prefix='/user_microcycles')
 
+        from .routes import user_workout_days
+        app.register_blueprint(user_workout_days.bp, url_prefix='/user_workout_days')
+
 def initialize_database(app, db):
     with app.app_context():
         db.create_all()

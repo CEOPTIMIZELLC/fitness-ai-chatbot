@@ -9,158 +9,16 @@ from datetime import timedelta
 #        \{\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*"phase_id": 5,\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n
 phase_components_example = {
     "weekday_availability": [
-        {"id": 1, "name": "Sunday", "availability": 0 * 60 * 60},
-        {"id": 2, "name": "Monday", "availability": 6 * 60 * 60},
-        {"id": 3, "name": "Tuesday", "availability": 3 * 60 * 60},
-        {"id": 4, "name": "Wednesday", "availability": 2 * 60 * 60},
+        {"id": 0, "name": "Monday", "availability": 6 * 60 * 60},
+        {"id": 1, "name": "Tuesday", "availability": 3 * 60 * 60},
+        {"id": 2, "name": "Wednesday", "availability": 2 * 60 * 60},
+        {"id": 3, "name": "Thursday", "availability": 5 * 60 * 60},
+        {"id": 4, "name": "Friday", "availability": 0 * 60 * 60},
+        {"id": 5, "name": "Saturday", "availability": 2 * 60 * 60},
+        {"id": 6, "name": "Sunday", "availability": 0 * 60 * 60},
     ],
-    "microcycle_weekdays": [4, 1, 2, 3],
-    "phase_components": [
-        {
-            "component_id": 1,
-            "exercise_selection_note": "SMR and static",
-            "exercises_per_bodypart_workout_max": None,
-            "exercises_per_bodypart_workout_min": None,
-            "frequency_per_microcycle_max": None,
-            "frequency_per_microcycle_min": None,
-            "id": 1,
-            "intensity_max": None,
-            "intensity_min": None,
-            "phase_id": 1,
-            "reps_max": 1,
-            "reps_min": 1,
-            "required_every_workout": True,
-            "required_within_microcycle": "always",
-            "rest_max": 0,
-            "rest_min": 0,
-            "seconds_per_exercise": 30,
-            "sets_max": 3,
-            "sets_min": 1,
-            "sub_component": "flexibility-stabilization",
-            "subcomponent_id": 1,
-            "tempo": "30 s hold"
-        },
-        {
-            "component_id": 2,
-            "exercise_selection_note": None,
-            "exercises_per_bodypart_workout_max": 4,
-            "exercises_per_bodypart_workout_min": 1,
-            "frequency_per_microcycle_max": 4,
-            "frequency_per_microcycle_min": 2,
-            "id": 2,
-            "intensity_max": None,
-            "intensity_min": None,
-            "phase_id": 1,
-            "reps_max": 20,
-            "reps_min": 12,
-            "required_every_workout": False,
-            "required_within_microcycle": "always",
-            "rest_max": 90,
-            "rest_min": 30,
-            "seconds_per_exercise": 7,
-            "sets_max": 4,
-            "sets_min": 1,
-            "sub_component": "core-stabilization",
-            "subcomponent_id": 1,
-            "tempo": "Slow 4/2/1"
-        },
-        {
-            "component_id": 3,
-            "exercise_selection_note": "for SL exercises half the reps",
-            "exercises_per_bodypart_workout_max": 4,
-            "exercises_per_bodypart_workout_min": 1,
-            "frequency_per_microcycle_max": 4,
-            "frequency_per_microcycle_min": 2,
-            "id": 3,
-            "intensity_max": None,
-            "intensity_min": None,
-            "phase_id": 1,
-            "reps_max": 20,
-            "reps_min": 12,
-            "required_every_workout": False,
-            "required_within_microcycle": "always",
-            "rest_max": 90,
-            "rest_min": 30,
-            "seconds_per_exercise": 7,
-            "sets_max": 3,
-            "sets_min": 1,
-            "sub_component": "balance-stabilization",
-            "subcomponent_id": 1,
-            "tempo": "Slow 4/2/1"
-        },
-        {
-            "component_id": 4,
-            "exercise_selection_note": None,
-            "exercises_per_bodypart_workout_max": 2,
-            "exercises_per_bodypart_workout_min": 0,
-            "frequency_per_microcycle_max": 4,
-            "frequency_per_microcycle_min": 2,
-            "id": 4,
-            "intensity_max": None,
-            "intensity_min": None,
-            "phase_id": 1,
-            "reps_max": 8,
-            "reps_min": 5,
-            "required_every_workout": False,
-            "required_within_microcycle": "after core and balance sufficient",
-            "rest_max": 90,
-            "rest_min": 30,
-            "seconds_per_exercise": 5,
-            "sets_max": 3,
-            "sets_min": 1,
-            "sub_component": "plyometric-stabilization",
-            "subcomponent_id": 1,
-            "tempo": "3-5 s hold on landing"
-        },
-        {
-            "component_id": 5,
-            "exercise_selection_note": "drills with limited horizontal inertia and unpredictability",
-            "exercises_per_bodypart_workout_max": 6,
-            "exercises_per_bodypart_workout_min": 4,
-            "frequency_per_microcycle_max": 4,
-            "frequency_per_microcycle_min": 2,
-            "id": 5,
-            "intensity_max": None,
-            "intensity_min": None,
-            "phase_id": 1,
-            "reps_max": 3,
-            "reps_min": 2,
-            "required_every_workout": False,
-            "required_within_microcycle": "after core and balance sufficient",
-            "rest_max": 90,
-            "rest_min": 30,
-            "seconds_per_exercise": 3,
-            "sets_max": 2,
-            "sets_min": 1,
-            "sub_component": "SAQ-strength",
-            "subcomponent_id": 2,
-            "tempo": "Moderate"
-        },
-        {
-            "component_id": 6,
-            "exercise_selection_note": "stabilization progression",
-            "exercises_per_bodypart_workout_max": 2,
-            "exercises_per_bodypart_workout_min": 1,
-            "frequency_per_microcycle_max": 4,
-            "frequency_per_microcycle_min": 2,
-            "id": 6,
-            "intensity_max": 70,
-            "intensity_min": 50,
-            "phase_id": 1,
-            "reps_max": 20,
-            "reps_min": 12,
-            "required_every_workout": False,
-            "required_within_microcycle": "always",
-            "rest_max": 90,
-            "rest_min": 30,
-            "seconds_per_exercise": 7,
-            "sets_max": 3,
-            "sets_min": 1,
-            "sub_component": "resistance-stabilization",
-            "subcomponent_id": 1,
-            "tempo": "Slow 4/2/1"
-        },
-    ]
+    "microcycle_weekdays": [0, 1, 2, 3, 4, 5, 6],
+    "phase_components": []
 }
 
 _ = load_dotenv()
@@ -731,9 +589,9 @@ def format_solution_node(state: State, config=None) -> dict:
 
             if active_phase_components:
                 final_output.append({
+                    "workday_index": workday_index, 
                     "phase_component_index": phase_component_index, 
                     "phase_component_id": phase_component_id,
-                    "workday_index": workday_index, 
                     "seconds_per_exercise": seconds_per_exercise, 
                     "active_phase_components": active_phase_components, 
                     "exercise_var": exercise_var, 
@@ -748,16 +606,16 @@ def format_solution_node(state: State, config=None) -> dict:
 
                 formatted_duration = f"Duration: {day_duration} seconds\t"
 
-                formatted_seconds_per_exercises = f"Seconds Per Exercise {seconds_per_exercise:<{5}}"
+                formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
                 formatted_exercises = f"Exercises {exercise_var:<{5}} (1-INF)\t"
                 formatted_reps = f"Reps {reps_var} ({phase_component["reps_min"]:<{3}}-{phase_component["reps_max"]:<{3}})\t"
                 formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]:<{2}}-{phase_component["sets_max"]:<{2}})\t"
                 formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"]}-{phase_component["rest_max"]})\t"
-                formatted_bodyparts = f"Bodypart Exercises {bodypart_var} ({phase_component["exercises_per_bodypart_workout_min"]} - {phase_component["exercises_per_bodypart_workout_max"]})\t"
+                formatted_bodyparts = f"Bodypart Exercises {bodypart_var} ({phase_component["exercises_per_bodypart_workout_min"]} - {phase_component["exercises_per_bodypart_workout_max"]})"
 
-                formatted += (f"Day {workday_index + 1}; Component {component_count + 1}: \t{phase_component_name:<{longest_string_size+3}} ({formatted_duration} {formatted_seconds_per_exercises} {formatted_exercises} {formatted_reps} {formatted_sets} {formatted_rest} {formatted_bodyparts})\n")
+                formatted += (f"Day {workday_index + 1} {weekday_availability[microcycle_weekdays[workday_index]]["name"]:<{10}}; Comp {component_count + 1}: \t{phase_component_name:<{longest_string_size+3}} ({formatted_duration} {formatted_seconds_per_exercises} {formatted_exercises} {formatted_reps} {formatted_sets} {formatted_rest} {formatted_bodyparts})\n")
             else:
-                formatted += (f"Day {workday_index + 1}; Component {component_count + 1}: \t{phase_component_name:<{longest_string_size+3}} ----\n")
+                formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t{phase_component_name:<{longest_string_size+3}} ----\n")
 
         formatted += f"Phase Component Counts:\n"
         for phase_component_index, phase_component_number in enumerate(phase_component_count):

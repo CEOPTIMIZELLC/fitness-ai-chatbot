@@ -20,22 +20,40 @@ class User_Workout_Days(db.Model):
         nullable=False,
         comment='The order of the workout_day for the current microcycle.')
 
-    start_date = db.Column(
+    date = db.Column(
         db.Date, 
         default=db.func.current_timestamp(), 
         nullable=False,
         comment='Date that the workout_day should start.')
 
-    end_date = db.Column(
-        db.Date, 
-        default=db.func.current_timestamp() + timedelta(weeks=26), 
+    exercise_count = db.Column(
+        db.Integer, 
         nullable=False,
-        comment='Date that the workout_day should end.')
+        comment='The number of different exercises for the phase subcomponent.')
 
-    # Duration of the workday based on the current start and end date.
-    @hybrid_property
-    def duration(self):
-        return self.end_date - self.start_date
+    rep = db.Column(
+        db.Integer, 
+        nullable=False,
+        comment='The number of repetitions for a single exercise for the phase subcomponent.')
+
+    sets = db.Column(
+        db.Integer, 
+        nullable=False,
+        comment='The number of sets of repetitions for a single exercise for the phase subcomponent.')
+
+    intensity = db.Column(
+        db.Integer, 
+        comment='The amount of intensity for a single exercise for the phase subcomponent.')
+
+    rest = db.Column(
+        db.Integer, 
+        nullable=False,
+        comment='The amount of time to rest for a single exercise for the phase subcomponent.')
+
+    exercises_per_bodypart_workout = db.Column(
+        db.Integer, 
+        comment='The number of exercises per bodypart included for the phase component.')
+
 
     # Relationships
     microcycles = db.relationship(
@@ -52,8 +70,12 @@ class User_Workout_Days(db.Model):
             "microcycle_id": self.microcycle_id,
             "phase_component_id": self.phase_component_id,
             "phase_component_subcomponent": self.phase_components.sub_component,
+            "date": self.date,
             "order": self.order,
-            "start_date": self.start_date,
-            "end_date": self.end_date,
-            "duration": str(self.duration)
+            "exercise_count": self.exercise_count,
+            "rep": self.rep,
+            "sets": self.sets,
+            "intensity": self.intensity,
+            "rest": self.rest,
+            "exercises_per_bodypart_workout": self.exercises_per_bodypart_workout
         }
