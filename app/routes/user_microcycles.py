@@ -9,13 +9,13 @@ bp = Blueprint('user_microcycles', __name__)
 
 from app.helper_functions.common_table_queries import current_mesocycle, current_microcycle
 
-# ----------------------------------------- Phases -----------------------------------------
+# ----------------------------------------- Microcycles -----------------------------------------
 
 def delete_old_user_microcycles(mesocycle_id):
     db.session.query(User_Microcycles).filter_by(mesocycle_id=mesocycle_id).delete()
     print("Successfully deleted")
 
-# Retrieve phases
+# Retrieve microcycles
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_microcycles():
@@ -23,9 +23,9 @@ def get_user_microcycles():
     result = []
     for user_microcycle in user_microcycles:
         result.append(user_microcycle.to_dict())
-    return jsonify({"status": "success", "phases": result}), 200
+    return jsonify({"status": "success", "microcycles": result}), 200
 
-# Retrieve phases
+# Retrieve microcycles
 @bp.route('/current_mesocycle', methods=['GET'])
 @login_required
 def get_user_current_microcycles():
