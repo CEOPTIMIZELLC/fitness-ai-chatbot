@@ -2,7 +2,7 @@ from app import db
 from sqlalchemy.dialects.postgresql import JSONB
 
 # The components that exist.
-class Phase_Components_Library(db.Model):
+class Phase_Component_Library(db.Model):
     __table_args__ = {
         'comment': "The library of phase components that exists."
     }
@@ -40,7 +40,7 @@ class Phase_Components_Library(db.Model):
         db.String(50),
         nullable=False,
         comment='The tempo for every exercise in the phase subcomponent.')
-    
+
     seconds_per_exercise = db.Column(
         db.Integer,
         default=3, 
@@ -90,7 +90,7 @@ class Phase_Components_Library(db.Model):
     exercise_selection_note = db.Column(
         db.String(255),
         comment='')
-    
+
     # Relationships
     phases = db.relationship(
         "Phase_Library",
@@ -103,6 +103,11 @@ class Phase_Components_Library(db.Model):
     subcomponents = db.relationship(
         "Phase_Components_Subcomponent_Library",
         back_populates = "phase_components")
+
+    workout_days = db.relationship(
+        "User_Workout_Days",
+        back_populates = "phase_components",
+        cascade="all, delete-orphan")
 
     def to_dict(self):
         return {

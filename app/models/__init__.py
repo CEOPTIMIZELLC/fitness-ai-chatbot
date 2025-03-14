@@ -11,6 +11,8 @@ from .phase_library import Phase_Library
 from .user_equipment import User_Equipment
 from .user_macrocycles import User_Macrocycles
 from .user_mesocycles import User_Mesocycles
+from .user_microcycles import User_Microcycles
+from .user_workout_days import User_Workout_Days
 from .users import Users
 
 __all__ = [
@@ -26,6 +28,8 @@ __all__ = [
     "User_Equipment",
     "User_Macrocycles",
     "User_Mesocycles",
+    "User_Microcycles",
+    "User_Workout_Days",
     "Users"
     ] 
 
