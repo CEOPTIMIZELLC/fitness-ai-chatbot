@@ -1,13 +1,13 @@
 from app import db
 from sqlalchemy.dialects.postgresql import JSONB
 
-# The subcomponents that exist for phase components.
-class Phase_Subcomponents_Library(db.Model):
+# The components that exist for phase components.
+class Phase_Components_Component_Library(db.Model):
     __table_args__ = {
-        'comment': "The library of subcomponents that exist for phase components."
+        'comment': "The library of components that exist for phase components."
     }
     # Fields
-    __tablename__ = "phase_subcomponents_library"
+    __tablename__ = "phase_components_component_library"
     id = db.Column(db.Integer, primary_key=True)
     
     name = db.Column(
@@ -18,7 +18,7 @@ class Phase_Subcomponents_Library(db.Model):
     # Relationships
     phase_components = db.relationship(
         "Phase_Components",
-        back_populates = "subcomponents",
+        back_populates = "components",
         cascade="all, delete-orphan")
 
     def to_dict(self):

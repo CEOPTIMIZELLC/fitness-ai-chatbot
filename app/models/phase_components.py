@@ -10,8 +10,8 @@ class Phase_Components(db.Model):
     __tablename__ = "phase_components"
     id = db.Column(db.Integer, primary_key=True)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey("phase_component_library.id"), nullable=False)
-    subcomponent_id = db.Column(db.Integer, db.ForeignKey("phase_subcomponents_library.id"), nullable=False)
+    component_id = db.Column(db.Integer, db.ForeignKey("phase_components_component_library.id"), nullable=False)
+    subcomponent_id = db.Column(db.Integer, db.ForeignKey("phase_components_subcomponent_library.id"), nullable=False)
 
     sub_component = db.Column(
         db.String(50),
@@ -97,11 +97,11 @@ class Phase_Components(db.Model):
         back_populates = "phase_components")
     
     components = db.relationship(
-        "Phase_Component_Library",
+        "Phase_Components_Component_Library",
         back_populates = "phase_components")
     
     subcomponents = db.relationship(
-        "Phase_Subcomponents_Library",
+        "Phase_Components_Subcomponent_Library",
         back_populates = "phase_components")
     
     def to_dict(self):
