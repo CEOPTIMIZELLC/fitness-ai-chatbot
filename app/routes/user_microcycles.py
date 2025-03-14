@@ -15,31 +15,6 @@ def delete_old_user_microcycles(mesocycle_id):
     db.session.query(User_Microcycles).filter_by(mesocycle_id=mesocycle_id).delete()
     print("Successfully deleted")
 
-# Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_current_mesocycle():
-    from datetime import date
-    today = date.today()
-    # Retrieve all possible phases that can be selected.
-    current_mesocyle = (
-        db.session.query(
-            User_Mesocycles.id,
-            User_Mesocycles.macrocycle_id,
-            User_Mesocycles.phase_id,
-            User_Mesocycles.order,
-            User_Mesocycles.start_date,
-            User_Mesocycles.end_date,
-        )
-        .join(User_Macrocycles, User_Macrocycles.id == User_Mesocycles.macrocycle_id)
-        .filter(
-            User_Mesocycles.start_date <= today, 
-            User_Mesocycles.end_date >= today,
-            User_Macrocycles.user_id == current_user.id,
-            )
-        .order_by(User_Mesocycles.id.desc())
-        .first()
-    )
-    return current_mesocyle
-
 # Retrieve phases
 @bp.route('/', methods=['GET'])
 @login_required
