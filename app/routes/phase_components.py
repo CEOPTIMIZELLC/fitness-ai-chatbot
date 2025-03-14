@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 
-from app.models import Phase_Components, Phase_Components_Component_Library, Phase_Components_Subcomponent_Library
+from app.models import Phase_Components_Library, Phase_Components_Component_Library, Phase_Components_Subcomponent_Library
 
 bp = Blueprint('phase_components', __name__)
 
@@ -9,7 +9,7 @@ bp = Blueprint('phase_components', __name__)
 # Retrieve all
 @bp.route('/', methods=['GET'])
 def get_phase_components_all():
-    phase_components = Phase_Components.query.all()
+    phase_components = Phase_Components_Library.query.all()
     phase_components_result = []
     for phase_component in phase_components:
         phase_components_result.append(phase_component.to_dict())
@@ -35,7 +35,7 @@ def get_phase_components_all():
 # Retrieve phase components
 @bp.route('/phase_components', methods=['GET'])
 def get_phase_components_list():
-    phase_components = Phase_Components.query.all()
+    phase_components = Phase_Components_Library.query.all()
     result = []
     for phase_component in phase_components:
         result.append(phase_component.to_dict())
@@ -44,7 +44,7 @@ def get_phase_components_list():
 # Show phase components based on id.
 @bp.route('/phase_components/<phase_component_id>', methods=['GET'])
 def read_phase_component(phase_component_id):
-    phase_component = Phase_Components.query.filter_by(id=phase_component_id).first()
+    phase_component = Phase_Components_Library.query.filter_by(id=phase_component_id).first()
     if not phase_component:
         return jsonify({"status": "error", "message": "Phase Component " + phase_component_id + " not found."}), 404
     return jsonify(phase_component.to_dict()), 200

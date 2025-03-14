@@ -2,7 +2,7 @@ from app import db
 from sqlalchemy.dialects.postgresql import JSONB
 
 # The components that exist.
-class Phase_Components(db.Model):
+class Phase_Components_Library(db.Model):
     __table_args__ = {
         'comment': "The library of phase components that exists."
     }

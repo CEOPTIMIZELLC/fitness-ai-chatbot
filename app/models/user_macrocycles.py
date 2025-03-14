@@ -50,6 +50,7 @@ class User_Macrocycles(db.Model):
             "id": self.id,
             "user_id": self.user_id,
             "goal_name": self.goals.name,
+            "goal_id": self.goal_id,
             "goal": self.goal,
             "start_date": self.start_date,
             "end_date": self.end_date
