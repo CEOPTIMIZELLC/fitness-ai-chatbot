@@ -12,30 +12,9 @@ from app.helper_functions.common_table_queries import current_macrocycle, curren
 
 # ----------------------------------------- Phases -----------------------------------------
 
-def delete_old_user_phases(mesocycle_id):
+def delete_old_user_microcycles(mesocycle_id):
     db.session.query(User_Microcycles).filter_by(mesocycle_id=mesocycle_id).delete()
     print("Successfully deleted")
-
-# Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_phase_constraints_for_goal(goal_id):
-    # Retrieve all possible phases that can be selected.
-    possible_phases = (
-        db.session.query(
-            Phase_Library.id,
-            Phase_Library.name,
-            Phase_Library.phase_duration_minimum_in_weeks,
-            Phase_Library.phase_duration_maximum_in_weeks,
-            Goal_Phase_Requirements.required_phase,
-            Goal_Phase_Requirements.is_goal_phase,
-        )
-        .join(Goal_Phase_Requirements, Goal_Phase_Requirements.phase_id == Phase_Library.id)
-        .join(Goal_Library, Goal_Library.id == Goal_Phase_Requirements.goal_id)
-        .filter(Goal_Library.id == goal_id)
-        .order_by(Phase_Library.id.asc())
-        .all()
-    )
-    return possible_phases
-
 
 # Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_current_mesocycle():
@@ -100,7 +79,7 @@ def microcycle_initializer():
 
     user_mesocycle = current_mesocycle(current_user.id)
 
-    print(user_mesocycle.duration)
+    delete_old_user_microcycles(user_mesocycle.id)
 
     # Each microcycle must last 1 week.
     microcycle_duration = timedelta(weeks=1)
