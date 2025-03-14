@@ -7,6 +7,7 @@ from app.models import Goal_Library, User_Macrocycles
 bp = Blueprint('goals', __name__)
 
 from app.agents.goals import create_goal_classification_graph
+from app.helper_functions.common_table_queries import current_macrocycle
 
 # ----------------------------------------- Goals -----------------------------------------
 # Retrieve possible goal types.
@@ -27,6 +28,17 @@ def retrieve_goal_types():
         for goal in goals
     ]
 
+def new_macrocycle(goal_id, new_goal):
+    new_macro = User_Macrocycles(user_id=current_user.id, goal_id=goal_id, goal=new_goal)
+    db.session.add(new_macro)
+    db.session.commit()
+
+def alter_macrocycle(goal_id, new_goal):
+    user_macro = current_macrocycle(current_user.id)
+    user_macro.goal = new_goal
+    user_macro.goal_id = goal_id
+    db.session.commit()
+
 # Retrieve current user's goals
 @bp.route('/', methods=['GET'])
 @login_required
@@ -42,20 +54,10 @@ def get_user_goal():
 @bp.route('/current', methods=['GET'])
 @login_required
 def get_user_current_goal():
-    user_macro = current_user.current_macrocycle
+    user_macro = current_macrocycle(current_user.id)
+    if not user_macro:
+        return jsonify({"status": "error", "message": "No active goal found."}), 404
     return jsonify({"status": "success", "goals": user_macro.to_dict()}), 200
-
-
-def new_macrocycle(goal_id, new_goal):
-    new_macro = User_Macrocycles(user_id=current_user.id, goal_id=goal_id, goal=new_goal)
-    db.session.add(new_macro)
-    db.session.commit()
-
-def alter_macrocycle(goal_id, new_goal):
-    user_macro = current_user.current_macrocycle
-    user_macro.goal = new_goal
-    user_macro.goal_id = goal_id
-    db.session.commit()
 
 # Change the current user's goal.
 @bp.route('/', methods=['POST', 'PATCH'])

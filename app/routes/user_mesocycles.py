@@ -7,6 +7,7 @@ from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Use
 bp = Blueprint('user_mesocycles', __name__)
 
 from app.agents.phases import Main as phase_main
+from app.helper_functions.common_table_queries import current_macrocycle, current_mesocycle
 
 # ----------------------------------------- Phases -----------------------------------------
 
@@ -45,16 +46,26 @@ def get_user_mesocycles():
         result.append(user_mesocycle.to_dict())
     return jsonify({"status": "success", "phases": result}), 200
 
-# Retrieve phases
-@bp.route('/current', methods=['GET'])
+# Retrieve user's current macrocycles's phases
+@bp.route('/current_macrocycle', methods=['GET'])
 @login_required
 def get_user_current_mesocycles():
-    #user_mesocycles = User_Mesocycles.query.join(User_Macrocycles).filter_by(user_id=current_user.id).all()
     result = []
-    user_mesocycles = current_user.current_macrocycle.mesocycles
+    user_macrocycle = current_macrocycle(current_user.id)
+    user_mesocycles = user_macrocycle.mesocycles
     for user_mesocycle in user_mesocycles:
         result.append(user_mesocycle.to_dict())
     return jsonify({"status": "success", "phases": result}), 200
+
+
+# Retrieve user's current phase
+@bp.route('/current', methods=['GET'])
+@login_required
+def get_user_current_mesocycle():
+    user_mesocycle = current_mesocycle(current_user.id)
+    if not user_mesocycle:
+        return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
+    return jsonify({"status": "success", "phases": user_mesocycle.to_dict()}), 200
 
 
 # Show phases based on id.
@@ -77,7 +88,7 @@ def mesocycle_phases():
         "constraints": {}
     }
 
-    user_macro = current_user.current_macrocycle
+    user_macro = current_macrocycle(current_user.id)
 
     delete_old_user_phases(user_macro.id)
 
