@@ -2,6 +2,7 @@ from app import db
 from datetime import datetime, timedelta
 
 from sqlalchemy.dialects.postgresql import TEXT
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # The phases that exist.
 class User_Mesocycles(db.Model):
@@ -32,6 +33,11 @@ class User_Mesocycles(db.Model):
         nullable=False,
         comment='Date that the mesocycle should end.')
 
+    # Duration of the mesocycle based on the current start and end date.
+    @hybrid_property
+    def duration(self):
+        return self.end_date - self.start_date
+
     # Relationships
     phases = db.relationship(
         "Phase_Library",
@@ -47,11 +53,13 @@ class User_Mesocycles(db.Model):
         cascade="all, delete-orphan")
 
     def to_dict(self):
+        total_duration = self.duration
         return {
             "macrocycle_id": self.macrocycle_id,
             "order": self.order,
             "phase_id": self.phase_id,
             "phase_name": self.phases.name,
             "start_date": self.start_date,
-            "end_date": self.end_date
+            "end_date": self.end_date,
+            "duration": f"{total_duration.days // 7} weeks {total_duration.days % 7} days"
         }

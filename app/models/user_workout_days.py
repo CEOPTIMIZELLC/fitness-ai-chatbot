@@ -2,6 +2,7 @@ from app import db
 from datetime import datetime, timedelta
 
 from sqlalchemy.dialects.postgresql import TEXT
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # The phases that exist.
 class User_Workout_Days(db.Model):
@@ -32,6 +33,11 @@ class User_Workout_Days(db.Model):
         nullable=False,
         comment='Date that the workout_day should end.')
 
+    # Duration of the workday based on the current start and end date.
+    @hybrid_property
+    def duration(self):
+        return self.end_date - self.start_date
+
     # Relationships
     microcycles = db.relationship(
         "User_Microcycles",
@@ -48,5 +54,6 @@ class User_Workout_Days(db.Model):
             "phase_component_subcomponent": self.phase_components.sub_component,
             "order": self.order,
             "start_date": self.start_date,
-            "end_date": self.end_date
+            "end_date": self.end_date,
+            "duration": str(self.duration)
         }

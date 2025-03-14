@@ -2,6 +2,7 @@ from app import db
 from datetime import datetime, timedelta
 
 from sqlalchemy.dialects.postgresql import TEXT
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # The phases that exist.
 class User_Macrocycles(db.Model):
@@ -31,6 +32,11 @@ class User_Macrocycles(db.Model):
         nullable=False,
         comment='Date that the macrocycle should end.')
 
+    # Duration of the macrocycle based on the current start and end date.
+    @hybrid_property
+    def duration(self):
+        return self.end_date - self.start_date
+
     # Relationships
     users = db.relationship(
         "Users",
@@ -46,6 +52,7 @@ class User_Macrocycles(db.Model):
         cascade="all, delete-orphan")
 
     def to_dict(self):
+        total_duration = self.duration
         return {
             "id": self.id,
             "user_id": self.user_id,
@@ -53,5 +60,6 @@ class User_Macrocycles(db.Model):
             "goal_id": self.goal_id,
             "goal": self.goal,
             "start_date": self.start_date,
-            "end_date": self.end_date
+            "end_date": self.end_date,
+            "duration": f"{total_duration.days // 7} weeks {total_duration.days % 7} days"
         }
