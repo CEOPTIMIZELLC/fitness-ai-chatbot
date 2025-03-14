@@ -36,7 +36,7 @@ def get_user_current_microcycles():
         result.append(user_microcycle.to_dict())
     return jsonify({"status": "success", "microcycles": result}), 200
 
-# Retrieve user's current phase
+# Retrieve user's current microcycle
 @bp.route('/current', methods=['GET'])
 @login_required
 def get_user_current_microcycle():
