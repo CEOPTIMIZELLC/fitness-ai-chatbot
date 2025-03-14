@@ -1,25 +1,25 @@
 
 #([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)
-#    Phase_Components_Library(phase_no=$1,\n        phase="$2",\n        component="$3",\n        subcomponent="$4",\n        sub_component="$5",\n        reps_min=$6,\n        reps_max=$7,\n        sets_min=$8,\n        sets_max=$9,\n        tempo="$10",\n        seconds_per_exercise=$11,\n        intensity_min=$12,\n        intensity_max=$13,\n        rest_min=$14,\n        rest_max=$15,\n        required_every_workout=$16,\n        required_within_microcycle=$17,\n        frequency_per_microcycle_min=$18,\n        frequency_per_microcycle_max=$19,\n        exercises_per_bodypart_workout_min=$20,\n        exercises_per_bodypart_workout_max=$21,\n        exercise_selection_note="$22"),\n
+#    Phase_Component_Library(phase_no=$1,\n        phase="$2",\n        component="$3",\n        subcomponent="$4",\n        sub_component="$5",\n        reps_min=$6,\n        reps_max=$7,\n        sets_min=$8,\n        sets_max=$9,\n        tempo="$10",\n        seconds_per_exercise=$11,\n        intensity_min=$12,\n        intensity_max=$13,\n        rest_min=$14,\n        rest_max=$15,\n        required_every_workout=$16,\n        required_within_microcycle=$17,\n        frequency_per_microcycle_min=$18,\n        frequency_per_microcycle_max=$19,\n        exercises_per_bodypart_workout_min=$20,\n        exercises_per_bodypart_workout_max=$21,\n        exercise_selection_note="$22"),\n
 
 #([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)
-#    Phase_Components_Library(phase_no=$1,\n        phase="$2",\n        component="$3",\n        subcomponent="$4",\n        sub_component="$5",\n        reps_min=$6,\n        reps_max=$7,\n        sets_min=$8,\n        sets_max=$9,\n        tempo="$10",\n        seconds_per_exercise=$11,\n        intensity_min=$12,\n        intensity_max=$13,\n        rest_min=$14,\n        rest_max=$15,\n        required_every_workout=$16,\n        required_within_microcycle=$17,\n        frequency_per_microcycle_min=$18,\n        frequency_per_microcycle_max=$19,\n        exercises_per_bodypart_workout_min=$20,\n        exercises_per_bodypart_workout_max=$21,\n        exercise_selection_note=None),\n
+#    Phase_Component_Library(phase_no=$1,\n        phase="$2",\n        component="$3",\n        subcomponent="$4",\n        sub_component="$5",\n        reps_min=$6,\n        reps_max=$7,\n        sets_min=$8,\n        sets_max=$9,\n        tempo="$10",\n        seconds_per_exercise=$11,\n        intensity_min=$12,\n        intensity_max=$13,\n        rest_min=$14,\n        rest_max=$15,\n        required_every_workout=$16,\n        required_within_microcycle=$17,\n        frequency_per_microcycle_min=$18,\n        frequency_per_microcycle_max=$19,\n        exercises_per_bodypart_workout_min=$20,\n        exercises_per_bodypart_workout_max=$21,\n        exercise_selection_note=None),\n
 
 
 
 #([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)
-#    Phase_Components_Library(\n        phase_no=$1,\n        phase="$2",\n        component="$3",\n        subcomponent="$4",\n        sub_component="$5",\n        reps_min=$6, reps_max=$7,\n        sets_min=$8, sets_max=$9,\n        tempo="$10",\n        seconds_per_exercise=$11,\n        intensity_min=$12, intensity_max=$13,\n        rest_min=$14, rest_max=$15,\n        required_every_workout="$16", required_within_microcycle="$17",\n        frequency_per_microcycle_min=$18, frequency_per_microcycle_max=$19,\n        exercises_per_bodypart_workout_min=$20, exercises_per_bodypart_workout_max=$21,\n        exercise_selection_note="$22"),\n
+#    Phase_Component_Library(\n        phase_no=$1,\n        phase="$2",\n        component="$3",\n        subcomponent="$4",\n        sub_component="$5",\n        reps_min=$6, reps_max=$7,\n        sets_min=$8, sets_max=$9,\n        tempo="$10",\n        seconds_per_exercise=$11,\n        intensity_min=$12, intensity_max=$13,\n        rest_min=$14, rest_max=$15,\n        required_every_workout="$16", required_within_microcycle="$17",\n        frequency_per_microcycle_min=$18, frequency_per_microcycle_max=$19,\n        exercises_per_bodypart_workout_min=$20, exercises_per_bodypart_workout_max=$21,\n        exercise_selection_note="$22"),\n
 
 #([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)	([^	)]+)
-#    Phase_Components_Library(\n        phase_no=$1,\n        phase="$2",\n        component="$3",\n        subcomponent="$4",\n        sub_component="$5",\n        reps_min=$6, reps_max=$7,\n        sets_min=$8, sets_max=$9,\n        tempo="$10",\n        seconds_per_exercise=$11,\n        intensity_min=$12, intensity_max=$13,\n        rest_min=$14, rest_max=$15,\n        required_every_workout="$16", required_within_microcycle="$17",\n        frequency_per_microcycle_min=$18, frequency_per_microcycle_max=$19,\n        exercises_per_bodypart_workout_min=$20, exercises_per_bodypart_workout_max=$21,\n        exercise_selection_note=None),\n
-from app.models import Phase_Components_Library
+#    Phase_Component_Library(\n        phase_no=$1,\n        phase="$2",\n        component="$3",\n        subcomponent="$4",\n        sub_component="$5",\n        reps_min=$6, reps_max=$7,\n        sets_min=$8, sets_max=$9,\n        tempo="$10",\n        seconds_per_exercise=$11,\n        intensity_min=$12, intensity_max=$13,\n        rest_min=$14, rest_max=$15,\n        required_every_workout="$16", required_within_microcycle="$17",\n        frequency_per_microcycle_min=$18, frequency_per_microcycle_max=$19,\n        exercises_per_bodypart_workout_min=$20, exercises_per_bodypart_workout_max=$21,\n        exercise_selection_note=None),\n
+from app.models import Phase_Component_Library
 
 
 
 NA = None
 
 phase_components = [
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=1,
         phase_id=1,
         component_id=1,
@@ -36,7 +36,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=None, exercises_per_bodypart_workout_max=None,
         exercise_selection_note="SMR and static"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=1,
         phase_id=1,
         component_id=2,
@@ -53,7 +53,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=4,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=1,
         phase_id=1,
         component_id=3,
@@ -70,7 +70,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=4,
         exercise_selection_note="for SL exercises half the reps"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=1,
         phase_id=1,
         component_id=4,
@@ -87,7 +87,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=2,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=1,
         phase_id=1,
         component_id=5,
@@ -104,7 +104,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=4, exercises_per_bodypart_workout_max=6,
         exercise_selection_note="drills with limited horizontal inertia and unpredictability"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=1,
         phase_id=1,
         component_id=6,
@@ -121,7 +121,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=2,
         exercise_selection_note="stabilization progression"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=2,
         phase_id=2,
         component_id=1,
@@ -138,7 +138,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=None, exercises_per_bodypart_workout_max=None,
         exercise_selection_note="SMR and active; static optional"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=2,
         phase_id=2,
         component_id=2,
@@ -155,7 +155,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=3,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=2,
         phase_id=2,
         component_id=3,
@@ -172,7 +172,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=3,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=2,
         phase_id=2,
         component_id=4,
@@ -189,7 +189,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=3,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=2,
         phase_id=2,
         component_id=5,
@@ -206,7 +206,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=6, exercises_per_bodypart_workout_max=8,
         exercise_selection_note="drills allowing greater horizontal inertia but limited unpredictability"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=2,
         phase_id=2,
         component_id=6,
@@ -223,7 +223,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=1,
         exercise_selection_note="first part of superset"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=2,
         phase_id=2,
         component_id=6,
@@ -240,7 +240,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=1,
         exercise_selection_note="second part of superset"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=3,
         phase_id=3,
         component_id=1,
@@ -257,7 +257,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=None, exercises_per_bodypart_workout_max=None,
         exercise_selection_note="SMR and active; static optional"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=3,
         phase_id=3,
         component_id=2,
@@ -274,7 +274,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=4,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=3,
         phase_id=3,
         component_id=3,
@@ -291,7 +291,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=4,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=3,
         phase_id=3,
         component_id=4,
@@ -308,7 +308,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=4,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=3,
         phase_id=3,
         component_id=5,
@@ -325,7 +325,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=6, exercises_per_bodypart_workout_max=8,
         exercise_selection_note="drills allowing greater horizontal inertia but limited unpredictability"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=3,
         phase_id=3,
         component_id=6,
@@ -342,7 +342,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=2, exercises_per_bodypart_workout_max=4,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=4,
         phase_id=4,
         component_id=1,
@@ -359,7 +359,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=None, exercises_per_bodypart_workout_max=None,
         exercise_selection_note="SMR and active; static optional"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=4,
         phase_id=4,
         component_id=2,
@@ -376,7 +376,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=3,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=4,
         phase_id=4,
         component_id=3,
@@ -393,7 +393,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=3,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=4,
         phase_id=4,
         component_id=4,
@@ -410,7 +410,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=3,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=4,
         phase_id=4,
         component_id=5,
@@ -427,7 +427,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=6, exercises_per_bodypart_workout_max=8,
         exercise_selection_note="drills allowing greater horizontal inertia but limited unpredictability"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=4,
         phase_id=4,
         component_id=6,
@@ -444,7 +444,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=3,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=5,
         phase_id=5,
         component_id=1,
@@ -461,7 +461,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=3, exercises_per_bodypart_workout_max=10,
         exercise_selection_note="SMR and dynamic"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=5,
         phase_id=5,
         component_id=2,
@@ -478,7 +478,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=2,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=5,
         phase_id=5,
         component_id=3,
@@ -495,7 +495,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=2,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=5,
         phase_id=5,
         component_id=4,
@@ -512,7 +512,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=0, exercises_per_bodypart_workout_max=2,
         exercise_selection_note=None),
 	
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=5,
         phase_id=5,
         component_id=5,
@@ -529,7 +529,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=6, exercises_per_bodypart_workout_max=10,
         exercise_selection_note="drills allowing maximal horizontal inertia and unpredictability"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=5,
         phase_id=5,
         component_id=6,
@@ -546,7 +546,7 @@ phase_components = [
         exercises_per_bodypart_workout_min=1, exercises_per_bodypart_workout_max=1,
         exercise_selection_note="first part of superset"),
 
-    Phase_Components_Library(
+    Phase_Component_Library(
         #phase_no=5,
         phase_id=5,
         component_id=6,

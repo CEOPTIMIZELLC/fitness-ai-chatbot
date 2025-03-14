@@ -17,7 +17,7 @@ class Phase_Components_Subcomponent_Library(db.Model):
 
     # Relationships
     phase_components = db.relationship(
-        "Phase_Components_Library",
+        "Phase_Component_Library",
         back_populates = "subcomponents",
         cascade="all, delete-orphan")
 

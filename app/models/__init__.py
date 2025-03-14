@@ -4,7 +4,7 @@ from .exercise_equipment import Exercise_Equipment
 from .exercise_library import Exercise_Library
 from .goal_library import Goal_Library
 from .goal_phase_requirements import Goal_Phase_Requirements
-from .phase_components_library import Phase_Components_Library
+from .phase_component_library import Phase_Component_Library
 from .phase_components_component_library import Phase_Components_Component_Library
 from .phase_components_subcomponent_library import Phase_Components_Subcomponent_Library
 from .phase_library import Phase_Library
@@ -19,7 +19,7 @@ __all__ = [
     "Exercise_Library",
     "Goal_Library",
     "Goal_Phase_Requirements",
-    "Phase_Components_Library",
+    "Phase_Component_Library",
     "Phase_Components_Component_Library",
     "Phase_Library",
     "Phase_Components_Subcomponent_Library",
