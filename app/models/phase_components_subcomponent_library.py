@@ -1,5 +1,4 @@
 from app import db
-from sqlalchemy.dialects.postgresql import JSONB
 
 # The subcomponents that exist for phase components.
 class Phase_Components_Subcomponent_Library(db.Model):

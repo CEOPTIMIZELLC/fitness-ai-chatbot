@@ -1,5 +1,5 @@
 from app import db
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from sqlalchemy.dialects.postgresql import TEXT
 from sqlalchemy.ext.hybrid import hybrid_property

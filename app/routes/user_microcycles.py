@@ -2,13 +2,12 @@ from flask import request, jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, User_Microcycles, User_Mesocycles, User_Macrocycles
-from datetime import datetime, timedelta
+from app.models import User_Microcycles, User_Mesocycles, User_Macrocycles
+from datetime import timedelta
 
 bp = Blueprint('user_microcycles', __name__)
 
-from app.agents.phases import Main as phase_main
-from app.helper_functions.common_table_queries import current_macrocycle, current_mesocycle, current_microcycle
+from app.helper_functions.common_table_queries import current_mesocycle, current_microcycle
 
 # ----------------------------------------- Phases -----------------------------------------
 
