@@ -110,7 +110,6 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
 
     # Each day in the microcycle
     for index_for_day, day in enumerate(microcycle_weekdays):
-        #print("Day:", index_for_day,f"(<= {weekday_availability[day-1]["availability"]})")
         workout_availability_for_day = weekday_availability[day]["availability"]
         is_active_workday = model.NewBoolVar(f'day_{index_for_day}_active')
 
@@ -448,13 +447,8 @@ def format_solution_node(state: State, config=None) -> dict:
     # Total time the user has to workout.
     workout_time = 0
     for day in microcycle_weekdays:
-        print(day)
         used_days.append({"used": False, "availability": weekday_availability[day]["availability"]})
         workout_time += weekday_availability[day]["availability"]
-
-    for i in range(len(used_days)):
-        print(used_days[i], end=f"\t")
-        print(weekday_availability[i])
 
     formatted = "Optimization Results:\n"
     formatted += "=" * 50 + "\n\n"
@@ -498,8 +492,6 @@ def format_solution_node(state: State, config=None) -> dict:
 
             day_duration = (exercise_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
 
-            #print("A", workday_index, used_days[workday_index])
-
             if active_phase_components:
                 final_output.append({
                     "workday_index": workday_index, 
@@ -516,7 +508,6 @@ def format_solution_node(state: State, config=None) -> dict:
 
                 if not used_days[workday_index]["used"]:
                     formatted += f"\nDay {workday_index + 1} {weekday_availability[microcycle_weekdays[workday_index]]["name"]:<{10}} Availability of {(weekday_availability[workday_index]["availability"] // 60)} minutes ({weekday_availability[workday_index]["availability"]} seconds)\n"
-                    #print(workday_index, weekday_availability[workday_index]["availability"])
                     used_days[workday_index]["used"] = True
 
                 # Count the number of occurrences of each phase component
