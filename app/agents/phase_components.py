@@ -164,8 +164,8 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
             # Create an optional entry for the rests variables.
             model, rest_var_entry = create_optional_intvar(
                 model=model, activator=is_phase_active_var,
-                min_if_active=phase_component["rest_min"],
-                max_if_active=phase_component["rest_max"],
+                min_if_active=phase_component["rest_min"] // 5,     # Adjusted so that rest is a multiple of 5.
+                max_if_active=phase_component["rest_max"] // 5,     # Adjusted so that rest is a multiple of 5.
                 name_of_entry_var=f'phase_component_{index_for_phase_component}_rest_on_day_{index_for_day}')
 
             # Create an optional entry for the bodyparts variables.
@@ -195,7 +195,7 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
                 f'phase_component_{index_for_phase_component}_duration_with_rest_on_day_{index_for_day}')
             
             # In between step for added components.
-            model.Add(duration_with_rest == seconds_per_exercise_and_reps + rest_var_entry)
+            model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * rest_var_entry))
 
             # Completed constraint.
             model.AddMultiplicationEquality(duration_var_entry, [exercise_var_entry, duration_with_rest, sets_var_entry])#.OnlyEnforceIf(is_phase_active_var)
@@ -389,7 +389,7 @@ def solve_model_node(state: State, config=None) -> dict:
                     exercise_vars_current = solver.Value(exercise_vars_for_phase_component)
                     reps_vars_current = solver.Value(reps_vars_for_phase_component)
                     sets_vars_current = solver.Value(sets_vars_for_phase_component)
-                    rest_vars_current = solver.Value(rest_vars_for_phase_component)
+                    rest_vars_current = 5 * solver.Value(rest_vars_for_phase_component)
                     bodypart_vars_current = solver.Value(bodypart_vars_for_phase_component)
 
                     schedule.append((
