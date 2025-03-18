@@ -12,7 +12,7 @@ class User_Microcycles(db.Model):
     }
     __tablename__ = "user_microcycles"
     id = db.Column(db.Integer, primary_key=True)
-    mesocycle_id = db.Column(db.Integer, db.ForeignKey("user_mesocycles.id"), nullable=False)
+    mesocycle_id = db.Column(db.Integer, db.ForeignKey("user_mesocycles.id", ondelete='CASCADE'), nullable=False)
 
     order = db.Column(
         db.Integer, 

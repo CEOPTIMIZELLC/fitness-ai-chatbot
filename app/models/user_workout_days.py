@@ -12,7 +12,7 @@ class User_Workout_Days(db.Model):
     }
     __tablename__ = "user_workout_days"
     id = db.Column(db.Integer, primary_key=True)
-    microcycle_id = db.Column(db.Integer, db.ForeignKey("user_microcycles.id"), nullable=False)
+    microcycle_id = db.Column(db.Integer, db.ForeignKey("user_microcycles.id", ondelete='CASCADE'), nullable=False)
     phase_component_id = db.Column(db.Integer, db.ForeignKey("phase_components.id"), nullable=False)
 
     order = db.Column(

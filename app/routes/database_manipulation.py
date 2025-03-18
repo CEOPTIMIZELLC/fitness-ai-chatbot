@@ -53,6 +53,10 @@ def initialize_db():
     create_db()
 
     # Populate items.
+    from app.existing_data.bodyparts import bodyparts
+    db.session.add_all(bodyparts)
+    db.session.commit()
+
     from app.existing_data.goals import goals
     db.session.add_all(goals)
     db.session.commit()
@@ -71,6 +75,10 @@ def initialize_db():
 
     from app.existing_data.phase_components import phase_components
     db.session.add_all(phase_components)
+    db.session.commit()
+
+    from app.existing_data.phase_components_bodyparts import component_bodyparts
+    db.session.add_all(component_bodyparts)
     db.session.commit()
 
     from app.existing_data.goal_phase_requirements import goal_phase_requirements

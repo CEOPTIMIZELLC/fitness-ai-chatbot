@@ -66,7 +66,7 @@ def setup_params_node(state: State, config=None) -> dict:
         "intensity_within_min_max": True,
         "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
         "exercises_per_bodypart_within_min_max": True,
-        "minimize_duration_delta": True,                # Minimize the amount of spread across the duration of phase component over the microcycle.
+        "minimize_duration_delta": False,                # Minimize the amount of spread across the duration of phase component over the microcycle.
         "minimize_exercise_count_delta": True,          # Minimize the amount of spread across the number of exercises per phase component over the microcycle.
         "minimize_sets_delta": True,                    # Minimize the amount of spread across the sets of phase component over the microcycle.
         "minimize_reps_delta": True,                    # Minimize the amount of spread across the reps of phase component over the microcycle.

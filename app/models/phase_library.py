@@ -31,6 +31,11 @@ class Phase_Library(db.Model):
         back_populates = "phases",
         cascade="all, delete-orphan")
 
+    phase_component_bodyparts = db.relationship(
+        "Phase_Component_Bodyparts",
+        back_populates = "phases",
+        cascade="all, delete-orphan")
+
     goals = db.relationship(
         "Goal_Phase_Requirements",
         back_populates = "phases",
