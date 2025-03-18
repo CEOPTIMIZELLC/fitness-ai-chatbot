@@ -5,7 +5,7 @@ from typing import Set, List, Optional
 from dotenv import load_dotenv
 from datetime import timedelta
 
-from app.agents.constraints import create_optional_intvar, create_spread_intvar, duration_within_allowed_time, use_workout_required_components, use_microcycle_required_components, frequency_within_min_max
+from app.agents.constraints import create_optional_intvar, create_spread_intvar, day_duration_within_availability, use_workout_required_components, use_microcycle_required_components, frequency_within_min_max
 
 #        \{\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*"phase_id": 5,\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n
 phase_components_example = {
@@ -13,12 +13,13 @@ phase_components_example = {
         {"id": 0, "name": "Monday", "availability": 6 * 60 * 60},
         {"id": 1, "name": "Tuesday", "availability": 3 * 60 * 60},
         {"id": 2, "name": "Wednesday", "availability": 2 * 60 * 60},
-        {"id": 3, "name": "Thursday", "availability": 5 * 60 * 60},
+        {"id": 3, "name": "Thursday", "availability": 35 * 60},
         {"id": 4, "name": "Friday", "availability": 0 * 60 * 60},
         {"id": 5, "name": "Saturday", "availability": 2 * 60 * 60},
         {"id": 6, "name": "Sunday", "availability": 0 * 60 * 60},
     ],
     "microcycle_weekdays": [0, 1, 2, 3, 4, 5, 6],
+    "workout_length": 50 * 60,
     "phase_components": []
 }
 
@@ -55,12 +56,14 @@ def setup_params_node(state: State, config=None) -> dict:
     parameters = {
         "weekday_availability": phase_components_example["weekday_availability"],
         "microcycle_weekdays": phase_components_example["microcycle_weekdays"],
+        "workout_length": phase_components_example["workout_length"],
         "phase_components": phase_components_example["phase_components"]        
     }
 
     # Define all constraints with their active status
     constraints = {
-        "duration_within_allowed_time": True,           # The time of a workout won't exceed the time of allowed for that given day.
+        "day_duration_within_availability": True,       # The time of a workout won't exceed the time allowed for that given day.
+        "day_duration_within_workout_length": True,     # The time of a workout won't exceed the length allowed for a workout.
         "use_workout_required_components": True,        # Include phase components that are required in every workout at least once.
         "use_microcycle_required_components": True,     # Include phase components that are required in every microcycle at least once.
         "intensity_within_min_max": True,
@@ -229,6 +232,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
 
     phase_components = parameters["phase_components"]
     weekday_availability = parameters["weekday_availability"]
+    workout_length = parameters["workout_length"]
     microcycle_weekdays = parameters["microcycle_weekdays"]
 
     (model, workout_availability, active_workday_vars, active_phase_components, seconds_per_exercise, 
@@ -237,12 +241,22 @@ def build_opt_model_node(state: State, config=None) -> dict:
     # Apply active constraints ======================================
     state["logs"] += "\nBuilding model with constraints:\n"
 
-    # Constraint: The duration of a day may only be a number of hours between the allowed time.
-    if constraints["duration_within_allowed_time"]:
-        model = duration_within_allowed_time(model=model, 
+    # Constraint: The duration of a day may only be a number of hours between the allowed time for that day.
+    if constraints["day_duration_within_availability"]:
+        model = day_duration_within_availability(model=model, 
                                              duration_vars=duration_vars, 
                                              availability=workout_availability)
         state["logs"] += "- Sum of phase component duration within maximum allowed time for a day.\n"
+
+    # Ensure that the duration doesn't exceed the maximum allowed time for a workout.
+    #model.Add(duration_var_entry <= workout_length)
+    # Constraint: The duration of a day may only be a number of hours less than the allowed time for a workout.
+    if constraints["day_duration_within_workout_length"]:
+        model = day_duration_within_availability(model=model, 
+                                             duration_vars=duration_vars, 
+                                             availability=[workout_length] * len(duration_vars))
+        state["logs"] += "- Sum of phase component duration within maximum allowed time for a workout.\n"
+
 
     # Constraint: Force all phase components required in every workout to be included at least once.
     if constraints["use_workout_required_components"]:
@@ -438,6 +452,7 @@ def format_solution_node(state: State, config=None) -> dict:
 
     phase_components = parameters["phase_components"]
     weekday_availability = parameters["weekday_availability"]
+    workout_length = parameters["workout_length"]
     microcycle_weekdays = parameters["microcycle_weekdays"]
 
     longest_string_size = len(max(phase_components, key=lambda d:len(d["sub_component"]))["sub_component"])
@@ -447,8 +462,9 @@ def format_solution_node(state: State, config=None) -> dict:
     # Total time the user has to workout.
     workout_time = 0
     for day in microcycle_weekdays:
-        used_days.append({"used": False, "availability": weekday_availability[day]["availability"]})
-        workout_time += weekday_availability[day]["availability"]
+        workout_availability = min(workout_length, weekday_availability[day]["availability"])
+        used_days.append({"used": False, "availability": workout_availability})
+        workout_time += workout_availability
 
     formatted = "Optimization Results:\n"
     formatted += "=" * 50 + "\n\n"
@@ -461,9 +477,11 @@ def format_solution_node(state: State, config=None) -> dict:
         formatted += f"Constraints relaxed: {attempt.constraints_relaxed}\n"
         formatted += f"Result: {'Feasible' if attempt.result_feasible else 'Infeasible'}\n"
         if workout_time is not None:
-            formatted += f"Total Hours Allowed: {(workout_time // 60) // 60} hours ({workout_time} seconds)\n"
+            formatted += f"Total Hours Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
+        if workout_length is not None:
+            formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
         if attempt.microcycle_duration is not None:
-            formatted += f"Total Time Used: {(attempt.microcycle_duration // 60) // 60} hours ({attempt.microcycle_duration} seconds)\n"
+            formatted += f"Total Time Used: {attempt.microcycle_duration  // 60} min {attempt.microcycle_duration  % 60} sec ({attempt.microcycle_duration} seconds)\n"
         if attempt.reasoning:
             formatted += f"Reasoning: {attempt.reasoning}\n"
         if attempt.expected_impact:
@@ -506,14 +524,16 @@ def format_solution_node(state: State, config=None) -> dict:
                     "bodypart_var": bodypart_var
                 })
 
+                current_weekday = microcycle_weekdays[workday_index]
+
                 if not used_days[workday_index]["used"]:
-                    formatted += f"\nDay {workday_index + 1} {weekday_availability[microcycle_weekdays[workday_index]]["name"]:<{10}} Availability of {(weekday_availability[workday_index]["availability"] // 60)} minutes ({weekday_availability[workday_index]["availability"]} seconds)\n"
+                    formatted += f"\nDay {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {used_days[workday_index]["availability"]  // 60} min {used_days[workday_index]["availability"]  % 60} sec ({used_days[workday_index]["availability"]} seconds)\n"
                     used_days[workday_index]["used"] = True
 
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
-                formatted_duration = f"Duration: {(day_duration // 60)} minutes ({day_duration} seconds)\t"
+                formatted_duration = f"Duration: {day_duration  // 60} min {day_duration  % 60} sec ({day_duration} seconds)\t"
 
                 formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
                 formatted_exercises = f"Exercises {exercise_var:<{5}} (1-INF)\t"
@@ -530,8 +550,9 @@ def format_solution_node(state: State, config=None) -> dict:
         for phase_component_index, phase_component_number in enumerate(phase_component_count):
             phase_component = phase_components[phase_component_index]
             formatted += f"\t{phase_component["sub_component"]:<{longest_string_size+3}}: {phase_component_number} ({phase_component["frequency_per_microcycle_min"]} - {phase_component["frequency_per_microcycle_max"]})\n"
-        formatted += f"Total Time Used: {(solution['microcycle_duration'] // 60) // 60} hours ({solution['microcycle_duration']}) seconds\n"
-        formatted += f"Total Time Allowed: {(workout_time // 60) // 60} ({workout_time} seconds)\n"
+        formatted += f"Total Time Used: {solution['microcycle_duration']  // 60} min {solution['microcycle_duration']  % 60} sec ({solution['microcycle_duration']}) seconds\n"
+        formatted += f"Total Time Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
+        formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
 
         # Show final constraint status
         formatted += "\nFinal Constraint Status:\n"

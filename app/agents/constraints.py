@@ -167,7 +167,7 @@ def create_spread_intvar(model, entry_vars, entry_var_name, active_entry_vars, m
 
 
 # Constraint: The duration of a day may only be a number of hours between the allowed time.
-def duration_within_allowed_time(model, duration_vars, availability):
+def day_duration_within_availability(model, duration_vars, availability):
     # Each day
     for duration_vars_for_day, availability_for_day in zip(duration_vars, availability):
         # Ensure total time does not exceed the macrocycle_allowed_weeks
