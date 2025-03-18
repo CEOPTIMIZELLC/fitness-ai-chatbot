@@ -69,10 +69,10 @@ def setup_params_node(state: State, config=None) -> dict:
         "intensity_within_min_max": True,
         "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
         "exercises_per_bodypart_within_min_max": True,
-        "minimize_duration_delta": False,                # Minimize the amount of spread across the duration of phase component over the microcycle.
-        "minimize_exercise_count_delta": True,          # Minimize the amount of spread across the number of exercises per phase component over the microcycle.
+        "minimize_duration_delta": False,               # Minimize the amount of spread across the duration of phase component over the microcycle.
         "minimize_sets_delta": True,                    # Minimize the amount of spread across the sets of phase component over the microcycle.
         "minimize_reps_delta": True,                    # Minimize the amount of spread across the reps of phase component over the microcycle.
+        "minimize_bodypart_exercise_delta": True,       # Minimize the amount of spread across the number of exercises per phase component over the microcycle.
         "maximize_exercise_time": True,                 # Objective function constraint
     }
 
@@ -104,7 +104,6 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
     active_workday_vars = []
     active_phase_components = []
     seconds_per_exercise = []
-    exercise_vars = []
     reps_vars = []
     sets_vars = []
     rest_vars = []
@@ -128,7 +127,6 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
         
         seconds_per_exercise_for_day = []
         active_phase_components_for_day = []
-        exercise_vars_for_day = []
         reps_vars_for_day = []
         sets_vars_for_day = []
         rest_vars_for_day = []
@@ -141,13 +139,6 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
                 f'phase_component_{index_for_phase_component}_active_on_day_{index_for_day}'))
             
             seconds_per_exercise_entry = phase_component["seconds_per_exercise"]
-            
-            # Create an optional entry for the number of exercise performed variables.
-            model, exercise_var_entry = create_optional_intvar(
-                model=model, activator=is_phase_active_var,
-                min_if_active=1,
-                max_if_active=workout_availability_for_day,
-                name_of_entry_var=f'phase_component_{index_for_phase_component}_exercises_on_day_{index_for_day}')
 
             # Create an optional entry for the reps variables.
             model, reps_var_entry = create_optional_intvar(
@@ -178,7 +169,7 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
                 name_of_entry_var=f'phase_component_{index_for_phase_component}_exercises_per_bodypart_on_day_{index_for_day}')
             
             # Create the entry for phase component's duration
-            # phase duration = number_of_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
+            # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
             duration_var_entry = model.NewIntVar(
                 0, workout_availability_for_day, 
                 f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}')
@@ -200,12 +191,11 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
             model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * rest_var_entry))
 
             # Completed constraint.
-            model.AddMultiplicationEquality(duration_var_entry, [exercise_var_entry, duration_with_rest, sets_var_entry])#.OnlyEnforceIf(is_phase_active_var)
+            model.AddMultiplicationEquality(duration_var_entry, [bodypart_var_entry, duration_with_rest, sets_var_entry])#.OnlyEnforceIf(is_phase_active_var)
             #model.Add(duration_var_entry == 0).OnlyEnforceIf(is_phase_active_var.Not())
             
             seconds_per_exercise_for_day.append(seconds_per_exercise_entry)
             active_phase_components_for_day.append(is_phase_active_var)
-            exercise_vars_for_day.append(exercise_var_entry)
             reps_vars_for_day.append(reps_var_entry)
             sets_vars_for_day.append(sets_var_entry)
             rest_vars_for_day.append(rest_var_entry)
@@ -215,14 +205,13 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
         # Append the new row to the corresponding 2D arrays.
         seconds_per_exercise.append(seconds_per_exercise_for_day)
         active_phase_components.append(active_phase_components_for_day)
-        exercise_vars.append(exercise_vars_for_day)
         reps_vars.append(reps_vars_for_day)
         sets_vars.append(sets_vars_for_day)
         rest_vars.append(rest_vars_for_day)
         bodypart_vars.append(bodypart_vars_for_day)
         duration_vars.append(duration_vars_for_day)
     return (model, workout_availability, active_workday_vars, active_phase_components, 
-            seconds_per_exercise, exercise_vars, reps_vars, sets_vars, rest_vars, bodypart_vars, duration_vars)
+            seconds_per_exercise, reps_vars, sets_vars, rest_vars, bodypart_vars, duration_vars)
 
 def build_opt_model_node(state: State, config=None) -> dict:
     """Build the optimization model with active constraints."""
@@ -236,7 +225,7 @@ def build_opt_model_node(state: State, config=None) -> dict:
     microcycle_weekdays = parameters["microcycle_weekdays"]
 
     (model, workout_availability, active_workday_vars, active_phase_components, seconds_per_exercise, 
-     exercise_vars, reps_vars, sets_vars, rest_vars, bodypart_vars, duration_vars) = declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_components)
+     reps_vars, sets_vars, rest_vars, bodypart_vars, duration_vars) = declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_components)
 
     # Apply active constraints ======================================
     state["logs"] += "\nBuilding model with constraints:\n"
@@ -294,16 +283,6 @@ def build_opt_model_node(state: State, config=None) -> dict:
                                                           max_value_allowed=max(workout_availability))
         state["logs"] += "- Minimizing spread across duration applied.\n"
 
-    exercise_spread_var = None
-    # Secondary Objective: Minimize the spread of exercise numbers.
-    if constraints["minimize_exercise_count_delta"]:
-        model, exercise_spread_var = create_spread_intvar(model=model, 
-                                                          entry_vars=exercise_vars, 
-                                                          entry_var_name="exercise_var", 
-                                                          active_entry_vars=active_phase_components, 
-                                                          max_value_allowed=max(workout_availability))
-        state["logs"] += "- Minimizing spread across exercise count applied.\n"
-
     reps_spread_var = None
     # Secondary Objective: Minimize the spread of reps.
     if constraints["minimize_reps_delta"]:
@@ -324,6 +303,18 @@ def build_opt_model_node(state: State, config=None) -> dict:
                                                           max_value_allowed=max(workout_availability))
         state["logs"] += "- Minimizing spread across sets applied.\n"
 
+    bodypart_spread_var = None
+    # Secondary Objective: Minimize the spread of exercise numbers.
+    if constraints["minimize_bodypart_exercise_delta"]:
+        model, bodypart_spread_var = create_spread_intvar(model=model, 
+                                                          entry_vars=bodypart_vars, 
+                                                          entry_var_name="bodypart_var", 
+                                                          active_entry_vars=active_phase_components, 
+                                                          max_value_allowed=max(workout_availability))
+        state["logs"] += "- Minimizing spread across exercise count applied.\n"
+
+
+
     # Objective: Maximize total duration of microcycle
     if constraints["maximize_exercise_time"]:
         # List of contributions to goal time.
@@ -341,8 +332,8 @@ def build_opt_model_node(state: State, config=None) -> dict:
         # Spread reduction.
         if duration_spread_var != None:
             total_duration_to_maximize -= duration_spread_var
-        if exercise_spread_var != None:
-            total_duration_to_maximize -= exercise_spread_var
+        if bodypart_spread_var != None:
+            total_duration_to_maximize -= bodypart_spread_var
         if reps_spread_var != None:
             total_duration_to_maximize -= reps_spread_var
         if sets_spread_var != None:
@@ -352,13 +343,13 @@ def build_opt_model_node(state: State, config=None) -> dict:
         model.Maximize(total_duration_to_maximize)
         state["logs"] += "- Maximizing time used in mesocycle.\n"
 
-    return {"opt_model": (model, workout_availability, seconds_per_exercise, active_phase_components, exercise_vars, reps_vars, sets_vars, rest_vars, bodypart_vars)}
+    return {"opt_model": (model, workout_availability, seconds_per_exercise, active_phase_components, reps_vars, sets_vars, rest_vars, bodypart_vars)}
 
 
 
 def solve_model_node(state: State, config=None) -> dict:
     """Solve model and record relaxation attempt results."""
-    model, workout_availability, seconds_per_exercise, active_phase_components, exercise_vars, reps_vars, sets_vars, rest_vars, bodypart_vars = state["opt_model"]
+    model, workout_availability, seconds_per_exercise, active_phase_components, reps_vars, sets_vars, rest_vars, bodypart_vars = state["opt_model"]
 
     solver = cp_model.CpSolver()
     #solver.parameters.log_search_progress = True
@@ -372,12 +363,11 @@ def solve_model_node(state: State, config=None) -> dict:
         schedule = []
 
         # Each day in the microcycle
-        for index_for_day, values_for_day in enumerate(zip(workout_availability, seconds_per_exercise, active_phase_components, exercise_vars, reps_vars, sets_vars, rest_vars, bodypart_vars)):
+        for index_for_day, values_for_day in enumerate(zip(workout_availability, seconds_per_exercise, active_phase_components, reps_vars, sets_vars, rest_vars, bodypart_vars)):
             (
                 workout_availability_for_day, 
                 seconds_per_exercise_for_day,
                 active_phase_components_for_day, 
-                exercise_vars_for_day, 
                 reps_vars_for_day, 
                 sets_vars_for_day, 
                 rest_vars_for_day, 
@@ -385,11 +375,10 @@ def solve_model_node(state: State, config=None) -> dict:
             ) = values_for_day
 
             # Each phase used in the day.
-            for index_for_phase_component, values_for_phase_component in enumerate(zip(seconds_per_exercise_for_day, active_phase_components_for_day, exercise_vars_for_day, reps_vars_for_day, sets_vars_for_day, rest_vars_for_day, bodypart_vars_for_day)):
+            for index_for_phase_component, values_for_phase_component in enumerate(zip(seconds_per_exercise_for_day, active_phase_components_for_day, reps_vars_for_day, sets_vars_for_day, rest_vars_for_day, bodypart_vars_for_day)):
                 (
                     seconds_per_exercise_for_phase_component,
                     active_phase_components_for_phase_component, 
-                    exercise_vars_for_phase_component, 
                     reps_vars_for_phase_component, 
                     sets_vars_for_phase_component, 
                     rest_vars_for_phase_component, 
@@ -399,7 +388,6 @@ def solve_model_node(state: State, config=None) -> dict:
                 # Ensure that the phase component is active.
                 if(solver.Value(active_phase_components_for_phase_component)):
                     seconds_per_exercise_current = solver.Value(seconds_per_exercise_for_phase_component)
-                    exercise_vars_current = solver.Value(exercise_vars_for_phase_component)
                     reps_vars_current = solver.Value(reps_vars_for_phase_component)
                     sets_vars_current = solver.Value(sets_vars_for_phase_component)
                     rest_vars_current = 5 * solver.Value(rest_vars_for_phase_component)
@@ -409,13 +397,12 @@ def solve_model_node(state: State, config=None) -> dict:
                         index_for_phase_component, index_for_day, 
                         seconds_per_exercise_current, 
                         solver.Value(active_phase_components_for_phase_component), 
-                        exercise_vars_current, 
                         reps_vars_current, 
                         sets_vars_current, 
                         rest_vars_current, 
                         bodypart_vars_current
                     ))
-                    microcycle_duration += (exercise_vars_current * (seconds_per_exercise_current * reps_vars_current + rest_vars_current) * sets_vars_current)
+                    microcycle_duration += (bodypart_vars_current * (seconds_per_exercise_current * reps_vars_current + rest_vars_current) * sets_vars_current)
         solution = {
             "schedule": schedule,
             "microcycle_duration": microcycle_duration,
@@ -502,13 +489,13 @@ def format_solution_node(state: State, config=None) -> dict:
         
         for component_count, (phase_component_index, workday_index, 
                   seconds_per_exercise, active_phase_components, 
-                  exercise_var, reps_var, sets_var, rest_var, bodypart_var) in enumerate(schedule):
+                  reps_var, sets_var, rest_var, bodypart_var) in enumerate(schedule):
 
             phase_component = phase_components[phase_component_index]
             phase_component_id = phase_component["id"]
             phase_component_name = phase_component["sub_component"]
 
-            day_duration = (exercise_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
+            day_duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
 
             if active_phase_components:
                 final_output.append({
@@ -517,7 +504,6 @@ def format_solution_node(state: State, config=None) -> dict:
                     "phase_component_id": phase_component_id,
                     "seconds_per_exercise": seconds_per_exercise, 
                     "active_phase_components": active_phase_components, 
-                    "exercise_var": exercise_var, 
                     "reps_var": reps_var, 
                     "sets_var": sets_var, 
                     "rest_var": rest_var, 
@@ -536,13 +522,12 @@ def format_solution_node(state: State, config=None) -> dict:
                 formatted_duration = f"Duration: {day_duration  // 60} min {day_duration  % 60} sec ({day_duration} seconds)\t"
 
                 formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
-                formatted_exercises = f"Exercises {exercise_var:<{5}} (1-INF)\t"
                 formatted_reps = f"Reps {reps_var} ({phase_component["reps_min"]:<{3}}-{phase_component["reps_max"]:<{3}})\t"
                 formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]:<{2}}-{phase_component["sets_max"]:<{2}})\t"
                 formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"]}-{phase_component["rest_max"]})\t"
                 formatted_bodyparts = f"Bodypart Exercises {bodypart_var} ({phase_component["exercises_per_bodypart_workout_min"]} - {phase_component["exercises_per_bodypart_workout_max"]})"
 
-                formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name:<{longest_string_size+3}} ({formatted_duration} {formatted_seconds_per_exercises} {formatted_exercises} {formatted_reps} {formatted_sets} {formatted_rest} {formatted_bodyparts})\n")
+                formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name:<{longest_string_size+3}} ({formatted_duration} {formatted_seconds_per_exercises} {formatted_reps} {formatted_sets} {formatted_rest} {formatted_bodyparts})\n")
             else:
                 formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t{phase_component_name:<{longest_string_size+3}} ----\n")
 

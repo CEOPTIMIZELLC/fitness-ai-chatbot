@@ -108,12 +108,11 @@ def workout_day_initializer():
             phase_component_id = phase_component["phase_component_id"],
             order = order,
             date = (user_microcycle.start_date + timedelta(days=phase_component["workday_index"])),
-            exercise_count = phase_component["exercise_var"],
             rep = phase_component["reps_var"],
             sets = phase_component["sets_var"],
             intensity = 0,
             rest = phase_component["rest_var"],
-            exercises_per_bodypart_workout = phase_component["bodypart_var"]
+            exercises_per_bodypart = phase_component["bodypart_var"]
         )
         user_workdays.append(new_workday)
         order += 1

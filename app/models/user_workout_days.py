@@ -26,11 +26,6 @@ class User_Workout_Days(db.Model):
         nullable=False,
         comment='Date that the workout_day should start.')
 
-    exercise_count = db.Column(
-        db.Integer, 
-        nullable=False,
-        comment='The number of different exercises for the phase subcomponent.')
-
     rep = db.Column(
         db.Integer, 
         nullable=False,
@@ -50,7 +45,7 @@ class User_Workout_Days(db.Model):
         nullable=False,
         comment='The amount of time to rest for a single exercise for the phase subcomponent.')
 
-    exercises_per_bodypart_workout = db.Column(
+    exercises_per_bodypart = db.Column(
         db.Integer, 
         comment='The number of exercises per bodypart included for the phase component.')
 
@@ -72,10 +67,9 @@ class User_Workout_Days(db.Model):
             "phase_component_subcomponent": self.phase_components.sub_component,
             "date": self.date,
             "order": self.order,
-            "exercise_count": self.exercise_count,
             "rep": self.rep,
             "sets": self.sets,
             "intensity": self.intensity,
             "rest": self.rest,
-            "exercises_per_bodypart_workout": self.exercises_per_bodypart_workout
+            "exercises_per_bodypart": self.exercises_per_bodypart
         }
