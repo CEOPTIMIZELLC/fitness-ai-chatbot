@@ -331,16 +331,11 @@ def build_opt_model_node(state: State, config=None) -> dict:
         # List of contributions to goal time.
         total_set_duration_for_day = []
 
-        number_of_unique_components = []
-        for phase_component in phase_components:
-            number_of_unique_components.append(len([i for i, phase_component_value in enumerate(phase_components) if phase_component_value["id"] == phase_component["id"]]))
-        
         # Each day
         for duration_vars_for_day in duration_vars:
             # Each phase component
-            for duration_vars_for_phase_component, component_quantity in zip(duration_vars_for_day, number_of_unique_components):
-                total_set_duration_for_day.append((1/component_quantity) * duration_vars_for_phase_component)
-                #total_set_duration_for_day.append(duration_vars_for_phase_component)
+            for duration_vars_for_phase_component in duration_vars_for_day:
+                total_set_duration_for_day.append(duration_vars_for_phase_component)
         
         # If minimizing the spread is a constraint, subtract it from the sum.
         total_duration_to_maximize = sum(total_set_duration_for_day)
