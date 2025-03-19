@@ -5,7 +5,7 @@ from typing import Set, List, Optional
 from dotenv import load_dotenv
 from datetime import timedelta
 
-from app.agents.constraints import create_optional_intvar, create_spread_intvar, day_duration_within_availability, use_workout_required_components, use_microcycle_required_components, frequency_within_min_max
+from app.agents.constraints import create_optional_intvar, create_spread_intvar, day_duration_within_availability, use_workout_required_components, use_microcycle_required_components, frequency_within_min_max, consecutive_bodyparts_for_component
 
 #        \{\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*"phase_id": 5,\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n
 phase_components_example = {
@@ -49,10 +49,11 @@ class State(TypedDict):
     parameter_input: dict
 
 def setup_params_node(state: State, config=None) -> dict:
+    """Initialize optimization parameters and constraints."""
+    print("Setting up parameters.")
 
     parameter_input = state.get("parameter_input", {})
-    
-    """Initialize optimization parameters and constraints."""
+
     parameters = {
         "weekday_availability": phase_components_example["weekday_availability"],
         "microcycle_weekdays": phase_components_example["microcycle_weekdays"],
@@ -69,10 +70,11 @@ def setup_params_node(state: State, config=None) -> dict:
         "intensity_within_min_max": True,
         "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
         "exercises_per_bodypart_within_min_max": True,
-        "minimize_duration_delta": False,               # Minimize the amount of spread across the duration of phase component over the microcycle.
-        "minimize_sets_delta": True,                    # Minimize the amount of spread across the sets of phase component over the microcycle.
-        "minimize_reps_delta": True,                    # Minimize the amount of spread across the reps of phase component over the microcycle.
-        "minimize_bodypart_exercise_delta": True,       # Minimize the amount of spread across the number of exercises per phase component over the microcycle.
+        "consecutive_bodyparts_for_component": True,    # Every bodypart division must be done consecutively for a phase component.
+        "minimize_duration_delta": True,               # Minimize the amount of spread across the duration of phase component over the microcycle.
+        "minimize_sets_delta": False,                    # Minimize the amount of spread across the sets of phase component over the microcycle.
+        "minimize_reps_delta": False,                    # Minimize the amount of spread across the reps of phase component over the microcycle.
+        "minimize_bodypart_exercise_delta": False,       # Minimize the amount of spread across the number of exercises per phase component over the microcycle.
         "maximize_exercise_time": True,                 # Objective function constraint
     }
 
@@ -191,8 +193,7 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
             model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * rest_var_entry))
 
             # Completed constraint.
-            model.AddMultiplicationEquality(duration_var_entry, [bodypart_var_entry, duration_with_rest, sets_var_entry])#.OnlyEnforceIf(is_phase_active_var)
-            #model.Add(duration_var_entry == 0).OnlyEnforceIf(is_phase_active_var.Not())
+            model.AddMultiplicationEquality(duration_var_entry, [bodypart_var_entry, duration_with_rest, sets_var_entry])
             
             seconds_per_exercise_for_day.append(seconds_per_exercise_entry)
             active_phase_components_for_day.append(is_phase_active_var)
@@ -215,6 +216,7 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
 
 def build_opt_model_node(state: State, config=None) -> dict:
     """Build the optimization model with active constraints."""
+    print("Building model.")
     parameters = state["parameters"]
     constraints = state["constraints"]
     model = cp_model.CpModel()
@@ -265,6 +267,15 @@ def build_opt_model_node(state: State, config=None) -> dict:
                                                    required_phase_components=required_phase_components, 
                                                    active_phase_components=active_phase_components)
         state["logs"] += "- All phase components required every microcycle will be included in every microcycle applied.\n"
+
+
+    # Constraint: Every bodypart division must be done consecutively for a phase component.
+    if constraints["consecutive_bodyparts_for_component"]:
+        model = consecutive_bodyparts_for_component(model=model, 
+                                                    phase_components=phase_components, 
+                                                    active_phase_components=active_phase_components)
+        state["logs"] += "- Bodypart division for components are done consecutively activated.\n"
+
 
     # Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
     if constraints["frequency_within_min_max"]:
@@ -320,11 +331,16 @@ def build_opt_model_node(state: State, config=None) -> dict:
         # List of contributions to goal time.
         total_set_duration_for_day = []
 
+        number_of_unique_components = []
+        for phase_component in phase_components:
+            number_of_unique_components.append(len([i for i, phase_component_value in enumerate(phase_components) if phase_component_value["id"] == phase_component["id"]]))
+        
         # Each day
         for duration_vars_for_day in duration_vars:
             # Each phase component
-            for duration_vars_for_phase_component in duration_vars_for_day:
-                total_set_duration_for_day.append(duration_vars_for_phase_component)
+            for duration_vars_for_phase_component, component_quantity in zip(duration_vars_for_day, number_of_unique_components):
+                total_set_duration_for_day.append((1/component_quantity) * duration_vars_for_phase_component)
+                #total_set_duration_for_day.append(duration_vars_for_phase_component)
         
         # If minimizing the spread is a constraint, subtract it from the sum.
         total_duration_to_maximize = sum(total_set_duration_for_day)
@@ -349,15 +365,18 @@ def build_opt_model_node(state: State, config=None) -> dict:
 
 def solve_model_node(state: State, config=None) -> dict:
     """Solve model and record relaxation attempt results."""
+    print("Solving model.")
     model, workout_availability, seconds_per_exercise, active_phase_components, reps_vars, sets_vars, rest_vars, bodypart_vars = state["opt_model"]
 
     solver = cp_model.CpSolver()
+    solver.parameters.num_search_workers = 24
     #solver.parameters.log_search_progress = True
     status = solver.Solve(model)
     
     state["logs"] += f"\nSolver status: {status}\n"
     state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
-    
+
+    print("Creating solution output.")
     if status in (cp_model.FEASIBLE, cp_model.OPTIMAL):
         microcycle_duration = 0
         schedule = []
@@ -433,6 +452,7 @@ def solve_model_node(state: State, config=None) -> dict:
 
 def format_solution_node(state: State, config=None) -> dict:
     """Format the optimization results."""
+    print("Formatting solution.")
     solution = state["solution"]
 
     parameters = state["parameters"]
@@ -442,7 +462,10 @@ def format_solution_node(state: State, config=None) -> dict:
     workout_length = parameters["workout_length"]
     microcycle_weekdays = parameters["microcycle_weekdays"]
 
-    longest_string_size = len(max(phase_components, key=lambda d:len(d["sub_component"]))["sub_component"])
+    longest_subcomponent_string_size = len(max(phase_components, key=lambda d:len(d["sub_component"]))["sub_component"])
+    longest_bodypart_string_size = len(max(phase_components, key=lambda d:len(d["bodypart"]))["bodypart"])
+
+    longest_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
 
     used_days = []
     
@@ -493,7 +516,7 @@ def format_solution_node(state: State, config=None) -> dict:
 
             phase_component = phase_components[phase_component_index]
             phase_component_id = phase_component["id"]
-            phase_component_name = phase_component["sub_component"]
+            phase_component_name = phase_component["sub_component"] + " " + phase_component["bodypart"] 
 
             day_duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
 
@@ -527,14 +550,14 @@ def format_solution_node(state: State, config=None) -> dict:
                 formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"]}-{phase_component["rest_max"]})\t"
                 formatted_bodyparts = f"Bodypart Exercises {bodypart_var} ({phase_component["exercises_per_bodypart_workout_min"]} - {phase_component["exercises_per_bodypart_workout_max"]})"
 
-                formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name:<{longest_string_size+3}} ({formatted_duration} {formatted_seconds_per_exercises} {formatted_reps} {formatted_sets} {formatted_rest} {formatted_bodyparts})\n")
+                formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name:<{longest_string_size+3}} {formatted_duration} ({formatted_seconds_per_exercises} {formatted_reps} {formatted_sets} {formatted_rest} {formatted_bodyparts})\n")
             else:
                 formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t{phase_component_name:<{longest_string_size+3}} ----\n")
 
         formatted += f"Phase Component Counts:\n"
         for phase_component_index, phase_component_number in enumerate(phase_component_count):
             phase_component = phase_components[phase_component_index]
-            formatted += f"\t{phase_component["sub_component"]:<{longest_string_size+3}}: {phase_component_number} ({phase_component["frequency_per_microcycle_min"]} - {phase_component["frequency_per_microcycle_max"]})\n"
+            formatted += f"\t{phase_component["sub_component"] + " " + phase_component["bodypart"]:<{longest_string_size+3}}: {phase_component_number} ({phase_component["frequency_per_microcycle_min"]} - {phase_component["frequency_per_microcycle_max"]})\n"
         formatted += f"Total Time Used: {solution['microcycle_duration']  // 60} min {solution['microcycle_duration']  % 60} sec ({solution['microcycle_duration']}) seconds\n"
         formatted += f"Total Time Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
         formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
@@ -551,6 +574,7 @@ def format_solution_node(state: State, config=None) -> dict:
 from langgraph.graph import StateGraph, START, END
 
 def create_optimization_graph():
+    print("Building graph.")
     builder = StateGraph(State)
 
     # Add nodes

@@ -221,3 +221,21 @@ def frequency_within_min_max(model, phase_components, active_phase_components):
         if phase_component["frequency_per_microcycle_max"]:
             model.Add(sum(active_window) <= phase_component["frequency_per_microcycle_max"]).OnlyEnforceIf(used_phase_components[phase_component_index])
     return model
+
+# Constraint: Every bodypart division must be done consecutively for a phase component.
+def consecutive_bodyparts_for_component(model, phase_components, active_phase_components):
+    # Retrieve the list of all unique phase component ids.
+    unique_components = list(set(phase_component["id"] for phase_component in phase_components))
+    for unique_component in unique_components:
+        # Find all phase components with the same id.
+        required_phase_components = [i for i, phase_component in enumerate(phase_components) if phase_component["id"] == unique_component]
+        # Each day
+        for active_phase_component in active_phase_components:
+            # Retrieve the corresponding indicator for all phase components of the same type on a day.
+            required_phase_components_for_day = [active_phase_component[i] for i in required_phase_components]
+            if required_phase_components_for_day:
+                # Ensure all variables in required_phase_components_for_day are equal (either all 1 or all 0)
+                first_var = required_phase_components_for_day[0]
+                for var in required_phase_components_for_day[1:]:
+                    model.Add(var == first_var)
+    return model

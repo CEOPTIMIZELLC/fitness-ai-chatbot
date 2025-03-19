@@ -2,7 +2,7 @@ from flask import request, jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Phase_Component_Library, User_Workout_Days, User_Microcycles, User_Mesocycles, User_Macrocycles
+from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Phase_Component_Library, Phase_Components_Component_Library, Phase_Component_Bodyparts, User_Workout_Days, User_Microcycles, User_Mesocycles, User_Macrocycles
 from datetime import datetime, timedelta
 
 bp = Blueprint('user_workout_days', __name__)
@@ -27,6 +27,17 @@ def retrieve_possible_phase_components(phase_id):
         .all()
     )
     return possible_phase_components
+
+# Retrieve the phase types and their corresponding constraints for a goal.
+def retrieve_phase_component_bodyparts(phase_id):
+    # Retrieve all possible phase components that can be selected.
+    possible_phase_component_bodyparts = (
+        Phase_Component_Bodyparts.query
+        .filter(Phase_Component_Bodyparts.phase_id == phase_id)
+        .order_by(Phase_Component_Bodyparts.id.asc())
+        .all()
+    )
+    return possible_phase_component_bodyparts
 
 # Retrieve phase components
 @bp.route('/', methods=['GET'])
@@ -84,12 +95,25 @@ def workout_day_initializer():
 
     config["parameters"]["microcycle_weekdays"] = microcycle_weekdays
 
+    # Retrieve all possible phase component body parts.
+    possible_phase_component_bodyparts = retrieve_phase_component_bodyparts(user_microcycle.mesocycles.phase_id)
+    possible_phase_component_bodyparts_list = []
+
+    for possible_phase_component_bodypart in possible_phase_component_bodyparts:
+        possible_phase_component_bodyparts_list.append(possible_phase_component_bodypart.to_dict())
+
     # Retrieve all possible phase components that can be selected for the phase id.
     possible_phase_components = retrieve_possible_phase_components(user_microcycle.mesocycles.phase_id)
     possible_phase_components_list = []
 
     for possible_phase_component in possible_phase_components:
-        possible_phase_components_list.append(possible_phase_component.to_dict())
+        # If the phase component is resistance, append it multiple times.
+        if possible_phase_component.component_id == 6:
+            for possible_phase_component_bodypart in possible_phase_component_bodyparts:
+                possible_phase_components_list.append(possible_phase_component.to_dict() | {"bodypart": possible_phase_component_bodypart.bodyparts.name})
+        # Append only once for full body if any other phase component.
+        else:
+            possible_phase_components_list.append(possible_phase_component.to_dict() | {"bodypart": "total_body"})
 
     config["parameters"]["phase_components"] = possible_phase_components_list
 
