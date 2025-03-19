@@ -50,6 +50,9 @@ def register_blueprints(app):
         from .routes import phase_components
         app.register_blueprint(phase_components.bp, url_prefix='/phase_components')
 
+        from .routes import user_macrocycles
+        app.register_blueprint(user_macrocycles.bp, url_prefix='/user_macrocycles')
+
         from .routes import user_mesocycles
         app.register_blueprint(user_mesocycles.bp, url_prefix='/user_mesocycles')
 
