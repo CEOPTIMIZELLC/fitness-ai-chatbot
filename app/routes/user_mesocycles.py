@@ -154,7 +154,7 @@ def mesocycle_phases():
 
 
 # Testing for the parameter programming for mesocycle labeling.
-@bp.route('/phase_classification_test', methods=['GET'])
+@bp.route('/test', methods=['GET'])
 def phase_classification_test():
     test_results = []
 
