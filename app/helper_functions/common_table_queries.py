@@ -53,8 +53,7 @@ def current_workout_day(user_id):
         .join(User_Macrocycles)
         .filter(
             User_Macrocycles.user_id == user_id,
-            User_Workout_Days.start_date <= today, 
-            User_Workout_Days.end_date >= today)
+            User_Workout_Days.date == today)
         .order_by(User_Workout_Days.id.desc())
         .first())
     return active_workout_day

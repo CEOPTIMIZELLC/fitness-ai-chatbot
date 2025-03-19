@@ -47,7 +47,7 @@ def get_user_mesocycles():
     return jsonify({"status": "success", "phases": result}), 200
 
 # Retrieve user's current macrocycles's phases
-@bp.route('/current_macrocycle', methods=['GET'])
+@bp.route('/current_list', methods=['GET'])
 @login_required
 def get_user_current_mesocycles():
     result = []

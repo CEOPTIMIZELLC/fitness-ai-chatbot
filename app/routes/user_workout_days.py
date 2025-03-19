@@ -50,7 +50,7 @@ def get_user_workout_days():
     return jsonify({"status": "success", "phase_components": result}), 200
 
 # Retrieve phase components
-@bp.route('/current_microcycle', methods=['GET'])
+@bp.route('/current_list', methods=['GET'])
 @login_required
 def get_user_current_workout_days():
     result = []

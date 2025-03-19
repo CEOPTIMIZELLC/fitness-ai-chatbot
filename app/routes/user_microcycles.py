@@ -26,7 +26,7 @@ def get_user_microcycles():
     return jsonify({"status": "success", "microcycles": result}), 200
 
 # Retrieve microcycles
-@bp.route('/current_mesocycle', methods=['GET'])
+@bp.route('/current_list', methods=['GET'])
 @login_required
 def get_user_current_microcycles():
     result = []
