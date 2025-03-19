@@ -51,7 +51,36 @@ password
 password
 ```
 
+# User Workout Information (Macrocycles, Mesocycles, Microcycles, Workout Days)
+## List all that belong to user
+For the selected information, retrieves all active and non active information.
+```
+[GET] /user_[macrocycle, mesocycle, microcycle, workout_days]/
+```
 
+## List all currently occurring
+This retrieves the list of entries for the current higher level item. (i.e. all mesocycles for the current macrocycle, all microcycles for the current mesocycle)
+```
+[GET] /user_[macrocycle, mesocycle, microcycle, workout_days]/current_list
+```
+
+# Retrieve currently occurring entry
+This retrieves whatever entry is currently ongoing. If multiple are, somehow, then this retrieves the lastest of the currently ongoing entries.
+```
+[GET] /user_[macrocycle, mesocycle, microcycle, workout_days]/current
+```
+
+## Perform Entry Decision Code
+With this endpoint, it will generate the desired entries if able to (i.e. generating the mesocycles based on your current macrocycle.)
+```
+[POST, PATCH] /user_[macrocycle, mesocycle, microcycle, workout_days]/
+```
+
+## Perform Unit Test
+With this endpoint, it will run through the generation for every higher level input (i.e. generating the mesocycles for every macrocycle). This doesn't save the information.
+```
+[GET, POST] /user_[macrocycle, mesocycle, microcycle, workout_days]/
+```
 
 
 # Current User Info
