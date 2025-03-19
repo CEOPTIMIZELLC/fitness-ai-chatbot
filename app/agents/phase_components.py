@@ -5,23 +5,8 @@ from typing import Set, List, Optional
 from dotenv import load_dotenv
 from datetime import timedelta
 
+from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
 from app.agents.constraints import create_optional_intvar, create_spread_intvar, day_duration_within_availability, use_workout_required_components, use_microcycle_required_components, frequency_within_min_max, consecutive_bodyparts_for_component
-
-#        \{\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*"phase_id": 5,\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n.*\n
-phase_components_example = {
-    "weekday_availability": [
-        {"id": 0, "name": "Monday", "availability": 6 * 60 * 60},
-        {"id": 1, "name": "Tuesday", "availability": 3 * 60 * 60},
-        {"id": 2, "name": "Wednesday", "availability": 2 * 60 * 60},
-        {"id": 3, "name": "Thursday", "availability": 35 * 60},
-        {"id": 4, "name": "Friday", "availability": 0 * 60 * 60},
-        {"id": 5, "name": "Saturday", "availability": 2 * 60 * 60},
-        {"id": 6, "name": "Sunday", "availability": 0 * 60 * 60},
-    ],
-    "microcycle_weekdays": [0, 1, 2, 3, 4, 5, 6],
-    "workout_length": 50 * 60,
-    "phase_components": []
-}
 
 _ = load_dotenv()
 
@@ -50,15 +35,22 @@ class State(TypedDict):
 
 def setup_params_node(state: State, config=None) -> dict:
     """Initialize optimization parameters and constraints."""
-    print("Setting up parameters.")
 
     parameter_input = state.get("parameter_input", {})
 
     parameters = {
-        "weekday_availability": phase_components_example["weekday_availability"],
-        "microcycle_weekdays": phase_components_example["microcycle_weekdays"],
-        "workout_length": phase_components_example["workout_length"],
-        "phase_components": phase_components_example["phase_components"]        
+        "weekday_availability": [
+            {"id": 0, "name": "Monday", "availability": 6 * 60 * 60},
+            {"id": 1, "name": "Tuesday", "availability": 3 * 60 * 60},
+            {"id": 2, "name": "Wednesday", "availability": 2 * 60 * 60},
+            {"id": 3, "name": "Thursday", "availability": 35 * 60},
+            {"id": 4, "name": "Friday", "availability": 0 * 60 * 60},
+            {"id": 5, "name": "Saturday", "availability": 2 * 60 * 60},
+            {"id": 6, "name": "Sunday", "availability": 0 * 60 * 60},
+        ],
+        "microcycle_weekdays": [0, 1, 2, 3, 4, 5, 6],
+        "workout_length": 50 * 60,
+        "phase_components": []
     }
 
     # Define all constraints with their active status
@@ -67,14 +59,12 @@ def setup_params_node(state: State, config=None) -> dict:
         "day_duration_within_workout_length": True,     # The time of a workout won't exceed the length allowed for a workout.
         "use_workout_required_components": True,        # Include phase components that are required in every workout at least once.
         "use_microcycle_required_components": True,     # Include phase components that are required in every microcycle at least once.
-        "intensity_within_min_max": True,
         "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
-        "exercises_per_bodypart_within_min_max": True,
         "consecutive_bodyparts_for_component": True,    # Every bodypart division must be done consecutively for a phase component.
-        "minimize_duration_delta": True,               # Minimize the amount of spread across the duration of phase component over the microcycle.
-        "minimize_sets_delta": False,                    # Minimize the amount of spread across the sets of phase component over the microcycle.
-        "minimize_reps_delta": False,                    # Minimize the amount of spread across the reps of phase component over the microcycle.
-        "minimize_bodypart_exercise_delta": False,       # Minimize the amount of spread across the number of exercises per phase component over the microcycle.
+        "minimize_duration_delta": True,                # Minimize the amount of spread across the duration of phase component over the microcycle.
+        "minimize_sets_delta": False,                   # Minimize the amount of spread across the sets of phase component over the microcycle.
+        "minimize_reps_delta": False,                   # Minimize the amount of spread across the reps of phase component over the microcycle.
+        "minimize_bodypart_exercise_delta": False,      # Minimize the amount of spread across the number of exercises per phase component over the microcycle.
         "maximize_exercise_time": True,                 # Objective function constraint
     }
 
@@ -216,7 +206,6 @@ def declare_model_vars(model, microcycle_weekdays, weekday_availability, phase_c
 
 def build_opt_model_node(state: State, config=None) -> dict:
     """Build the optimization model with active constraints."""
-    print("Building model.")
     parameters = state["parameters"]
     constraints = state["constraints"]
     model = cp_model.CpModel()
@@ -356,11 +345,36 @@ def build_opt_model_node(state: State, config=None) -> dict:
 
     return {"opt_model": (model, workout_availability, seconds_per_exercise, active_phase_components, reps_vars, sets_vars, rest_vars, bodypart_vars)}
 
+def analyze_infeasibility_node(state: State, config=None) -> dict:
+    """Use LLM to analyze solver logs and suggest constraints to relax."""
+    # Prepare history of what's been tried
+    history = retrieve_relaxation_history(state["relaxation_attempts"])
+
+    available_constraints = """
+-
+- day_duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
+- day_duration_within_workout_length: Prevents workout from exceeding the time allowed for a workout.
+- use_workout_required_components: Forces all phase components required for a workout to be assigned in every workout.
+- use_microcycle_required_components: Forces all phase components required for a microcycle to be assigned at lease once in the microcycle.
+- frequency_within_min_max: Forces each phase component that does occur to occur between the minimum and maximum values allowed.
+- consecutive_bodyparts_for_component: Forces phase components of the same component and subcomponent type to occur simultaneously on a workout where any is assigned.
+- minimize_duration_delta: Secondary objective to minimize the amount of spread of phase component durations.
+- minimize_sets_delta: Secondary objective to minimize the amount of spread of phase component sets.
+- minimize_reps_delta: Secondary objective to minimize the amount of spread of phase component reps.
+- minimize_bodypart_exercise_delta: Secondary objective to minimize the amount of spread for the number of exercises.
+- maximize_exercise_time: Objective to maximize the amount of time spent overall.
+"""
+
+    state = analyze_infeasibility(state, history, available_constraints)
+    
+    return {
+        "constraints": state["constraints"],
+        "current_attempt": state["current_attempt"]
+    }
 
 
 def solve_model_node(state: State, config=None) -> dict:
     """Solve model and record relaxation attempt results."""
-    print("Solving model.")
     model, workout_availability, seconds_per_exercise, active_phase_components, reps_vars, sets_vars, rest_vars, bodypart_vars = state["opt_model"]
 
     solver = cp_model.CpSolver()
@@ -371,7 +385,6 @@ def solve_model_node(state: State, config=None) -> dict:
     state["logs"] += f"\nSolver status: {status}\n"
     state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
 
-    print("Creating solution output.")
     if status in (cp_model.FEASIBLE, cp_model.OPTIMAL):
         microcycle_duration = 0
         schedule = []
@@ -447,7 +460,6 @@ def solve_model_node(state: State, config=None) -> dict:
 
 def format_solution_node(state: State, config=None) -> dict:
     """Format the optimization results."""
-    print("Formatting solution.")
     solution = state["solution"]
 
     parameters = state["parameters"]
@@ -571,20 +583,35 @@ def format_solution_node(state: State, config=None) -> dict:
 from langgraph.graph import StateGraph, START, END
 
 def create_optimization_graph():
-    print("Building graph.")
     builder = StateGraph(State)
 
     # Add nodes
     builder.add_node("setup", setup_params_node)
     builder.add_node("build", build_opt_model_node)
     builder.add_node("solve", solve_model_node)
+    builder.add_node("analyze", analyze_infeasibility_node)
     builder.add_node("format", format_solution_node)
 
     # Add edges
     builder.add_edge(START, "setup")
     builder.add_edge("setup", "build")
     builder.add_edge("build", "solve")
-    builder.add_edge("solve", "format")
+
+    def solution_router(state: State, config=None):
+        if state["solution"] is None and any(state["constraints"].values()):
+            return "analyze"  # Try relaxing a constraint
+        return "format"      # Either solution found or no more constraints to relax
+
+    builder.add_conditional_edges(
+        "solve",
+        solution_router,
+        {
+            "analyze": "analyze",
+            "format": "format"
+        }
+    )
+
+    builder.add_edge("analyze", "build")
     builder.add_edge("format", END)
 
     return builder.compile()
