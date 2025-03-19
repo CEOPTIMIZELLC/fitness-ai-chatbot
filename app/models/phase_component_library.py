@@ -6,7 +6,7 @@ class Phase_Component_Library(db.Model):
         'comment': "The library of phase components that exists."
     }
     # Fields
-    __tablename__ = "phase_components"
+    __tablename__ = "phase_component_library"
     id = db.Column(db.Integer, primary_key=True)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
     component_id = db.Column(db.Integer, db.ForeignKey("phase_components_component_library.id"), nullable=False)
@@ -103,8 +103,8 @@ class Phase_Component_Library(db.Model):
         "Phase_Components_Subcomponent_Library",
         back_populates = "phase_components")
 
-    workout_days = db.relationship(
-        "User_Workout_Days",
+    workout_components = db.relationship(
+        "User_Workout_Components",
         back_populates = "phase_components",
         cascade="all, delete-orphan")
 

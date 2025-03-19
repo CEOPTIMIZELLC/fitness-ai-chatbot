@@ -13,7 +13,6 @@ class User_Workout_Days(db.Model):
     __tablename__ = "user_workout_days"
     id = db.Column(db.Integer, primary_key=True)
     microcycle_id = db.Column(db.Integer, db.ForeignKey("user_microcycles.id", ondelete='CASCADE'), nullable=False)
-    phase_component_id = db.Column(db.Integer, db.ForeignKey("phase_components.id"), nullable=False)
 
     order = db.Column(
         db.Integer, 
@@ -26,50 +25,24 @@ class User_Workout_Days(db.Model):
         nullable=False,
         comment='Date that the workout_day should start.')
 
-    rep = db.Column(
-        db.Integer, 
-        nullable=False,
-        comment='The number of repetitions for a single exercise for the phase subcomponent.')
-
-    sets = db.Column(
-        db.Integer, 
-        nullable=False,
-        comment='The number of sets of repetitions for a single exercise for the phase subcomponent.')
-
-    intensity = db.Column(
-        db.Integer, 
-        comment='The amount of intensity for a single exercise for the phase subcomponent.')
-
-    rest = db.Column(
-        db.Integer, 
-        nullable=False,
-        comment='The amount of time to rest for a single exercise for the phase subcomponent.')
-
-    exercises_per_bodypart = db.Column(
-        db.Integer, 
-        comment='The number of exercises per bodypart included for the phase component.')
-
-
     # Relationships
     microcycles = db.relationship(
         "User_Microcycles",
         back_populates = "workout_days")
 
-    phase_components = db.relationship(
-        "Phase_Component_Library",
-        back_populates = "workout_days")
+    workout_components = db.relationship(
+        "User_Workout_Components",
+        back_populates = "workout_days",
+        cascade="all, delete-orphan")
 
     def to_dict(self):
+        components = []
+        for workout_component in self.workout_components:
+            components.append(workout_component.to_dict())
         return {
             "id": self.id,
             "microcycle_id": self.microcycle_id,
-            "phase_component_id": self.phase_component_id,
-            "phase_component_subcomponent": self.phase_components.sub_component,
-            "date": self.date,
             "order": self.order,
-            "rep": self.rep,
-            "sets": self.sets,
-            "intensity": self.intensity,
-            "rest": self.rest,
-            "exercises_per_bodypart": self.exercises_per_bodypart
+            "date": self.date,
+            "components": components
         }

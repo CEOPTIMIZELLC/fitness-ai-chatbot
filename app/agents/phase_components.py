@@ -516,6 +516,7 @@ def format_solution_node(state: State, config=None) -> dict:
 
             phase_component = phase_components[phase_component_index]
             phase_component_id = phase_component["id"]
+            bodypart_id = phase_component["bodypart_id"]
             phase_component_name = phase_component["sub_component"] + " " + phase_component["bodypart"] 
 
             day_duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
@@ -525,6 +526,7 @@ def format_solution_node(state: State, config=None) -> dict:
                     "workday_index": workday_index, 
                     "phase_component_index": phase_component_index, 
                     "phase_component_id": phase_component_id,
+                    "bodypart_id": bodypart_id,
                     "seconds_per_exercise": seconds_per_exercise, 
                     "active_phase_components": active_phase_components, 
                     "reps_var": reps_var, 

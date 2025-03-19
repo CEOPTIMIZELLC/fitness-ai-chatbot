@@ -2,7 +2,7 @@ from flask import request, jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Phase_Component_Library, Phase_Components_Component_Library, Phase_Component_Bodyparts, User_Workout_Days, User_Microcycles, User_Mesocycles, User_Macrocycles
+from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Phase_Component_Library, Phase_Components_Component_Library, Phase_Component_Bodyparts, User_Workout_Days, User_Workout_Components, User_Microcycles, User_Mesocycles, User_Macrocycles
 from datetime import datetime, timedelta
 
 bp = Blueprint('user_workout_days', __name__)
@@ -88,10 +88,19 @@ def workout_day_initializer():
 
     microcycle_weekdays = []
 
+    user_workdays = []
+
     # Loop through the number of iterations
     for i in range(user_microcycle.duration.days):
         # Calculate the current number using modulo to handle the circular nature
         microcycle_weekdays.append((weekday_number + i) % 7)
+
+        new_workday = User_Workout_Days(
+            microcycle_id = user_microcycle.id,
+            order = i+1,
+            date = (user_microcycle.start_date + timedelta(days=i))
+        )
+        user_workdays.append(new_workday)
 
     config["parameters"]["microcycle_weekdays"] = microcycle_weekdays
 
@@ -110,10 +119,10 @@ def workout_day_initializer():
         # If the phase component is resistance, append it multiple times.
         if possible_phase_component.component_id == 6:
             for possible_phase_component_bodypart in possible_phase_component_bodyparts:
-                possible_phase_components_list.append(possible_phase_component.to_dict() | {"bodypart": possible_phase_component_bodypart.bodyparts.name})
+                possible_phase_components_list.append(possible_phase_component.to_dict() | {"bodypart_id": possible_phase_component_bodypart.bodypart_id, "bodypart": possible_phase_component_bodypart.bodyparts.name})
         # Append only once for full body if any other phase component.
         else:
-            possible_phase_components_list.append(possible_phase_component.to_dict() | {"bodypart": "total_body"})
+            possible_phase_components_list.append(possible_phase_component.to_dict() | {"bodypart_id": 1, "bodypart": "total_body"})
 
     config["parameters"]["phase_components"] = possible_phase_components_list
 
@@ -122,27 +131,23 @@ def workout_day_initializer():
     print(result["formatted"])
     phase_components_output = result["output"]
 
-    user_workdays = []
-    order = 1
     for phase_component in phase_components_output:
-        #print(i)
-        #print(i["workday_index"], user_microcycle.start_date, user_microcycle.start_date + timedelta(days=i["workday_index"]))
-        new_workday = User_Workout_Days(
-            microcycle_id = user_microcycle.id,
+        # Create a new component entry.
+        new_component = User_Workout_Components(
             phase_component_id = phase_component["phase_component_id"],
-            order = order,
-            date = (user_microcycle.start_date + timedelta(days=phase_component["workday_index"])),
+            bodypart_id = phase_component["bodypart_id"],
+            order = 0,
             rep = phase_component["reps_var"],
             sets = phase_component["sets_var"],
             intensity = 0,
             rest = phase_component["rest_var"],
             exercises_per_bodypart = phase_component["bodypart_var"]
         )
-        user_workdays.append(new_workday)
-        order += 1
+
+        # Append the component to its corresponding workday.
+        user_workdays[phase_component["workday_index"]].workout_components.append(new_component)
 
     db.session.add_all(user_workdays)
     db.session.commit()
 
     return result
-

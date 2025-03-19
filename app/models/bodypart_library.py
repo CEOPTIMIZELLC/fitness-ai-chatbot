@@ -20,6 +20,11 @@ class Bodypart_Library(db.Model):
         back_populates = "bodyparts",
         cascade="all, delete-orphan")
 
+    workout_components = db.relationship(
+        "User_Workout_Components",
+        back_populates = "bodyparts",
+        cascade="all, delete-orphan")
+
     def to_dict(self):
         return {
             "id": self.id,
