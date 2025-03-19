@@ -170,7 +170,7 @@ def workout_day_initializer():
 
 
 # Testing for the parameter programming for mesocycle labeling.
-@bp.route('/test', methods=['GET'])
+@bp.route('/test', methods=['GET', 'POST'])
 def phase_component_classification_test():
     test_results = []
 

@@ -154,7 +154,7 @@ def mesocycle_phases():
 
 
 # Testing for the parameter programming for mesocycle labeling.
-@bp.route('/test', methods=['GET'])
+@bp.route('/test', methods=['GET', 'POST'])
 def phase_classification_test():
     test_results = []
 
@@ -178,7 +178,6 @@ def phase_classification_test():
     
 
     # Retrieve all possible goals.
-    #goals = (db.session.query(Goal_Library.id).group_by(Goal_Library.id).all())
     goals = (
         db.session.query(Goal_Library.id)
         .join(Goal_Phase_Requirements, Goal_Library.id == Goal_Phase_Requirements.goal_id)  # Adjust column names as necessary
