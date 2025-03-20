@@ -86,7 +86,7 @@ def agent_output_to_sqlalchemy_model(phase_components_output, user_workdays):
             phase_component_id = phase_component["phase_component_id"],
             bodypart_id = phase_component["bodypart_id"],
             order = 0,
-            rep = phase_component["reps_var"],
+            reps = phase_component["reps_var"],
             sets = phase_component["sets_var"],
             intensity = 0,
             rest = phase_component["rest_var"],

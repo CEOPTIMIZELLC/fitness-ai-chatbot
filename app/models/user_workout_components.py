@@ -20,7 +20,7 @@ class User_Workout_Components(db.Model):
         db.Integer,
         comment='The order of the workout_component for the current workout_day.')
 
-    rep = db.Column(
+    reps = db.Column(
         db.Integer, 
         nullable=False,
         comment='The number of repetitions for a single exercise for the phase subcomponent.')
@@ -66,7 +66,7 @@ class User_Workout_Components(db.Model):
             "bodypart_id": self.bodypart_id,
             "bodypart_name": self.bodyparts.name,
             "order": self.order,
-            "rep": self.rep,
+            "reps": self.reps,
             "sets": self.sets,
             "intensity": self.intensity,
             "rest": self.rest,
