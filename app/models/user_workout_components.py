@@ -16,32 +16,10 @@ class User_Workout_Components(db.Model):
     phase_component_id = db.Column(db.Integer, db.ForeignKey("phase_component_library.id"), nullable=False)
     bodypart_id = db.Column(db.Integer, db.ForeignKey("bodypart_library.id"), nullable=False)
 
-    order = db.Column(
-        db.Integer,
-        comment='The order of the workout_component for the current workout_day.')
-
-    reps = db.Column(
+    duration = db.Column(
         db.Integer, 
         nullable=False,
-        comment='The number of repetitions for a single exercise for the phase subcomponent.')
-
-    sets = db.Column(
-        db.Integer, 
-        nullable=False,
-        comment='The number of sets of repetitions for a single exercise for the phase subcomponent.')
-
-    intensity = db.Column(
-        db.Integer, 
-        comment='The amount of intensity for a single exercise for the phase subcomponent.')
-
-    rest = db.Column(
-        db.Integer, 
-        nullable=False,
-        comment='The amount of time to rest for a single exercise for the phase subcomponent.')
-
-    exercises_per_bodypart = db.Column(
-        db.Integer, 
-        comment='The number of exercises per bodypart included for the phase component.')
+        comment='The duration that the phase component is projected to last.')
 
 
     # Relationships
@@ -65,10 +43,5 @@ class User_Workout_Components(db.Model):
             "phase_component_subcomponent": self.phase_components.sub_component,
             "bodypart_id": self.bodypart_id,
             "bodypart_name": self.bodyparts.name,
-            "order": self.order,
-            "reps": self.reps,
-            "sets": self.sets,
-            "intensity": self.intensity,
-            "rest": self.rest,
-            "exercises_per_bodypart": self.exercises_per_bodypart
+            "duration": self.duration
         }

@@ -1,3 +1,14 @@
+
+# Links each entry and item with the "used" variables, determining if item j is the item at entry i.
+def link_entry_and_item(model, items, entry_vars, number_of_entries, used_vars):
+    for i in range(number_of_entries):
+        for j in range(len(items)):
+            # Ensures that if an item is chosen (used_vars[i][j] is True), then:
+            # The corresponding entry_vars[i] must match the index j.
+            model.Add(entry_vars[i] == j).OnlyEnforceIf(used_vars[i][j])
+            model.Add(entry_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
+    return model
+
 # Define and create a list of variables to determine if an entry is active.
 # As well, this will constrain the possible items that an inactive entry can have to be an invalid one.
 def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration_vars, active_entry_vars):
@@ -18,18 +29,10 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
     
     return model
 
-
-# Constraint: The duration of a item may only be a number of weeks between the minimum and maximum values allowed.
-# Links each entry and item with the "used" variables, determining if item j is the item at entry i.
-# They key to be used to find the corresponding minimum and/or maximum duration will be given.
-def entry_within_min_max(model, items, minimum_key, maximum_key, entry_vars, number_of_entries, used_vars, duration_vars):
+# Constraint: The duration of a item may only be a value between the minimum and maximum values allowed.
+def entry_within_min_max(model, items, minimum_key, maximum_key, number_of_entries, used_vars, duration_vars):
     for i in range(number_of_entries):
         for j, item in enumerate(items):
-            # Ensures that if an item is chosen (used_vars[i][j] is True), then:
-            # The corresponding entry_vars[i] must match the index j.
-            model.Add(entry_vars[i] == j).OnlyEnforceIf(used_vars[i][j])
-            model.Add(entry_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
-
             # The duration_vars[i] must be within the allowed range.
             model.Add(duration_vars[i] >= item[minimum_key]).OnlyEnforceIf(used_vars[i][j])
             model.Add(duration_vars[i] <= item[maximum_key]).OnlyEnforceIf(used_vars[i][j])
@@ -197,7 +200,7 @@ def use_microcycle_required_components(model, required_phase_components, active_
     return model
 
 # Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
-def frequency_within_min_max(model, phase_components, active_phase_components):
+def frequency_within_min_max(model, phase_components, active_phase_components, min_key, max_key):
     # Boolean variables indicating whether the phase component has been used at least once in the microcycle
     used_phase_components = [
         model.NewBoolVar(f'phase_component_{i}_is_active') 
@@ -216,10 +219,10 @@ def frequency_within_min_max(model, phase_components, active_phase_components):
         model.Add(sum(active_window) == 0).OnlyEnforceIf(used_phase_components[phase_component_index].Not())
 
         # Constrain to be between the minimum and maximum allowed (if one exists)
-        if phase_component["frequency_per_microcycle_min"]:
-            model.Add(sum(active_window) >= phase_component["frequency_per_microcycle_min"]).OnlyEnforceIf(used_phase_components[phase_component_index])
-        if phase_component["frequency_per_microcycle_max"]:
-            model.Add(sum(active_window) <= phase_component["frequency_per_microcycle_max"]).OnlyEnforceIf(used_phase_components[phase_component_index])
+        if phase_component[min_key]:
+            model.Add(sum(active_window) >= phase_component[min_key]).OnlyEnforceIf(used_phase_components[phase_component_index])
+        if phase_component[max_key]:
+            model.Add(sum(active_window) <= phase_component[max_key]).OnlyEnforceIf(used_phase_components[phase_component_index])
     return model
 
 # Constraint: Every bodypart division must be done consecutively for a phase component.
@@ -238,4 +241,19 @@ def consecutive_bodyparts_for_component(model, phase_components, active_phase_co
                 first_var = required_phase_components_for_day[0]
                 for var in required_phase_components_for_day[1:]:
                     model.Add(var == first_var)
+    return model
+
+
+# Constraint: The numer of exercises may only be a number of exercises between the minimum and maximum exercises per bodypart allowed.
+def exercises_per_bodypart_within_min_max(model, items, minimum_key, maximum_key, used_vars):
+    # Each required phase component
+    for i, item in enumerate(items[1:], start=1):
+        # Retrieve the count for every exercise of the phase type.
+        exercises_of_phase = [exercise_phases[i] for exercise_phases in used_vars]
+
+        # Constrain to be between the minimum and maximum allowed (if one exists)
+        if item[minimum_key]:
+            model.Add(sum(exercises_of_phase) >= item[minimum_key])
+        if item[maximum_key]:
+            model.Add(sum(exercises_of_phase) <= item[maximum_key])
     return model

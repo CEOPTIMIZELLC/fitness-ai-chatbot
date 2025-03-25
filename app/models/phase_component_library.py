@@ -102,6 +102,11 @@ class Phase_Component_Library(db.Model):
     subcomponents = db.relationship(
         "Phase_Components_Subcomponent_Library",
         back_populates = "phase_components")
+    
+    user_exercises = db.relationship(
+        "User_Exercises",
+        back_populates = "phase_components",
+        cascade="all, delete-orphan")
 
     workout_components = db.relationship(
         "User_Workout_Components",

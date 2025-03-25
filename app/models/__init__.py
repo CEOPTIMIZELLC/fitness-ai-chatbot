@@ -16,6 +16,7 @@ from .user_mesocycles import User_Mesocycles
 from .user_microcycles import User_Microcycles
 from .user_workout_days import User_Workout_Days
 from .user_workout_components import User_Workout_Components
+from .user_exercises import User_Exercises
 from .users import Users
 
 __all__ = [
@@ -36,6 +37,7 @@ __all__ = [
     "User_Microcycles",
     "User_Workout_Days",
     "User_Workout_Components",
+    "User_Exercises",
     "Users"
     ] 
 

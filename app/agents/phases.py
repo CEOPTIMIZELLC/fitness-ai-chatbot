@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 
 from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
-from app.agents.constraints import constrain_active_entries_vars, entry_within_min_max, no_consecutive_identical_active_items, no_n_active_items_without_desired_item, only_use_required_items, use_all_required_items
+from app.agents.constraints import link_entry_and_item, constrain_active_entries_vars, entry_within_min_max, no_consecutive_identical_active_items, no_n_active_items_without_desired_item, only_use_required_items, use_all_required_items
 
 
 _ = load_dotenv()
@@ -141,13 +141,18 @@ def build_opt_model_node(state: State, config=None) -> dict:
     # Apply active constraints ======================================
     state["logs"] += "\nBuilding model with constraints:\n"
 
+    model = link_entry_and_item(model = model, 
+                                 items = phases, 
+                                 entry_vars = mesocycle_vars, 
+                                 number_of_entries = max_mesocycles, 
+                                 used_vars = used_vars)
+
     # Constraint: The duration of a phase may only be a number of weeks between the minimum and maximum weeks allowed.
     if constraints["phase_within_min_max"]:
         model = entry_within_min_max(model = model, 
                                      items = phases, 
                                      minimum_key="element_minimum", 
                                      maximum_key="element_maximum",
-                                     entry_vars = mesocycle_vars, 
                                      number_of_entries = max_mesocycles, 
                                      used_vars = used_vars, 
                                      duration_vars = duration_vars)

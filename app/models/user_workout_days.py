@@ -35,14 +35,23 @@ class User_Workout_Days(db.Model):
         back_populates = "workout_days",
         cascade="all, delete-orphan")
 
+    exercises = db.relationship(
+        "User_Exercises",
+        back_populates = "workout_days",
+        cascade="all, delete-orphan")
+
     def to_dict(self):
         components = []
         for workout_component in self.workout_components:
             components.append(workout_component.to_dict())
+        exercises = []
+        for exercise in self.exercises:
+            exercises.append(exercise.to_dict())
         return {
             "id": self.id,
             "microcycle_id": self.microcycle_id,
             "order": self.order,
             "date": self.date,
-            "components": components
+            "components": components,
+            "exercises": exercises
         }

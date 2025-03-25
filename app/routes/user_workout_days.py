@@ -39,6 +39,7 @@ def retrieve_phase_component_bodyparts(phase_id):
     )
     return possible_phase_component_bodyparts    
 
+# Using the information for the phase components, generate the phase components with the minimum and maximum possible values.
 def construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts):
     possible_phase_components_list = []
 
@@ -47,13 +48,45 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
         # If the phase component is resistance, append it multiple times.
         if possible_phase_component.component_id == 6:
             for possible_phase_component_bodypart in possible_phase_component_bodyparts:
-                possible_phase_components_list.append(
-                    possible_phase_component.to_dict() | {
+                possible_phase_components_list.append({
+                    "id": possible_phase_component.id,
+                    "sub_component": possible_phase_component.sub_component,
+                    "required_every_workout": possible_phase_component.required_every_workout,
+                    "required_within_microcycle": possible_phase_component.required_within_microcycle,
+                    "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
+                    "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
+                    "duration_min": (
+                        (possible_phase_component.exercises_per_bodypart_workout_min or 1)
+                        * (possible_phase_component.seconds_per_exercise * possible_phase_component.reps_min + possible_phase_component.rest_min) 
+                        * possible_phase_component.sets_min
+                    ),
+                    "duration_max": (
+                        (possible_phase_component.exercises_per_bodypart_workout_max or 1)
+                        * (possible_phase_component.seconds_per_exercise * possible_phase_component.reps_max + possible_phase_component.rest_max) 
+                        * possible_phase_component.sets_max),
                     "bodypart_id": possible_phase_component_bodypart.bodypart_id, 
-                    "bodypart": possible_phase_component_bodypart.bodyparts.name})
+                    "bodypart": possible_phase_component_bodypart.bodyparts.name
+                    })
         # Append only once for full body if any other phase component.
         else:
-            possible_phase_components_list.append(possible_phase_component.to_dict() | {"bodypart_id": 1, "bodypart": "total_body"})
+            possible_phase_components_list.append({
+                "id": possible_phase_component.id,
+                "sub_component": possible_phase_component.sub_component,
+                "required_every_workout": possible_phase_component.required_every_workout,
+                "required_within_microcycle": possible_phase_component.required_within_microcycle,
+                "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
+                "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
+                "duration_min": (
+                    (possible_phase_component.exercises_per_bodypart_workout_min or 1)
+                    * (possible_phase_component.seconds_per_exercise * possible_phase_component.reps_min + possible_phase_component.rest_min) 
+                    * possible_phase_component.sets_min
+                ),
+                "duration_max": (
+                    (possible_phase_component.exercises_per_bodypart_workout_max or 1)
+                    * (possible_phase_component.seconds_per_exercise * possible_phase_component.reps_max + possible_phase_component.rest_max) 
+                    * possible_phase_component.sets_max),
+                "bodypart_id": 1, "bodypart": "total_body"
+            })
     
     return possible_phase_components_list
 
@@ -85,12 +118,7 @@ def agent_output_to_sqlalchemy_model(phase_components_output, user_workdays):
         new_component = User_Workout_Components(
             phase_component_id = phase_component["phase_component_id"],
             bodypart_id = phase_component["bodypart_id"],
-            order = 0,
-            reps = phase_component["reps_var"],
-            sets = phase_component["sets_var"],
-            intensity = 0,
-            rest = phase_component["rest_var"],
-            exercises_per_bodypart = phase_component["bodypart_var"]
+            duration = phase_component["duration_var"]
         )
 
         # Append the component to its corresponding workday.
@@ -130,7 +158,7 @@ def get_user_current_workout_day():
     return jsonify({"status": "success", "phase_component": user_workout_day.to_dict()}), 200
 
 
-# Gives four mirocycles for microcycle.
+# Assigns phase components to days along with projected length.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def workout_day_initializer():
@@ -157,6 +185,8 @@ def workout_day_initializer():
 
     config["parameters"]["phase_components"] = possible_phase_components_list
 
+    result = []
+
     result = phase_component_main(parameter_input=config)
     print(result["formatted"])
 
@@ -169,7 +199,7 @@ def workout_day_initializer():
 
 
 
-# Testing for the parameter programming for mesocycle labeling.
+# Testing for the parameter programming for phase component assignment.
 @bp.route('/test', methods=['GET', 'POST'])
 def phase_component_classification_test():
     test_results = []
@@ -210,6 +240,9 @@ def phase_component_classification_test():
         possible_phase_components_list = construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)
 
         config["parameters"]["phase_components"] = possible_phase_components_list
+
+        '''for i in possible_phase_components_list:
+            print(i)'''
 
         result = phase_component_main(parameter_input=config)
         print(str(phase.id))
