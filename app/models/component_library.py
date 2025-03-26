@@ -1,12 +1,12 @@
 from app import db
 
-# The subcomponents that exist for phase components.
-class Phase_Components_Subcomponent_Library(db.Model):
+# The components that exist for phase components.
+class Component_Library(db.Model):
     __table_args__ = {
-        'comment': "The library of subcomponents that exist for phase components."
+        'comment': "The library of components that exist for phase components."
     }
     # Fields
-    __tablename__ = "phase_components_subcomponent_library"
+    __tablename__ = "component_library"
     id = db.Column(db.Integer, primary_key=True)
     
     name = db.Column(
@@ -17,7 +17,12 @@ class Phase_Components_Subcomponent_Library(db.Model):
     # Relationships
     phase_components = db.relationship(
         "Phase_Component_Library",
-        back_populates = "subcomponents",
+        back_populates = "components",
+        cascade="all, delete-orphan")
+
+    phase_component_bodyparts = db.relationship(
+        "Phase_Component_Bodyparts",
+        back_populates = "components",
         cascade="all, delete-orphan")
 
     def to_dict(self):

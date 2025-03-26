@@ -2,7 +2,7 @@ from flask import request, jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Phase_Component_Library, Phase_Components_Component_Library, Phase_Component_Bodyparts, User_Exercises, User_Workout_Days, User_Workout_Components, User_Microcycles, User_Mesocycles, User_Macrocycles
+from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Phase_Component_Library, Component_Library, Phase_Component_Bodyparts, User_Exercises, User_Workout_Days, User_Workout_Components, User_Microcycles, User_Mesocycles, User_Macrocycles
 from datetime import datetime, timedelta
 
 bp = Blueprint('user_exercises', __name__)

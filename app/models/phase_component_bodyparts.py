@@ -9,7 +9,7 @@ class Phase_Component_Bodyparts(db.Model):
     __tablename__ = "phase_component_bodyparts"
     id = db.Column(db.Integer, primary_key=True)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey("phase_components_component_library.id"), nullable=False)
+    component_id = db.Column(db.Integer, db.ForeignKey("component_library.id"), nullable=False)
     bodypart_id = db.Column(db.Integer, db.ForeignKey("bodypart_library.id"), nullable=False)
 
     required_within_microcycle = db.Column(
@@ -23,7 +23,7 @@ class Phase_Component_Bodyparts(db.Model):
         back_populates = "phase_component_bodyparts")
 
     components = db.relationship(
-        "Phase_Components_Component_Library",
+        "Component_Library",
         back_populates = "phase_component_bodyparts")
 
     bodyparts = db.relationship(

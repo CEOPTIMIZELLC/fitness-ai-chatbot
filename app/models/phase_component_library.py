@@ -9,8 +9,8 @@ class Phase_Component_Library(db.Model):
     __tablename__ = "phase_component_library"
     id = db.Column(db.Integer, primary_key=True)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey("phase_components_component_library.id"), nullable=False)
-    subcomponent_id = db.Column(db.Integer, db.ForeignKey("phase_components_subcomponent_library.id"), nullable=False)
+    component_id = db.Column(db.Integer, db.ForeignKey("component_library.id"), nullable=False)
+    subcomponent_id = db.Column(db.Integer, db.ForeignKey("subcomponent_library.id"), nullable=False)
 
     sub_component = db.Column(
         db.String(50),
@@ -96,11 +96,11 @@ class Phase_Component_Library(db.Model):
         back_populates = "phase_components")
 
     components = db.relationship(
-        "Phase_Components_Component_Library",
+        "Component_Library",
         back_populates = "phase_components")
 
     subcomponents = db.relationship(
-        "Phase_Components_Subcomponent_Library",
+        "Subcomponent_Library",
         back_populates = "phase_components")
     
     user_exercises = db.relationship(

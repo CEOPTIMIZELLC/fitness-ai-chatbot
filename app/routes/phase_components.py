@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 
-from app.models import Phase_Component_Library, Phase_Components_Component_Library, Phase_Components_Subcomponent_Library
+from app.models import Phase_Component_Library, Component_Library, Subcomponent_Library
 
 bp = Blueprint('phase_components', __name__)
 
@@ -14,12 +14,12 @@ def get_phase_components_all():
     for phase_component in phase_components:
         phase_components_result.append(phase_component.to_dict())
 
-    components = Phase_Components_Component_Library.query.all()
+    components = Component_Library.query.all()
     components_result = []
     for component in components:
         components_result.append(component.to_dict())
 
-    subcomponents = Phase_Components_Subcomponent_Library.query.all()
+    subcomponents = Subcomponent_Library.query.all()
     subcomponents_result = []
     for subcomponent in subcomponents:
         subcomponents_result.append(subcomponent.to_dict())
@@ -53,7 +53,7 @@ def read_phase_component(phase_component_id):
 # Retrieve phase components
 @bp.route('/components', methods=['GET'])
 def get_components_list():
-    components = Phase_Components_Component_Library.query.all()
+    components = Component_Library.query.all()
     result = []
     for component in components:
         result.append(component.to_dict())
@@ -62,7 +62,7 @@ def get_components_list():
 # Show phase components based on id.
 @bp.route('/components/<component_id>', methods=['GET'])
 def read_component(component_id):
-    component = Phase_Components_Component_Library.query.filter_by(id=component_id).first()
+    component = Component_Library.query.filter_by(id=component_id).first()
     if not component:
         return jsonify({"status": "error", "message": "Phase Component " + component_id + " not found."}), 404
     return jsonify(component.to_dict()), 200
@@ -71,7 +71,7 @@ def read_component(component_id):
 # Retrieve phase subcomponents
 @bp.route('/subcomponents', methods=['GET'])
 def get_subcomponents_list():
-    subcomponents = Phase_Components_Subcomponent_Library.query.all()
+    subcomponents = Subcomponent_Library.query.all()
     result = []
     for subcomponent in subcomponents:
         result.append(subcomponent.to_dict())
@@ -80,7 +80,7 @@ def get_subcomponents_list():
 # Show phase subcomponents based on id.
 @bp.route('/subcomponents/<subcomponent_id>', methods=['GET'])
 def read_subcomponent(subcomponent_id):
-    subcomponent = Phase_Components_Subcomponent_Library.query.filter_by(id=subcomponent_id).first()
+    subcomponent = Subcomponent_Library.query.filter_by(id=subcomponent_id).first()
     if not subcomponent:
         return jsonify({"status": "error", "message": "Phase Component " + subcomponent_id + " not found."}), 404
     return jsonify(subcomponent.to_dict()), 200

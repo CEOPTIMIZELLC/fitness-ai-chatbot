@@ -7,8 +7,8 @@ from .goal_library import Goal_Library
 from .goal_phase_requirements import Goal_Phase_Requirements
 from .phase_component_library import Phase_Component_Library
 from .phase_component_bodyparts import Phase_Component_Bodyparts
-from .phase_components_component_library import Phase_Components_Component_Library
-from .phase_components_subcomponent_library import Phase_Components_Subcomponent_Library
+from .component_library import Component_Library
+from .subcomponent_library import Subcomponent_Library
 from .phase_library import Phase_Library
 from .user_equipment import User_Equipment
 from .user_macrocycles import User_Macrocycles
@@ -28,9 +28,9 @@ __all__ = [
     "Goal_Phase_Requirements",
     "Phase_Component_Library",
     "Phase_Component_Bodyparts",
-    "Phase_Components_Component_Library",
+    "Component_Library",
     "Phase_Library",
-    "Phase_Components_Subcomponent_Library",
+    "Subcomponent_Library",
     "User_Equipment",
     "User_Macrocycles",
     "User_Mesocycles",
