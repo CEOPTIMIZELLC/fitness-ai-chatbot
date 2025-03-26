@@ -526,14 +526,14 @@ def format_solution_node(state: State, config=None) -> dict:
                 phase_component_count[phase_component_index] += 1
 
                 formatted_duration = f"Duration: {duration // 60} min {duration % 60} sec ({duration} seconds)\t"
-                formatted_duration = f"Working Duration: {working_duration  // 60} min {working_duration  % 60} sec ({working_duration:<{4}} seconds)\t"
+                formatted_working_duration = f"Working Duration: {working_duration  // 60} min {working_duration  % 60} sec ({working_duration:<{4}} seconds)\t"
 
                 formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
-                formatted_reps = f"Reps {reps_var} ({phase_component["reps_min"]:<{3}}- {phase_component["reps_max"]:<{3}})\t"
-                formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]:<{2}}- {phase_component["sets_max"]:<{2}})\t"
-                formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})\t"
+                formatted_reps = f"Reps {reps_var:<{3}} ({phase_component["reps_min"]:<{3}}- {phase_component["reps_max"]:<{3}})\t"
+                formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]}- {phase_component["sets_max"]})\t"
+                formatted_rest = f"Rest {rest_var:<{3}} ({(phase_component["rest_min"] * 5):<{3}}-  {(phase_component["rest_max"] * 5):<{3}})"
 
-                formatted += (f"Exercise {(component_count + 1):<{3}}: {phase_component_name:<{longest_string_size+3}} {formatted_duration} ({formatted_seconds_per_exercises} {formatted_reps} {formatted_sets} {formatted_rest})\n")
+                formatted += (f"Exercise {(component_count + 1):<{3}}: {phase_component_name:<{longest_string_size+3}} {formatted_duration} {formatted_working_duration} ({formatted_seconds_per_exercises} {formatted_reps} {formatted_sets} {formatted_rest})\n")
             else:
                 formatted += (f"Exercise {(component_count + 1):<{3}} ----\n")
 
