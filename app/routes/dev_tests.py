@@ -18,7 +18,7 @@ from app.helper_functions.table_context_parser import context_retriever_app
 
 from app.agents.cp_pulp import Main as cp_pulp_main
 from app.agents.cp_ortools import Main as cp_ortools_main
-from app.helper_functions.cp_pulp_equipment_test import Main as cp_pulp_equipment_test_main
+#from app.helper_functions.cp_pulp_equipment_test import Main as cp_pulp_equipment_test_main
 
 # ----------------------------------------- Dev Tests -----------------------------------------
 
@@ -141,7 +141,7 @@ def test_cp_ortools():
     #results["result_1"] = result_1
 
     return results
-
+'''
 # Testing for constrain programming.
 @bp.route('/test_cp_pulp_equipment', methods=['GET'])
 def test_cp_pulp_equipment():
@@ -152,4 +152,4 @@ def test_cp_pulp_equipment():
     print(result_1["output"])
     #results["result_1"] = result_1
 
-    return results
+    return results'''

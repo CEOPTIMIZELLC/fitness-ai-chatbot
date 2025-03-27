@@ -10,7 +10,7 @@ from flask_login import current_user
 
 from sqlalchemy.sql import func, distinct
 from app import db
-from app.models import Exercise_Library, Equipment_Library, Exercise_Equipment, User_Equipment
+from app.models import Exercise_Library, Equipment_Library, User_Equipment
 
 bp = Blueprint('exercises', __name__)
 
@@ -20,7 +20,8 @@ bp = Blueprint('exercises', __name__)
 @bp.route('/', methods=['GET'])
 @login_required
 def get_exercises_user_can_perform():
-    # Subquery: Count distinct equipment types needed per exercise
+    return "Done"
+'''    # Subquery: Count distinct equipment types needed per exercise
     equipment_needed = (
         db.session.query(
             Exercise_Equipment.exercise_id,
@@ -58,3 +59,4 @@ def get_exercises_user_can_perform():
     for exercise in exercises:
         result.append(exercise.to_dict())
     return jsonify({"status": "success", "exercises": result}), 200
+'''

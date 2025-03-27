@@ -52,50 +52,54 @@ def initialize_db():
     drop_db()
     create_db()
 
-    # Populate items.
-    from app.existing_data.bodyparts import bodyparts
-    db.session.add_all(bodyparts)
-    db.session.commit()
+    # # Populate items.
+    # from app.existing_data.bodyparts import bodyparts
+    # db.session.add_all(bodyparts)
+    # db.session.commit()
 
-    from app.existing_data.goals import goals
-    db.session.add_all(goals)
-    db.session.commit()
+    # from app.existing_data.goals import goals
+    # db.session.add_all(goals)
+    # db.session.commit()
 
-    from app.existing_data.phases import phases
-    db.session.add_all(phases)
-    db.session.commit()
+    # from app.existing_data.phases import phases
+    # db.session.add_all(phases)
+    # db.session.commit()
 
-    from app.existing_data.components import components
-    db.session.add_all(components)
-    db.session.commit()
+    # from app.existing_data.components import components
+    # db.session.add_all(components)
+    # db.session.commit()
 
-    from app.existing_data.subcomponents import subcomponents
-    db.session.add_all(subcomponents)
-    db.session.commit()
+    # from app.existing_data.subcomponents import subcomponents
+    # db.session.add_all(subcomponents)
+    # db.session.commit()
 
-    from app.existing_data.phase_components import phase_components
-    db.session.add_all(phase_components)
-    db.session.commit()
+    # from app.existing_data.phase_components import phase_components
+    # db.session.add_all(phase_components)
+    # db.session.commit()
 
-    from app.existing_data.phase_components_bodyparts import component_bodyparts
-    db.session.add_all(component_bodyparts)
-    db.session.commit()
+    # from app.existing_data.phase_components_bodyparts import component_bodyparts
+    # db.session.add_all(component_bodyparts)
+    # db.session.commit()
 
-    from app.existing_data.goal_phase_requirements import goal_phase_requirements
-    db.session.add_all(goal_phase_requirements)
-    db.session.commit()
+    # from app.existing_data.goal_phase_requirements import goal_phase_requirements
+    # db.session.add_all(goal_phase_requirements)
+    # db.session.commit()
 
-    from app.existing_data.equipment import equipment
-    db.session.add_all(equipment)
-    db.session.commit()
+    # from app.existing_data.equipment import equipment
+    # db.session.add_all(equipment)
+    # db.session.commit()
 
-    from app.existing_data.exercises import exercises
-    db.session.add_all(exercises)
-    db.session.commit()
+    # from app.existing_data.exercises import exercises
+    # db.session.add_all(exercises)
+    # db.session.commit()
 
-    from app.existing_data.exercise_equipment import exercise_equipment
-    db.session.add_all(exercise_equipment)
-    db.session.commit()
+    # from app.existing_data.exercise_equipment import exercise_equipment
+    # db.session.add_all(exercise_equipment)
+    # db.session.commit()
+
+    from app.existing_data.import_existing_data import Main as import_data_main
+
+    import_data_main("OPT Phase Breakdown.xlsx")
 
     if ('email' in request.form 
         and 'password' in request.form 
@@ -111,9 +115,9 @@ def initialize_db():
         db.session.add_all(user_macrocycles)
         db.session.commit()
 
-        from app.existing_data.user_equipment import user_equipment
+        '''from app.existing_data.user_equipment import user_equipment
         db.session.add_all(user_equipment)
-        db.session.commit()
+        db.session.commit()'''
 
     current_app.table_schema = get_database_schema(db)
 
