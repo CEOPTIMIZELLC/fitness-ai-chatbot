@@ -15,6 +15,16 @@ class Bodypart_Library(db.Model):
         nullable=False)
 
     # Relationships
+    categories = db.relationship(
+        "Muscle_Categories",
+        back_populates = "bodyparts",
+        cascade="all, delete-orphan")
+
+    exercises = db.relationship(
+        "Exercise_Bodyparts",
+        back_populates = "bodyparts",
+        cascade="all, delete-orphan")
+
     phase_component_bodyparts = db.relationship(
         "Phase_Component_Bodyparts",
         back_populates = "bodyparts",

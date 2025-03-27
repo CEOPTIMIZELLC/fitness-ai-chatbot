@@ -14,6 +14,25 @@ class Subcomponent_Library(db.Model):
         unique=True,
         nullable=False)
 
+    density = db.Column(
+        db.Integer, 
+        nullable=False,
+        comment='')
+
+    volume = db.Column(
+        db.Integer, 
+        nullable=False,
+        comment='')
+
+    load = db.Column(
+        db.Integer, 
+        nullable=False,
+        comment='')
+
+    explanation = db.Column(
+        db.String(255),
+        comment='')
+
     # Relationships
     phase_components = db.relationship(
         "Phase_Component_Library",
@@ -23,5 +42,10 @@ class Subcomponent_Library(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.name
+            "name": self.name,
+            "name": self.name,
+            "density": self.density,
+            "volume": self.volume,
+            "load": self.load,
+            "explanation": self.explanation
         }

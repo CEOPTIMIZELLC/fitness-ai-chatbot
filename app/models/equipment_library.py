@@ -22,11 +22,6 @@ class Equipment_Library(db.Model):
         comment='E.g., kilograms, centimeters')
     
     # Relationships
-    exercises = db.relationship(
-        "Exercise_Equipment",
-        back_populates = "equipment",
-        cascade="all, delete-orphan")
-
     users = db.relationship(
         "User_Equipment",
         back_populates = "equipment",

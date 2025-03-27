@@ -1,10 +1,17 @@
 from app import db
+from .body_region_library import Body_Region_Library
 from .bodypart_library import Bodypart_Library
 from .equipment_library import Equipment_Library
-from .exercise_equipment import Exercise_Equipment
 from .exercise_library import Exercise_Library
+from .exercise_body_regions import Exercise_Body_Regions
+from .exercise_bodyparts import Exercise_Bodyparts
+from .exercise_muscle_groups import Exercise_Muscle_Groups
+from .exercise_muscles import Exercise_Muscles
 from .goal_library import Goal_Library
 from .goal_phase_requirements import Goal_Phase_Requirements
+from .muscle_categories import Muscle_Categories
+from .muscle_group_library import Muscle_Group_Library
+from .muscle_library import Muscle_Library
 from .phase_component_library import Phase_Component_Library
 from .phase_component_bodyparts import Phase_Component_Bodyparts
 from .component_library import Component_Library
@@ -20,17 +27,23 @@ from .user_exercises import User_Exercises
 from .users import Users
 
 __all__ = [
+    "Body_Region_Library",
     "Bodypart_Library",
-    "Equipment_Library",
-    "Exercise_Equipment",
     "Exercise_Library",
+    "Exercise_Body_Regions",
+    "Exercise_Bodyparts",
+    "Exercise_Muscle_Groups",
+    "Exercise_Muscles",
     "Goal_Library",
     "Goal_Phase_Requirements",
+    "Muscle_Categories",
+    "Muscle_Group_Library",
+    "Muscle_Library",
     "Phase_Component_Library",
     "Phase_Component_Bodyparts",
     "Component_Library",
-    "Phase_Library",
     "Subcomponent_Library",
+    "Phase_Library",
     "User_Equipment",
     "User_Macrocycles",
     "User_Mesocycles",
@@ -38,7 +51,7 @@ __all__ = [
     "User_Workout_Days",
     "User_Workout_Components",
     "User_Exercises",
-    "Users"
+    "Users",
     ] 
 
 tables_dict = {table.__tablename__: table for table in db.Model.__subclasses__()}

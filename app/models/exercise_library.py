@@ -14,40 +14,60 @@ class Exercise_Library(db.Model):
         unique=True, 
         nullable=False, 
         comment='E.g., Squat, Dead Bug Exercise')
+
+    base_strain = db.Column(
+        db.Integer, 
+        nullable=False,
+        comment='The base strain for the exercise.')
+
+    technical_difficulty = db.Column(
+        db.Integer, 
+        nullable=False,
+        comment='The difficulty to perform the exercise.')
     
-    movement_type = db.Column(
-        db.String(50), 
-        nullable=False, 
-        comment='E.g., Compound, Isolation')
-    
-    primary_muscle_group = db.Column(
-        db.String(50), 
-        nullable=False, 
-        comment='E.g., Quadriceps, Chest')
-    
-    tempo = db.Column(
-        db.String(50), 
-        nullable=False, 
-        comment='E.g., 2-0-2, 3-1-2')
-    
-    tracking = db.Column(
-        db.String(50), 
-        nullable=False, 
-        comment='E.g., {"reps": 10, "time": 30, "weight": 50}')
+    tags = db.Column(db.String(50))
+    sides = db.Column(db.String(50))
+    body_position = db.Column(db.String(50))
+    option_for_added_weight = db.Column(db.String(50))
+    proprioceptive_progressions = db.Column(db.String(50))
     
     # Relationships
-    equipment = db.relationship(
+    '''equipment = db.relationship(
         "Exercise_Equipment",
         back_populates = "exercises",
+        cascade="all, delete-orphan")'''
+
+    muscles = db.relationship(
+        "Exercise_Muscles",
+        back_populates = "exercises",
         cascade="all, delete-orphan")
-    
+
+    muscle_groups = db.relationship(
+        "Exercise_Muscle_Groups",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
+
+    body_regions = db.relationship(
+        "Exercise_Body_Regions",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
+
+    bodyparts = db.relationship(
+        "Exercise_Bodyparts",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
+
+
     def to_dict(self):
         return {
             "id": self.id,
             "name": self.name,
-            "movement_type": self.movement_type,
-            "primary_muscle_group": self.primary_muscle_group,
-            "tempo": self.tempo,
-            "tracking": self.tracking,
+            "base_strain": self.base_strain,
+            "technical_difficulty": self.batechnical_difficultyse_strain,
+            "tags": self.tags,
+            "sides": self.sides,
+            "body_position": self.body_position,
+            "option_for_added_weight": self.taoption_for_added_weightgs,
+            "proprioceptive_progressions": self.proprioceptive_progressions,
         }
     

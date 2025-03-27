@@ -12,7 +12,7 @@ class Phase_Component_Library(db.Model):
     component_id = db.Column(db.Integer, db.ForeignKey("component_library.id"), nullable=False)
     subcomponent_id = db.Column(db.Integer, db.ForeignKey("subcomponent_library.id"), nullable=False)
 
-    sub_component = db.Column(
+    name = db.Column(
         db.String(50),
         nullable=False,
         comment='The name of the phase and subcomponent combination.')
@@ -122,7 +122,7 @@ class Phase_Component_Library(db.Model):
             "component_name": self.components.name,
             "subcomponent_id": self.subcomponent_id,
             "subcomponent_name": self.subcomponents.name,
-            "sub_component": self.sub_component,
+            "sub_component": self.name,
             "reps_min": self.reps_min,
             "reps_max": self.reps_max,
             "sets_min": self.sets_min,
