@@ -40,7 +40,7 @@ class User_Workout_Components(db.Model):
             "id": self.id,
             "workout_day_id": self.workout_day_id,
             "phase_component_id": self.phase_component_id,
-            "phase_component_subcomponent": self.phase_components.sub_component,
+            "phase_component_subcomponent": self.phase_components.name,
             "bodypart_id": self.bodypart_id,
             "bodypart_name": self.bodyparts.name,
             "duration": self.duration

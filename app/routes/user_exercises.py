@@ -43,7 +43,7 @@ def construct_user_workout_components_list(user_workout_components):
     user_workout_components_list = [{
         "id": 0,
         "name": "Inactive",
-        "sub_component": "Inactive",
+        "name": "Inactive",
         "bodypart_name": "Inactive",
         "duration": 0,
         "duration_min": 0,
@@ -83,7 +83,7 @@ def construct_user_workout_components_list(user_workout_components):
             "phase_component_id": phase_component_data["id"],
             "phase_name": phase_component_data["phase_name"],
             "component_name": phase_component_data["component_name"],
-            "sub_component": phase_component_data["sub_component"],
+            "name": phase_component_data["name"],
             "reps_min": phase_component_data["reps_min"],
             "reps_max": phase_component_data["reps_max"],
             "sets_min": phase_component_data["sets_min"],

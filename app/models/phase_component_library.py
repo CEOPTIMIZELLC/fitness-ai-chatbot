@@ -122,7 +122,7 @@ class Phase_Component_Library(db.Model):
             "component_name": self.components.name,
             "subcomponent_id": self.subcomponent_id,
             "subcomponent_name": self.subcomponents.name,
-            "sub_component": self.name,
+            "name": self.name,
             "reps_min": self.reps_min,
             "reps_max": self.reps_max,
             "sets_min": self.sets_min,

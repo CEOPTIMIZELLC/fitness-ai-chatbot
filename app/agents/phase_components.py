@@ -349,7 +349,7 @@ def format_solution_node(state: State, config=None) -> dict:
     workout_length = parameters["workout_length"]
     microcycle_weekdays = parameters["microcycle_weekdays"]
 
-    longest_subcomponent_string_size = len(max(phase_components, key=lambda d:len(d["sub_component"]))["sub_component"])
+    longest_subcomponent_string_size = len(max(phase_components, key=lambda d:len(d["name"]))["name"])
     longest_bodypart_string_size = len(max(phase_components, key=lambda d:len(d["bodypart"]))["bodypart"])
 
     longest_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
@@ -402,7 +402,7 @@ def format_solution_node(state: State, config=None) -> dict:
             phase_component = phase_components[phase_component_index]
             phase_component_id = phase_component["id"]
             bodypart_id = phase_component["bodypart_id"]
-            phase_component_name = phase_component["sub_component"] + " " + phase_component["bodypart"] 
+            phase_component_name = phase_component["name"] + " " + phase_component["bodypart"] 
 
             day_duration = duration_var
 
@@ -435,7 +435,7 @@ def format_solution_node(state: State, config=None) -> dict:
         formatted += f"Phase Component Counts:\n"
         for phase_component_index, phase_component_number in enumerate(phase_component_count):
             phase_component = phase_components[phase_component_index]
-            formatted += f"\t{phase_component["sub_component"] + " " + phase_component["bodypart"]:<{longest_string_size+3}}: {phase_component_number} ({phase_component["frequency_per_microcycle_min"]} - {phase_component["frequency_per_microcycle_max"]})\n"
+            formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart"]:<{longest_string_size+3}}: {phase_component_number} ({phase_component["frequency_per_microcycle_min"]} - {phase_component["frequency_per_microcycle_max"]})\n"
         formatted += f"Total Time Used: {solution['microcycle_duration']  // 60} min {solution['microcycle_duration']  % 60} sec ({solution['microcycle_duration']}) seconds\n"
         formatted += f"Total Time Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
         formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"

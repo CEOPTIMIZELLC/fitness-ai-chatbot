@@ -62,7 +62,7 @@ class User_Exercises(db.Model):
             "id": self.id,
             "workout_day_id": self.workout_day_id,
             "phase_component_id": self.phase_component_id,
-            "phase_component_subcomponent": self.phase_components.sub_component,
+            "phase_component_subcomponent": self.phase_components.name,
             #"exercise_id": self.exercise_id,
             #"exercise_name": self.exercises.name,
             "order": self.order,

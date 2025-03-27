@@ -50,7 +50,7 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
             for possible_phase_component_bodypart in possible_phase_component_bodyparts:
                 possible_phase_components_list.append({
                     "id": possible_phase_component.id,
-                    "sub_component": possible_phase_component.sub_component,
+                    "name": possible_phase_component.name,
                     "required_every_workout": possible_phase_component.required_every_workout,
                     "required_within_microcycle": possible_phase_component.required_within_microcycle,
                     "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
@@ -71,7 +71,7 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
         else:
             possible_phase_components_list.append({
                 "id": possible_phase_component.id,
-                "sub_component": possible_phase_component.sub_component,
+                "name": possible_phase_component.name,
                 "required_every_workout": possible_phase_component.required_every_workout,
                 "required_within_microcycle": possible_phase_component.required_within_microcycle,
                 "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
