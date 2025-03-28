@@ -57,6 +57,30 @@ class Exercise_Library(db.Model):
         back_populates = "exercises",
         cascade="all, delete-orphan")
 
+    supportive_equipment = db.relationship(
+        "Exercise_Supportive_Equipment",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
+
+    assistive_equipment = db.relationship(
+        "Exercise_Assistive_Equipment",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
+
+    weighted_equipment = db.relationship(
+        "Exercise_Weighted_Equipment",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
+
+    marking_equipment = db.relationship(
+        "Exercise_Marking_Equipment",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
+
+    other_equipment = db.relationship(
+        "Exercise_Other_Equipment",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
