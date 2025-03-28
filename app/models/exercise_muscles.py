@@ -8,11 +8,6 @@ class Exercise_Muscles(db.Model):
     __tablename__ = "exercise_muscles"
     exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_library.id", ondelete='CASCADE'), primary_key=True)
     muscle_id = db.Column(db.Integer, db.ForeignKey("muscle_library.id", ondelete='CASCADE'), primary_key=True)
-    
-    name = db.Column(
-        db.String(50),
-        unique=True,
-        nullable=False)
 
     # Relationships
     exercises = db.relationship(
