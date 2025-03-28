@@ -6,11 +6,16 @@ from app.models import (
     Bodypart_Library,
     Component_Library,
     Equipment_Library,
+    Exercise_Library,
     Exercise_Body_Regions,
     Exercise_Bodyparts,
-    Exercise_Library,
     Exercise_Muscle_Groups,
     Exercise_Muscles,
+    Exercise_Supportive_Equipment,
+    Exercise_Assistive_Equipment,
+    Exercise_Weighted_Equipment,
+    Exercise_Marking_Equipment,
+    Exercise_Other_Equipment,
     Goal_Library,
     Goal_Phase_Requirements,
     Muscle_Categories,
@@ -70,6 +75,7 @@ class Data_Importer:
     exercise_ids = {}
     equipment_ids = {}
     plane_of_motion_ids = {}
+    equipment_ids = {}
 
     # Read in the sheets
     def __init__(self, file_path):
@@ -90,6 +96,7 @@ class Data_Importer:
         self.phase_components_df = sheets["phases_components"]
         self.phase_component_bodyparts_df = sheets["component-phase_bodypart"]
         self.exercises_df = sheets["Exercises Copy"]
+        self.equipment_df = pd.DataFrame(self.exercises_df[["Supportive Equipment", "Assistive Equipment", "Weighted Equipment", "Marking Equipment", "Other Equipment"]].values.ravel(), columns=["Equipment"]).dropna()
 
     def muscles(self):
         muscle_names = self.muscle_groups_df['Muscle'].unique()
@@ -292,34 +299,203 @@ class Data_Importer:
                 proprioceptive_progressions=row["Proprioceptive Progressions"])
             db.session.merge(db_entry)
         db.session.commit()
+        return None
 
-        # Add the ids to the join table
-        self.exercises_df['Exercise ID'] = self.exercises_df['Exercise'].map(self.exercise_ids)        
+    def equipment(self):
+        # Convert the ' & 's to a list and explode into new rows.
+        self.equipment_df["Equipment"] = self.equipment_df["Equipment"].str.split(' & ')
+        self.equipment_df = self.equipment_df.explode("Equipment", ignore_index=True)
+
+        # Convert the ' | 's to a list and explode into new rows.
+        self.equipment_df["Equipment"] = self.equipment_df["Equipment"].str.split(r" \| ")
+        self.equipment_df = self.equipment_df.explode("Equipment", ignore_index=True)
+
+        # Remove the quantity of original string
+        self.equipment_df["Equipment"] = self.equipment_df["Equipment"].apply(lambda x: re.sub(r' \(\d+\)$', '', x))
+
+        # Capitalize to match format of identifier strings
+        self.equipment_df["Equipment"] = self.equipment_df["Equipment"].str.title()
+
+        # Retrieve the unique equipment
+        equipment_names = self.equipment_df["Equipment"].unique()
+
+        self.equipment_ids = create_list_of_table_entries(self.equipment_ids, equipment_names, Equipment_Library)
         return None
 
     # Method to convert the exercise equipment join tables to the proper format.
-    def parse_exercise_join_table(self, exercise_equipment_df, equipment_column_name):
-        # Create the new column
-        exercise_equipment_df['Relationship'] = exercise_equipment_df[equipment_column_name].apply(determine_connector)
+    def _parse_exercise_join_table(self, exercise_equipment_df, model_type):
+        # Ensure that the ids neccessary have been initialized.
+        if not (self.exercise_ids and self.equipment_ids):
+            print("IDs not initialized.")
+            return None
+
+        # Create the new column to determine how the equipment should be included.
+        exercise_equipment_df["Equipment Relationship"] = exercise_equipment_df["Equipment"].apply(determine_connector)
 
         # Convert the ' & 's to a list and explode into new rows.
-        exercise_equipment_df[equipment_column_name] = exercise_equipment_df[equipment_column_name].str.split(' & ')
-        exercise_equipment_df = exercise_equipment_df.explode(equipment_column_name, ignore_index=True)
+        exercise_equipment_df["Equipment"] = exercise_equipment_df["Equipment"].str.split(' & ')
+        exercise_equipment_df = exercise_equipment_df.explode("Equipment", ignore_index=True)
 
         # Convert the ' | 's to a list and explode into new rows.
-        exercise_equipment_df[equipment_column_name] = exercise_equipment_df[equipment_column_name].str.split(r" \| ")
-        exercise_equipment_df = exercise_equipment_df.explode(equipment_column_name, ignore_index=True)
+        exercise_equipment_df["Equipment"] = exercise_equipment_df["Equipment"].str.split(r" \| ")
+        exercise_equipment_df = exercise_equipment_df.explode("Equipment", ignore_index=True)
 
         # Apply the function to extract the number and store it in a new column
-        exercise_equipment_df['Quantity'] = exercise_equipment_df[equipment_column_name].apply(extract_number)
+        exercise_equipment_df['Quantity'] = exercise_equipment_df["Equipment"].apply(extract_number)
 
         # Create the updated column with the number removed from the original string
-        exercise_equipment_df[equipment_column_name] = exercise_equipment_df[equipment_column_name].apply(lambda x: re.sub(r' \(\d+\)$', '', x))
+        exercise_equipment_df["Equipment"] = exercise_equipment_df["Equipment"].apply(lambda x: re.sub(r' \(\d+\)$', '', x))
 
         # Capitalize to match format of identifier strings
-        exercise_equipment_df[equipment_column_name] = exercise_equipment_df[equipment_column_name].str.title()
+        exercise_equipment_df["Equipment"] = exercise_equipment_df["Equipment"].str.title()
+
+        exercise_equipment_df["Exercise ID"] = exercise_equipment_df["Exercise"].map(self.exercise_ids)
+        exercise_equipment_df["Equipment ID"] = exercise_equipment_df["Equipment"].map(self.equipment_ids)
+
+        # Create a list of entries for the exercises
+        for _, row in exercise_equipment_df.iterrows():
+            db_entry = model_type(
+                exercise_id=row["Exercise ID"], 
+                equipment_id=row["Equipment ID"],
+                quantity=row["Quantity"],
+                equipment_relationship=row["Equipment Relationship"],
+            )
+            db.session.merge(db_entry)
+        db.session.commit()
 
         return exercise_equipment_df
+
+    def exercise_supportive_equipment(self):
+        # Copy Information from exercise df and rename the column name for the parser it.
+        exercise_supportive_equipment_df = self.exercises_df[["Exercise", "Supportive Equipment"]].copy().dropna()
+        exercise_supportive_equipment_df.rename(columns={"Supportive Equipment": "Equipment"}, inplace=True)
+        exercise_supportive_equipment_df = self._parse_exercise_join_table(exercise_supportive_equipment_df, Exercise_Supportive_Equipment)
+        return None
+
+    def exercise_assistive_equipment(self):
+        # Copy Information from exercise df and rename the column name for the parser it.
+        exercise_assistive_equipment_df = self.exercises_df[["Exercise", "Assistive Equipment"]].copy().dropna()
+        exercise_assistive_equipment_df.rename(columns={"Assistive Equipment": "Equipment"}, inplace=True)
+        exercise_assistive_equipment_df = self._parse_exercise_join_table(exercise_assistive_equipment_df, Exercise_Assistive_Equipment)
+        return None
+
+    def exercise_weighted_equipment(self):
+        # Copy Information from exercise df and rename the column name for the parser it.
+        exercise_weighted_equipment_df = self.exercises_df[["Exercise", "Weighted Equipment"]].copy().dropna()
+        exercise_weighted_equipment_df.rename(columns={"Weighted Equipment": "Equipment"}, inplace=True)
+        exercise_weighted_equipment_df = self._parse_exercise_join_table(exercise_weighted_equipment_df, Exercise_Weighted_Equipment)
+        return None
+
+    def exercise_marking_equipment(self):
+        # Copy Information from exercise df and rename the column name for the parser it.
+        exercise_marking_equipment_df = self.exercises_df[["Exercise", "Marking Equipment"]].copy().dropna()
+        exercise_marking_equipment_df.rename(columns={"Marking Equipment": "Equipment"}, inplace=True)
+        exercise_marking_equipment_df = self._parse_exercise_join_table(exercise_marking_equipment_df, Exercise_Marking_Equipment)
+        return None
+
+    def exercise_other_equipment(self):
+        # Copy Information from exercise df and rename the column name for the parser it.
+        exercise_other_equipment_df = self.exercises_df[["Exercise", "Other Equipment"]].copy().dropna()
+        exercise_other_equipment_df.rename(columns={"Other Equipment": "Equipment"}, inplace=True)
+        exercise_other_equipment_df = self._parse_exercise_join_table(exercise_other_equipment_df, Exercise_Other_Equipment)
+        return None
+
+    def exercise_muscles(self):
+        # Ensure that the ids neccessary have been initialized.
+        if not (self.exercise_ids and self.muscle_ids):
+            print("IDs not initialized.")
+            return None
+        # Retrieve relevant information for target muscle classification for exercises, as well as dropping the None values.
+        exercise_muscle_df = self.exercises_df[["Exercise", "Target Muscle"]].copy().dropna()
+
+        # Lowercase to match format of identifier strings
+        exercise_muscle_df["Target Muscle"] = exercise_muscle_df["Target Muscle"].str.lower()
+
+        # Create the id columns
+        exercise_muscle_df['Exercise ID'] = exercise_muscle_df['Exercise'].map(self.exercise_ids)
+        exercise_muscle_df['Target Muscle ID'] = exercise_muscle_df['Target Muscle'].map(self.muscle_ids)
+
+        # Create a list of entries for Exercise Phase Components table.
+        for _, row in exercise_muscle_df.iterrows():
+            db_entry = Exercise_Muscles(
+                exercise_id=row["Exercise ID"], 
+                muscle_id=row["Target Muscle ID"])
+            db.session.merge(db_entry)
+        db.session.commit()
+        return None
+
+    def exercise_muscle_groups(self):
+        # Ensure that the ids neccessary have been initialized.
+        if not (self.exercise_ids and self.muscle_group_ids):
+            print("IDs not initialized.")
+            return None
+        # Retrieve relevant information for target muscle group classification for exercises, as well as dropping the None values.
+        exercise_muscle_group_df = self.exercises_df[["Exercise", "Target Muscle Group"]].copy().dropna()
+
+        # Lowercase to match format of identifier strings
+        exercise_muscle_group_df["Target Muscle Group"] = exercise_muscle_group_df["Target Muscle Group"].str.lower()
+
+        # Create the id columns
+        exercise_muscle_group_df['Exercise ID'] = exercise_muscle_group_df['Exercise'].map(self.exercise_ids)
+        exercise_muscle_group_df['Target Muscle Group ID'] = exercise_muscle_group_df['Target Muscle Group'].map(self.muscle_group_ids)
+
+        # Create a list of entries for Exercise Phase Components table.
+        for _, row in exercise_muscle_group_df.iterrows():
+            db_entry = Exercise_Muscle_Groups(
+                exercise_id=row["Exercise ID"], 
+                muscle_group_id=row["Target Muscle Group ID"])
+            db.session.merge(db_entry)
+        db.session.commit()
+        return None
+
+    def exercise_body_regions(self):
+        # Ensure that the ids neccessary have been initialized.
+        if not (self.exercise_ids and self.body_region_ids):
+            print("IDs not initialized.")
+            return None
+        # Retrieve relevant information for target body region classification for exercises, as well as dropping the None values.
+        exercise_body_region_df = self.exercises_df[["Exercise", "Target Body Region"]].copy().dropna()
+
+        # Lowercase to match format of identifier strings
+        exercise_body_region_df["Target Body Region"] = exercise_body_region_df["Target Body Region"].str.lower()
+
+        # Create the id columns
+        exercise_body_region_df['Exercise ID'] = exercise_body_region_df['Exercise'].map(self.exercise_ids)
+        exercise_body_region_df['Target Body Region ID'] = exercise_body_region_df['Target Body Region'].map(self.body_region_ids)
+
+        # Create a list of entries for Exercise Phase Components table.
+        for _, row in exercise_body_region_df.iterrows():
+            db_entry = Exercise_Body_Regions(
+                exercise_id=row["Exercise ID"], 
+                body_region_id=row["Target Body Region ID"])
+            db.session.merge(db_entry)
+        db.session.commit()
+        return None
+
+    def exercise_bodyparts(self):
+        # Ensure that the ids neccessary have been initialized.
+        if not (self.exercise_ids and self.bodypart_ids):
+            print("IDs not initialized.")
+            return None
+        # Retrieve relevant information for target general body area classification for exercises, as well as dropping the None values.
+        exercise_bodypart_df = self.exercises_df[["Exercise", "Target General Body Area"]].copy().dropna()
+
+        # Lowercase to match format of identifier strings
+        exercise_bodypart_df["Target General Body Area"] = exercise_bodypart_df["Target General Body Area"].str.lower()
+
+        # Create the id columns
+        exercise_bodypart_df['Exercise ID'] = exercise_bodypart_df['Exercise'].map(self.exercise_ids)
+        exercise_bodypart_df['Target General Body Area ID'] = exercise_bodypart_df['Target General Body Area'].map(self.bodypart_ids)
+
+        # Create a list of entries for Exercise Phase Components table.
+        for _, row in exercise_bodypart_df.iterrows():
+            db_entry = Exercise_Bodyparts(
+                exercise_id=row["Exercise ID"], 
+                bodypart_id=row["Target General Body Area ID"])
+            db.session.merge(db_entry)
+        db.session.commit()
+        return None
+
 
 def Main(excel_file):
     from pathlib import Path
@@ -336,6 +512,13 @@ def Main(excel_file):
     di.phase_components()
     di.phase_component_bodyparts()
     di.exercises()
+    di.equipment()
+    di.exercise_supportive_equipment()
+    di.exercise_assistive_equipment()
+    di.exercise_weighted_equipment()
+    di.exercise_marking_equipment()
+    di.exercise_other_equipment()
+    di.exercise_muscle_groups()
     return None
 
 if __name__ == "__main__":
