@@ -87,11 +87,11 @@ class Exercise_Library(db.Model):
             "id": self.id,
             "name": self.name,
             "base_strain": self.base_strain,
-            "technical_difficulty": self.batechnical_difficultyse_strain,
+            "technical_difficulty": self.technical_difficulty,
             "tags": self.tags,
             "sides": self.sides,
             "body_position": self.body_position,
-            "option_for_added_weight": self.taoption_for_added_weightgs,
+            "option_for_added_weight": self.option_for_added_weight,
             "proprioceptive_progressions": self.proprioceptive_progressions,
         }
     
