@@ -29,6 +29,8 @@ from .user_microcycles import User_Microcycles
 from .user_workout_days import User_Workout_Days
 from .user_workout_components import User_Workout_Components
 from .user_exercises import User_Exercises
+from .user_weekday_availability import User_Weekday_Availability
+from .weekday_library import Weekday_Library
 from .users import Users
 
 __all__ = [
@@ -62,6 +64,8 @@ __all__ = [
     "User_Workout_Days",
     "User_Workout_Components",
     "User_Exercises",
+    "User_Weekday_Availability",
+    "Weekday_Library",
     "Users",
     ] 
 

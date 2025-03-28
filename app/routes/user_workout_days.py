@@ -95,15 +95,17 @@ def duration_to_weekdays(dur, start_date, microcycle_id):
     microcycle_weekdays = []
     user_workdays = []
 
-    weekday_number = start_date.weekday()
+    start_date_number = start_date.weekday()
 
     # Loop through the number of iterations
     for i in range(dur):
         # Calculate the current number using modulo to handle the circular nature
-        microcycle_weekdays.append((weekday_number + i) % 7)
+        weekday_number = (start_date_number + i) % 7
+        microcycle_weekdays.append(weekday_number)
 
         new_workday = User_Workout_Days(
             microcycle_id = microcycle_id,
+            weekday_id = weekday_number,
             order = i+1,
             date = (start_date + timedelta(days=i))
         )

@@ -13,6 +13,7 @@ class User_Workout_Days(db.Model):
     __tablename__ = "user_workout_days"
     id = db.Column(db.Integer, primary_key=True)
     microcycle_id = db.Column(db.Integer, db.ForeignKey("user_microcycles.id", ondelete='CASCADE'), nullable=False)
+    weekday_id = db.Column(db.Integer, db.ForeignKey("weekday_library.id", ondelete='CASCADE'), nullable=False)
 
     order = db.Column(
         db.Integer, 
@@ -26,6 +27,10 @@ class User_Workout_Days(db.Model):
         comment='Date that the workout_day should start.')
 
     # Relationships
+    weekdays = db.relationship(
+        "Weekday_Library",
+        back_populates = "workout_days")
+
     microcycles = db.relationship(
         "User_Microcycles",
         back_populates = "workout_days")
@@ -50,6 +55,8 @@ class User_Workout_Days(db.Model):
         return {
             "id": self.id,
             "microcycle_id": self.microcycle_id,
+            "weekday_id": self.weekday_id,
+            "weekday_name": self.weekdays.name,
             "order": self.order,
             "date": self.date,
             "components": components,

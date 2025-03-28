@@ -24,7 +24,8 @@ from app.models import (
     Phase_Component_Bodyparts,
     Phase_Component_Library,
     Phase_Library,
-    Subcomponent_Library
+    Subcomponent_Library,
+    Weekday_Library
 )
 
 from datetime import timedelta
@@ -97,6 +98,15 @@ class Data_Importer:
         self.phase_component_bodyparts_df = sheets["component-phase_bodypart"]
         self.exercises_df = sheets["Exercises"]
         self.equipment_df = pd.DataFrame(self.exercises_df[["Supportive Equipment", "Assistive Equipment", "Weighted Equipment", "Marking Equipment", "Other Equipment"]].values.ravel(), columns=["Equipment"]).dropna()
+
+    # Create an entry for each weekday.
+    def weekdays(self):
+        from calendar import day_name
+        for i, name in enumerate(day_name):
+            db_entry = Weekday_Library(id=i, name=name)
+            db.session.merge(db_entry)
+        db.session.commit()
+        return None
 
     def muscles(self):
         muscle_names = self.muscle_groups_df['Muscle'].unique()
@@ -504,6 +514,7 @@ def Main(excel_file):
     from pathlib import Path
     file_path = Path(__file__).parent / excel_file
     di = Data_Importer(file_path)
+    di.weekdays()
     di.muscles()
     di.muscle_groups()
     di.body_regions()

@@ -65,6 +65,11 @@ class Users(db.Model, UserMixin):
         back_populates = "users",
         cascade="all, delete-orphan")
 
+    availability = db.relationship(
+        "User_Weekday_Availability",
+        back_populates = "users",
+        cascade="all, delete-orphan")
+
     macrocycles = db.relationship(
         "User_Macrocycles",
         back_populates = "users",
