@@ -95,7 +95,7 @@ class Data_Importer:
         self.subcomponents_df = sheets["periodization_model"]
         self.phase_components_df = sheets["phases_components"]
         self.phase_component_bodyparts_df = sheets["component-phase_bodypart"]
-        self.exercises_df = sheets["Exercises Copy"]
+        self.exercises_df = sheets["Exercises"]
         self.equipment_df = pd.DataFrame(self.exercises_df[["Supportive Equipment", "Assistive Equipment", "Weighted Equipment", "Marking Equipment", "Other Equipment"]].values.ravel(), columns=["Equipment"]).dropna()
 
     def muscles(self):
@@ -173,7 +173,7 @@ class Data_Importer:
                 phase_duration_maximum_in_weeks=timedelta(weeks=row['phase_weeks_duration_max']))
             db.session.merge(db_entry)
             for goal in goal_columns:
-                row[goal] =  row[goal].split(',')
+                row[goal] =  row[goal].split(', ')
                 db_entry = Goal_Phase_Requirements(
                     goal_id=self.goal_ids[goal], 
                     phase_id=phase_id, 
@@ -417,10 +417,13 @@ class Data_Importer:
 
         # Create a list of entries for Exercise Phase Components table.
         for _, row in exercise_muscle_df.iterrows():
-            db_entry = Exercise_Muscles(
-                exercise_id=row["Exercise ID"], 
-                muscle_id=row["Target Muscle ID"])
-            db.session.merge(db_entry)
+            if np.isnan(row["Exercise ID"]) or np.isnan(row["Target Muscle ID"]):
+                print(row["Exercise"], "has ID of", row["Exercise ID"], "while", row["Target Muscle"], "has id of", row["Target Muscle ID"])
+            else:
+                db_entry = Exercise_Muscles(
+                    exercise_id=row["Exercise ID"], 
+                    muscle_id=row["Target Muscle ID"])
+                db.session.merge(db_entry)
         db.session.commit()
         return None
 
@@ -518,7 +521,10 @@ def Main(excel_file):
     di.exercise_weighted_equipment()
     di.exercise_marking_equipment()
     di.exercise_other_equipment()
+    di.exercise_muscles()
     di.exercise_muscle_groups()
+    di.exercise_body_regions()
+    di.exercise_bodyparts()
     return None
 
 if __name__ == "__main__":
