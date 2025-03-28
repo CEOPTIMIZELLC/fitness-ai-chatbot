@@ -1,9 +1,8 @@
-from flask import request, jsonify, Blueprint
+from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Phase_Component_Library, Component_Library, Phase_Component_Bodyparts, User_Exercises, User_Workout_Days, User_Workout_Components, User_Microcycles, User_Mesocycles, User_Macrocycles
-from datetime import datetime, timedelta
+from app.models import Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
 
 bp = Blueprint('user_exercises', __name__)
 
@@ -42,7 +41,6 @@ def retrieve_phase_component_bodyparts(phase_id):
 def construct_user_workout_components_list(user_workout_components):
     user_workout_components_list = [{
         "id": 0,
-        "name": "Inactive",
         "name": "Inactive",
         "bodypart_name": "Inactive",
         "duration": 0,
@@ -102,7 +100,6 @@ def construct_user_workout_components_list(user_workout_components):
     
     return user_workout_components_list
 
-
 def agent_output_to_sqlalchemy_model(exercises_output, user_workdays):
     new_exercises = []
     for exercise in exercises_output:
@@ -120,8 +117,6 @@ def agent_output_to_sqlalchemy_model(exercises_output, user_workdays):
 
         new_exercises.append(new_exercise)
     return user_workdays
-
-
 
 
 # Retrieve phase components
@@ -184,4 +179,4 @@ def exercise_initializer():
     # db.session.add_all(user_workdays)
     # db.session.commit()
 
-    return result
+    return jsonify({"status": "success", "exercises": result}), 200

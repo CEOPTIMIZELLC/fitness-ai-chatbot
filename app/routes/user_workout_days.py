@@ -1,14 +1,14 @@
-from flask import request, jsonify, Blueprint
+from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Phase_Component_Library, Component_Library, Phase_Component_Bodyparts, User_Workout_Days, User_Workout_Components, User_Microcycles, User_Mesocycles, User_Macrocycles
-from datetime import datetime, timedelta
+from app.models import Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Workout_Components, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days
+from datetime import timedelta
 
 bp = Blueprint('user_workout_days', __name__)
 
 from app.agents.phase_components import Main as phase_component_main
-from app.helper_functions.common_table_queries import current_macrocycle, current_microcycle, current_workout_day
+from app.helper_functions.common_table_queries import current_microcycle, current_workout_day
 
 # ----------------------------------------- Phase_Components -----------------------------------------
 
@@ -169,9 +169,7 @@ def workout_day_initializer():
     }
 
     user_microcycle = current_microcycle(current_user.id)
-
     delete_old_user_workout_days(user_microcycle.id)
-
     microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
 
     config["parameters"]["microcycle_weekdays"] = microcycle_weekdays
@@ -191,13 +189,10 @@ def workout_day_initializer():
     print(result["formatted"])
 
     user_workdays = agent_output_to_sqlalchemy_model(result["output"], user_workdays)
-
     db.session.add_all(user_workdays)
     db.session.commit()
 
-    return result
-
-
+    return jsonify({"status": "success", "workdays": result}), 200
 
 # Testing for the parameter programming for phase component assignment.
 @bp.route('/test', methods=['GET', 'POST'])
@@ -254,4 +249,4 @@ def phase_component_classification_test():
         })
         print("----------------------")
 
-    return test_results
+    return jsonify({"status": "success", "test_results": test_results}), 200

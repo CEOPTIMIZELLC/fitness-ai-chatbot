@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint
+from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
@@ -150,7 +150,7 @@ def mesocycle_phases():
     db.session.add_all(user_phases)
     db.session.commit()
 
-    return result
+    return jsonify({"status": "success", "mesocycles": result}), 200
 
 
 # Testing for the parameter programming for mesocycle labeling.
@@ -223,4 +223,4 @@ def phase_classification_test():
         })
         print("----------------------")
 
-    return test_results
+    return jsonify({"status": "success", "test_results": test_results}), 200

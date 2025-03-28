@@ -101,7 +101,7 @@ def change_goal():
 # Testing for goal classification.
 @bp.route('/test', methods=['GET', 'POST'])
 def goal_classification_test():
-    results = {}
+    result = []
     goal_types = retrieve_goal_types()
     goal_app = create_goal_classification_graph()
     
@@ -112,10 +112,10 @@ def goal_classification_test():
             "goal_types": goal_types, 
             "attempts": 0
         })
-    results["result_1"] = {
+    result.append({
         "new_goal": user_goal,
         "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]}
+        "goal_id": result_temp["goal_id"]})
     print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
 
@@ -127,10 +127,10 @@ def goal_classification_test():
             "goal_types": goal_types, 
             "attempts": 0
         })
-    results["result_2"] = {
+    result.append({
         "new_goal": user_goal,
         "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]}
+        "goal_id": result_temp["goal_id"]})
     print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
 
@@ -141,10 +141,10 @@ def goal_classification_test():
             "goal_types": goal_types, 
             "attempts": 0
         })
-    results["result_3"] = {
+    result.append({
         "new_goal": user_goal,
         "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]}
+        "goal_id": result_temp["goal_id"]})
     print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
     
@@ -156,10 +156,10 @@ def goal_classification_test():
             "goal_types": goal_types, 
             "attempts": 0
         })
-    results["result_4"] = {
+    result.append({
         "new_goal": user_goal,
         "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]}
+        "goal_id": result_temp["goal_id"]})
     print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
 
@@ -170,12 +170,12 @@ def goal_classification_test():
             "goal_types": goal_types, 
             "attempts": 0
         })
-    results["result_5"] = {
+    result.append({
         "new_goal": user_goal,
         "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]}
+        "goal_id": result_temp["goal_id"]})
     print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
     print("")
     
-    return jsonify(results), 200
+    return jsonify(result), 200
 

@@ -1,8 +1,8 @@
-from flask import request, jsonify, Blueprint
+from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import User_Microcycles, User_Mesocycles, User_Macrocycles
+from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 from datetime import timedelta
 
 bp = Blueprint('user_microcycles', __name__)
@@ -86,5 +86,5 @@ def microcycle_initializer():
     result = []
     for microcycle in microcycles:
         result.append(microcycle.to_dict())
-    return result
+    return jsonify({"status": "success", "microcycles": result}), 200
 
