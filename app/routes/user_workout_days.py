@@ -2,7 +2,7 @@ from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Workout_Components, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days
+from app.models import Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, Weekday_Library, User_Weekday_Availability, User_Workout_Components, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days
 from datetime import timedelta
 
 bp = Blueprint('user_workout_days', __name__)
@@ -183,6 +183,23 @@ def workout_day_initializer():
     possible_phase_components = retrieve_possible_phase_components(user_microcycle.mesocycles.phase_id)
     possible_phase_components_list = construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)
 
+    availability = (
+        User_Weekday_Availability.query
+        .join(Weekday_Library)
+        .filter(User_Weekday_Availability.user_id == current_user.id)
+        .order_by(User_Weekday_Availability.user_id.asc())
+        .all())
+    
+    weekday_availability = []
+
+    for day in availability:
+        weekday_availability.append({
+            "id": day.weekday_id, 
+            "name": day.weekdays.name.title(), 
+            "availability": int(day.availability.total_seconds())
+        })
+
+    config["parameters"]["weekday_availability"] = weekday_availability
     config["parameters"]["phase_components"] = possible_phase_components_list
 
     result = []

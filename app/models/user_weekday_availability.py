@@ -28,5 +28,5 @@ class User_Weekday_Availability(db.Model):
             "user_id": self.user_id,
             "weekday_id": self.weekday_id,
             "weekday_name": self.weekdays.name,
-            "availability": str(self.availability)
+            "availability": self.availability.total_seconds()
         }

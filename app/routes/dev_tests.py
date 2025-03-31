@@ -29,6 +29,7 @@ from app.agents.cp_ortools import Main as cp_ortools_main
 @bp.route('/pipeline', methods=['GET'])
 @login_required
 def check_pipeline():
+    from app.routes.user_weekday_availability import get_user_weekday
     from app.routes.user_macrocycles import get_user_current_macrocycle
     from app.routes.user_mesocycles import get_user_current_mesocycles
     from app.routes.user_microcycles import get_user_current_microcycles
@@ -36,6 +37,7 @@ def check_pipeline():
     from app.routes.user_exercises import get_user_current_exercises
 
     result = {}
+    result["user_availability"] = get_user_weekday()[0].get_json()["weekdays"]
     result["user_macrocycles"] = get_user_current_macrocycle()[0].get_json()["goals"]
     result["user_mesocycles"] = get_user_current_mesocycles()[0].get_json()["phases"]
     result["user_microcycles"] = get_user_current_microcycles()[0].get_json()["microcycles"]
@@ -48,6 +50,7 @@ def check_pipeline():
 @bp.route('/pipeline', methods=['POST'])
 @login_required
 def run_pipeline():
+    from app.routes.user_weekday_availability import change_weekday_availability, get_user_weekday
     from app.routes.user_macrocycles import change_goal
     from app.routes.user_mesocycles import mesocycle_phases
     from app.routes.user_microcycles import microcycle_initializer
@@ -55,6 +58,8 @@ def run_pipeline():
     from app.routes.user_exercises import exercise_initializer
 
     result = {}
+    change_weekday_availability()
+    result["user_availability"] = get_user_weekday()[0].get_json()["weekdays"]
     result["user_macrocycles"] = change_goal()[0].get_json()
     result["user_mesocycles"] = mesocycle_phases()[0].get_json()["mesocycles"]["output"]
     result["user_microcycles"] = microcycle_initializer()[0].get_json()["microcycles"]

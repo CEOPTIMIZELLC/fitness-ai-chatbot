@@ -42,8 +42,10 @@ Example Input: "I am available on Friday for four hours and I am available on Tu
 Example Output: tuesday_availability = 1800, friday_availability = 14400
 
 Sometimes, it will be specified that there is no availability on a day or that there is an availability of 0. If this is the case, extract nothing for these days.
-Example Input: "I will not be available on Saturdays, Sundays, or Mondays. I am available on Thursday for 2 hours. I will be available on Wednesday for 30 seconds. Oh yeah, and I'll be available for 0 seconds on Tuesday."
-Example Output: wednesday_availability = 30, thursday_availability = 7200
+Example Input: "I will not be available on Saturdays, Sundays, or Mondays. I am available on Thursday for 2 hours. I will be available on Wednesday for 30 minutes. Oh yeah, and I'll be available for 0 seconds on Tuesday."
+Example Output: wednesday_availability = 1800, thursday_availability = 7200
+
+The minimum allowed availability is 15 minutues. If an availability less than that is requested, extract nothing for these days.
 """
     human = f"New_availability: {new_availability}"
     check_prompt = ChatPromptTemplate.from_messages(
@@ -67,6 +69,8 @@ def llm_output_to_timedelta(state: AgentState):
     for id, availability in enumerate(weekday_availability_llm):
         if availability[1]:
             result.append({"weekday_id": id, "availability": timedelta(seconds=availability[1])})
+        else:
+            result.append({"weekday_id": id, "availability": timedelta(seconds=0)})
 
     state["weekday_availability"] = result
     return state

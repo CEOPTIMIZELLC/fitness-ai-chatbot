@@ -157,6 +157,9 @@ def exercise_initializer():
     # Retrieve user components
     user_workout_components = user_workout_day.workout_components
 
+    if not user_workout_components:
+        return jsonify({"status": "success", "exercises": "This phase component is inactive. No exercises for today."}), 200
+
     projected_duration = 0
 
     # Get the total desired duration.
