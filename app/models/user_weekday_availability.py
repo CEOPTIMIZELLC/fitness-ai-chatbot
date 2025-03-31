@@ -25,9 +25,8 @@ class User_Weekday_Availability(db.Model):
 
     def to_dict(self):
         return {
-            "id": self.id,
             "user_id": self.user_id,
             "weekday_id": self.weekday_id,
             "weekday_name": self.weekdays.name,
-            "availability": self.availability
+            "availability": str(self.availability)
         }
