@@ -65,7 +65,6 @@ def change_weekday_availability():
     weekday_availability = state["weekday_availability"]
     # Update each availability entry to the database.
     for i in weekday_availability:
-        print(current_user.id, i["weekday_id"], i["availability"])
         db_entry = User_Weekday_Availability(user_id=current_user.id, 
                                              weekday_id=i["weekday_id"], 
                                              availability=i["availability"])

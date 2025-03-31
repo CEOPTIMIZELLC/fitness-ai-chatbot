@@ -72,6 +72,11 @@ def llm_output_to_timedelta(state: AgentState):
         else:
             result.append({"weekday_id": id, "availability": timedelta(seconds=0)})
 
+    from calendar import day_name
+    for day in result:
+        total_seconds = day["availability"].total_seconds()
+        print(f"{day_name[day["weekday_id"]]}: {total_seconds // 60} minutes and {total_seconds % 60} seconds")
+
     state["weekday_availability"] = result
     return state
 
