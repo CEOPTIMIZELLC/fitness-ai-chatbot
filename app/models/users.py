@@ -1,6 +1,6 @@
 from app import db, bcrypt, login_manager
 from flask_login import UserMixin
-from datetime import date
+from datetime import date, timedelta
 from app import user_validate
 
 from sqlalchemy.dialects.postgresql import TEXT, JSONB
@@ -22,6 +22,11 @@ class Users(db.Model, UserMixin):
     last_name = db.Column(db.String, nullable=False)
     age = db.Column(db.Integer, nullable=False)
     gender = db.Column(db.String, nullable=False)
+    workout_length = db.Column(
+        db.Interval,
+        nullable=False, 
+        default=timedelta(hours=1),
+        comment='The amount of time the user is allowed on this day.')
 
     goal = db.Column(
         TEXT, 
@@ -84,6 +89,7 @@ class Users(db.Model, UserMixin):
             "age": self.age,
             "gender": self.gender,
             "goal": self.goal,
+            "workout_length": str(self.workout_length),
             "start_date": self.start_date
         }
 

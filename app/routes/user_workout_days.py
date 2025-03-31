@@ -201,6 +201,7 @@ def workout_day_initializer():
 
     config["parameters"]["weekday_availability"] = weekday_availability
     config["parameters"]["phase_components"] = possible_phase_components_list
+    config["parameters"]["workout_length"] = int(current_user.workout_length.total_seconds())
 
     result = []
 

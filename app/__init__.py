@@ -30,7 +30,7 @@ def register_blueprints(app):
         app.register_blueprint(auth.bp)
 
         from .routes import current_user
-        app.register_blueprint(current_user.bp, url_prefix='/current-user')
+        app.register_blueprint(current_user.bp, url_prefix='/current_user')
 
         from .routes import database_manipulation
         app.register_blueprint(database_manipulation.bp, url_prefix='/database_manipulation')
