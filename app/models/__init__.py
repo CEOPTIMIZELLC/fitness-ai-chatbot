@@ -3,15 +3,19 @@ from .body_region_library import Body_Region_Library
 from .bodypart_library import Bodypart_Library
 from .equipment_library import Equipment_Library
 from .exercise_library import Exercise_Library
-from .exercise_body_regions import Exercise_Body_Regions
-from .exercise_bodyparts import Exercise_Bodyparts
-from .exercise_muscle_groups import Exercise_Muscle_Groups
-from .exercise_muscles import Exercise_Muscles
-from .exercise_supportive_equipment import Exercise_Supportive_Equipment
-from .exercise_assistive_equipment import Exercise_Assistive_Equipment
-from .exercise_weighted_equipment import Exercise_Weighted_Equipment
-from .exercise_marking_equipment import Exercise_Marking_Equipment
-from .exercise_other_equipment import Exercise_Other_Equipment
+from .exercise_muscle_categories import(
+    Exercise_Body_Regions,
+    Exercise_Bodyparts,
+    Exercise_Muscle_Groups,
+    Exercise_Muscles)
+
+from .exercise_equipment import (
+    Exercise_Supportive_Equipment, 
+    Exercise_Assistive_Equipment, 
+    Exercise_Weighted_Equipment, 
+    Exercise_Marking_Equipment, 
+    Exercise_Other_Equipment)
+
 from .goal_library import Goal_Library
 from .goal_phase_requirements import Goal_Phase_Requirements
 from .muscle_categories import Muscle_Categories
