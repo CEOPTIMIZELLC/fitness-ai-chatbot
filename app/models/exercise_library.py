@@ -32,10 +32,10 @@ class Exercise_Library(db.Model):
     proprioceptive_progressions = db.Column(db.String(50))
     
     # Relationships
-    '''equipment = db.relationship(
-        "Exercise_Equipment",
+    component_phases = db.relationship(
+        "Exercise_Component_Phases",
         back_populates = "exercises",
-        cascade="all, delete-orphan")'''
+        cascade="all, delete-orphan")
 
     muscles = db.relationship(
         "Exercise_Muscles",

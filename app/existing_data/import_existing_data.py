@@ -7,6 +7,7 @@ from app.models import (
     Component_Library,
     Equipment_Library,
     Exercise_Library,
+    Exercise_Component_Phases,
     Exercise_Body_Regions,
     Exercise_Bodyparts,
     Exercise_Muscle_Groups,
@@ -97,7 +98,11 @@ class Data_Importer:
         self.phase_components_df = sheets["phases_components"]
         self.phase_component_bodyparts_df = sheets["component-phase_bodypart"]
         self.exercises_df = sheets["Exercises"]
-        self.equipment_df = pd.DataFrame(self.exercises_df[["Supportive Equipment", "Assistive Equipment", "Weighted Equipment", "Marking Equipment", "Other Equipment"]].values.ravel(), columns=["Equipment"]).dropna()
+        self.equipment_df = pd.DataFrame(self.exercises_df[["Supportive Equipment", 
+                                                            "Assistive Equipment", 
+                                                            "Weighted Equipment", 
+                                                            "Marking Equipment", 
+                                                            "Other Equipment"]].values.ravel(), columns=["Equipment"]).dropna()
 
     # Create an entry for each weekday.
     def weekdays(self):
@@ -307,6 +312,41 @@ class Data_Importer:
                 body_position=row["Body Position"], 
                 option_for_added_weight=row["Option for added weight"], 
                 proprioceptive_progressions=row["Proprioceptive Progressions"])
+            db.session.merge(db_entry)
+        db.session.commit()
+        return None
+
+    def exercise_phase_component(self):
+        # Ensure that the ids neccessary have been initialized.
+        if not (self.exercise_ids and self.component_ids and self.subcomponent_ids):
+            print("IDs not initialized.")
+            return None
+
+        # Retrieve relevant information for exercise component-phases, as well as dropping the None values.
+        exercise_component_phase_df = self.exercises_df[["Exercise", "Component-Phase"]].copy().dropna()
+
+        # Convert the ' & 's to a list and explode into new rows.
+        exercise_component_phase_df["Component-Phase"] = exercise_component_phase_df["Component-Phase"].str.split(' & ')
+        exercise_component_phase_df = exercise_component_phase_df.explode("Component-Phase", ignore_index=True)
+
+        # Split the "Component-Phase" column into "Component" and "Subcomponent".
+        exercise_component_phase_df[["Component", "Subcomponent"]] = exercise_component_phase_df["Component-Phase"].str.split('-', expand=True)
+
+        # Title case to match format of identifier strings
+        exercise_component_phase_df["Component"] = exercise_component_phase_df["Component"].str.title()
+        exercise_component_phase_df["Subcomponent"] = exercise_component_phase_df["Subcomponent"].str.title()
+
+        # Create the id columns
+        exercise_component_phase_df['Exercise ID'] = exercise_component_phase_df['Exercise'].map(self.exercise_ids)
+        exercise_component_phase_df['Component ID'] = exercise_component_phase_df['Component'].map(self.component_ids)
+        exercise_component_phase_df['Subcomponent ID'] = exercise_component_phase_df['Subcomponent'].map(self.subcomponent_ids)
+
+        # Create a list of entries for Exercise Phase Components table.
+        for _, row in exercise_component_phase_df.iterrows():
+            db_entry = Exercise_Component_Phases(
+                exercise_id=row["Exercise ID"], 
+                component_id=row["Component ID"],
+                subcomponent_id=row["Subcomponent ID"])
             db.session.merge(db_entry)
         db.session.commit()
         return None
@@ -526,6 +566,7 @@ def Main(excel_file):
     di.phase_components()
     di.phase_component_bodyparts()
     di.exercises()
+    di.exercise_phase_component()
     di.equipment()
     di.exercise_supportive_equipment()
     di.exercise_assistive_equipment()

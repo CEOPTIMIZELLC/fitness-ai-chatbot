@@ -3,6 +3,8 @@ from .body_region_library import Body_Region_Library
 from .bodypart_library import Bodypart_Library
 from .equipment_library import Equipment_Library
 from .exercise_library import Exercise_Library
+from .exercise_component_phase import Exercise_Component_Phases
+
 from .exercise_muscle_categories import(
     Exercise_Body_Regions,
     Exercise_Bodyparts,
@@ -42,6 +44,7 @@ __all__ = [
     "Bodypart_Library",
     "Equipment_Library",
     "Exercise_Library",
+    "Exercise_Component_Phases",
     "Exercise_Body_Regions",
     "Exercise_Bodyparts",
     "Exercise_Muscle_Groups",

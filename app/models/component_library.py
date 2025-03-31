@@ -25,6 +25,11 @@ class Component_Library(db.Model):
         back_populates = "components",
         cascade="all, delete-orphan")
 
+    exercises = db.relationship(
+        "Exercise_Component_Phases",
+        back_populates = "components",
+        cascade="all, delete-orphan")
+
     def to_dict(self):
         return {
             "id": self.id,
