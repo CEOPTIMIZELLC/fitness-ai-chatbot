@@ -2,7 +2,7 @@ from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Exercise_Library, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
+from app.models import Exercise_Library, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
 
 bp = Blueprint('user_exercises', __name__)
 
@@ -41,17 +41,25 @@ def retrieve_phase_component_bodyparts(phase_id):
 # Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_exercises():
     # Retrieve all possible exercises that can be selected.
-    possible_exercises = Exercise_Library.query.all()
+    results = (
+        db.session.query(Exercise_Library, Exercise_Component_Phases)
+        .join(Exercise_Component_Phases, Exercise_Library.id == Exercise_Component_Phases.exercise_id)
+        .order_by(Exercise_Library.id.asc())
+        .all())
 
-    return [
+    possible_exercises_list = [
         {
-            "id": exercise.id, 
+            "id": exercise.id,
             "name": exercise.name.lower(),
-            "base_strain": exercise.base_strain, 
-            "technical_difficulty": exercise.technical_difficulty
-        } 
-        for exercise in possible_exercises
+            "base_strain": exercise.base_strain,
+            "technical_difficulty": exercise.technical_difficulty,
+            "component_id": phase.component_id,
+            "subcomponent_id": phase.subcomponent_id,
+        }
+        for exercise, phase in results
     ]
+
+    return possible_exercises_list
 
 def construct_user_workout_components_list(user_workout_components):
     user_workout_components_list = [{
@@ -184,6 +192,8 @@ def exercise_initializer():
 
     # Retrieve all possible phase components that can be selected for the phase id.
     #possible_phase_components = retrieve_possible_phase_components(user_workout_day.microcycles.mesocycles.phase_id)
+
+    possible_exercises = retrieve_exercises()
 
     result = []
     config["parameters"]["projected_duration"] = projected_duration
