@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 
 from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
-from app.agents.constraints import entry_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max
+from app.agents.constraints import entry_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var
 
 _ = load_dotenv()
 
@@ -90,29 +90,6 @@ def setup_params_node(state: State, config=None) -> dict:
             "expected_impact": None
         }
     }
-
-# Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
-# This method performs the in between steps and returns the final duration variable.
-# total_set_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count + rest_time) * set_count
-def create_duration_var(model, i, workout_length, seconds_per_exercise, reps, rest, sets):
-    # Create the entry for phase component's duration
-    # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
-    duration_var_entry = model.NewIntVar(0, workout_length, f'duration_{i}')
-
-    # Temporary variable for seconds per exercise and the rep count. (seconds_per_exercise * rep_count)
-    seconds_per_exercise_and_reps = model.NewIntVar(0, workout_length, f'seconds_per_exercise_and_rep_count_{i}')
-    
-    model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, reps])
-
-    # Temporary variable for the previous product and the rest time. (seconds_per_exercise * rep_count + rest_time)
-    duration_with_rest = model.NewIntVar(0, workout_length, f'duration_with_rest_{i}')
-
-    # In between step for added components.
-    model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * rest))
-
-    # Completed constraint.
-    model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
-    return model, duration_var_entry
 
 def build_opt_model_node(state: State, config=None) -> dict:
     """Build the optimization model with active constraints."""
