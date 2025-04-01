@@ -83,17 +83,15 @@ def read_user_mesocycle(phase_id):
 @login_required
 def mesocycle_phases():
 
-    config = {
-        "parameters": {},
-        "constraints": {}
-    }
+    parameters={}
+    constraints={}
 
     user_macro = current_macrocycle(current_user.id)
 
     delete_old_user_phases(user_macro.id)
 
-    config["parameters"]["macrocycle_allowed_weeks"] = 26
-    config["parameters"]["goal_type"] = user_macro.goal_id
+    parameters["macrocycle_allowed_weeks"] = 26
+    parameters["goal_type"] = user_macro.goal_id
 
     # Retrieve all possible phases that can be selected.
     possible_phases = retrieve_phase_constraints_for_goal(int(user_macro.goal_id))
@@ -119,9 +117,9 @@ def mesocycle_phases():
             "is_goal_phase": possible_phase.is_goal_phase,
         })
     
-    config["parameters"]["possible_phases"] = possible_phases_list
+    parameters["possible_phases"] = possible_phases_list
 
-    result = phase_main(parameter_input=config)
+    result = phase_main(parameters, constraints)
 
     print(result["formatted"])
 
@@ -158,19 +156,18 @@ def mesocycle_phases():
 def phase_classification_test():
     test_results = []
 
-    config = {
-        "parameters": {},
-        "constraints": {}
-    }
-    config["parameters"]["macrocycle_allowed_weeks"] = 43
+    parameters={}
+    constraints={}
+
+    parameters["macrocycle_allowed_weeks"] = 43
 
     # Test with default test values.
 
-    result = phase_main(parameter_input=config)
+    result = phase_main(parameters, constraints)
     print("TESTING")
     print(result["formatted"])
     test_results.append({
-        "macrocycle_allowed_weeks": config["parameters"]["macrocycle_allowed_weeks"], 
+        "macrocycle_allowed_weeks": parameters["macrocycle_allowed_weeks"], 
         "goal_id": 0,
         "result": result
     })
@@ -211,13 +208,13 @@ def phase_classification_test():
                 "is_goal_phase": possible_phase.is_goal_phase,
             })
         
-        config["parameters"]["possible_phases"] = possible_phases_list
+        parameters["possible_phases"] = possible_phases_list
 
-        result = phase_main(parameter_input=config)
+        result = phase_main(parameters, constraints)
         print(str(goal.id))
         print(result["formatted"])
         test_results.append({
-            "macrocycle_allowed_weeks": config["parameters"]["macrocycle_allowed_weeks"], 
+            "macrocycle_allowed_weeks": parameters["macrocycle_allowed_weeks"], 
             "goal_id": goal.id,
             "result": result
         })

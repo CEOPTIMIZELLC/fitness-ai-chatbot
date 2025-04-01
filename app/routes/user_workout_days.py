@@ -165,16 +165,14 @@ def get_user_current_workout_day():
 @login_required
 def workout_day_initializer():
 
-    config = {
-        "parameters": {},
-        "constraints": {}
-    }
+    parameters={}
+    constraints={}
 
     user_microcycle = current_microcycle(current_user.id)
     delete_old_user_workout_days(user_microcycle.id)
     microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
 
-    config["parameters"]["microcycle_weekdays"] = microcycle_weekdays
+    parameters["microcycle_weekdays"] = microcycle_weekdays
 
     # Retrieve all possible phase component body parts.
     possible_phase_component_bodyparts = retrieve_phase_component_bodyparts(user_microcycle.mesocycles.phase_id)
@@ -199,13 +197,13 @@ def workout_day_initializer():
             "availability": int(day.availability.total_seconds())
         })
 
-    config["parameters"]["weekday_availability"] = weekday_availability
-    config["parameters"]["phase_components"] = possible_phase_components_list
-    config["parameters"]["workout_length"] = int(current_user.workout_length.total_seconds())
+    parameters["weekday_availability"] = weekday_availability
+    parameters["phase_components"] = possible_phase_components_list
+    parameters["workout_length"] = int(current_user.workout_length.total_seconds())
 
     result = []
 
-    result = phase_component_main(parameter_input=config)
+    result = phase_component_main(parameters, constraints)
     print(result["formatted"])
 
     user_workdays = agent_output_to_sqlalchemy_model(result["output"], user_workdays)
@@ -219,11 +217,7 @@ def workout_day_initializer():
 def phase_component_classification_test():
     test_results = []
 
-    config = {
-        "parameters": {},
-        "constraints": {}
-    }
-    config["parameters"] = {
+    parameters = {
         "weekday_availability": [
             {"id": 0, "name": "Monday", "availability": 6 * 60 * 60},
             {"id": 1, "name": "Tuesday", "availability": 3 * 60 * 60},
@@ -237,6 +231,7 @@ def phase_component_classification_test():
         "workout_length": 50 * 60,
         "phase_components": []
     }
+    constraints={}
 
     # Retrieve all possible phases.
     phases = (
@@ -254,16 +249,16 @@ def phase_component_classification_test():
         possible_phase_components = retrieve_possible_phase_components(phase.id)
         possible_phase_components_list = construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)
 
-        config["parameters"]["phase_components"] = possible_phase_components_list
+        parameters["phase_components"] = possible_phase_components_list
 
         '''for i in possible_phase_components_list:
             print(i)'''
 
-        result = phase_component_main(parameter_input=config)
+        result = phase_component_main(parameters, constraints)
         print(str(phase.id))
         print(result["formatted"])
         test_results.append({
-            "phase_components": config["parameters"]["phase_components"], 
+            "phase_components": parameters["phase_components"], 
             "phase_id": phase.id,
             "result": result
         })

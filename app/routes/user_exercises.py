@@ -2,7 +2,7 @@ from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Exercise_Library, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
+from app.models import Exercise_Library, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Weekday_Availability, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
 
 bp = Blueprint('user_exercises', __name__)
 
@@ -168,10 +168,8 @@ def get_user_current_exercises():
 @login_required
 def exercise_initializer():
 
-    config = {
-        "parameters": {},
-        "constraints": {}
-    }
+    parameters={}
+    constraints={}
 
     user_workout_day = current_workout_day(current_user.id)
 
@@ -193,13 +191,20 @@ def exercise_initializer():
     # Retrieve all possible phase components that can be selected for the phase id.
     #possible_phase_components = retrieve_possible_phase_components(user_workout_day.microcycles.mesocycles.phase_id)
 
+    availability = (
+        User_Weekday_Availability.query
+        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
+        .first())
+
+    parameters["projected_duration"] = projected_duration
+    parameters["phase_components"] = user_workout_components_list
+    parameters["availability"] = int(availability.availability.total_seconds())
+    parameters["workout_length"] = int(current_user.workout_length.total_seconds())
+
     possible_exercises = retrieve_exercises()
 
     result = []
-    config["parameters"]["projected_duration"] = projected_duration
-    config["parameters"]["phase_components"] = user_workout_components_list
-
-    result = exercises_main(parameter_input=config)
+    result = exercises_main(parameters, constraints)
     print(result["formatted"])
 
     # user_workdays = agent_output_to_sqlalchemy_model(result["output"], user_workdays)
