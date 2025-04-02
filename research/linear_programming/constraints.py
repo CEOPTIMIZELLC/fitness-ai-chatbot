@@ -21,7 +21,7 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
 
 # Constraint: The duration of a item may only be a number of weeks between the minimum and maximum values allowed.
 # Links each entry and item with the "used" variables, determining if item j is the item at entry i.
-def entry_within_min_max(model, items, entry_vars, number_of_entries, used_vars, duration_vars):
+def entries_within_min_max(model, items, entry_vars, number_of_entries, used_vars, duration_vars):
     for i in range(number_of_entries):
         for j, item in enumerate(items):
             # Ensures that if an item is chosen (used_vars[i][j] is True), then:

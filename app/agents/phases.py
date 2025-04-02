@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 
 from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
-from app.agents.constraints import link_entry_and_item, constrain_active_entries_vars, entry_within_min_max, no_consecutive_identical_active_items, no_n_active_items_without_desired_item, only_use_required_items, use_all_required_items
+from app.agents.constraints import link_entry_and_item, constrain_active_entries_vars, entries_within_min_max, no_consecutive_identical_items, no_n_items_without_desired_item, only_use_required_items, use_all_required_items
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
 _ = load_dotenv()
@@ -147,7 +147,7 @@ class PhaseAgent(BaseAgent):
 
         # Constraint: The duration of a phase may only be a number of weeks between the minimum and maximum weeks allowed.
         if constraints["phase_within_min_max"]:
-            model = entry_within_min_max(model = model, 
+            model = entries_within_min_max(model = model, 
                                         items = phases, 
                                         minimum_key="element_minimum", 
                                         maximum_key="element_maximum",
@@ -162,16 +162,15 @@ class PhaseAgent(BaseAgent):
 
         # Constraint: No consecutive phases
         if constraints["no_consecutive_same_phase"]:
-            model = no_consecutive_identical_active_items(model = model, 
+            model = no_consecutive_identical_items(model = model, 
                                                         entry_vars = mesocycle_vars, 
-                                                        number_of_entries = max_mesocycles, 
                                                         active_entry_vars = active_mesocycle_vars)
             state["logs"] += "- No consecutive phase of the same type applied.\n"
         
         # Constraint: No 6 phases without stabilization endurance
         if constraints["no_6_phases_without_stab_end"]:
             stab_end_index = 1
-            model = no_n_active_items_without_desired_item(model = model, 
+            model = no_n_items_without_desired_item(model = model, 
                                                         allowed_n = 6, 
                                                         desired_item_index = stab_end_index, 
                                                         entry_vars = mesocycle_vars, 

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 
 from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
-from app.agents.constraints import entry_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var
+from app.agents.constraints import entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
 _ = load_dotenv()
@@ -206,7 +206,7 @@ class ExerciseAgent(BaseAgent):
 
         # Constraint: The reps of a phase component may only be a number of reps between the minimum and maximum reps allowed.
         if constraints["reps_within_min_max"]:
-            model = entry_within_min_max(model = model, 
+            model = entries_within_min_max(model = model, 
                                         items = phase_components, 
                                         minimum_key="reps_min", 
                                         maximum_key="reps_max",
@@ -217,7 +217,7 @@ class ExerciseAgent(BaseAgent):
 
         # Constraint: The sets of a phase component may only be a number of sets between the minimum and maximum sets allowed.
         if constraints["sets_within_min_max"]:
-            model = entry_within_min_max(model = model, 
+            model = entries_within_min_max(model = model, 
                                         items = phase_components, 
                                         minimum_key="sets_min", 
                                         maximum_key="sets_max",
@@ -228,7 +228,7 @@ class ExerciseAgent(BaseAgent):
 
         # Constraint: The rest of a phase component may only be a number of rest between the minimum and maximum rest allowed.
         if constraints["rest_within_min_max"]:
-            model = entry_within_min_max(model = model, 
+            model = entries_within_min_max(model = model, 
                                         items = phase_components, 
                                         minimum_key="rest_min", 
                                         maximum_key="rest_max",

@@ -198,8 +198,8 @@ class PhaseComponentAgent(BaseAgent):
             model = frequency_within_min_max(model=model, 
                                             phase_components=phase_components, 
                                             active_phase_components=active_phase_components,
-                                            min_key="frequency_per_microcycle_min",
-                                            max_key="frequency_per_microcycle_max")
+                                            minimum_key="frequency_per_microcycle_min",
+                                            maximum_key="frequency_per_microcycle_max")
             state["logs"] += "- All phase components occuring within microcycle will occur the allowed number of times applied.\n"
 
         duration_spread_var = None
