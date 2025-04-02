@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 
 from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
-from app.agents.constraints import entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var
+from app.agents.constraints import entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var, use_all_required_items
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
 _ = load_dotenv()
@@ -52,6 +52,7 @@ class ExerciseAgent(BaseAgent):
         constraints = {
             "duration_within_availability": True,           # The time of a workout won't exceed the time allowed for that given day.
             "duration_within_workout_length": True,         # The time of a workout won't exceed the length allowed for a workout.
+            "use_all_phase_components": True,               # At least one exercise should be given each phase component.
             "reps_within_min_max": True,                    # The number of reps of the exercise may only be a number of weeks between the minimum and maximum reps allowed for the phase component.
             "sets_within_min_max": True,                    # The number of sets of the exercise may only be a number of weeks between the minimum and maximum sets allowed for the phase component.
             "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number of weeks between the minimum and maximum rest allowed for the phase component.
@@ -204,6 +205,17 @@ class ExerciseAgent(BaseAgent):
         model.Add(sum(duration_vars) <= workout_length)
         model.Add(sum(duration_vars) >= (projected_duration - (2 * 60)))
 
+        # Constraint: Use all required phases at least once
+        if constraints["use_all_phase_components"]:
+            required_phase_components = list(range(1, len(phase_components)))
+            
+            model = use_all_required_items(model = model, 
+                                        required_items = required_phase_components, 
+                                        entry_vars = phase_component_vars, 
+                                        number_of_entries = max_exercises)
+            state["logs"] += "- Use every required phase at least once applied.\n"
+
+
         # Constraint: The reps of a phase component may only be a number of reps between the minimum and maximum reps allowed.
         if constraints["reps_within_min_max"]:
             model = entries_within_min_max(model = model, 
@@ -306,6 +318,7 @@ class ExerciseAgent(BaseAgent):
         history = retrieve_relaxation_history(state["relaxation_attempts"])
 
         available_constraints = """
+    - use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
     - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed.
     - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed.
     - rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed.

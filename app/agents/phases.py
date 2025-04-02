@@ -259,7 +259,7 @@ class PhaseAgent(BaseAgent):
     - phase_2_is_str_end: Forces the second phase of a macrocycle to be a strength endurance phase.
     - no_6_phases_without_stab_end: Prevents 6 months from passing without a stabilization endurance phase.
     - only_use_required_phases: Prevents mesocycle_vars from being given a phase that isn't required.
-    - use_all_required_phases: Forces all required phases to be assigned at lease once in a macrocycle.
+    - use_all_required_phases: Forces all required phases to be assigned at least once in a macrocycle.
     - maximize_phases: Secondary objective to maximize the amount of time spent in phases in general.
     - maximize_goal_phase: Objective to maximize the amount of time spent in the goal phase.
     """
