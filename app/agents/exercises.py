@@ -204,8 +204,8 @@ class ExerciseAgent(BaseAgent):
                                                     workout_length=workout_length, 
                                                     seconds_per_exercise=seconds_per_exercise_var_entry, 
                                                     reps=reps_var_entry, 
-                                                    rest=rest_var_entry, 
-                                                    sets=sets_var_entry)
+                                                    sets=sets_var_entry, 
+                                                    rest=rest_var_entry)
 
             active_exercise_vars.append(is_exercise_active_var)
             used_exercise_vars.append(used_exercise_vars_entry)
@@ -253,12 +253,32 @@ class ExerciseAgent(BaseAgent):
             for phase_component_index, phase_component in enumerate(phase_components[1:]):
                 exercises_for_pc = [
                     i for i, exercise in enumerate(exercises[1:], start=1)
-                    if (
-                        exercise['component_id']==phase_component["component_id"] 
+                    if (exercise['component_id']==phase_component["component_id"] 
                         and exercise['subcomponent_id']==phase_component["subcomponent_id"]
-                        #and exercise['bodypart_id']==phase_component["bodypart_id"]
+                        and (
+                            # phase_component["bodypart_id"] == 1 or  # Total body
+                            (1 in exercise['bodypart_ids']) or      # Total body
+                            (phase_component["bodypart_id"] in exercise["bodypart_ids"])
+                        )
                     )
                 ]
+                if exercises_for_pc == []:
+                    exercises_for_pc = [
+                        i for i, exercise in enumerate(exercises[1:], start=1)
+                        if (exercise['component_id']==phase_component["component_id"] 
+                            and exercise['subcomponent_id']==phase_component["subcomponent_id"]
+                            and phase_component["bodypart_id"] == 1     # Total body
+                        )
+                    ]
+                if exercises_for_pc == []:
+                    exercises_for_pc = [i for i, _ in enumerate(exercises[1:], start=1)
+                    ]
+
+                conditions = [row[phase_component_index] for row in used_pc_vars]
+                model = only_use_required_items(model = model, 
+                                                required_items = exercises_for_pc, 
+                                                entry_vars = exercise_vars, 
+                                                conditions = conditions)
             state["logs"] += "- Only use allowed exercises applied.\n"
 
         # Constraint: Use all required phases at least once
@@ -352,15 +372,14 @@ class ExerciseAgent(BaseAgent):
 
             # Creates strain_time, which will hold the total strain over the workout.
             strain_time = model.NewIntVar(0, max_exercises * workout_length, 'strain_time')
-            for i, values_for_exercise in enumerate(zip(active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars)):
+            for i, values_for_exercise in enumerate(zip(active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars)):
                 (
                     active_exercise_var, 
                     base_strain_var,
                     seconds_per_exercise_var, 
                     reps_var, 
                     sets_var, 
-                    rest_var,
-                    duration_var
+                    rest_var
                 ) = values_for_exercise
                 # Create the entry for phase component's duration
                 # total_working_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
@@ -368,7 +387,27 @@ class ExerciseAgent(BaseAgent):
                 non_zero_working_duration_var = model.NewIntVar(1, workout_length, f'working_duration_{i}')
                 working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
 
-                model.AddMultiplicationEquality(working_duration_var, [seconds_per_exercise_var, reps_var, sets_var])
+                model, duration_var = create_duration_var(model=model, 
+                                                          i=i, 
+                                                          workout_length=workout_length, 
+                                                          seconds_per_exercise=seconds_per_exercise_var, 
+                                                          reps=reps_var, 
+                                                          sets=sets_var, 
+                                                          rest=rest_var,
+                                                          base_strain=base_strain_var,
+                                                          name="base_",
+                                                          scaled=10)
+
+                model, working_duration_var = create_duration_var(model=model, 
+                                                          i=i, 
+                                                          workout_length=workout_length, 
+                                                          seconds_per_exercise=seconds_per_exercise_var, 
+                                                          reps=reps_var, 
+                                                          sets=sets_var, 
+                                                          rest=rest_var,
+                                                          base_strain=base_strain_var,
+                                                          name="working_",
+                                                          scaled=10)
 
                 # Ensure no division by 0 occurs.
                 model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
@@ -603,16 +642,14 @@ class ExerciseAgent(BaseAgent):
                     formatted_exercise = f"{exercise_name:<{longest_exercise_string_size+3}}"
                     formatted_phase_component = f"{phase_component_name:<{longest_pc_string_size+3}}"
 
-                    formatted_duration = f"Duration: {duration // 60} min {duration % 60} sec ({duration} seconds)\t"
-                    formatted_working_duration = f"Work: {working_duration // 60} min {working_duration  % 60} sec ({working_duration:<{4}} seconds)\t"
-
+                    formatted_duration = f"Duration: {duration // 60} min {duration % 60} sec ({duration} seconds)"
                     formatted_base_strain = f"Base Strain {base_strain:<{3}}\t"
                     formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
-                    formatted_reps = f"Reps {reps_var:<{3}} ({phase_component["reps_min"]:<{3}}- {phase_component["reps_max"]:<{3}})\t"
-                    formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]}- {phase_component["sets_max"]})\t"
-                    formatted_rest = f"Rest {rest_var:<{3}} ({(phase_component["rest_min"] * 5):<{3}}-  {(phase_component["rest_max"] * 5):<{3}})"
+                    formatted_reps = f"Reps {reps_var} ({phase_component["reps_min"]}-{phase_component["reps_max"]})"
+                    formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
+                    formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
 
-                    formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_exercise}{formatted_base_strain}\n\t{formatted_phase_component}{formatted_duration}{formatted_working_duration}({formatted_seconds_per_exercises}{formatted_reps}{formatted_sets}{formatted_rest})\n")
+                    formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_exercise}{formatted_base_strain}{formatted_phase_component}{formatted_duration:<{45}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{20}}{formatted_rest:<{6}})\n")
                 else:
                     formatted += (f"Exercise {(component_count + 1):<{2}} ----\n")
 

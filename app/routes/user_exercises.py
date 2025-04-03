@@ -45,17 +45,8 @@ def retrieve_exercises():
         db.session.query(
             Exercise_Library,
             Exercise_Component_Phases,
-            Exercise_Bodyparts,
-            Exercise_Body_Regions,
-            Exercise_Muscle_Groups,
-            Exercise_Muscles
         )
         .join(Exercise_Component_Phases, Exercise_Library.id == Exercise_Component_Phases.exercise_id)
-        .outerjoin(Exercise_Bodyparts, Exercise_Library.id == Exercise_Bodyparts.exercise_id)
-        .outerjoin(Exercise_Body_Regions, Exercise_Library.id == Exercise_Body_Regions.exercise_id)
-        .outerjoin(Exercise_Muscle_Groups, Exercise_Library.id == Exercise_Muscle_Groups.exercise_id)
-        .outerjoin(Exercise_Muscles, Exercise_Library.id == Exercise_Muscles.exercise_id)
-        .order_by(Exercise_Library.id.asc())
         .all()
     )
 
@@ -67,14 +58,14 @@ def retrieve_exercises():
             "technical_difficulty": 0,
             "component_id": 0,
             "subcomponent_id": 0,
-            "bodypart_id": None,
-            "body_region_id": None,
-            "muscle_group_id": None,
-            "muscle_id": None
+            "body_region_ids": None,
+            "bodypart_ids": None,
+            "muscle_group_ids": None,
+            "muscle_ids": None
         }
     ]
 
-    for exercise, phase, bodypart, body_region, muscle_group, muscle in results:
+    for exercise, phase in results:
         exercise_dict = {
             "id": exercise.id,
             "name": exercise.name.lower(),
@@ -82,12 +73,13 @@ def retrieve_exercises():
             "technical_difficulty": exercise.technical_difficulty,
             "component_id": phase.component_id,
             "subcomponent_id": phase.subcomponent_id,
-            "bodypart_id": bodypart.bodypart_id if bodypart else None,
-            "body_region_id": body_region.body_region_id if body_region else None,
-            "muscle_group_id": muscle_group.muscle_group_id if muscle_group else None,
-            "muscle_id": muscle.muscle_id if muscle else None
+            "body_region_ids": exercise.all_body_region_ids,
+            "bodypart_ids": exercise.all_bodypart_ids,
+            "muscle_group_ids": exercise.all_muscle_group_ids,
+            "muscle_ids": exercise.all_muscle_ids
         }
         possible_exercises_list.append(exercise_dict)
+
 
     return possible_exercises_list
 
@@ -136,6 +128,7 @@ def construct_user_workout_components_list(user_workout_components):
             "component_id": phase_component_data["component_id"],
             "component_name": phase_component_data["component_name"],
             "subcomponent_id": phase_component_data["subcomponent_id"],
+            "subcomponent_name": phase_component_data["subcomponent_name"],
             "name": phase_component_data["name"],
             "reps_min": phase_component_data["reps_min"],
             "reps_max": phase_component_data["reps_max"],
