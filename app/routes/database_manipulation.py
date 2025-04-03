@@ -145,7 +145,9 @@ def read_all_tables():
         result = []
         for elem in query_result: 
             result.append(elem.to_dict())
-        print(result)
+        print(f"\n\nTable: {table_name}")
+        for i in result:
+            print(i)
         final_result[table_name] = result
     return {"status": "success", "results": final_result}, 200
 
@@ -170,7 +172,9 @@ def read_table():
     result = []
     for elem in query_result: 
         result.append(elem.to_dict())
-    print(result)
+    print(f"Table: {table_name}")
+    for i in result:
+        print(i)
     return {"status": "success", "results": result}, 200
 
 # Table Reader
