@@ -2,7 +2,7 @@ from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Exercise_Library, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Weekday_Availability, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
+from app.models import Exercise_Library, Exercise_Bodyparts, Exercise_Body_Regions, Exercise_Muscle_Groups, Exercise_Muscles, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Weekday_Availability, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
 
 bp = Blueprint('user_exercises', __name__)
 
@@ -40,24 +40,54 @@ def retrieve_phase_component_bodyparts(phase_id):
 
 # Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_exercises():
-    # Retrieve all possible exercises that can be selected.
+    # Retrieve all possible exercises with their component phases
     results = (
-        db.session.query(Exercise_Library, Exercise_Component_Phases)
+        db.session.query(
+            Exercise_Library,
+            Exercise_Component_Phases,
+            Exercise_Bodyparts,
+            Exercise_Body_Regions,
+            Exercise_Muscle_Groups,
+            Exercise_Muscles
+        )
         .join(Exercise_Component_Phases, Exercise_Library.id == Exercise_Component_Phases.exercise_id)
+        .outerjoin(Exercise_Bodyparts, Exercise_Library.id == Exercise_Bodyparts.exercise_id)
+        .outerjoin(Exercise_Body_Regions, Exercise_Library.id == Exercise_Body_Regions.exercise_id)
+        .outerjoin(Exercise_Muscle_Groups, Exercise_Library.id == Exercise_Muscle_Groups.exercise_id)
+        .outerjoin(Exercise_Muscles, Exercise_Library.id == Exercise_Muscles.exercise_id)
         .order_by(Exercise_Library.id.asc())
-        .all())
+        .all()
+    )
 
     possible_exercises_list = [
         {
+            "id": 0,
+            "name": "Inactive",
+            "base_strain": 0,
+            "technical_difficulty": 0,
+            "component_id": 0,
+            "subcomponent_id": 0,
+            "bodypart_id": None,
+            "body_region_id": None,
+            "muscle_group_id": None,
+            "muscle_id": None
+        }
+    ]
+
+    for exercise, phase, bodypart, body_region, muscle_group, muscle in results:
+        exercise_dict = {
             "id": exercise.id,
             "name": exercise.name.lower(),
             "base_strain": exercise.base_strain,
             "technical_difficulty": exercise.technical_difficulty,
             "component_id": phase.component_id,
             "subcomponent_id": phase.subcomponent_id,
+            "bodypart_id": bodypart.bodypart_id if bodypart else None,
+            "body_region_id": body_region.body_region_id if body_region else None,
+            "muscle_group_id": muscle_group.muscle_group_id if muscle_group else None,
+            "muscle_id": muscle.muscle_id if muscle else None
         }
-        for exercise, phase in results
-    ]
+        possible_exercises_list.append(exercise_dict)
 
     return possible_exercises_list
 
@@ -103,7 +133,9 @@ def construct_user_workout_components_list(user_workout_components):
 
             "phase_component_id": phase_component_data["id"],
             "phase_name": phase_component_data["phase_name"],
+            "component_id": phase_component_data["component_id"],
             "component_name": phase_component_data["component_name"],
+            "subcomponent_id": phase_component_data["subcomponent_id"],
             "name": phase_component_data["name"],
             "reps_min": phase_component_data["reps_min"],
             "reps_max": phase_component_data["reps_max"],
@@ -186,10 +218,6 @@ def exercise_initializer():
     # Get the total desired duration.
     for user_workout_component in user_workout_components:
         projected_duration += user_workout_component.duration
-    user_workout_components_list = construct_user_workout_components_list(user_workout_components)
-
-    # Retrieve all possible phase components that can be selected for the phase id.
-    #possible_phase_components = retrieve_possible_phase_components(user_workout_day.microcycles.mesocycles.phase_id)
 
     availability = (
         User_Weekday_Availability.query
@@ -197,11 +225,10 @@ def exercise_initializer():
         .first())
 
     parameters["projected_duration"] = projected_duration
-    parameters["phase_components"] = user_workout_components_list
+    parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
     parameters["availability"] = int(availability.availability.total_seconds())
     parameters["workout_length"] = int(current_user.workout_length.total_seconds())
-
-    possible_exercises = retrieve_exercises()
+    parameters["possible_exercises"] = retrieve_exercises()
 
     result = []
     result = exercises_main(parameters, constraints)
