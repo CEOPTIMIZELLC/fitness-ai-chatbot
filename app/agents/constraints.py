@@ -208,10 +208,13 @@ def consecutive_bodyparts_for_component(model, phase_components, active_phase_co
     return model
 
 # Ensures that only required entrys will be used at any entry in the entry_set.
-def only_use_required_items(model, required_items, entry_vars):
+def only_use_required_items(model, required_items, entry_vars, conditions=None):
     # Ensures that only required items will be used at any entry in the macrocycle.
     for entry in entry_vars:
-        model.AddAllowedAssignments([entry], [(item,) for item in required_items])
+        constraint = model.AddAllowedAssignments([entry], [(item,) for item in required_items])
+        if conditions is not None:
+            constraint.OnlyEnforceIf(conditions)
+    
     return model
 
 # Ensures that each required entry occurs at least once in the entry_set.
