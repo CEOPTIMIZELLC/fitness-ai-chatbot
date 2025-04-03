@@ -48,25 +48,26 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
         # If the phase component is resistance, append it multiple times.
         if possible_phase_component.component_id == 6:
             for possible_phase_component_bodypart in possible_phase_component_bodyparts:
-                possible_phase_components_list.append({
-                    "id": possible_phase_component.id,
-                    "name": possible_phase_component.name,
-                    "required_every_workout": possible_phase_component.required_every_workout,
-                    "required_within_microcycle": possible_phase_component.required_within_microcycle,
-                    "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
-                    "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
-                    "duration_min": (
-                        (possible_phase_component.exercises_per_bodypart_workout_min or 1)
-                        * (possible_phase_component.seconds_per_exercise * possible_phase_component.reps_min + possible_phase_component.rest_min) 
-                        * possible_phase_component.sets_min
-                    ),
-                    "duration_max": (
-                        (possible_phase_component.exercises_per_bodypart_workout_max or 1)
-                        * (possible_phase_component.seconds_per_exercise * possible_phase_component.reps_max + possible_phase_component.rest_max) 
-                        * possible_phase_component.sets_max),
-                    "bodypart_id": possible_phase_component_bodypart.bodypart_id, 
-                    "bodypart": possible_phase_component_bodypart.bodyparts.name
-                    })
+                if possible_phase_component_bodypart.bodypart_id != 1:
+                    possible_phase_components_list.append({
+                        "id": possible_phase_component.id,
+                        "name": possible_phase_component.name,
+                        "required_every_workout": possible_phase_component.required_every_workout,
+                        "required_within_microcycle": possible_phase_component.required_within_microcycle,
+                        "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
+                        "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
+                        "duration_min": (
+                            (possible_phase_component.exercises_per_bodypart_workout_min or 1)
+                            * (possible_phase_component.seconds_per_exercise * possible_phase_component.reps_min + possible_phase_component.rest_min) 
+                            * possible_phase_component.sets_min
+                        ),
+                        "duration_max": (
+                            (possible_phase_component.exercises_per_bodypart_workout_max or 1)
+                            * (possible_phase_component.seconds_per_exercise * possible_phase_component.reps_max + possible_phase_component.rest_max) 
+                            * possible_phase_component.sets_max),
+                        "bodypart_id": possible_phase_component_bodypart.bodypart_id, 
+                        "bodypart": possible_phase_component_bodypart.bodyparts.name
+                        })
         # Append only once for full body if any other phase component.
         else:
             possible_phase_components_list.append({
