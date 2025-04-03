@@ -1,4 +1,5 @@
 from app import db
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # The exercises that exist.
 class Exercise_Library(db.Model):
@@ -47,13 +48,13 @@ class Exercise_Library(db.Model):
         back_populates = "exercises",
         cascade="all, delete-orphan")
 
-    body_regions = db.relationship(
-        "Exercise_Body_Regions",
+    bodyparts = db.relationship(
+        "Exercise_Bodyparts",
         back_populates = "exercises",
         cascade="all, delete-orphan")
 
-    bodyparts = db.relationship(
-        "Exercise_Bodyparts",
+    body_regions = db.relationship(
+        "Exercise_Body_Regions",
         back_populates = "exercises",
         cascade="all, delete-orphan")
 
@@ -82,6 +83,82 @@ class Exercise_Library(db.Model):
         back_populates = "exercises",
         cascade="all, delete-orphan")
 
+    @hybrid_property
+    def all_muscle_ids(self):
+        # Direct muscles
+        direct_ids = {i.muscle_id for i in self.muscles}
+        
+        # Muscles from muscle groups, bodyparts, and body regions
+        category_ids = (
+            {mc.muscle_id 
+             for mg in self.muscle_groups 
+             for mc in mg.muscle_groups.categories} | 
+            {mc.muscle_id 
+             for bp in self.bodyparts 
+             for mc in bp.bodyparts.categories} | 
+            {mc.muscle_id 
+             for br in self.body_regions 
+             for mc in br.body_regions.categories})
+        
+        return list(set(direct_ids | category_ids))
+
+    @hybrid_property
+    def all_muscle_group_ids(self):
+        # Direct muscle groups
+        direct_ids = {i.muscle_group_id for i in self.muscle_groups}
+
+        # Muscle groups from muscles, bodyparts, and body regions
+        category_ids = (
+            {mc.muscle_group_id 
+             for m in self.muscles 
+             for mc in m.muscles.categories} | 
+            {mc.muscle_group_id 
+             for bp in self.bodyparts 
+             for mc in bp.bodyparts.categories} | 
+            {mc.muscle_group_id 
+             for br in self.body_regions 
+             for mc in br.body_regions.categories})
+        
+        return list(set(direct_ids | category_ids))
+
+    @hybrid_property
+    def all_bodypart_ids(self):
+        # Direct bodyparts
+        direct_ids = {i.bodypart_id for i in self.bodyparts}
+        
+        # Bodyparts from muscles, muscle groups, and body regions
+        category_ids = (
+            {mc.bodypart_id 
+             for m in self.muscles 
+             for mc in m.muscles.categories} | 
+            {mc.bodypart_id 
+             for mg in self.muscle_groups 
+             for mc in mg.muscle_groups.categories} | 
+            {mc.bodypart_id 
+             for br in self.body_regions 
+             for mc in br.body_regions.categories})
+        
+        return list(set(direct_ids | category_ids))
+
+    @hybrid_property
+    def all_body_region_ids(self):
+        # Direct body regions
+        direct_ids = {i.body_region_id for i in self.body_regions}
+        
+        # Body regions from muscles, muscle groups, and bodyparts
+        category_ids = (
+            {mc.body_region_id 
+             for m in self.muscles 
+             for mc in m.muscles.categories} | 
+            {mc.body_region_id 
+             for mg in self.muscle_groups 
+             for mc in mg.muscle_groups.categories} | 
+            {mc.body_region_id 
+             for bp in self.bodyparts 
+             for mc in bp.bodyparts.categories})
+        
+        return list(set(direct_ids | category_ids))
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -93,5 +170,9 @@ class Exercise_Library(db.Model):
             "body_position": self.body_position,
             "option_for_added_weight": self.option_for_added_weight,
             "proprioceptive_progressions": self.proprioceptive_progressions,
+            "muscle_ids": self.all_muscle_ids,
+            "muscle_group_ids": self.all_muscle_group_ids,
+            "bodypart_ids": self.all_bodypart_ids,
+            "body_region_ids": self.all_body_region_ids,
         }
     
