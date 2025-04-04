@@ -266,9 +266,8 @@ class PhaseComponentAgent(BaseAgent):
         model, workout_availability, active_phase_components, duration_vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]
 
         solver = cp_model.CpSolver()
-        solver.parameters.num_search_workers = 12
-
-        #solver.parameters.log_search_progress = True
+        solver.parameters.num_search_workers = 24
+        # solver.parameters.log_search_progress = True
         status = solver.Solve(model)
 
         # If the duration spread should be minimized, then ensure the final duration is the same, with the new goal of minimizing the spread.
