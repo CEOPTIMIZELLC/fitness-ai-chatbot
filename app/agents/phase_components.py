@@ -5,7 +5,6 @@ from typing import Set, List, Optional
 from dotenv import load_dotenv
 from datetime import timedelta
 
-from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
 from app.agents.constraints import create_optional_intvar, create_spread_intvar, day_duration_within_availability, use_workout_required_components, use_microcycle_required_components, frequency_within_min_max, consecutive_bodyparts_for_component
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
@@ -77,6 +76,16 @@ class PhaseComponentAgent(BaseAgent):
         self.initial_state["parameter_input"]={
             "parameters": parameters, 
             "constraints": constraints}
+        self.available_constraints = """
+- day_duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
+- day_duration_within_workout_length: Prevents workout from exceeding the length allowed for a workout.
+- use_workout_required_components: Forces all phase components required for a workout to be assigned in every workout.
+- use_microcycle_required_components: Forces all phase components required for a microcycle to be assigned at lease once in the microcycle.
+- frequency_within_min_max: Forces each phase component that does occur to occur between the minimum and maximum values allowed.
+- consecutive_bodyparts_for_component: Forces phase components of the same component and subcomponent type to occur simultaneously on a workout where any is assigned.
+- minimize_duration_delta: Secondary objective to minimize the amount of spread of phase component durations.
+- maximize_exercise_time: Objective to maximize the amount of time spent overall.
+"""
 
     def setup_params_node(self, state: State, config=None) -> dict:
         """Initialize optimization parameters and constraints."""
@@ -235,31 +244,6 @@ class PhaseComponentAgent(BaseAgent):
             state["logs"] += "- Maximizing time used in microcycle.\n"
 
         return {"opt_model": (model, workout_availability, active_phase_components, duration_vars, duration_spread_var, total_duration_to_maximize)}
-
-    def analyze_infeasibility_node(self, state: State, config=None) -> dict:
-        """Use LLM to analyze solver logs and suggest constraints to relax."""
-        # Prepare history of what's been tried
-        history = retrieve_relaxation_history(state["relaxation_attempts"])
-
-        available_constraints = """
-    -
-    - day_duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
-    - day_duration_within_workout_length: Prevents workout from exceeding the time allowed for a workout.
-    - use_workout_required_components: Forces all phase components required for a workout to be assigned in every workout.
-    - use_microcycle_required_components: Forces all phase components required for a microcycle to be assigned at lease once in the microcycle.
-    - frequency_within_min_max: Forces each phase component that does occur to occur between the minimum and maximum values allowed.
-    - consecutive_bodyparts_for_component: Forces phase components of the same component and subcomponent type to occur simultaneously on a workout where any is assigned.
-    - minimize_duration_delta: Secondary objective to minimize the amount of spread of phase component durations.
-    - maximize_exercise_time: Objective to maximize the amount of time spent overall.
-    """
-
-        state = analyze_infeasibility(state, history, available_constraints)
-        
-        return {
-            "constraints": state["constraints"],
-            "current_attempt": state["current_attempt"]
-        }
-
 
     def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""

@@ -7,7 +7,6 @@ from typing import Set, List, Optional
 from dotenv import load_dotenv
 from datetime import timedelta
 
-from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
 from app.agents.constraints import link_entry_and_item, constrain_active_entries_vars, entries_within_min_max, no_consecutive_identical_items, no_n_items_without_desired_item, only_use_required_items, use_all_required_items
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
@@ -34,6 +33,16 @@ class PhaseAgent(BaseAgent):
         self.initial_state["parameter_input"]={
             "parameters": parameters, 
             "constraints": constraints}
+        self.available_constraints = """
+- phase_2_is_str_end: Forces second phase to be strength endurance
+- only_use_required_phases: Only use phases that are required
+- use_all_required_phases: Use every required phase at least once
+- phase_duration_within_min_max: Forces the duration of a phase to be between the minimum and maximum values allowed.
+- no_consecutive_identical_phases: Prevents consecutive identical phases
+- no_n_phases_without_goal: Prevents n phases without including the goal phase
+- maximize_phases: Secondary objective to maximize the amount of time spent in phases in general.
+- maximize_goal_phase: Objective to maximize the amount of time spent in the goal phase.
+"""
 
     def setup_params_node(self, state: State, config=None) -> dict:
 
@@ -246,30 +255,6 @@ class PhaseAgent(BaseAgent):
 
 
         return {"opt_model": (model, mesocycle_vars, duration_vars, used_vars, active_mesocycle_vars)}
-
-    def analyze_infeasibility_node(self, state: State, config=None) -> dict:
-        """Use LLM to analyze solver logs and suggest constraints to relax."""
-        # Prepare history of what's been tried
-        history = retrieve_relaxation_history(state["relaxation_attempts"])
-
-        available_constraints = """
-    - no_consecutive_same_phase: Prevents consecutive phases of the same type.
-    - phase_within_min_max: Forces the duration of a phase to be between the minimum and maximum values allowed.
-    - phase_1_is_stab_end: Forces the first phase of a macrocycle to be a stabilization endurance phase.
-    - phase_2_is_str_end: Forces the second phase of a macrocycle to be a strength endurance phase.
-    - no_6_phases_without_stab_end: Prevents 6 months from passing without a stabilization endurance phase.
-    - only_use_required_phases: Prevents mesocycle_vars from being given a phase that isn't required.
-    - use_all_required_phases: Forces all required phases to be assigned at least once in a macrocycle.
-    - maximize_phases: Secondary objective to maximize the amount of time spent in phases in general.
-    - maximize_goal_phase: Objective to maximize the amount of time spent in the goal phase.
-    """
-
-        state = analyze_infeasibility(state, history, available_constraints)
-        
-        return {
-            "constraints": state["constraints"],
-            "current_attempt": state["current_attempt"]
-        }
 
     def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""

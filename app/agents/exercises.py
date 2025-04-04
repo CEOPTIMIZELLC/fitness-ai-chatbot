@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from datetime import timedelta
 import math
 
-from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
 from app.agents.constraints import entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var, use_all_required_items, only_use_required_items
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
@@ -36,7 +35,18 @@ class ExerciseAgent(BaseAgent):
         self.initial_state["parameter_input"]={
             "parameters": parameters, 
             "constraints": constraints}
-    
+        self.available_constraints = """
+- duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
+- duration_within_workout_length: Prevents workout from exceeding the length allowed for a workout.
+- use_allowed_exercises: Only use exercises that are allowed for the phase component and bodypart combination.
+- no_duplicate_exercises: Ensure each exercise only appears once
+- use_all_phase_components: At least one exercise should be given each phase component.
+- sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
+- rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
+- exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
+- minimize_strain: Objective to minimize the amount of strain overall.
+"""
+
     def setup_params_node(self, state: State, config=None) -> dict:
         """Initialize optimization parameters and constraints."""
 
@@ -447,32 +457,6 @@ class ExerciseAgent(BaseAgent):
             state["logs"] += "- Maximizing time used in workout.\n"
 
         return {"opt_model": (model, workout_length, exercise_vars, phase_component_vars, active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars)}
-
-    def analyze_infeasibility_node(self, state: State, config=None) -> dict:
-        """Use LLM to analyze solver logs and suggest constraints to relax."""
-        # Prepare history of what's been tried
-        history = retrieve_relaxation_history(state["relaxation_attempts"])
-
-        available_constraints = """
-    - use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
-    - base_strain_within_min_max: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
-    - use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
-    - no_duplicate_exercises: Forces each exercise to only appear once in the schedule.
-    - secs_within_min_max: Forces the number of seconds per exercise to be between the minimum and maximum values allowed for the phase component.
-    - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
-    - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
-    - rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
-    - exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
-    - minimize_strain: Objective to minimize the amount of strain overall.
-    """
-
-        state = analyze_infeasibility(state, history, available_constraints)
-        
-        return {
-            "constraints": state["constraints"],
-            "current_attempt": state["current_attempt"]
-        }
-
 
     def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""
