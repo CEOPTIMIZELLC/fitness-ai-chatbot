@@ -3,7 +3,10 @@ from ortools.sat.python import cp_model
 from datetime import datetime
 from typing import Set, Optional
 from dotenv import load_dotenv
-from app.agents.constraints import link_entry_and_item, create_optional_intvar, create_duration_var, no_repeated_items, only_use_required_items
+from datetime import timedelta
+import math
+
+from app.agents.constraints import entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var, use_all_required_items, only_use_required_items
 from app.agents.base_agent import BaseAgent, BaseAgentState
 from app.agents.exercises_phase_components import RelaxationAttempt as RelaxationAttempt2, State, ExerciseComponentsAgent
 
@@ -61,27 +64,88 @@ class RelaxationAttempt(RelaxationAttempt2):
                  duration: Optional[int] = None,
                  working_duration: Optional[int] = None,
                  reasoning: Optional[str] = None, expected_impact: Optional[str] = None):
-        super().__init__(constraints_relaxed, result_feasible, strain_ratio, duration, working_duration, reasoning, expected_impact)
+        self.constraints_relaxed = set(constraints_relaxed)
+        self.result_feasible = result_feasible
+        self.strain_ratio = strain_ratio
+        self.duration = duration
+        self.working_duration = working_duration
+        self.timestamp = datetime.now()
+        self.reasoning = reasoning
+        self.expected_impact = expected_impact
+
+class State(BaseAgentState):
+    parameter_input: dict
+
+class ExerciseAgent(BaseAgent):
+    def __init__(self, parameters={}, constraints={}):
+        super().__init__()
+        self.initial_state["parameter_input"]={
+            "parameters": parameters, 
+            "constraints": constraints}
         self.available_constraints = """
-- use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
-- base_strain_equals: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
-- use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
-- no_duplicate_exercises: Forces each exercise to only appear once in the schedule.
-- secs_equals: Forces the number of seconds per exercise to be between the minimum and maximum values allowed for the phase component.
-- reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
+- duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
+- duration_within_workout_length: Prevents workout from exceeding the length allowed for a workout.
+- use_allowed_exercises: Only use exercises that are allowed for the phase component and bodypart combination.
+- no_duplicate_exercises: Ensure each exercise only appears once
+- use_all_phase_components: At least one exercise should be given each phase component.
 - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
 - rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
 - exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
 - minimize_strain: Objective to minimize the amount of strain overall.
 """
 
-class ExerciseAgent(ExerciseComponentsAgent):
-    def build_opt_model_node_2(self, state: State, config=None) -> dict:
-        print(state["formatted"])
+    def setup_params_node(self, state: State, config=None) -> dict:
+        """Initialize optimization parameters and constraints."""
 
-        print("Building Second Step")
-        model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars = state["opt_model"]
+        parameter_input = state.get("parameter_input", {})
 
+        parameters = {
+            "availability": 0,
+            "workout_length": 0,
+            "projected_duration": 0,
+            "phase_components": [],
+            "possible_exercises": []
+        }
+
+        # Define all constraints with their active status
+        constraints = {
+            "duration_within_availability": True,           # The time of a workout won't exceed the time allowed for that given day.
+            "duration_within_workout_length": True,         # The time of a workout won't exceed the length allowed for a workout.
+            "use_allowed_exercises": True,                  # Only use exercises that are allowed for the phase component and bodypart combination.
+            "no_duplicate_exercises": True,                 # Ensure each exercise only appears once
+            "use_all_phase_components": True,               # At least one exercise should be given each phase component.
+            "base_strain_within_min_max": True,             # The amount of base strain of the exercise may only be a number of weeks between the minimum and maximum base strain allowed for the exercise.
+            "secs_within_min_max": True,                    # The number of seconds per exercise of the exercise may only be a number of weeks between the minimum and maximum seconds allowed for the phase component.
+            "reps_within_min_max": True,                    # The number of reps of the exercise may only be a number of weeks between the minimum and maximum reps allowed for the phase component.
+            "sets_within_min_max": True,                    # The number of sets of the exercise may only be a number of weeks between the minimum and maximum sets allowed for the phase component.
+            "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number of weeks between the minimum and maximum rest allowed for the phase component.
+            "exercises_per_bodypart_within_min_max": True,  # The number of exercises for the phase components of the exercise may only be a number of weeks between the minimum and maximum exercises per bodypart allowed for the phase component.
+            "minimize_strain": True,                        # Objective function constraint
+        }
+
+        # Merge in any new parameters or constraints from the provided config
+        if "parameters" in parameter_input:
+            parameters.update(parameter_input["parameters"])
+        if "constraints" in parameter_input:
+            constraints.update(parameter_input["constraints"])
+        
+        return {
+            "parameters": parameters,
+            "constraints": constraints,
+            "opt_model": None,
+            "solution": None,
+            "formatted": "",
+            "output": "",
+            "logs": "Parameters and constraints initialized\n",
+            "relaxation_attempts": [],
+            "current_attempt": {
+                "constraints": set(),
+                "reasoning": None,
+                "expected_impact": None
+            }
+        }
+
+    def build_opt_model_node(self, state: State, config=None) -> dict:
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
         constraints = state["constraints"]
@@ -232,10 +296,9 @@ class ExerciseAgent(ExerciseComponentsAgent):
 
             state["logs"] += "- Maximizing time used in workout.\n"
 
-        return {"opt_model": (model, exercise_vars, phase_component_vars, active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars)}
+        return {"opt_model": (model, workout_length, exercise_vars, phase_component_vars, active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars)}
 
-    def solve_model_node_2(self, state: State, config=None) -> dict:
-        print("Solving Second Step")
+    def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
         model, exercise_vars, phase_component_vars, active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars = state["opt_model"]
