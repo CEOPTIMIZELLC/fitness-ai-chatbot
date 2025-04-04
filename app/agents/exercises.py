@@ -130,6 +130,8 @@ class ExerciseAgent(BaseAgent):
         max_rest = max(phase_component["rest_max"] for phase_component in phase_components[1:])
         min_base_strain = min(exercise["base_strain"] for exercise in exercises[1:])
         max_base_strain = max(exercise["base_strain"] for exercise in exercises[1:])
+        max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
+        max_strain_scaled = ((max_seconds_per_exercise * (10 + max_base_strain) * max_reps) + (10 *max_rest * 5)) * max_sets
 
         used_exercise_vars = []
         used_pc_vars = []
@@ -212,7 +214,7 @@ class ExerciseAgent(BaseAgent):
 
             model, duration_var_entry = create_duration_var(model=model, 
                                                     i=i, 
-                                                    workout_length=workout_length, 
+                                                    max_duration=max_duration, 
                                                     seconds_per_exercise=seconds_per_exercise_var_entry, 
                                                     reps=reps_var_entry, 
                                                     sets=sets_var_entry, 
@@ -273,13 +275,12 @@ class ExerciseAgent(BaseAgent):
                         )
                     )
                 ]
-                if exercises_for_pc == []:
+                if exercises_for_pc == [] and phase_component["bodypart_id"] == 1:
                     print(f"\n{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, if total body, include all.")
                     exercises_for_pc = [
                         i for i, exercise in enumerate(exercises[1:], start=1)
                         if (exercise['component_id']==phase_component["component_id"] 
                             and exercise['subcomponent_id']==phase_component["subcomponent_id"]
-                            and phase_component["bodypart_id"] == 1     # Total body
                         )
                     ]
                 if exercises_for_pc == []:
@@ -394,13 +395,13 @@ class ExerciseAgent(BaseAgent):
         if constraints["duration_within_workout_length"]:
             state["logs"] += "- Sum of phase component duration within maximum allowed time for a workout.\n"
 
-        # Objective: Maximize total duration of microcycle
+        # Objective: Minimize strain over workout.
         if constraints["minimize_strain"]:
             # List of contributions to goal time.
             strain_terms = []
 
             # Creates strain_time, which will hold the total strain over the workout.
-            strain_time = model.NewIntVar(0, max_exercises * workout_length, 'strain_time')
+            strain_time = model.NewIntVar(0, max_exercises * max_strain_scaled, 'strain_time')
             for i, values_for_exercise in enumerate(zip(active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars)):
                 (
                     active_exercise_var, 
@@ -413,12 +414,12 @@ class ExerciseAgent(BaseAgent):
                 # Create the entry for phase component's duration
                 # total_working_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
                 #working_duration_var = model.NewIntVar(0, workout_length, f'working_duration_{i}')
-                non_zero_working_duration_var = model.NewIntVar(1, workout_length, f'working_duration_{i}')
+                non_zero_working_duration_var = model.NewIntVar(1, max_strain_scaled, f'working_duration_{i}')
                 working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
 
                 model, duration_var = create_duration_var(model=model, 
                                                           i=i, 
-                                                          workout_length=workout_length, 
+                                                          max_duration=max_strain_scaled, 
                                                           seconds_per_exercise=seconds_per_exercise_var, 
                                                           reps=reps_var, 
                                                           sets=sets_var, 
@@ -429,7 +430,7 @@ class ExerciseAgent(BaseAgent):
 
                 model, working_duration_var = create_duration_var(model=model, 
                                                           i=i, 
-                                                          workout_length=workout_length, 
+                                                          max_duration=max_strain_scaled, 
                                                           seconds_per_exercise=seconds_per_exercise_var, 
                                                           reps=reps_var, 
                                                           sets=sets_var, 
