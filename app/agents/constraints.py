@@ -49,7 +49,8 @@ def create_spread_intvar(model, entry_vars, entry_var_name, active_entry_vars, m
 # Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
 # This method performs the in between steps and returns the final duration variable.
 # total_set_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count + rest_time) * set_count
-def create_duration_var(model, i, workout_length=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, base_strain=1, name="", scaled=1):
+# total_set_duration = (seconds_per_exercise*(10+basestrain)* rep_count + 10*rest_time) * set_count
+def create_duration_var(model, i, workout_length=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, base_strain=None, name="", scaled=1):
     # Create the entry for phase component's duration
     # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
     duration_var_entry = model.NewIntVar(0, scaled * workout_length, f'{name}duration_{i}')
@@ -57,16 +58,23 @@ def create_duration_var(model, i, workout_length=0, seconds_per_exercise=0, reps
     # Temporary variable for seconds per exercise and the rep count. (seconds_per_exercise * rep_count)
     seconds_per_exercise_and_reps = model.NewIntVar(0, scaled * workout_length, f'{name}seconds_per_exercise_and_rep_count_{i}')
     
-    model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, base_strain, reps, scaled])
+    # In between step for base strain.
+    if base_strain != None:
+        scaled_base_strain = model.NewIntVar(0, scaled * scaled, f'{name}scaled_base_strain_{i}')
+        model.Add(scaled_base_strain == (scaled + base_strain))
+    else:
+        scaled_base_strain = 1
+
+    model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, scaled_base_strain, reps])
 
     # Temporary variable for the previous product and the rest time. (seconds_per_exercise * rep_count + rest_time)
     duration_with_rest = model.NewIntVar(0, scaled * workout_length, f'{name}duration_with_rest_{i}')
 
     # In between step for added components.
-    model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * rest * scaled))
+    model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * scaled * rest))
 
     # Completed constraint.
-    model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets, scaled])
+    model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
     return model, duration_var_entry
 
 
@@ -208,12 +216,17 @@ def consecutive_bodyparts_for_component(model, phase_components, active_phase_co
     return model
 
 # Ensures that only required entrys will be used at any entry in the entry_set.
-def only_use_required_items(model, required_items, entry_vars, conditions=None):
+def only_use_required_items(model, required_items, entry_vars, active_entry_vars=None, conditions=None):
     # Ensures that only required items will be used at any entry in the macrocycle.
     for i, entry in enumerate(entry_vars):
         constraint = model.AddAllowedAssignments([entry], [(item,) for item in required_items])
+        condition = []
         if conditions is not None:
-            constraint.OnlyEnforceIf(conditions[i])
+            condition.append(conditions[i])
+        if active_entry_vars is not None:
+            condition.append(active_entry_vars[i])
+        if condition != []:
+            constraint.OnlyEnforceIf(condition)
     return model
 
 # Ensures that each required entry occurs at least once in the entry_set.

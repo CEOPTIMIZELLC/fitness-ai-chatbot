@@ -55,6 +55,7 @@ class ExerciseAgent(BaseAgent):
             "duration_within_availability": True,           # The time of a workout won't exceed the time allowed for that given day.
             "duration_within_workout_length": True,         # The time of a workout won't exceed the length allowed for a workout.
             "use_allowed_exercises": True,                  # Only use exercises that are allowed for the phase component and bodypart combination.
+            "no_duplicate_exercises": True,                 # Ensure each exercise only appears once
             "use_all_phase_components": True,               # At least one exercise should be given each phase component.
             "base_strain_within_min_max": True,             # The amount of base strain of the exercise may only be a number of weeks between the minimum and maximum base strain allowed for the exercise.
             "secs_within_min_max": True,                    # The number of seconds per exercise of the exercise may only be a number of weeks between the minimum and maximum seconds allowed for the phase component.
@@ -263,6 +264,7 @@ class ExerciseAgent(BaseAgent):
                     )
                 ]
                 if exercises_for_pc == []:
+                    print(f"\n{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, if total body, include all.")
                     exercises_for_pc = [
                         i for i, exercise in enumerate(exercises[1:], start=1)
                         if (exercise['component_id']==phase_component["component_id"] 
@@ -271,6 +273,7 @@ class ExerciseAgent(BaseAgent):
                         )
                     ]
                 if exercises_for_pc == []:
+                    print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, include all.")
                     exercises_for_pc = [i for i, _ in enumerate(exercises[1:], start=1)
                     ]
 
@@ -278,8 +281,24 @@ class ExerciseAgent(BaseAgent):
                 model = only_use_required_items(model = model, 
                                                 required_items = exercises_for_pc, 
                                                 entry_vars = exercise_vars, 
+                                                active_entry_vars = active_exercise_vars, 
                                                 conditions = conditions)
             state["logs"] += "- Only use allowed exercises applied.\n"
+
+        # Constraint: Ensure each exercise only appears once in the schedule
+        if constraints["no_duplicate_exercises"]:
+            for exercise_index in range(1, len(exercises)):  # Start from 1 to skip the invalid exercise at index 0
+                # Create boolean variables for each entry indicating if this exercise is used
+                exercise_occurrences = []
+                for i in range(max_exercises):
+                    is_exercise = model.NewBoolVar(f'is_exercise_{exercise_index}_at_{i}')
+                    model.Add(exercise_vars[i] == exercise_index).OnlyEnforceIf(is_exercise)
+                    model.Add(exercise_vars[i] != exercise_index).OnlyEnforceIf(is_exercise.Not())
+                    exercise_occurrences.append(is_exercise)
+                
+                # Ensure sum of occurrences is at most 1
+                model.Add(sum(exercise_occurrences) <= 1)
+            state["logs"] += "- No duplicate exercises constraint applied.\n"
 
         # Constraint: Use all required phases at least once
         if constraints["use_all_phase_components"]:
@@ -383,7 +402,7 @@ class ExerciseAgent(BaseAgent):
                 ) = values_for_exercise
                 # Create the entry for phase component's duration
                 # total_working_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
-                working_duration_var = model.NewIntVar(0, workout_length, f'working_duration_{i}')
+                #working_duration_var = model.NewIntVar(0, workout_length, f'working_duration_{i}')
                 non_zero_working_duration_var = model.NewIntVar(1, workout_length, f'working_duration_{i}')
                 working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
 
@@ -404,7 +423,7 @@ class ExerciseAgent(BaseAgent):
                                                           seconds_per_exercise=seconds_per_exercise_var, 
                                                           reps=reps_var, 
                                                           sets=sets_var, 
-                                                          rest=rest_var,
+                                                          rest=0,
                                                           base_strain=base_strain_var,
                                                           name="working_",
                                                           scaled=10)
@@ -438,6 +457,7 @@ class ExerciseAgent(BaseAgent):
     - use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
     - base_strain_within_min_max: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
     - use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
+    - no_duplicate_exercises: Forces each exercise to only appear once in the schedule.
     - secs_within_min_max: Forces the number of seconds per exercise to be between the minimum and maximum values allowed for the phase component.
     - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
     - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
@@ -461,7 +481,7 @@ class ExerciseAgent(BaseAgent):
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
-        solver.parameters.log_search_progress = False
+        solver.parameters.log_search_progress = True
         status = solver.Solve(model)
         
         state["logs"] += f"\nSolver status: {status}\n"
