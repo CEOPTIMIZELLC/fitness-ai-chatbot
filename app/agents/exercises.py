@@ -2,10 +2,50 @@ from ortools.sat.python import cp_model
 from datetime import datetime
 from typing import Set, Optional
 from dotenv import load_dotenv
-from app.agents.constraints import entries_equal, entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var, use_all_required_items, no_repeated_items, only_use_required_items
+from app.agents.constraints import entries_equal, entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, create_duration_var, use_all_required_items
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
 _ = load_dotenv()
+
+# Ensures that only required entrys will be used at any entry in the entry_set.
+def only_use_required_items(model, required_items, entry_vars, active_entry_vars=None, conditions=None):
+    # Ensures that only required items will be used at any entry in the macrocycle.
+    for i, entry in enumerate(entry_vars):
+        constraint = model.AddAllowedAssignments([entry], [(item,) for item in required_items])
+        condition = []
+        if conditions is not None:
+            condition.append(conditions[i])
+        if active_entry_vars is not None:
+            condition.append(active_entry_vars[i])
+        if condition != []:
+            constraint.OnlyEnforceIf(condition)
+    return model
+
+# Ensures that an item only occurs once in the entry_set.
+def no_repeated_items(model, required_items, used_vars):
+    for item_index in required_items:
+        conditions = [row[item_index] for row in used_vars]
+        model.Add(sum(conditions) <= 1)
+    return model
+
+def entry_within_min_max(model, var, item, min_key, max_key):
+    """Generic function to add min/max constraints with optional condition."""
+    if (min_key in item) and (item[min_key] is not None):
+        model.Add(var >= item[min_key])
+    if (max_key in item) and (item[max_key] is not None):
+        model.Add(var <= item[max_key])
+
+# Constraint: The number of exercises may only be a number of exercises between the minimum and maximum exercises per bodypart allowed.
+def exercises_per_bodypart_within_min_max(model, required_items, items, minimum_key, maximum_key, used_vars):
+    for item_index in required_items:
+        exercises_of_phase = [row[item_index] for row in used_vars]
+
+        # Constrain to be between the minimum and maximum allowed (if one exists)
+        entry_within_min_max(
+            model, sum(exercises_of_phase), items[item_index],
+            minimum_key, maximum_key
+        )
+    return model
 
 def get_exercises_for_pc(exercises, phase_component):
     exercises_for_pc = [
@@ -88,7 +128,7 @@ class ExerciseAgent(BaseAgent):
             "reps_within_min_max": True,                    # The number of reps of the exercise may only be a number of weeks between the minimum and maximum reps allowed for the phase component.
             "sets_within_min_max": True,                    # The number of sets of the exercise may only be a number of weeks between the minimum and maximum sets allowed for the phase component.
             "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number of weeks between the minimum and maximum rest allowed for the phase component.
-            "exercises_per_bodypart_within_min_max": False,  # The number of exercises for the phase components of the exercise may only be a number of weeks between the minimum and maximum exercises per bodypart allowed for the phase component.
+            "exercises_per_bodypart_within_min_max": True,  # The number of exercises for the phase components of the exercise may only be a number of weeks between the minimum and maximum exercises per bodypart allowed for the phase component.
             "minimize_strain": True,                        # Objective function constraint
         }
 
@@ -284,6 +324,7 @@ class ExerciseAgent(BaseAgent):
         if constraints["use_allowed_exercises"]:
             for phase_component_index, phase_component in enumerate(phase_components[1:]):
                 exercises_for_pc = get_exercises_for_pc(exercises[1:], phase_component)
+                exercises_for_pc.insert(0, 0)
                 conditions = [row[phase_component_index] for row in used_pc_vars]
 
                 model = only_use_required_items(model = model, 
@@ -457,38 +498,26 @@ class ExerciseAgent(BaseAgent):
             working_duration = 0
             schedule = []
             # Each day in the microcycle
-            for i, values_for_exercise in enumerate(zip(exercise_vars, phase_component_vars, active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars)):
-                (
-                    exercise_var,
-                    phase_component_var, 
-                    active_exercise_var, 
-                    base_strain_var,
-                    seconds_per_exercise_var, 
-                    reps_var, 
-                    sets_var, 
-                    rest_var,
-                    duration_var
-                ) = values_for_exercise
+            for i in range(len(duration_vars)):
 
                 # Ensure that the phase component is active.
-                if(solver.Value(active_exercise_var)):
-                    exercise_vars_current = solver.Value(exercise_var)
-                    phase_component_vars_current = solver.Value(phase_component_var)
-                    base_strain_vars_current = solver.Value(base_strain_var)
-                    seconds_per_exercise_current = solver.Value(seconds_per_exercise_var)
-                    reps_vars_current = solver.Value(reps_var)
-                    sets_vars_current = solver.Value(sets_var)
-                    rest_vars_current = solver.Value(rest_var) * 5
-                    duration_vars_current = solver.Value(duration_var)
+                if(solver.Value(active_exercise_vars[i])):
+                    exercise_vars_current = solver.Value(exercise_vars[i])
+                    phase_component_vars_current = solver.Value(phase_component_vars[i])
+                    base_strain_vars_current = solver.Value(base_strain_vars[i])
+                    seconds_per_exercise_current = solver.Value(seconds_per_exercise_vars[i])
+                    reps_vars_current = solver.Value(reps_vars[i])
+                    sets_vars_current = solver.Value(sets_vars[i])
+                    duration_vars_current = solver.Value(duration_vars[i])
                     working_duration_vars_current = (seconds_per_exercise_current * reps_vars_current * sets_vars_current)
                     schedule.append((
                         i, exercise_vars_current, phase_component_vars_current, 
-                        solver.Value(active_exercise_var), 
+                        solver.Value(active_exercise_vars[i]), 
                         base_strain_vars_current, 
                         seconds_per_exercise_current, 
                         reps_vars_current, 
                         sets_vars_current, 
-                        rest_vars_current, 
+                        solver.Value(rest_vars[i]) * 5, 
                         duration_vars_current,
                         working_duration_vars_current
                     ))
@@ -587,12 +616,8 @@ class ExerciseAgent(BaseAgent):
                     duration, working_duration) in enumerate(schedule):
 
                 exercise = exercises[exercise_index]
-                exercise_id = exercise["id"]
                 phase_component = phase_components[phase_component_index]
-                phase_component_id = phase_component["phase_component_id"]
-                bodypart_id = phase_component["bodypart_id"]
 
-                exercise_name = exercise["name"]
                 phase_component_name = phase_component["name"] + " " + phase_component["bodypart_name"] 
 
                 #duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
@@ -601,10 +626,10 @@ class ExerciseAgent(BaseAgent):
                     final_output.append({
                         "i": i, 
                         "exercise_index": exercise_index,
-                        "exercise_id": exercise_id,
+                        "exercise_id": exercise["id"],
                         "phase_component_index": phase_component_index, 
-                        "phase_component_id": phase_component_id,
-                        "bodypart_id": bodypart_id,
+                        "phase_component_id": phase_component["phase_component_id"],
+                        "bodypart_id": phase_component["bodypart_id"],
                         "base_strain": base_strain, 
                         "seconds_per_exercise": seconds_per_exercise, 
                         "active_exercises": active_exercises, 
@@ -618,7 +643,7 @@ class ExerciseAgent(BaseAgent):
                     # Count the number of occurrences of each phase component
                     phase_component_count[phase_component_index] += 1
 
-                    formatted_exercise = f"{exercise_name:<{longest_exercise_string_size+3}}"
+                    formatted_exercise = f"{exercise["name"]:<{longest_exercise_string_size+3}}"
                     formatted_phase_component = f"{phase_component_name:<{longest_pc_string_size+3}}"
 
                     formatted_duration = f"Duration: {duration // 60} min {duration % 60} sec ({duration} seconds)"
