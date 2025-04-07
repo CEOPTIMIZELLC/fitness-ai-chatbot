@@ -99,13 +99,33 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
     return model
 
 
+
+def entry_equals(model, var, item, key, condition=None):
+    """Generic function to add equals constraints with optional condition."""
+    if (key in item) and (item[key] is not None):
+        constraint = model.Add(var == item[key])
+        if condition is not None:
+            constraint.OnlyEnforceIf(condition)
+
+# Constraint: The duration of a item may only be the value allowed.
+def entries_equal(model, items, key, number_of_entries, used_vars, duration_vars):
+    for i in range(number_of_entries):
+        for j, item in enumerate(items):
+            # The duration_vars[i] must be within the allowed range of the item.
+            entry_equals(
+                model, duration_vars[i], item,
+                key, used_vars[i][j]
+            )
+    return model
+
+
 def entry_within_min_max(model, var, item, min_key, max_key, condition=None):
     """Generic function to add min/max constraints with optional condition."""
-    if item.get(min_key):
+    if (min_key in item) and (item[min_key] is not None):
         constraint = model.Add(var >= item[min_key])
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
-    if item.get(max_key):
+    if (max_key in item) and (item[max_key] is not None):
         constraint = model.Add(var <= item[max_key])
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
