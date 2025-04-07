@@ -16,6 +16,7 @@ def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_acti
     # Enforce min <= entry <= max if the activator is on
     model.Add(entry >= min_if_active).OnlyEnforceIf(activator)
     model.Add(entry <= max_if_active).OnlyEnforceIf(activator)
+
     return model
 
 
@@ -169,15 +170,13 @@ def frequency_within_min_max(model, phase_components, active_phase_components, m
     return model
 
 # Constraint: The number of exercises may only be a number of exercises between the minimum and maximum exercises per bodypart allowed.
-def exercises_per_bodypart_within_min_max(model, items, minimum_key, maximum_key, used_vars):
-    # Each required phase component
-    for i, item in enumerate(items[1:], start=1):
-        # Retrieve the count for every exercise of the phase type.
-        exercises_of_phase = [exercise_phases[i] for exercise_phases in used_vars]
+def exercises_per_bodypart_within_min_max(model, required_items, items, minimum_key, maximum_key, used_vars):
+    for item_index in required_items:
+        exercises_of_phase = [row[item_index] for row in used_vars]
 
         # Constrain to be between the minimum and maximum allowed (if one exists)
         entry_within_min_max(
-            model, sum(exercises_of_phase), item,
+            model, sum(exercises_of_phase), items[item_index],
             minimum_key, maximum_key
         )
     return model
@@ -250,41 +249,27 @@ def only_use_required_items(model, required_items, entry_vars, active_entry_vars
     return model
 
 # Ensures that each required entry occurs at least once in the entry_set.
-def use_all_required_items(model, required_items, entry_vars, number_of_entries):
+def use_all_required_items(model, required_items, used_vars):
     for item_index in required_items:
-        # Create an array of Boolean variables indicating whether this item appears in each entry
-        item_in_entries = [
-            model.NewBoolVar(f'item_{item_index}_in_entry_{i}') 
-            for i in range(number_of_entries)]
-        
-        for i in range(number_of_entries):
-            model.Add(entry_vars[i] == item_index).OnlyEnforceIf(item_in_entries[i])
-            model.Add(entry_vars[i] != item_index).OnlyEnforceIf(item_in_entries[i].Not())
+        conditions = [row[item_index] for row in used_vars]
+        model.AddBoolOr(conditions)
+    return model
 
-        # Ensure that at least one of these Boolean variables is true
-        model.AddBoolOr(item_in_entries)
+# Ensures that an item only occurs once in the entry_set.
+def no_repeated_items(model, required_items, used_vars):
+    for item_index in required_items:
+        conditions = [row[item_index] for row in used_vars]
+        model.Add(sum(conditions) <= 1)
     return model
 
 # Constraint: Force all phase components required in every workout to be included at least once.
-def use_workout_required_components(model, required_phase_components, active_phase_components, active_workday_vars):
+def use_workout_required_components(model, required_items, used_vars, active_entry_vars):
     # Each required phase component
-    for required_component_index in required_phase_components:
+    for item_index in required_items:
         # Each day
-        for active_phase_component, active_workday in zip(active_phase_components, active_workday_vars):
+        for row, active_entry in zip(used_vars, active_entry_vars):
             # Set the active indicator for the phase to active on each active day
-            model.Add(active_phase_component[required_component_index] == True).OnlyEnforceIf(active_workday)
-    return model
-
-# Constraint: Force all phase components required in every microcycle to be included at least once.
-def use_microcycle_required_components(model, required_phase_components, active_phase_components):
-    # Each required phase component
-    for required_component_index in required_phase_components:
-        active_window = []
-        # Each day
-        for active_phase_component in active_phase_components:
-            # Add the corresponding indicator for phase component activity to the list to be checked
-            active_window.append(active_phase_component[required_component_index])
-        model.AddBoolOr(active_window)
+            model.Add(row[item_index] == True).OnlyEnforceIf(active_entry)
     return model
 
 # Constraint: The duration of a day may only be a number of hours between the allowed time.

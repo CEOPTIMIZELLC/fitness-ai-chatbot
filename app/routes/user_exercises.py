@@ -99,7 +99,10 @@ def construct_user_workout_components_list(user_workout_components):
         'intensity_min': 0, 
         'intensity_max': 0, 
         'rest_min': 0, 
-        'rest_max': 0
+        'rest_max': 0,
+        'exercises_per_bodypart_workout_min': 0,
+        'exercises_per_bodypart_workout_max': 0,
+        'exercise_selection_note': None
     }]
 
     # Convert the query into a list of dictionaries, adding the information for the phase restrictions.

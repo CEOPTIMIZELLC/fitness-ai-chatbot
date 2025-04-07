@@ -1,5 +1,6 @@
 from typing_extensions import TypedDict, TypeVar
 from langgraph.graph import StateGraph, START, END
+from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
 
 class BaseAgentState(TypedDict):
     parameters: dict
@@ -27,6 +28,20 @@ class BaseAgent:
             "logs": "",
             "relaxation_attempts": [],
             "current_attempt": {"constraints": set(), "reasoning": None, "expected_impact": None}
+        }
+        # Each child class should override this with their specific constraints
+        self.available_constraints = ""
+
+    def analyze_infeasibility_node(self, state: TState, config=None) -> dict:
+        """Use LLM to analyze solver logs and suggest constraints to relax."""
+        # Prepare history of what's been tried
+        history = retrieve_relaxation_history(state["relaxation_attempts"])
+
+        state = analyze_infeasibility(state, history, self.available_constraints)
+        
+        return {
+            "constraints": state["constraints"],
+            "current_attempt": state["current_attempt"]
         }
 
     def create_optimization_graph(self, state_class: type[TState]):

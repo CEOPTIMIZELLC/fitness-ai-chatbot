@@ -1,16 +1,30 @@
 from ortools.sat.python import cp_model
-from typing_extensions import TypedDict
 from datetime import datetime
-from typing import Set, List, Optional
+from typing import Set, Optional
 from dotenv import load_dotenv
-from datetime import timedelta
-import math
-
-from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
-from app.agents.constraints import entries_equal, entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var, use_all_required_items, only_use_required_items
+from app.agents.constraints import entries_equal, entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, exercises_per_bodypart_within_min_max, create_duration_var, use_all_required_items, no_repeated_items, only_use_required_items
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
 _ = load_dotenv()
+
+def get_exercises_for_pc(exercises, phase_component):
+    exercises_for_pc = [
+        i for i, exercise in enumerate(exercises, start=1)
+        if (exercise['component_id']==phase_component["component_id"] 
+            and exercise['subcomponent_id']==phase_component["subcomponent_id"]
+            and ((1 in exercise['bodypart_ids']) or
+                 (phase_component["bodypart_id"] in exercise["bodypart_ids"])))]
+    if exercises_for_pc == []:
+        print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, if total body, include all.")
+        if phase_component["bodypart_id"] == 1:
+            exercises_for_pc = [
+                i for i, exercise in enumerate(exercises, start=1)
+                if (exercise['component_id']==phase_component["component_id"] 
+                    and exercise['subcomponent_id']==phase_component["subcomponent_id"])]
+    if exercises_for_pc == []:
+        print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, include all.")
+        exercises_for_pc = [i for i, _ in enumerate(exercises, start=1)]
+    return exercises_for_pc
 
 class RelaxationAttempt:
     def __init__(self, constraints_relaxed: Set[str], result_feasible: bool, 
@@ -26,6 +40,18 @@ class RelaxationAttempt:
         self.timestamp = datetime.now()
         self.reasoning = reasoning
         self.expected_impact = expected_impact
+        self.available_constraints = """
+- use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
+- base_strain_equals: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
+- use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
+- no_duplicate_exercises: Forces each exercise to only appear once in the schedule.
+- secs_equals: Forces the number of seconds per exercise to be between the minimum and maximum values allowed for the phase component.
+- reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
+- sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
+- rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
+- exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
+- minimize_strain: Objective to minimize the amount of strain overall.
+"""
 
 class State(BaseAgentState):
     parameter_input: dict
@@ -54,15 +80,15 @@ class ExerciseAgent(BaseAgent):
         constraints = {
             "duration_within_availability": True,           # The time of a workout won't exceed the time allowed for that given day.
             "duration_within_workout_length": True,         # The time of a workout won't exceed the length allowed for a workout.
-            "use_allowed_exercises": True,                  # Only use exercises that are allowed for the phase component and bodypart combination.
+            "use_allowed_exercises": False,                  # Only use exercises that are allowed for the phase component and bodypart combination.
             "no_duplicate_exercises": True,                 # Ensure each exercise only appears once
             "use_all_phase_components": True,               # At least one exercise should be given each phase component.
-            "base_strain_equals": True,             # The amount of base strain of the exercise may only be a number of weeks between the minimum and maximum base strain allowed for the exercise.
-            "secs_equals": True,                    # The number of seconds per exercise of the exercise may only be a number of weeks between the minimum and maximum seconds allowed for the phase component.
+            "base_strain_equals": True,                     # The amount of base strain of the exercise may only be a number of weeks between the minimum and maximum base strain allowed for the exercise.
+            "secs_equals": True,                            # The number of seconds per exercise of the exercise may only be a number of weeks between the minimum and maximum seconds allowed for the phase component.
             "reps_within_min_max": True,                    # The number of reps of the exercise may only be a number of weeks between the minimum and maximum reps allowed for the phase component.
             "sets_within_min_max": True,                    # The number of sets of the exercise may only be a number of weeks between the minimum and maximum sets allowed for the phase component.
             "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number of weeks between the minimum and maximum rest allowed for the phase component.
-            "exercises_per_bodypart_within_min_max": True,  # The number of exercises for the phase components of the exercise may only be a number of weeks between the minimum and maximum exercises per bodypart allowed for the phase component.
+            "exercises_per_bodypart_within_min_max": False,  # The number of exercises for the phase components of the exercise may only be a number of weeks between the minimum and maximum exercises per bodypart allowed for the phase component.
             "minimize_strain": True,                        # Objective function constraint
         }
 
@@ -226,18 +252,21 @@ class ExerciseAgent(BaseAgent):
         num_exercises_used = model.NewIntVar(min_exercises, max_exercises, 'num_exercises_used')
         model.Add(num_exercises_used == sum(active_exercise_vars))
 
+        # Links the exercise variables and the exercises that can exist via the used exercises variables.
         model = link_entry_and_item(model = model, 
                                     items = exercises, 
                                     entry_vars = exercise_vars, 
                                     number_of_entries = max_exercises, 
                                     used_vars = used_exercise_vars)
-
+        
+        # Links the phase components variables and the phase components via the used phase components variables.
         model = link_entry_and_item(model = model, 
                                     items = phase_components, 
                                     entry_vars = phase_component_vars, 
                                     number_of_entries = max_exercises, 
                                     used_vars = used_pc_vars)
         
+        # Constrain the active exercises to be within the duration of the workout.
         model = constrain_active_entries_vars(model = model, 
                                             entry_vars = phase_component_vars, 
                                             number_of_entries = max_exercises, 
@@ -254,32 +283,9 @@ class ExerciseAgent(BaseAgent):
         # Constraint: Use only allowed exercises
         if constraints["use_allowed_exercises"]:
             for phase_component_index, phase_component in enumerate(phase_components[1:]):
-                exercises_for_pc = [
-                    i for i, exercise in enumerate(exercises[1:], start=1)
-                    if (exercise['component_id']==phase_component["component_id"] 
-                        and exercise['subcomponent_id']==phase_component["subcomponent_id"]
-                        and (
-                            # phase_component["bodypart_id"] == 1 or  # Total body
-                            (1 in exercise['bodypart_ids']) or      # Total body
-                            (phase_component["bodypart_id"] in exercise["bodypart_ids"])
-                        )
-                    )
-                ]
-                if exercises_for_pc == []:
-                    print(f"\n{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, if total body, include all.")
-                    exercises_for_pc = [
-                        i for i, exercise in enumerate(exercises[1:], start=1)
-                        if (exercise['component_id']==phase_component["component_id"] 
-                            and exercise['subcomponent_id']==phase_component["subcomponent_id"]
-                            and phase_component["bodypart_id"] == 1     # Total body
-                        )
-                    ]
-                if exercises_for_pc == []:
-                    print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, include all.")
-                    exercises_for_pc = [i for i, _ in enumerate(exercises[1:], start=1)
-                    ]
-
+                exercises_for_pc = get_exercises_for_pc(exercises[1:], phase_component)
                 conditions = [row[phase_component_index] for row in used_pc_vars]
+
                 model = only_use_required_items(model = model, 
                                                 required_items = exercises_for_pc, 
                                                 entry_vars = exercise_vars, 
@@ -289,27 +295,19 @@ class ExerciseAgent(BaseAgent):
 
         # Constraint: Ensure each exercise only appears once in the schedule
         if constraints["no_duplicate_exercises"]:
-            for exercise_index in range(1, len(exercises)):  # Start from 1 to skip the invalid exercise at index 0
-                # Create boolean variables for each entry indicating if this exercise is used
-                exercise_occurrences = []
-                for i in range(max_exercises):
-                    is_exercise = model.NewBoolVar(f'is_exercise_{exercise_index}_at_{i}')
-                    model.Add(exercise_vars[i] == exercise_index).OnlyEnforceIf(is_exercise)
-                    model.Add(exercise_vars[i] != exercise_index).OnlyEnforceIf(is_exercise.Not())
-                    exercise_occurrences.append(is_exercise)
-                
-                # Ensure sum of occurrences is at most 1
-                model.Add(sum(exercise_occurrences) <= 1)
+            required_phase_components = list(range(1, len(exercises)))
+            model = no_repeated_items(model = model, 
+                                      required_items = required_phase_components, 
+                                      used_vars = used_exercise_vars)
             state["logs"] += "- No duplicate exercises constraint applied.\n"
 
         # Constraint: Use all required phases at least once
         if constraints["use_all_phase_components"]:
             required_phase_components = list(range(1, len(phase_components)))
-            
+
             model = use_all_required_items(model = model, 
                                         required_items = required_phase_components, 
-                                        entry_vars = phase_component_vars, 
-                                        number_of_entries = max_exercises)
+                                        used_vars = used_pc_vars)
             state["logs"] += "- Use every required phase at least once applied.\n"
 
         # Constraint: The base strain of an exercise may only be between the minimum and maximum base strain allowed.
@@ -367,22 +365,14 @@ class ExerciseAgent(BaseAgent):
 
         # Constraint: The numer of exercises may only be a number of exercises between the minimum and maximum exercises per bodypart allowed.
         if constraints["exercises_per_bodypart_within_min_max"]:
+            required_phase_components = list(range(1, len(phase_components)))
             model = exercises_per_bodypart_within_min_max(model=model, 
-                                                        items=phase_components, 
-                                                        minimum_key="exercises_per_bodypart_workout_min", 
-                                                        maximum_key="exercises_per_bodypart_workout_max", 
-                                                        used_vars=used_pc_vars)
+                                                          required_items=required_phase_components, 
+                                                          items=phase_components, 
+                                                          minimum_key="exercises_per_bodypart_workout_min", 
+                                                          maximum_key="exercises_per_bodypart_workout_max", 
+                                                          used_vars=used_pc_vars)
             state["logs"] += "- Exercises count within min and max allowed exercises applied.\n"
-
-        # Constraint: The duration of a day may only be a number of hours between the allowed time for that day.
-        if constraints["duration_within_availability"]:
-            state["logs"] += "- Sum of phase component duration within maximum allowed time for a day.\n"
-
-        # Ensure that the duration doesn't exceed the maximum allowed time for a workout.
-        #model.Add(duration_var_entry <= workout_length)
-        # Constraint: The duration of a day may only be a number of hours less than the allowed time for a workout.
-        if constraints["duration_within_workout_length"]:
-            state["logs"] += "- Sum of phase component duration within maximum allowed time for a workout.\n"
 
         # Objective: Maximize total duration of microcycle
         if constraints["minimize_strain"]:
@@ -448,32 +438,6 @@ class ExerciseAgent(BaseAgent):
 
         return {"opt_model": (model, workout_length, exercise_vars, phase_component_vars, active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars)}
 
-    def analyze_infeasibility_node(self, state: State, config=None) -> dict:
-        """Use LLM to analyze solver logs and suggest constraints to relax."""
-        # Prepare history of what's been tried
-        history = retrieve_relaxation_history(state["relaxation_attempts"])
-
-        available_constraints = """
-    - use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
-    - base_strain_equals: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
-    - use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
-    - no_duplicate_exercises: Forces each exercise to only appear once in the schedule.
-    - secs_equals: Forces the number of seconds per exercise to be between the minimum and maximum values allowed for the phase component.
-    - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
-    - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
-    - rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
-    - exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
-    - minimize_strain: Objective to minimize the amount of strain overall.
-    """
-
-        state = analyze_infeasibility(state, history, available_constraints)
-        
-        return {
-            "constraints": state["constraints"],
-            "current_attempt": state["current_attempt"]
-        }
-
-
     def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
@@ -481,7 +445,7 @@ class ExerciseAgent(BaseAgent):
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
-        solver.parameters.log_search_progress = True
+        #solver.parameters.log_search_progress = True
         status = solver.Solve(model)
         
         state["logs"] += f"\nSolver status: {status}\n"
@@ -571,11 +535,8 @@ class ExerciseAgent(BaseAgent):
 
         parameters = state["parameters"]
 
-        exercises = parameters["possible_exercises"]
-        phase_components = parameters["phase_components"]
+        exercises, phase_components, projected_duration = parameters["possible_exercises"], parameters["phase_components"], parameters["projected_duration"]
         workout_length = min(parameters["availability"], parameters["workout_length"])
-
-        projected_duration = parameters["projected_duration"]
 
         longest_subcomponent_string_size = len(max(phase_components[1:], key=lambda d:len(d["name"]))["name"])
         longest_bodypart_string_size = len(max(phase_components[1:], key=lambda d:len(d["bodypart_name"]))["bodypart_name"])
@@ -583,8 +544,6 @@ class ExerciseAgent(BaseAgent):
         longest_pc_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
         longest_exercise_string_size = len(max(exercises[1:], key=lambda d:len(d["name"]))["name"])
 
-        used_days = []
-        
         # Total time the user has to workout.
         formatted = "Optimization Results:\n"
         formatted += "=" * 50 + "\n\n"
@@ -676,7 +635,7 @@ class ExerciseAgent(BaseAgent):
             formatted += f"Phase Component Counts:\n"
             for phase_component_index, phase_component_number in enumerate(phase_component_count):
                 phase_component = phase_components[phase_component_index]
-                formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}: {phase_component_number}\n"
+                formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}: {phase_component_number} ({phase_component["exercises_per_bodypart_workout_min"]}-{phase_component["exercises_per_bodypart_workout_max"]})\n"
             formatted += f"Total Strain: {solution['strain_ratio']}\n"
             formatted += f"Projected Duration: {projected_duration // 60} min {projected_duration % 60} sec ({projected_duration}) seconds\n"
             formatted += f"Total Duration: {solution['duration'] // 60} min {solution['duration'] % 60} sec ({solution['duration']}) seconds\n"
