@@ -1,4 +1,5 @@
 from app import db
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # The components that exist.
 class Phase_Component_Library(db.Model):
@@ -90,6 +91,15 @@ class Phase_Component_Library(db.Model):
         db.String(255),
         comment='')
 
+    # Duration of the mesocycle based on the current start and end date.
+    @hybrid_property
+    def min_duration(self):
+        return (self.seconds_per_exercise * self.reps_min + self.rest_min) * self.sets_min
+        
+    @hybrid_property
+    def max_duration(self):
+        return (self.seconds_per_exercise * self.reps_max + self.rest_max) * self.sets_max
+
     # Relationships
     phases = db.relationship(
         "Phase_Library",
@@ -139,5 +149,7 @@ class Phase_Component_Library(db.Model):
             "frequency_per_microcycle_max": self.frequency_per_microcycle_max,
             "exercises_per_bodypart_workout_min": self.exercises_per_bodypart_workout_min,
             "exercises_per_bodypart_workout_max": self.exercises_per_bodypart_workout_max,
+            "duration_min": self.min_duration,
+            "duration_max": self.max_duration,
             "exercise_selection_note": self.exercise_selection_note
         }
