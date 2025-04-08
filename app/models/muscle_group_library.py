@@ -1,17 +1,12 @@
 from app import db
+from app.models.mixins import LibraryMixin
 
-class Muscle_Group_Library(db.Model):
+class Muscle_Group_Library(db.Model, LibraryMixin):
     __table_args__ = {
         'comment': "The library of muscle groups."
     }
     # Fields
     __tablename__ = "muscle_group_library"
-    id = db.Column(db.Integer, primary_key=True)
-    
-    name = db.Column(
-        db.String(50), 
-        unique=True, 
-        nullable=False)
 
     # Relationships
     categories = db.relationship(

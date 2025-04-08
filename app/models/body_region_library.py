@@ -1,17 +1,12 @@
 from app import db
+from app.models.mixins import LibraryMixin
 
-class Body_Region_Library(db.Model):
+class Body_Region_Library(db.Model, LibraryMixin):
     __table_args__ = {
         'comment': "The library of body regions."
     }
     # Fields
     __tablename__ = "body_region_library"
-    id = db.Column(db.Integer, primary_key=True)
-    
-    name = db.Column(
-        db.String(50), 
-        unique=True, 
-        nullable=False)
 
     # Relationships
     categories = db.relationship(

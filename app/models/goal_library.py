@@ -1,20 +1,14 @@
 from app import db
+from app.models.mixins import LibraryMixin
 
 # The goals that exist.
-class Goal_Library(db.Model):
+class Goal_Library(db.Model, LibraryMixin):
     # Fields
     __table_args__ = {
         'comment': "The categories of that a goal may fall in to."
     }
     __tablename__ = "goal_library"
-    id = db.Column(db.Integer, primary_key=True)
 
-    name = db.Column(
-        db.String(50), 
-        unique=True, 
-        nullable=False, 
-        comment='E.g., Fat Loss Goal, Hypertrophy Goal, General Sports Performance Goal')
-    
     # Relationships
     phases = db.relationship(
         "Goal_Phase_Requirements", 

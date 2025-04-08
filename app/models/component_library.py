@@ -1,18 +1,13 @@
 from app import db
+from app.models.mixins import LibraryMixin
 
 # The components that exist for phase components.
-class Component_Library(db.Model):
+class Component_Library(db.Model, LibraryMixin):
     __table_args__ = {
         'comment': "The library of components that exist for phase components."
     }
     # Fields
     __tablename__ = "component_library"
-    id = db.Column(db.Integer, primary_key=True)
-    
-    name = db.Column(
-        db.String(50), 
-        unique=True, 
-        nullable=False)
 
     # Relationships
     phase_components = db.relationship(

@@ -1,19 +1,13 @@
 from app import db
+from app.models.mixins import LibraryMixin
 
 # The phases that exist.
-class Phase_Library(db.Model):
+class Phase_Library(db.Model, LibraryMixin):
     # Fields
     __table_args__ = {
         'comment': "The phases that a mesocycle may be tagged with."
     }
     __tablename__ = "phase_library"
-    id = db.Column(db.Integer, primary_key=True)
-
-    name = db.Column(
-        db.String(50), 
-        unique=True, 
-        nullable=False, 
-        comment='E.g., Stabilization Endurance, Strength Endurance, Hypertrophy, Maximal Strength, Power')
 
     phase_duration_minimum_in_weeks = db.Column(
         db.Interval, 
