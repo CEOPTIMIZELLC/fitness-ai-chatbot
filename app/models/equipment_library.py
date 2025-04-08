@@ -1,5 +1,4 @@
 from app import db
-from sqlalchemy.dialects.postgresql import JSONB
 
 # The equipment that exist.
 class Equipment_Library(db.Model):

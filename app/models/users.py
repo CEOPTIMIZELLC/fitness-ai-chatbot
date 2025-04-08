@@ -1,15 +1,9 @@
 from app import db, bcrypt, login_manager
 from flask_login import UserMixin
-from datetime import date, timedelta
+from datetime import timedelta
 from app import user_validate
 
-from sqlalchemy.dialects.postgresql import TEXT, JSONB
-from sqlalchemy.ext.hybrid import hybrid_property
-
-from .user_macrocycles import User_Macrocycles
-from .user_mesocycles import User_Mesocycles
-from .user_microcycles import User_Microcycles
-from .user_workout_days import User_Workout_Days
+from sqlalchemy.dialects.postgresql import TEXT
 
 class Users(db.Model, UserMixin):
     __tablename__ = "users"

@@ -2,7 +2,7 @@ from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Exercise_Library, Exercise_Bodyparts, Exercise_Body_Regions, Exercise_Muscle_Groups, Exercise_Muscles, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Weekday_Availability, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
+from app.models import Exercise_Library, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Weekday_Availability, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
 
 bp = Blueprint('user_exercises', __name__)
 

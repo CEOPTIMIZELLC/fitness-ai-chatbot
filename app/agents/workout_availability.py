@@ -3,8 +3,6 @@ from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from sqlalchemy import text
 from langgraph.graph import StateGraph, END
 from flask import current_app
 from datetime import timedelta
@@ -70,7 +68,6 @@ def create_workout_availability_extraction_graph():
     workflow.add_node("llm_output_to_timedelta", llm_output_to_timedelta)
 
     workflow.add_edge("workout_availability_extraction", "llm_output_to_timedelta")
-
     workflow.add_edge("llm_output_to_timedelta", END)
 
     workflow.set_entry_point("workout_availability_extraction")

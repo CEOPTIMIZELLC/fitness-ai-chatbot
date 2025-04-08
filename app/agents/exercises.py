@@ -1,11 +1,9 @@
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
-from datetime import datetime
 from typing import Set, Optional
 from dotenv import load_dotenv
 from app.agents.constraints import link_entry_and_item, create_optional_intvar, create_duration_var, no_repeated_items, only_use_required_items
-from app.agents.base_agent import BaseAgent, BaseAgentState
-from app.agents.exercises_phase_components import RelaxationAttempt as RelaxationAttempt2, State, ExerciseComponentsAgent
+from app.agents.exercises_phase_components import RelaxationAttempt as RelaxationAttemptBase, State, ExerciseComponentsAgent
 
 _ = load_dotenv()
 
@@ -28,34 +26,7 @@ def get_exercises_for_pc(exercises, phase_component):
         exercises_for_pc = [i for i, _ in enumerate(exercises, start=1)]
     return exercises_for_pc
 
-def get_exercises_for_pc_test(exercises, phase_component):
-    print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']}")
-    exercises_for_pc = []
-    for i, exercise in enumerate(exercises, start=1):
-        if (exercise['component_id']==phase_component["component_id"] 
-            and exercise['subcomponent_id']==phase_component["subcomponent_id"]
-            and ((1 in exercise['bodypart_ids']) or
-                 (phase_component["bodypart_id"] in exercise["bodypart_ids"]))):
-            print(i, exercise["id"], exercise["name"])
-            exercises_for_pc.append(i)
-    
-    if exercises_for_pc == []:
-        print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, if total body, include all.")
-        if phase_component["bodypart_id"] == 1:
-            for i, exercise in enumerate(exercises, start=1):
-                if (exercise['component_id']==phase_component["component_id"] 
-                    and exercise['subcomponent_id']==phase_component["subcomponent_id"]):
-                    print(i, exercise["id"], exercise["name"])
-                    exercises_for_pc.append(i)
-    if exercises_for_pc == []:
-        print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, include all.")
-        for i, exercise in enumerate(exercises, start=1):
-            print(i, exercise["id"], exercise["name"])
-            exercises_for_pc.append(i)
-    print("")
-    return exercises_for_pc
-
-class RelaxationAttempt(RelaxationAttempt2):
+class RelaxationAttempt(RelaxationAttemptBase):
     def __init__(self, constraints_relaxed: Set[str], result_feasible: bool, 
                  strain_ratio: Optional[int] = None,
                  duration: Optional[int] = None,

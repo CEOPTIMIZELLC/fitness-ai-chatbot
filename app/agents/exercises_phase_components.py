@@ -1,7 +1,18 @@
 from ortools.sat.python import cp_model
 from datetime import datetime
 from typing import Set, Optional
-from app.agents.constraints import entries_equal, entries_within_min_max, link_entry_and_item, constrain_active_entries_vars, create_optional_intvar, create_duration_var, use_all_required_items, exercises_per_bodypart_within_min_max, symmetry_breaking_constraints, add_tight_bounds
+from app.agents.constraints import (
+    entries_equal, 
+    entries_within_min_max, 
+    link_entry_and_item, 
+    constrain_active_entries_vars, 
+    create_optional_intvar, 
+    create_duration_var, 
+    use_all_required_items, 
+    exercises_per_bodypart_within_min_max, 
+    symmetry_breaking_constraints, 
+    add_tight_bounds)
+
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
 class RelaxationAttempt:

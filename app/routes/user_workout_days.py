@@ -10,7 +10,7 @@ bp = Blueprint('user_workout_days', __name__)
 from app.agents.phase_components import Main as phase_component_main
 from app.helper_functions.common_table_queries import current_microcycle, current_workout_day
 
-# ----------------------------------------- Phase_Components -----------------------------------------
+# ----------------------------------------- Workout Days -----------------------------------------
 
 def delete_old_user_workout_days(microcycle_id):
     db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()

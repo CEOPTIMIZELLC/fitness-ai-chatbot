@@ -1,15 +1,7 @@
-# %%
-
-
-# %%
-# sql_agent.py
-
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from sqlalchemy import text
 from langgraph.graph import StateGraph, END
 from flask import current_app
 

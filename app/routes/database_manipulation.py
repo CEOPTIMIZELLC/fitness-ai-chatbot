@@ -1,11 +1,4 @@
-from random import randrange
 from flask import request, jsonify, current_app, Blueprint
-from flask_cors import CORS
-from sqlalchemy import text
-
-import json
-
-#from app.models import Users, Fitness, User_Fitness, Exercises, Exercise_Fitness
 
 from app import db
 from app.models import table_object
@@ -13,10 +6,9 @@ from app.models import table_object
 bp = Blueprint('database_manipulation', __name__)
 
 from app.helper_functions.table_schema_cache import get_database_schema
-
 from app.routes.auth import register
 
-# ----------------------------------------- Dev Tests -----------------------------------------
+# ----------------------------------------- Database Manipulation -----------------------------------------
 
 
 def create_db():
@@ -74,63 +66,6 @@ def initialize_db():
 
     return "Database CREATED!"
 
-
-def execute_sql_single_column(state):
-    sql_query = state["sql_query"].strip()
-    print(f"Executing SQL query: {sql_query}")
-    try:
-        result = db.session.execute(text(sql_query))
-        rows = result.fetchall()
-        if rows:
-            state["query_rows"] = [list(i)[0] for i in rows]
-            print(f"Raw SQL Query Result: {state['query_rows']}")
-            # Format the result for readability
-            data = "; ".join([f"{row}" for row in state["query_rows"]])
-            formatted_result = f"{data}"
-        else:
-            state["query_rows"] = []
-            formatted_result = "No results found."
-        state["query_result"] = formatted_result
-        state["sql_error"] = False
-        print("SQL SELECT query executed successfully.")
-    except Exception as e:
-        state["query_result"] = f"Error executing SQL query: {str(e)}"
-        state["sql_error"] = True
-        print(f"Error executing SQL query: {str(e)}")
-    return state
-
-def execute_sql(state):
-    sql_query = state["sql_query"].strip()
-    print(f"Executing SQL query: {sql_query}")
-    try:
-        result = db.session.execute(text(sql_query))
-        if sql_query.lower().startswith("select"):
-            rows = result.fetchall()
-            columns = result.keys()
-            if rows:
-                header = ", ".join(columns)
-                state["query_rows"] = [dict(zip(columns, row)) for row in rows]
-                print(f"Raw SQL Query Result: {state['query_rows']}")
-                # Format the result for readability
-                data = "; ".join([f"{row.get('food_name', row.get('name'))} for ${row.get('price', row.get('food_price'))}" for row in state["query_rows"]])
-                formatted_result = f"{header}\n{data}"
-            else:
-                state["query_rows"] = []
-                formatted_result = "No results found."
-            state["query_result"] = formatted_result
-            state["sql_error"] = False
-            print("SQL SELECT query executed successfully.")
-        else:
-            db.session.commit()
-            state["query_result"] = "The action has been successfully completed."
-            state["sql_error"] = False
-            print("SQL command executed successfully.")
-    except Exception as e:
-        state["query_result"] = f"Error executing SQL query: {str(e)}"
-        state["sql_error"] = True
-        print(f"Error executing SQL query: {str(e)}")
-    return state
-
 # Table Reader
 @bp.route('/read_all_tables', methods=['GET'])
 def read_all_tables():
@@ -176,18 +111,3 @@ def read_table():
     for i in result:
         print(i)
     return {"status": "success", "results": result}, 200
-
-# Table Reader
-@bp.route('/read_table_sql_names', methods=['GET'])
-def read_table_sql_names():
-    if 'table_name' not in request.form:
-        return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
-    table_name = request.form.get("table_name")
-
-    # Make sure that table with the desired name exists.
-    if table_name not in get_table_names():
-        return jsonify({"status": "error", "message": f"Table with name '{table_name}' does not exist."}), 400
-    
-    state = {"sql_query": f"SELECT name FROM {table_name}"}
-    execute_sql_single_column(state)
-    return state

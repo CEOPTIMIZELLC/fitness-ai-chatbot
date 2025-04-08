@@ -9,7 +9,7 @@ bp = Blueprint('user_microcycles', __name__)
 
 from app.helper_functions.common_table_queries import current_mesocycle, current_microcycle
 
-# ----------------------------------------- Microcycles -----------------------------------------
+# ----------------------------------------- User Microcycles -----------------------------------------
 
 def delete_old_user_microcycles(mesocycle_id):
     db.session.query(User_Microcycles).filter_by(mesocycle_id=mesocycle_id).delete()

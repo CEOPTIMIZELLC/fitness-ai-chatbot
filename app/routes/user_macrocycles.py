@@ -9,16 +9,10 @@ bp = Blueprint('user_macrocycles', __name__)
 from app.agents.goals import create_goal_classification_graph
 from app.helper_functions.common_table_queries import current_macrocycle
 
-# ----------------------------------------- Goals -----------------------------------------
+# ----------------------------------------- User Macrocycles -----------------------------------------
 # Retrieve possible goal types.
 def retrieve_goal_types():
-    goals = (
-        db.session.query(
-            Goal_Library.id,
-            Goal_Library.name
-        )
-        .all()
-    )
+    goals = db.session.query(Goal_Library.id, Goal_Library.name).all()
 
     return [
         {

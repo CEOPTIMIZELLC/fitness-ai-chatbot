@@ -3,7 +3,6 @@ from flask_login import current_user, login_required
 from flask_cors import CORS
 
 from app.models import Users
-import psycopg2
 
 from app import db, login_manager
 
@@ -47,7 +46,6 @@ def change_workout_length():
     
     if ('workout_length' not in data):
         return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
-
 
     workout_app = create_workout_availability_extraction_graph()
 

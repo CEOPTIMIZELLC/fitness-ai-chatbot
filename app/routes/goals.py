@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint
+from flask import jsonify, Blueprint
 
 from app.models import Goal_Library
 

@@ -1,25 +1,12 @@
 from random import randrange
-from flask import request, jsonify, redirect, url_for, current_app, Blueprint
+from flask import request, jsonify, Blueprint
 
 from flask_login import current_user, login_required
 
-from flask_cors import CORS
-from sqlalchemy import text
-
-import json
-
-#from app.models import Users, Fitness, User_Fitness, Exercises, Exercise_Fitness
-
-from app import db
-from app.models import table_object
-
 bp = Blueprint('dev_tests', __name__)
 
-from app.helper_functions.table_schema_cache import get_database_schema
 from app.helper_functions.sql import sql_app
 from app.helper_functions.table_context_parser import context_retriever_app
-
-# from app.helper_functions.cp_pulp_equipment_test import Main as cp_pulp_equipment_test_main
 
 # ----------------------------------------- Dev Tests -----------------------------------------
 

@@ -2,7 +2,15 @@ from ortools.sat.python import cp_model
 from datetime import datetime
 from typing import Set, Optional
 from dotenv import load_dotenv
-from app.agents.constraints import create_optional_intvar, create_spread_intvar, day_duration_within_availability, use_workout_required_components, use_all_required_items, frequency_within_min_max, consecutive_bodyparts_for_component
+from app.agents.constraints import (
+    create_optional_intvar, 
+    create_spread_intvar, 
+    day_duration_within_availability, 
+    use_workout_required_components, 
+    use_all_required_items, 
+    frequency_within_min_max, 
+    consecutive_bodyparts_for_component)
+
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
 _ = load_dotenv()

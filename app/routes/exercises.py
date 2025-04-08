@@ -1,14 +1,10 @@
-from flask import jsonify, Blueprint
-
 import json
 
-from flask_login import login_required
-
-from app import db
-
-from flask_login import current_user
+from flask import jsonify, Blueprint
+from flask_login import current_user, login_required
 
 from sqlalchemy.sql import func, distinct
+
 from app import db
 from app.models import Exercise_Library, Equipment_Library, User_Equipment
 
@@ -16,8 +12,26 @@ bp = Blueprint('exercises', __name__)
 
 # ----------------------------------------- Exercises -----------------------------------------
 
-# Testing for the SQL to add and check training equipment.
+# Retrieve exercises
 @bp.route('/', methods=['GET'])
+def get_exercise_list():
+    exercises = Exercise_Library.query.all()
+    result = []
+    for exercise in exercises:
+        result.append(exercise.to_dict())
+    return jsonify({"status": "success", "exercises": result}), 200
+
+# Show exercises based on id.
+@bp.route('/<exercise_id>', methods=['GET'])
+def read_exercise(exercise_id):
+    exercise = Exercise_Library.query.filter_by(id=exercise_id).first()
+    if not exercise:
+        return jsonify({"status": "error", "message": "Exercise " + exercise_id + " not found."}), 404
+    return jsonify(exercise.to_dict()), 200
+
+
+# Testing for the SQL to add and check training equipment.
+@bp.route('/current', methods=['GET'])
 @login_required
 def get_exercises_user_can_perform():
     return "Done"
