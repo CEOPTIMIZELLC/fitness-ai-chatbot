@@ -1,10 +1,10 @@
 from app import db
 from datetime import timedelta
 
-from sqlalchemy.ext.hybrid import hybrid_property
+from .mixins import DateRangeMixin, OrderedMixin
 
 # The phases that exist.
-class User_Mesocycles(db.Model):
+class User_Mesocycles(db.Model, DateRangeMixin, OrderedMixin):
     """The mesocycles belonging to a user's macrocycle. This also acts as a join table between a macrocycle and the phase types."""
     # Fields
     __table_args__ = {
@@ -15,27 +15,11 @@ class User_Mesocycles(db.Model):
     macrocycle_id = db.Column(db.Integer, db.ForeignKey("user_macrocycles.id", ondelete='CASCADE'), nullable=False)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
 
-    order = db.Column(
-        db.Integer, 
-        nullable=False, 
-        comment='The order of the mesocycle for the current macrocycle.')
-
-    start_date = db.Column(
-        db.Date, 
-        default=db.func.current_timestamp(), 
-        nullable=False, 
-        comment='Date that the mesocycle should start.')
-
     end_date = db.Column(
         db.Date, 
-        default=db.func.current_timestamp() + timedelta(weeks=26), 
+        default=db.func.current_timestamp() + timedelta(weeks=4), 
         nullable=False, 
         comment='Date that the mesocycle should end.')
-
-    # Duration of the mesocycle based on the current start and end date.
-    @hybrid_property
-    def duration(self):
-        return self.end_date - self.start_date
 
     # Relationships
     phases = db.relationship("Phase_Library", back_populates="mesocycles")

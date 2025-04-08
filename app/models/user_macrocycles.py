@@ -1,11 +1,11 @@
 from app import db
 from datetime import timedelta
-
 from sqlalchemy.dialects.postgresql import TEXT
-from sqlalchemy.ext.hybrid import hybrid_property
+
+from .mixins import DateRangeMixin
 
 # The phases that exist.
-class User_Macrocycles(db.Model):
+class User_Macrocycles(db.Model, DateRangeMixin):
     """The macrocycles belonging to a user. This also acts as a join table between a user and the goal types."""
     # Fields
     __table_args__ = {
@@ -20,22 +20,11 @@ class User_Macrocycles(db.Model):
         nullable=False, 
         comment='Goal for the entire macrocycle.')
 
-    start_date = db.Column(
-        db.Date, 
-        default=db.func.current_timestamp(), 
-        nullable=False, 
-        comment='Date that the macrocycle should start.')
-
     end_date = db.Column(
         db.Date, 
         default=db.func.current_timestamp() + timedelta(weeks=26), 
         nullable=False, 
         comment='Date that the macrocycle should end.')
-
-    # Duration of the macrocycle based on the current start and end date.
-    @hybrid_property
-    def duration(self):
-        return self.end_date - self.start_date
 
     # Relationships
     users = db.relationship("Users", back_populates="macrocycles")

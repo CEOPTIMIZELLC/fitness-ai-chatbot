@@ -1,7 +1,8 @@
 from app import db
+from .mixins import OrderedMixin
 
 # The phases that exist.
-class User_Workout_Days(db.Model):
+class User_Workout_Days(db.Model, OrderedMixin):
     """The workout days belonging to a user's microcycle. This also acts as a join table between a microcycle and the phase components types."""
     # Fields
     __table_args__ = {
@@ -11,11 +12,6 @@ class User_Workout_Days(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     microcycle_id = db.Column(db.Integer, db.ForeignKey("user_microcycles.id", ondelete='CASCADE'), nullable=False)
     weekday_id = db.Column(db.Integer, db.ForeignKey("weekday_library.id", ondelete='CASCADE'), nullable=False)
-
-    order = db.Column(
-        db.Integer, 
-        nullable=False, 
-        comment='The order of the workout_day for the current microcycle.')
 
     date = db.Column(
         db.Date, 
