@@ -449,7 +449,7 @@ class ExerciseAgent(BaseAgent):
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
-        #solver.parameters.log_search_progress = True
+        # solver.parameters.log_search_progress = True
         status = solver.Solve(model)
         
         state["logs"] += f"\nSolver status: {status}\n"
