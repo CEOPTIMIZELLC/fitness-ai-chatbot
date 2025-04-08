@@ -342,7 +342,7 @@ class ExerciseComponentsAgent(BaseAgent):
             model.Add(strain_time == sum(strain_terms))
             model.Minimize(strain_time)
 
-            state["logs"] += "- Maximizing time used in workout.\n"
+            state["logs"] += "- Minimizing the strain time used in workout.\n"
 
         return {"opt_model": (model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars)}
 
