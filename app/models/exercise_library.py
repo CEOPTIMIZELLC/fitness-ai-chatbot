@@ -11,7 +11,7 @@ class Exercise_Library(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     name = db.Column(
-        db.String(50), 
+        db.String(255), 
         unique=True, 
         nullable=False, 
         comment='E.g., Squat, Dead Bug Exercise')
