@@ -17,13 +17,13 @@ class Goal_Library(db.Model):
     
     # Relationships
     phases = db.relationship(
-        "Goal_Phase_Requirements",
-        back_populates = "goals",
+        "Goal_Phase_Requirements", 
+        back_populates="goals", 
         cascade="all, delete-orphan")
 
     macrocycles = db.relationship(
-        "User_Macrocycles",
-        back_populates = "goals",
+        "User_Macrocycles", 
+        back_populates="goals", 
         cascade="all, delete-orphan")
 
     # Relationships
@@ -35,8 +35,8 @@ class Goal_Library(db.Model):
             phase_requirements.append(phase.to_dict())
 
         return {
-            "id": self.id,
-            "name": self.name,
+            "id": self.id, 
+            "name": self.name, 
             "phase_requirements": phase_requirements
         }
     

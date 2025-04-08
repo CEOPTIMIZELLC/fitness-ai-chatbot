@@ -10,47 +10,47 @@ class Subcomponent_Library(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     name = db.Column(
-        db.String(50),
-        unique=True,
+        db.String(50), 
+        unique=True, 
         nullable=False)
 
     density = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='')
 
     volume = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='')
 
     load = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='')
 
     explanation = db.Column(
-        db.String(255),
+        db.String(255), 
         comment='')
 
     # Relationships
     phase_components = db.relationship(
-        "Phase_Component_Library",
-        back_populates = "subcomponents",
+        "Phase_Component_Library", 
+        back_populates="subcomponents", 
         cascade="all, delete-orphan")
 
     exercises = db.relationship(
-        "Exercise_Component_Phases",
-        back_populates = "subcomponents",
+        "Exercise_Component_Phases", 
+        back_populates="subcomponents", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "name": self.name,
-            "name": self.name,
-            "density": self.density,
-            "volume": self.volume,
-            "load": self.load,
+            "id": self.id, 
+            "name": self.name, 
+            "name": self.name, 
+            "density": self.density, 
+            "volume": self.volume, 
+            "load": self.load, 
             "explanation": self.explanation
         }

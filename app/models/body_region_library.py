@@ -9,23 +9,23 @@ class Body_Region_Library(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     name = db.Column(
-        db.String(50),
-        unique=True,
+        db.String(50), 
+        unique=True, 
         nullable=False)
 
     # Relationships
     categories = db.relationship(
-        "Muscle_Categories",
-        back_populates = "body_regions",
+        "Muscle_Categories", 
+        back_populates="body_regions", 
         cascade="all, delete-orphan")
 
     exercises = db.relationship(
-        "Exercise_Body_Regions",
-        back_populates = "body_regions",
+        "Exercise_Body_Regions", 
+        back_populates="body_regions", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
-            "id": self.id,
+            "id": self.id, 
             "name": self.name
         }

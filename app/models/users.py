@@ -17,9 +17,9 @@ class Users(db.Model, UserMixin):
     age = db.Column(db.Integer, nullable=False)
     gender = db.Column(db.String, nullable=False)
     workout_length = db.Column(
-        db.Interval,
+        db.Interval, 
         nullable=False, 
-        default=timedelta(hours=1),
+        default=timedelta(hours=1), 
         comment='The amount of time the user is allowed on this day.')
 
     goal = db.Column(
@@ -60,30 +60,30 @@ class Users(db.Model, UserMixin):
 
     # Relationships
     equipment = db.relationship(
-        "User_Equipment",
-        back_populates = "users",
+        "User_Equipment", 
+        back_populates="users", 
         cascade="all, delete-orphan")
 
     availability = db.relationship(
-        "User_Weekday_Availability",
-        back_populates = "users",
+        "User_Weekday_Availability", 
+        back_populates="users", 
         cascade="all, delete-orphan")
 
     macrocycles = db.relationship(
-        "User_Macrocycles",
-        back_populates = "users",
+        "User_Macrocycles", 
+        back_populates="users", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "email": self.email,
-            "first_name": self.first_name,
-            "last_name": self.last_name,
-            "age": self.age,
-            "gender": self.gender,
-            "goal": self.goal,
-            "workout_length": str(self.workout_length),
+            "id": self.id, 
+            "email": self.email, 
+            "first_name": self.first_name, 
+            "last_name": self.last_name, 
+            "age": self.age, 
+            "gender": self.gender, 
+            "goal": self.goal, 
+            "workout_length": str(self.workout_length), 
             "start_date": self.start_date
         }
 

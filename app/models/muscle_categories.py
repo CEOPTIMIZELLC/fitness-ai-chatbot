@@ -15,30 +15,30 @@ class Muscle_Categories(db.Model):
 
     # Relationships
     muscles = db.relationship(
-        "Muscle_Library",
-        back_populates = "categories")
+        "Muscle_Library", 
+        back_populates="categories")
 
     muscle_groups = db.relationship(
-        "Muscle_Group_Library",
-        back_populates = "categories")
+        "Muscle_Group_Library", 
+        back_populates="categories")
 
     body_regions = db.relationship(
-        "Body_Region_Library",
-        back_populates = "categories")
+        "Body_Region_Library", 
+        back_populates="categories")
 
     bodyparts = db.relationship(
-        "Bodypart_Library",
-        back_populates = "categories")
+        "Bodypart_Library", 
+        back_populates="categories")
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "muscle_id": self.muscle_id,
-            "muscle_name": self.muscles.name,
-            "muscle_group_id": self.muscle_group_id,
-            "muscle_group_name": self.muscle_groups.name,
-            "body_region_id": self.body_region_id,
-            "body_region_name": self.body_regions.name,
-            "bodypart_id": self.bodypart_id,
+            "id": self.id, 
+            "muscle_id": self.muscle_id, 
+            "muscle_name": self.muscles.name, 
+            "muscle_group_id": self.muscle_group_id, 
+            "muscle_group_name": self.muscle_groups.name, 
+            "body_region_id": self.body_region_id, 
+            "body_region_name": self.body_regions.name, 
+            "bodypart_id": self.bodypart_id, 
             "bodypart_name": self.bodyparts.name
         }

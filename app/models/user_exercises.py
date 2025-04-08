@@ -16,17 +16,17 @@ class User_Exercises(db.Model):
 
     order = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='The order of the workout_component for the current workout_day.')
 
     reps = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='The number of repetitions for a single exercise for the phase subcomponent.')
 
     sets = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='The number of sets of repetitions for a single exercise for the phase subcomponent.')
 
     intensity = db.Column(
@@ -35,7 +35,7 @@ class User_Exercises(db.Model):
 
     rest = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='The amount of time to rest for a single exercise for the phase subcomponent.')
 
 
@@ -76,35 +76,35 @@ class User_Exercises(db.Model):
 
     # Relationships
     workout_days = db.relationship(
-        "User_Workout_Days",
-        back_populates = "exercises")
+        "User_Workout_Days", 
+        back_populates="exercises")
 
     exercises = db.relationship(
-        "Exercise_Library",
-        back_populates = "user_exercises")
+        "Exercise_Library", 
+        back_populates="user_exercises")
 
     phase_components = db.relationship(
-        "Phase_Component_Library",
-        back_populates = "user_exercises")
+        "Phase_Component_Library", 
+        back_populates="user_exercises")
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "workout_day_id": self.workout_day_id,
-            "phase_component_id": self.phase_component_id,
-            "phase_component_subcomponent": self.phase_components.name,
-            "exercise_id": self.exercise_id,
-            "exercise_name": self.exercises.name,
-            "order": self.order,
-            "seconds_per_exercise": self.seconds_per_exercise,
-            "base_strain": self.base_strain,
-            "reps": self.reps,
-            "sets": self.sets,
-            "intensity": self.intensity,
-            "rest": self.rest,
-            "duration": self.duration,
-            "working_duration": self.working_duration,
-            "strained_duration": self.strained_duration,
-            "strained_working_duration": self.strained_working_duration,
+            "id": self.id, 
+            "workout_day_id": self.workout_day_id, 
+            "phase_component_id": self.phase_component_id, 
+            "phase_component_subcomponent": self.phase_components.name, 
+            "exercise_id": self.exercise_id, 
+            "exercise_name": self.exercises.name, 
+            "order": self.order, 
+            "seconds_per_exercise": self.seconds_per_exercise, 
+            "base_strain": self.base_strain, 
+            "reps": self.reps, 
+            "sets": self.sets, 
+            "intensity": self.intensity, 
+            "rest": self.rest, 
+            "duration": self.duration, 
+            "working_duration": self.working_duration, 
+            "strained_duration": self.strained_duration, 
+            "strained_working_duration": self.strained_working_duration, 
             "strain": self.strain
         }

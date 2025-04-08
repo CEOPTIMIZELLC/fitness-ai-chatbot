@@ -14,32 +14,32 @@ class User_Workout_Days(db.Model):
 
     order = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='The order of the workout_day for the current microcycle.')
 
     date = db.Column(
         db.Date, 
         default=db.func.current_timestamp(), 
-        nullable=False,
+        nullable=False, 
         comment='Date that the workout_day should start.')
 
     # Relationships
     weekdays = db.relationship(
-        "Weekday_Library",
-        back_populates = "workout_days")
+        "Weekday_Library", 
+        back_populates="workout_days")
 
     microcycles = db.relationship(
-        "User_Microcycles",
-        back_populates = "workout_days")
+        "User_Microcycles", 
+        back_populates="workout_days")
 
     workout_components = db.relationship(
-        "User_Workout_Components",
-        back_populates = "workout_days",
+        "User_Workout_Components", 
+        back_populates="workout_days", 
         cascade="all, delete-orphan")
 
     exercises = db.relationship(
-        "User_Exercises",
-        back_populates = "workout_days",
+        "User_Exercises", 
+        back_populates="workout_days", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
@@ -50,12 +50,12 @@ class User_Workout_Days(db.Model):
         for exercise in self.exercises:
             exercises.append(exercise.to_dict())
         return {
-            "id": self.id,
-            "microcycle_id": self.microcycle_id,
-            "weekday_id": self.weekday_id,
-            "weekday_name": self.weekdays.name,
-            "order": self.order,
-            "date": self.date,
-            "components": components,
+            "id": self.id, 
+            "microcycle_id": self.microcycle_id, 
+            "weekday_id": self.weekday_id, 
+            "weekday_name": self.weekdays.name, 
+            "order": self.order, 
+            "date": self.date, 
+            "components": components, 
             "exercises": exercises
         }

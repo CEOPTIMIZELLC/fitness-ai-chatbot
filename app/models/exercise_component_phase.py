@@ -16,23 +16,23 @@ class Exercise_Component_Phases(db.Model):
 
     # Relationships
     exercises = db.relationship(
-        "Exercise_Library",
-        back_populates = "component_phases")
+        "Exercise_Library", 
+        back_populates="component_phases")
 
     components = db.relationship(
-        "Component_Library",
-        back_populates = "exercises")
+        "Component_Library", 
+        back_populates="exercises")
 
     subcomponents = db.relationship(
-        "Subcomponent_Library",
-        back_populates = "exercises")
+        "Subcomponent_Library", 
+        back_populates="exercises")
 
     def to_dict(self):
         return {
-            "exercise_id": self.exercise_id,
-            "exercise_name": self.exercises.name,
-            "component_id": self.component_id,
-            "component_name": self.components.name,
-            "subcomponent_id": self.subcomponent_id,
+            "exercise_id": self.exercise_id, 
+            "exercise_name": self.exercises.name, 
+            "component_id": self.component_id, 
+            "component_name": self.components.name, 
+            "subcomponent_id": self.subcomponent_id, 
             "subcomponent_name": self.subcomponents.name
         }

@@ -10,33 +10,33 @@ class Bodypart_Library(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     name = db.Column(
-        db.String(50),
-        unique=True,
+        db.String(50), 
+        unique=True, 
         nullable=False)
 
     # Relationships
     categories = db.relationship(
-        "Muscle_Categories",
-        back_populates = "bodyparts",
+        "Muscle_Categories", 
+        back_populates="bodyparts", 
         cascade="all, delete-orphan")
 
     exercises = db.relationship(
-        "Exercise_Bodyparts",
-        back_populates = "bodyparts",
+        "Exercise_Bodyparts", 
+        back_populates="bodyparts", 
         cascade="all, delete-orphan")
 
     phase_component_bodyparts = db.relationship(
-        "Phase_Component_Bodyparts",
-        back_populates = "bodyparts",
+        "Phase_Component_Bodyparts", 
+        back_populates="bodyparts", 
         cascade="all, delete-orphan")
 
     workout_components = db.relationship(
-        "User_Workout_Components",
-        back_populates = "bodyparts",
+        "User_Workout_Components", 
+        back_populates="bodyparts", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
-            "id": self.id,
+            "id": self.id, 
             "name": self.name
         }

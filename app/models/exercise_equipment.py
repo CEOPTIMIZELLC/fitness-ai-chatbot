@@ -15,16 +15,16 @@ class Exercise_Supportive_Equipment(db.Model):
     equipment_relationship = db.Column(db.String(50), comment='E.g., And, Or')
 
     # Relationships
-    exercises = db.relationship("Exercise_Library", back_populates = "supportive_equipment")
-    equipment = db.relationship("Equipment_Library", back_populates = "supportive_for_exercises")
+    exercises = db.relationship("Exercise_Library", back_populates="supportive_equipment")
+    equipment = db.relationship("Equipment_Library", back_populates="supportive_for_exercises")
 
     def to_dict(self):
         return {
-            "exercise_id": self.exercise_id,
-            "exercise_name": self.exercises.name,
-            "equipment_id": self.equipment_id,
-            "equipment_name": self.equipment.name,
-            "quantity": self.quantity,
+            "exercise_id": self.exercise_id, 
+            "exercise_name": self.exercises.name, 
+            "equipment_id": self.equipment_id, 
+            "equipment_name": self.equipment.name, 
+            "quantity": self.quantity, 
             "equipment_relationship": self.equipment_relationship
         }
 
@@ -44,16 +44,16 @@ class Exercise_Assistive_Equipment(db.Model):
     equipment_relationship = db.Column(db.String(50), comment='E.g., And, Or')
 
     # Relationships
-    exercises = db.relationship("Exercise_Library", back_populates = "assistive_equipment")
-    equipment = db.relationship("Equipment_Library", back_populates = "assistive_for_exercises")
+    exercises = db.relationship("Exercise_Library", back_populates="assistive_equipment")
+    equipment = db.relationship("Equipment_Library", back_populates="assistive_for_exercises")
     
     def to_dict(self):
         return {
-            "exercise_id": self.exercise_id,
-            "exercise_name": self.exercises.name,
-            "equipment_id": self.equipment_id,
-            "equipment_name": self.equipment.name,
-            "quantity": self.quantity,
+            "exercise_id": self.exercise_id, 
+            "exercise_name": self.exercises.name, 
+            "equipment_id": self.equipment_id, 
+            "equipment_name": self.equipment.name, 
+            "quantity": self.quantity, 
             "equipment_relationship": self.equipment_relationship
         }
 
@@ -73,16 +73,16 @@ class Exercise_Weighted_Equipment(db.Model):
     equipment_relationship = db.Column(db.String(50), comment='E.g., And, Or')
 
     # Relationships
-    exercises = db.relationship("Exercise_Library", back_populates = "weighted_equipment")
-    equipment = db.relationship("Equipment_Library", back_populates = "weighted_for_exercises")
+    exercises = db.relationship("Exercise_Library", back_populates="weighted_equipment")
+    equipment = db.relationship("Equipment_Library", back_populates="weighted_for_exercises")
 
     def to_dict(self):
         return {
-            "exercise_id": self.exercise_id,
-            "exercise_name": self.exercises.name,
-            "equipment_id": self.equipment_id,
-            "equipment_name": self.equipment.name,
-            "quantity": self.quantity,
+            "exercise_id": self.exercise_id, 
+            "exercise_name": self.exercises.name, 
+            "equipment_id": self.equipment_id, 
+            "equipment_name": self.equipment.name, 
+            "quantity": self.quantity, 
             "equipment_relationship": self.equipment_relationship
         }
 
@@ -102,16 +102,16 @@ class Exercise_Marking_Equipment(db.Model):
     equipment_relationship = db.Column(db.String(50), comment='E.g., And, Or')
 
     # Relationships
-    exercises = db.relationship("Exercise_Library", back_populates = "marking_equipment")
-    equipment = db.relationship("Equipment_Library", back_populates = "marking_for_exercises")
+    exercises = db.relationship("Exercise_Library", back_populates="marking_equipment")
+    equipment = db.relationship("Equipment_Library", back_populates="marking_for_exercises")
     
     def to_dict(self):
         return {
-            "exercise_id": self.exercise_id,
-            "exercise_name": self.exercises.name,
-            "equipment_id": self.equipment_id,
-            "equipment_name": self.equipment.name,
-            "quantity": self.quantity,
+            "exercise_id": self.exercise_id, 
+            "exercise_name": self.exercises.name, 
+            "equipment_id": self.equipment_id, 
+            "equipment_name": self.equipment.name, 
+            "quantity": self.quantity, 
             "equipment_relationship": self.equipment_relationship
         }
 
@@ -131,16 +131,16 @@ class Exercise_Other_Equipment(db.Model):
     equipment_relationship = db.Column(db.String(50), comment='E.g., And, Or')
 
     # Relationships
-    exercises = db.relationship("Exercise_Library", back_populates = "other_equipment")
-    equipment = db.relationship("Equipment_Library", back_populates = "other_for_exercises")
+    exercises = db.relationship("Exercise_Library", back_populates="other_equipment")
+    equipment = db.relationship("Equipment_Library", back_populates="other_for_exercises")
     
     def to_dict(self):
         return {
-            "exercise_id": self.exercise_id,
-            "exercise_name": self.exercises.name,
-            "equipment_id": self.equipment_id,
-            "equipment_name": self.equipment.name,
-            "quantity": self.quantity,
+            "exercise_id": self.exercise_id, 
+            "exercise_name": self.exercises.name, 
+            "equipment_id": self.equipment_id, 
+            "equipment_name": self.equipment.name, 
+            "quantity": self.quantity, 
             "equipment_relationship": self.equipment_relationship
         }
 

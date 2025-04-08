@@ -23,13 +23,13 @@ class User_Macrocycles(db.Model):
     start_date = db.Column(
         db.Date, 
         default=db.func.current_timestamp(), 
-        nullable=False,
+        nullable=False, 
         comment='Date that the macrocycle should start.')
 
     end_date = db.Column(
         db.Date, 
         default=db.func.current_timestamp() + timedelta(weeks=26), 
-        nullable=False,
+        nullable=False, 
         comment='Date that the macrocycle should end.')
 
     # Duration of the macrocycle based on the current start and end date.
@@ -39,27 +39,27 @@ class User_Macrocycles(db.Model):
 
     # Relationships
     users = db.relationship(
-        "Users",
-        back_populates = "macrocycles")
+        "Users", 
+        back_populates="macrocycles")
 
     goals = db.relationship(
-        "Goal_Library",
-        back_populates = "macrocycles")
+        "Goal_Library", 
+        back_populates="macrocycles")
 
     mesocycles = db.relationship(
-        "User_Mesocycles",
-        back_populates = "macrocycles",
+        "User_Mesocycles", 
+        back_populates="macrocycles", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
         total_duration = self.duration
         return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "goal_name": self.goals.name,
-            "goal_id": self.goal_id,
-            "goal": self.goal,
-            "start_date": self.start_date,
-            "end_date": self.end_date,
+            "id": self.id, 
+            "user_id": self.user_id, 
+            "goal_name": self.goals.name, 
+            "goal_id": self.goal_id, 
+            "goal": self.goal, 
+            "start_date": self.start_date, 
+            "end_date": self.end_date, 
             "duration": f"{total_duration.days // 7} weeks {total_duration.days % 7} days"
         }

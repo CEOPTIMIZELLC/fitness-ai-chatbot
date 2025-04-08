@@ -10,28 +10,28 @@ class Component_Library(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     name = db.Column(
-        db.String(50),
-        unique=True,
+        db.String(50), 
+        unique=True, 
         nullable=False)
 
     # Relationships
     phase_components = db.relationship(
-        "Phase_Component_Library",
-        back_populates = "components",
+        "Phase_Component_Library", 
+        back_populates="components", 
         cascade="all, delete-orphan")
 
     phase_component_bodyparts = db.relationship(
-        "Phase_Component_Bodyparts",
-        back_populates = "components",
+        "Phase_Component_Bodyparts", 
+        back_populates="components", 
         cascade="all, delete-orphan")
 
     exercises = db.relationship(
-        "Exercise_Component_Phases",
-        back_populates = "components",
+        "Exercise_Component_Phases", 
+        back_populates="components", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
-            "id": self.id,
+            "id": self.id, 
             "name": self.name
         }

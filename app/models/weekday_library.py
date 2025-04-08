@@ -13,17 +13,17 @@ class Weekday_Library(db.Model):
 
     # Relationships
     availability = db.relationship(
-        "User_Weekday_Availability",
-        back_populates = "weekdays",
+        "User_Weekday_Availability", 
+        back_populates="weekdays", 
         cascade="all, delete-orphan")
 
     workout_days = db.relationship(
-        "User_Workout_Days",
-        back_populates = "weekdays",
+        "User_Workout_Days", 
+        back_populates="weekdays", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
-            "id": self.id,
+            "id": self.id, 
             "name": self.name
         }

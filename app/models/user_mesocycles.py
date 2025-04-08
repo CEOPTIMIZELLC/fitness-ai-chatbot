@@ -17,19 +17,19 @@ class User_Mesocycles(db.Model):
 
     order = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='The order of the mesocycle for the current macrocycle.')
 
     start_date = db.Column(
         db.Date, 
         default=db.func.current_timestamp(), 
-        nullable=False,
+        nullable=False, 
         comment='Date that the mesocycle should start.')
 
     end_date = db.Column(
         db.Date, 
         default=db.func.current_timestamp() + timedelta(weeks=26), 
-        nullable=False,
+        nullable=False, 
         comment='Date that the mesocycle should end.')
 
     # Duration of the mesocycle based on the current start and end date.
@@ -39,27 +39,27 @@ class User_Mesocycles(db.Model):
 
     # Relationships
     phases = db.relationship(
-        "Phase_Library",
-        back_populates = "mesocycles")
+        "Phase_Library", 
+        back_populates="mesocycles")
 
     macrocycles = db.relationship(
-        "User_Macrocycles",
-        back_populates = "mesocycles")
+        "User_Macrocycles", 
+        back_populates="mesocycles")
 
     microcycles = db.relationship(
-        "User_Microcycles",
-        back_populates = "mesocycles",
+        "User_Microcycles", 
+        back_populates="mesocycles", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
         total_duration = self.duration
         return {
-            "id": self.id,
-            "macrocycle_id": self.macrocycle_id,
-            "order": self.order,
-            "phase_id": self.phase_id,
-            "phase_name": self.phases.name,
-            "start_date": self.start_date,
-            "end_date": self.end_date,
+            "id": self.id, 
+            "macrocycle_id": self.macrocycle_id, 
+            "order": self.order, 
+            "phase_id": self.phase_id, 
+            "phase_name": self.phases.name, 
+            "start_date": self.start_date, 
+            "end_date": self.end_date, 
             "duration": f"{total_duration.days // 7} weeks {total_duration.days % 7} days"
         }

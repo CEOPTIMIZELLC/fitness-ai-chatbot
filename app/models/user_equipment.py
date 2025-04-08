@@ -15,18 +15,18 @@ class User_Equipment(db.Model):
 
     # Relationships
     users = db.relationship(
-        "Users",
-        back_populates = "equipment")
+        "Users", 
+        back_populates="equipment")
 
     equipment = db.relationship(
-        "Equipment_Library",
-        back_populates = "users")
+        "Equipment_Library", 
+        back_populates="users")
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "equipment_name": self.equipment.name,
-            "measurement": self.measurement,
+            "id": self.id, 
+            "user_id": self.user_id, 
+            "equipment_name": self.equipment.name, 
+            "measurement": self.measurement, 
             "unit_of_measurement": self.equipment.unit_of_measurement
         }

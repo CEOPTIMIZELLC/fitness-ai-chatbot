@@ -15,19 +15,19 @@ class User_Microcycles(db.Model):
 
     order = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='The order of the microcycle for the current mesocycle.')
 
     start_date = db.Column(
         db.Date, 
         default=db.func.current_timestamp(), 
-        nullable=False,
+        nullable=False, 
         comment='Date that the microcycle should start.')
 
     end_date = db.Column(
         db.Date, 
         default=db.func.current_timestamp() + timedelta(weeks=7), 
-        nullable=False,
+        nullable=False, 
         comment='Date that the microcycle should end.')
 
     # Duration of the microcycle based on the current start and end date.
@@ -37,21 +37,21 @@ class User_Microcycles(db.Model):
     
     # Relationships
     mesocycles = db.relationship(
-        "User_Mesocycles",
-        back_populates = "microcycles")
+        "User_Mesocycles", 
+        back_populates="microcycles")
 
     workout_days = db.relationship(
-        "User_Workout_Days",
-        back_populates = "microcycles",
+        "User_Workout_Days", 
+        back_populates="microcycles", 
         cascade="all, delete-orphan")
 
     def to_dict(self):
         total_duration = self.duration
         return {
-            "id": self.id,
-            "mesocycle_id": self.mesocycle_id,
-            "order": self.order,
-            "start_date": self.start_date,
-            "end_date": self.end_date,
+            "id": self.id, 
+            "mesocycle_id": self.mesocycle_id, 
+            "order": self.order, 
+            "start_date": self.start_date, 
+            "end_date": self.end_date, 
             "duration": f"{total_duration.days // 7} weeks {total_duration.days % 7} days"
         }

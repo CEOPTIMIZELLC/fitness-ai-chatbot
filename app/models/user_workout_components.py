@@ -15,30 +15,30 @@ class User_Workout_Components(db.Model):
 
     duration = db.Column(
         db.Integer, 
-        nullable=False,
+        nullable=False, 
         comment='The duration that the phase component is projected to last.')
 
 
     # Relationships
     workout_days = db.relationship(
-        "User_Workout_Days",
-        back_populates = "workout_components")
+        "User_Workout_Days", 
+        back_populates="workout_components")
 
     phase_components = db.relationship(
-        "Phase_Component_Library",
-        back_populates = "workout_components")
+        "Phase_Component_Library", 
+        back_populates="workout_components")
 
     bodyparts = db.relationship(
-        "Bodypart_Library",
-        back_populates = "workout_components")
+        "Bodypart_Library", 
+        back_populates="workout_components")
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "workout_day_id": self.workout_day_id,
-            "phase_component_id": self.phase_component_id,
-            "phase_component_subcomponent": self.phase_components.name,
-            "bodypart_id": self.bodypart_id,
-            "bodypart_name": self.bodyparts.name,
+            "id": self.id, 
+            "workout_day_id": self.workout_day_id, 
+            "phase_component_id": self.phase_component_id, 
+            "phase_component_subcomponent": self.phase_components.name, 
+            "bodypart_id": self.bodypart_id, 
+            "bodypart_name": self.bodyparts.name, 
             "duration": self.duration
         }
