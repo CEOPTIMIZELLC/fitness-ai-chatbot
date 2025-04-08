@@ -151,23 +151,24 @@ def construct_user_workout_components_list(user_workout_components):
     
     return user_workout_components_list
 
-def agent_output_to_sqlalchemy_model(exercises_output, user_workdays):
+def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
     new_exercises = []
-    for exercise in exercises_output:
+    for i, exercise in enumerate(exercises_output, start=1):
         # Create a new exercise entry.
         new_exercise = User_Exercises(
-            #exercise_id = exercise["exercise_id"],
-            bodypart_id = exercise["bodypart_id"],
-            order = 0,
+            workout_day_id = workout_day_id,
+            phase_component_id = exercise["phase_component_id"],
+            exercise_id = exercise["exercise_id"],
+            #bodypart_id = exercise["bodypart_id"],
+            order = i,
             reps = exercise["reps_var"],
             sets = exercise["sets_var"],
             intensity = 0,
-            rest = exercise["rest_var"],
-            exercises_per_bodypart = exercise["bodypart_var"]
+            rest = exercise["rest_var"]
         )
 
         new_exercises.append(new_exercise)
-    return user_workdays
+    return new_exercises
 
 
 # Retrieve phase components
@@ -230,9 +231,9 @@ def exercise_initializer():
     result = exercises_main(parameters, constraints)
     print(result["formatted"])
 
-    # user_workdays = agent_output_to_sqlalchemy_model(result["output"], user_workdays)
+    user_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
 
-    # db.session.add_all(user_workdays)
-    # db.session.commit()
+    db.session.add_all(user_exercises)
+    db.session.commit()
 
     return jsonify({"status": "success", "exercises": result}), 200

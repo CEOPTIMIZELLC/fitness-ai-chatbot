@@ -83,6 +83,11 @@ class Exercise_Library(db.Model):
         back_populates = "exercises",
         cascade="all, delete-orphan")
 
+    user_exercises = db.relationship(
+        "User_Exercises",
+        back_populates = "exercises",
+        cascade="all, delete-orphan")
+
     @hybrid_property
     def all_muscle_ids(self):
         # Direct muscles

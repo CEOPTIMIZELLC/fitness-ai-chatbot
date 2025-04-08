@@ -14,10 +14,11 @@ class User_Exercises(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     workout_day_id = db.Column(db.Integer, db.ForeignKey("user_workout_days.id", ondelete='CASCADE'), nullable=False)
     phase_component_id = db.Column(db.Integer, db.ForeignKey("phase_component_library.id"), nullable=False)
-    #exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_library.id"), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_library.id"), nullable=False)
 
     order = db.Column(
-        db.Integer,
+        db.Integer, 
+        nullable=False,
         comment='The order of the workout_component for the current workout_day.')
 
     reps = db.Column(
@@ -39,19 +40,50 @@ class User_Exercises(db.Model):
         nullable=False,
         comment='The amount of time to rest for a single exercise for the phase subcomponent.')
 
-    exercises_per_bodypart = db.Column(
-        db.Integer, 
-        comment='The number of exercises per bodypart included for the phase component.')
 
+    # Seconds per exercise of the exercise.
+    @hybrid_property
+    def seconds_per_exercise(self):
+        return self.phase_components.seconds_per_exercise
+
+    # Base strain of the exercise.
+    @hybrid_property
+    def base_strain(self):
+        return self.exercises.base_strain
+
+    # Duration of the exercise.
+    @hybrid_property
+    def duration(self):
+        return (self.seconds_per_exercise * self.reps + self.rest) * self.sets
+
+    # Working duration of the exercise.
+    @hybrid_property
+    def working_duration(self):
+        return self.seconds_per_exercise * self.reps * self.sets
+
+    # Duration of the exercise based on the formula adjusted with strain.
+    @hybrid_property
+    def strained_duration(self):
+        return (self.seconds_per_exercise * (1 + self.base_strain / 10) * self.reps + self.rest) * self.sets
+
+    # Working duration of the exercise based on the formula adjusted with strain.
+    @hybrid_property
+    def strained_working_duration(self):
+        return self.seconds_per_exercise * (1 + self.base_strain / 10) * self.reps * self.sets
+    
+    # Strain of the exercise overall.
+    @hybrid_property
+    def strain(self):
+        return self.strained_duration / self.strained_working_duration
 
     # Relationships
     workout_days = db.relationship(
         "User_Workout_Days",
         back_populates = "exercises")
 
-    '''exercises = db.relationship(
+    exercises = db.relationship(
         "Exercise_Library",
-        back_populates = "workout_days")'''
+        back_populates = "user_exercises")
 
     phase_components = db.relationship(
         "Phase_Component_Library",
@@ -63,12 +95,18 @@ class User_Exercises(db.Model):
             "workout_day_id": self.workout_day_id,
             "phase_component_id": self.phase_component_id,
             "phase_component_subcomponent": self.phase_components.name,
-            #"exercise_id": self.exercise_id,
-            #"exercise_name": self.exercises.name,
+            "exercise_id": self.exercise_id,
+            "exercise_name": self.exercises.name,
             "order": self.order,
+            "seconds_per_exercise": self.seconds_per_exercise,
+            "base_strain": self.base_strain,
             "reps": self.reps,
             "sets": self.sets,
             "intensity": self.intensity,
             "rest": self.rest,
-            "exercises_per_bodypart": self.exercises_per_bodypart
+            "duration": self.duration,
+            "working_duration": self.working_duration,
+            "strained_duration": self.strained_duration,
+            "strained_working_duration": self.strained_working_duration,
+            "strain": self.strain
         }
