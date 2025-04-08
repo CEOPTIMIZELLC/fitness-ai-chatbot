@@ -180,7 +180,7 @@ class ExerciseComponentsAgent(BaseAgent):
             model, duration_var_entry = create_duration_var(
                 model=model, 
                 i=i, 
-                workout_length=workout_length, 
+                max_duration=workout_length, 
                 seconds_per_exercise=seconds_per_exercise_var_entry, 
                 reps=reps_var_entry, 
                 sets=sets_var_entry, 
@@ -310,7 +310,7 @@ class ExerciseComponentsAgent(BaseAgent):
 
                 model, duration_var = create_duration_var(model=model, 
                                                           i=i, 
-                                                          workout_length=max_duration, 
+                                                          max_duration=max_duration, 
                                                           seconds_per_exercise=seconds_per_exercise_var, 
                                                           reps=reps_var, 
                                                           sets=sets_var, 
@@ -319,7 +319,7 @@ class ExerciseComponentsAgent(BaseAgent):
 
                 model, working_duration_var = create_duration_var(model=model, 
                                                                   i=i, 
-                                                                  workout_length=max_duration, 
+                                                                  max_duration=max_duration, 
                                                                   seconds_per_exercise=seconds_per_exercise_var, 
                                                                   reps=reps_var, 
                                                                   sets=sets_var, 

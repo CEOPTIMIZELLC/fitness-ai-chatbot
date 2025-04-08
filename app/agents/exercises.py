@@ -194,7 +194,7 @@ class ExerciseAgent(ExerciseComponentsAgent):
 
                 model, duration_var = create_duration_var(model=model, 
                                                           i=i, 
-                                                          workout_length=max_strain_scaled, 
+                                                          max_duration=max_strain_scaled, 
                                                           seconds_per_exercise=seconds_per_exercise_var, 
                                                           reps=reps_var, 
                                                           sets=sets_var, 
@@ -205,7 +205,7 @@ class ExerciseAgent(ExerciseComponentsAgent):
 
                 model, working_duration_var = create_duration_var(model=model, 
                                                           i=i, 
-                                                          workout_length=max_strain_scaled, 
+                                                          max_duration=max_strain_scaled, 
                                                           seconds_per_exercise=seconds_per_exercise_var, 
                                                           reps=reps_var, 
                                                           sets=sets_var, 
