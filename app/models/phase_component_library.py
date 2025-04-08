@@ -91,11 +91,12 @@ class Phase_Component_Library(db.Model):
         db.String(255),
         comment='')
 
-    # Duration of the mesocycle based on the current start and end date.
+    # Duration of the phase component based on the formula for the minimum values allowed.
     @hybrid_property
     def min_duration(self):
         return (self.seconds_per_exercise * self.reps_min + self.rest_min) * self.sets_min
         
+    # Duration of the phase component based on the formula for the maximum values allowed.
     @hybrid_property
     def max_duration(self):
         return (self.seconds_per_exercise * self.reps_max + self.rest_max) * self.sets_max
