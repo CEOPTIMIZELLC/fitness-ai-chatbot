@@ -58,17 +58,26 @@ def run_pipeline():
     from app.routes.user_workout_days import workout_day_initializer
     from app.routes.user_exercises import exercise_initializer
 
-    result = {}
-    result["workout_length"] = change_workout_length()[0].get_json()["message"]
-    change_weekday_availability()
-    result["user_availability"] = get_user_weekday()[0].get_json()["weekdays"]
-    result["user_macrocycles"] = change_goal()[0].get_json()
-    result["user_mesocycles"] = mesocycle_phases()[0].get_json()["mesocycles"]["output"]
-    result["user_microcycles"] = microcycle_initializer()[0].get_json()["microcycles"]
-    result["user_workout_days"] = workout_day_initializer()[0].get_json()["workdays"]["output"]
-    result["user_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
+    # Input is a json.
+    data = request.get_json()
+    if not data:
+        return jsonify({"status": "error", "message": "Invalid request"}), 400
 
-    return result
+    runs = data.get("runs", 1)
+    results = []
+    for i in range(runs):
+        result = {}
+        result["workout_length"] = change_workout_length()[0].get_json()["message"]
+        change_weekday_availability()
+        result["user_availability"] = get_user_weekday()[0].get_json()["weekdays"]
+        result["user_macrocycles"] = change_goal()[0].get_json()
+        result["user_mesocycles"] = mesocycle_phases()[0].get_json()["mesocycles"]["output"]
+        result["user_microcycles"] = microcycle_initializer()[0].get_json()["microcycles"]
+        result["user_workout_days"] = workout_day_initializer()[0].get_json()["workdays"]["output"]
+        result["user_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
+        results.append(result)
+
+    return results
 
 # Testing for the SQL to add and check training equipment.
 @bp.route('/test_equipment_sql', methods=['GET'])
