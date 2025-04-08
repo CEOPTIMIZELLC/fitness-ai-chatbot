@@ -279,3 +279,33 @@ def day_duration_within_availability(model, duration_vars, availability):
         # Ensure total time does not exceed the macrocycle_allowed_weeks
         model.Add(sum(duration_vars_for_day) <= availability_for_day)
     return model
+
+def symmetry_breaking_constraints(model, phase_component_vars, active_exercise_vars):
+    """Add symmetry breaking constraints to reduce search space."""
+    # Force active exercises to be ordered
+    for i in range(len(active_exercise_vars) - 1):
+        # If exercise i+1 is active, exercise i must be active
+        model.Add(active_exercise_vars[i] >= active_exercise_vars[i + 1])
+        
+        # If both exercises are active, force ordering of phase components
+        model.Add(phase_component_vars[i] <= phase_component_vars[i + 1]).OnlyEnforceIf([
+            active_exercise_vars[i], active_exercise_vars[i + 1]
+        ])
+    return model
+
+def add_tight_bounds(model, phase_component_vars, used_pc_vars, phase_components):
+    """Add tight bounds to variables to help the solver."""
+    # Track used phase components
+    phase_component_counts = {}
+    
+    # Calculate minimum and maximum possible counts for each phase component
+    for pc_index, pc in enumerate(phase_components):
+        min_count = pc.get("exercises_per_bodypart_workout_min", 0) or 0
+        max_count = pc.get("exercises_per_bodypart_workout_max", len(phase_component_vars)) or len(phase_component_vars)
+        
+        # Create counter variable with tight bounds
+        counter = model.NewIntVar(min_count, max_count, f'pc_counter_{pc_index}')
+        model.Add(counter == sum(row[pc_index] for row in used_pc_vars))
+        phase_component_counts[pc_index] = counter
+        
+    return model, phase_component_counts
