@@ -24,14 +24,8 @@ class User_Workout_Days(db.Model):
         comment='Date that the workout_day should start.')
 
     # Relationships
-    weekdays = db.relationship(
-        "Weekday_Library", 
-        back_populates="workout_days")
-
-    microcycles = db.relationship(
-        "User_Microcycles", 
-        back_populates="workout_days")
-
+    weekdays = db.relationship("Weekday_Library", back_populates="workout_days")
+    microcycles = db.relationship("User_Microcycles", back_populates="workout_days")
     workout_components = db.relationship(
         "User_Workout_Components", 
         back_populates="workout_days", 

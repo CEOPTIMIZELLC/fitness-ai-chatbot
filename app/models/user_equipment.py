@@ -14,13 +14,8 @@ class User_Equipment(db.Model):
     measurement = db.Column(db.Integer, nullable=False)
 
     # Relationships
-    users = db.relationship(
-        "Users", 
-        back_populates="equipment")
-
-    equipment = db.relationship(
-        "Equipment_Library", 
-        back_populates="users")
+    users = db.relationship("Users", back_populates="equipment")
+    equipment = db.relationship("Equipment_Library", back_populates="users")
 
     def to_dict(self):
         return {

@@ -15,17 +15,9 @@ class Exercise_Component_Phases(db.Model):
     subcomponent_id = db.Column(db.Integer, db.ForeignKey("subcomponent_library.id", ondelete='CASCADE'), nullable=False)
 
     # Relationships
-    exercises = db.relationship(
-        "Exercise_Library", 
-        back_populates="component_phases")
-
-    components = db.relationship(
-        "Component_Library", 
-        back_populates="exercises")
-
-    subcomponents = db.relationship(
-        "Subcomponent_Library", 
-        back_populates="exercises")
+    exercises = db.relationship("Exercise_Library", back_populates="component_phases")
+    components = db.relationship("Component_Library", back_populates="exercises")
+    subcomponents = db.relationship("Subcomponent_Library", back_populates="exercises")
 
     def to_dict(self):
         return {

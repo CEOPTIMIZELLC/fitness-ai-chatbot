@@ -75,17 +75,9 @@ class User_Exercises(db.Model):
         return self.strained_duration / self.strained_working_duration
 
     # Relationships
-    workout_days = db.relationship(
-        "User_Workout_Days", 
-        back_populates="exercises")
-
-    exercises = db.relationship(
-        "Exercise_Library", 
-        back_populates="user_exercises")
-
-    phase_components = db.relationship(
-        "Phase_Component_Library", 
-        back_populates="user_exercises")
+    workout_days = db.relationship("User_Workout_Days", back_populates="exercises")
+    exercises = db.relationship("Exercise_Library", back_populates="user_exercises")
+    phase_components = db.relationship("Phase_Component_Library", back_populates="user_exercises")
 
     def to_dict(self):
         return {

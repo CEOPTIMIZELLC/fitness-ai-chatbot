@@ -18,17 +18,9 @@ class Phase_Component_Bodyparts(db.Model):
         comment='Whether or not the phase component is required for every microcycle.')
 
     # Relationships
-    phases = db.relationship(
-        "Phase_Library", 
-        back_populates="phase_component_bodyparts")
-
-    components = db.relationship(
-        "Component_Library", 
-        back_populates="phase_component_bodyparts")
-
-    bodyparts = db.relationship(
-        "Bodypart_Library", 
-        back_populates="phase_component_bodyparts")
+    phases = db.relationship("Phase_Library", back_populates="phase_component_bodyparts")
+    components = db.relationship("Component_Library", back_populates="phase_component_bodyparts")
+    bodyparts = db.relationship("Bodypart_Library", back_populates="phase_component_bodyparts")
 
     def to_dict(self):
         return {

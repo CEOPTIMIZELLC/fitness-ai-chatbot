@@ -14,21 +14,10 @@ class Muscle_Categories(db.Model):
     bodypart_id = db.Column(db.Integer, db.ForeignKey("bodypart_library.id", ondelete='CASCADE'), nullable=False)
 
     # Relationships
-    muscles = db.relationship(
-        "Muscle_Library", 
-        back_populates="categories")
-
-    muscle_groups = db.relationship(
-        "Muscle_Group_Library", 
-        back_populates="categories")
-
-    body_regions = db.relationship(
-        "Body_Region_Library", 
-        back_populates="categories")
-
-    bodyparts = db.relationship(
-        "Bodypart_Library", 
-        back_populates="categories")
+    muscles = db.relationship("Muscle_Library", back_populates="categories")
+    muscle_groups = db.relationship("Muscle_Group_Library", back_populates="categories")
+    body_regions = db.relationship("Body_Region_Library", back_populates="categories")
+    bodyparts = db.relationship("Bodypart_Library", back_populates="categories")
 
     def to_dict(self):
         return {

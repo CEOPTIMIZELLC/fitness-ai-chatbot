@@ -102,18 +102,9 @@ class Phase_Component_Library(db.Model):
         return (self.seconds_per_exercise * self.reps_max + self.rest_max) * self.sets_max
 
     # Relationships
-    phases = db.relationship(
-        "Phase_Library", 
-        back_populates="phase_components")
-
-    components = db.relationship(
-        "Component_Library", 
-        back_populates="phase_components")
-
-    subcomponents = db.relationship(
-        "Subcomponent_Library", 
-        back_populates="phase_components")
-    
+    phases = db.relationship("Phase_Library", back_populates="phase_components")
+    components = db.relationship("Component_Library", back_populates="phase_components")
+    subcomponents = db.relationship("Subcomponent_Library", back_populates="phase_components")    
     user_exercises = db.relationship(
         "User_Exercises", 
         back_populates="phase_components", 

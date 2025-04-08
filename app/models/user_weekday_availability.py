@@ -15,13 +15,8 @@ class User_Weekday_Availability(db.Model):
         comment='The amount of time the user is allowed on this day.')
 
     # Relationships
-    users = db.relationship(
-        "Users", 
-        back_populates="availability")
-
-    weekdays = db.relationship(
-        "Weekday_Library", 
-        back_populates="availability")
+    users = db.relationship("Users", back_populates="availability")
+    weekdays = db.relationship("Weekday_Library", back_populates="availability")
 
     def to_dict(self):
         return {

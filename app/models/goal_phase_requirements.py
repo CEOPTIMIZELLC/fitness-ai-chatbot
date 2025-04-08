@@ -22,14 +22,8 @@ class Goal_Phase_Requirements(db.Model):
         comment='Whether or not the phase is the desired goal phase that should be maximized.')
 
     # Relationships
-    goals = db.relationship(
-        "Goal_Library", 
-        back_populates="phases")
-    
-    phases = db.relationship(
-        "Phase_Library", 
-        back_populates="goals")
-    
+    goals = db.relationship("Goal_Library", back_populates="phases")    
+    phases = db.relationship("Phase_Library", back_populates="goals")    
     def to_dict(self):
         return {
             "goal_name": self.goals.name, 

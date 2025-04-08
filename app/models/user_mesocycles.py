@@ -38,14 +38,8 @@ class User_Mesocycles(db.Model):
         return self.end_date - self.start_date
 
     # Relationships
-    phases = db.relationship(
-        "Phase_Library", 
-        back_populates="mesocycles")
-
-    macrocycles = db.relationship(
-        "User_Macrocycles", 
-        back_populates="mesocycles")
-
+    phases = db.relationship("Phase_Library", back_populates="mesocycles")
+    macrocycles = db.relationship("User_Macrocycles", back_populates="mesocycles")
     microcycles = db.relationship(
         "User_Microcycles", 
         back_populates="mesocycles", 

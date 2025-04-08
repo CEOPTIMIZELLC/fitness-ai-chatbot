@@ -38,14 +38,8 @@ class User_Macrocycles(db.Model):
         return self.end_date - self.start_date
 
     # Relationships
-    users = db.relationship(
-        "Users", 
-        back_populates="macrocycles")
-
-    goals = db.relationship(
-        "Goal_Library", 
-        back_populates="macrocycles")
-
+    users = db.relationship("Users", back_populates="macrocycles")
+    goals = db.relationship("Goal_Library", back_populates="macrocycles")
     mesocycles = db.relationship(
         "User_Mesocycles", 
         back_populates="macrocycles", 

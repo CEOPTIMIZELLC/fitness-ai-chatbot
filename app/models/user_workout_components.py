@@ -20,17 +20,9 @@ class User_Workout_Components(db.Model):
 
 
     # Relationships
-    workout_days = db.relationship(
-        "User_Workout_Days", 
-        back_populates="workout_components")
-
-    phase_components = db.relationship(
-        "Phase_Component_Library", 
-        back_populates="workout_components")
-
-    bodyparts = db.relationship(
-        "Bodypart_Library", 
-        back_populates="workout_components")
+    workout_days = db.relationship("User_Workout_Days", back_populates="workout_components")
+    phase_components = db.relationship("Phase_Component_Library", back_populates="workout_components")
+    bodyparts = db.relationship("Bodypart_Library", back_populates="workout_components")
 
     def to_dict(self):
         return {

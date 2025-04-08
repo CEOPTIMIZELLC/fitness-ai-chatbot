@@ -36,10 +36,7 @@ class User_Microcycles(db.Model):
         return self.end_date - self.start_date
     
     # Relationships
-    mesocycles = db.relationship(
-        "User_Mesocycles", 
-        back_populates="microcycles")
-
+    mesocycles = db.relationship("User_Mesocycles", back_populates="microcycles")
     workout_days = db.relationship(
         "User_Workout_Days", 
         back_populates="microcycles", 
