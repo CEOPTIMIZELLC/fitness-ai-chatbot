@@ -92,6 +92,21 @@ def change_goal():
     }), 200
 
 
+def goal_classification_test_run(goal_app, goal_types, user_goal):
+    result_temp = goal_app.invoke(
+        {
+            "new_goal": user_goal, 
+            "goal_types": goal_types, 
+            "attempts": 0
+        })
+    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
+    print("")
+    return {
+        "new_goal": user_goal,
+        "goal_classification": result_temp["goal_class"],
+        "goal_id": result_temp["goal_id"]}
+
+
 # Testing for goal classification.
 @bp.route('/test', methods=['GET', 'POST'])
 def goal_classification_test():
@@ -99,77 +114,16 @@ def goal_classification_test():
     goal_types = retrieve_goal_types()
     goal_app = create_goal_classification_graph()
     
-    user_goal = "Create a new user equipment for my new barbell that weighs 4 kilograms."
-    result_temp = goal_app.invoke(
-        {
-            "new_goal": user_goal, 
-            "goal_types": goal_types, 
-            "attempts": 0
-        })
-    result.append({
-        "new_goal": user_goal,
-        "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]})
-    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
-    print("")
+    user_goals = [
+        "Create a new user equipment for my new barbell that weighs 4 kilograms.",
+        "I would like to do a push up.",
+        "I would like to be ready for the soccer championship.",
+        "Am I ready for the soccker championship this year?",
+        "I would like to weight 100 pounds."
+        ]
 
-
-    user_goal = "I would like to do a push up."
-    result_temp = goal_app.invoke(
-        {
-            "new_goal": user_goal, 
-            "goal_types": goal_types, 
-            "attempts": 0
-        })
-    result.append({
-        "new_goal": user_goal,
-        "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]})
-    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
-    print("")
-
-    user_goal = "I would like to be ready for the soccer championship."
-    result_temp = goal_app.invoke(
-        {
-            "new_goal": user_goal, 
-            "goal_types": goal_types, 
-            "attempts": 0
-        })
-    result.append({
-        "new_goal": user_goal,
-        "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]})
-    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
-    print("")
-    
-
-    user_goal = "Am I ready for the soccker championship this year?"
-    result_temp = goal_app.invoke(
-        {
-            "new_goal": user_goal, 
-            "goal_types": goal_types, 
-            "attempts": 0
-        })
-    result.append({
-        "new_goal": user_goal,
-        "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]})
-    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
-    print("")
-
-    user_goal = "I would like to weight 100 pounds."
-    result_temp = goal_app.invoke(
-        {
-            "new_goal": user_goal, 
-            "goal_types": goal_types, 
-            "attempts": 0
-        })
-    result.append({
-        "new_goal": user_goal,
-        "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]})
-    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
-    print("")
+    for user_goal in user_goals:
+        result.append(goal_classification_test_run(goal_app, goal_types, user_goal))
     
     return jsonify(result), 200
 

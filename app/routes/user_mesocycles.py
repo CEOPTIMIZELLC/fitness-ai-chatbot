@@ -1,5 +1,6 @@
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
+from datetime import timedelta
 
 from app import db
 from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, User_Mesocycles, User_Macrocycles
@@ -35,6 +36,48 @@ def retrieve_phase_constraints_for_goal(goal_id):
     )
 
     return possible_phases
+
+def construct_phases_list(possible_phases):
+    # Convert the phases to a list form.
+    possible_phases_list = [{
+            "id": 0,
+            "name": "Inactive",
+            "element_minimum": 0,
+            "element_maximum": 0,
+            "required_phase": False,
+            "is_goal_phase": False,
+        }]
+
+    for possible_phase in possible_phases:
+        possible_phases_list.append({
+            "id": possible_phase.id,
+            "name": possible_phase.name.lower(),
+            "element_minimum": possible_phase.phase_duration_minimum_in_weeks.days // 7,
+            "element_maximum": possible_phase.phase_duration_maximum_in_weeks.days // 7,
+            "required_phase": True if possible_phase.required_phase == "required" else False,
+            #"required_phase": possible_phase.required_phase,
+            "is_goal_phase": possible_phase.is_goal_phase,
+        })
+    return possible_phases_list
+
+def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_start_date):
+    # Convert output to form that may be stored.
+    user_phases = []
+    order = 1
+    for phase in phases_output:
+        new_phase = User_Mesocycles(
+            macrocycle_id = macrocycle_id,
+            phase_id = phase["id"],
+            order = order,
+            start_date = mesocycle_start_date,
+            end_date = mesocycle_start_date + timedelta(weeks=phase["duration"])
+        )
+        user_phases.append(new_phase)
+
+        # Set startdate of next phase to be at the end of the current one.
+        mesocycle_start_date +=timedelta(weeks=phase["duration"])
+        order += 1
+    return user_phases
 
 # Retrieve phases
 @bp.route('/', methods=['GET'])
@@ -95,55 +138,15 @@ def mesocycle_phases():
 
     # Retrieve all possible phases that can be selected.
     possible_phases = retrieve_phase_constraints_for_goal(int(user_macro.goal_id))
-
-    # Convert the phases to a list form.
-    possible_phases_list = [{
-            "id": 0,
-            "name": "Inactive",
-            "element_minimum": 0,
-            "element_maximum": 0,
-            "required_phase": False,
-            "is_goal_phase": False,
-        }]
-
-    for possible_phase in possible_phases:
-        possible_phases_list.append({
-            "id": possible_phase.id,
-            "name": possible_phase.name.lower(),
-            "element_minimum": possible_phase.phase_duration_minimum_in_weeks.days // 7,
-            "element_maximum": possible_phase.phase_duration_maximum_in_weeks.days // 7,
-            "required_phase": True if possible_phase.required_phase == "required" else False,
-            #"required_phase": possible_phase.required_phase,
-            "is_goal_phase": possible_phase.is_goal_phase,
-        })
     
-    parameters["possible_phases"] = possible_phases_list
+    # Convert the phases to a list form.
+    parameters["possible_phases"] = construct_phases_list(possible_phases)
 
     result = phase_main(parameters, constraints)
 
     print(result["formatted"])
 
-    phases_output = result["output"]
-
-    # Convert output to form that may be stored.
-
-    from datetime import timedelta
-    user_phases = []
-    order = 1
-    mesocycle_start_date = user_macro.start_date
-    for phase in phases_output:
-        new_phase = User_Mesocycles(
-            macrocycle_id = user_macro.id,
-            phase_id = phase["id"],
-            order = order,
-            start_date = mesocycle_start_date,
-            end_date = mesocycle_start_date + timedelta(weeks=phase["duration"])
-        )
-        user_phases.append(new_phase)
-
-        # Set startdate of next phase to be at the end of the current one.
-        mesocycle_start_date +=timedelta(weeks=phase["duration"])
-        order += 1
+    user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
     
     db.session.add_all(user_phases)
     db.session.commit()
@@ -188,27 +191,8 @@ def phase_classification_test():
     for goal in goals:
         possible_phases = retrieve_phase_constraints_for_goal(int(goal.id))
 
-        possible_phases_list = [{
-                "id": 0,
-                "name": "Inactive",
-                "element_minimum": 0,
-                "element_maximum": 0,
-                "required_phase": False,
-                "is_goal_phase": False,
-            }]
-
-        for possible_phase in possible_phases:
-            possible_phases_list.append({
-                "id": possible_phase.id,
-                "name": possible_phase.name.lower(),
-                "element_minimum": possible_phase.phase_duration_minimum_in_weeks.days // 7,
-                "element_maximum": possible_phase.phase_duration_maximum_in_weeks.days // 7,
-                "required_phase": True if possible_phase.required_phase == "required" else False,
-                #"required_phase": possible_phase.required_phase,
-                "is_goal_phase": possible_phase.is_goal_phase,
-            })
-        
-        parameters["possible_phases"] = possible_phases_list
+        # Convert the phases to a list form.
+        parameters["possible_phases"] = construct_phases_list(possible_phases)
 
         result = phase_main(parameters, constraints)
         print(str(goal.id))
