@@ -4,11 +4,10 @@ from typing import Set, Optional
 from dotenv import load_dotenv
 from app.agents.constraints import (
     link_entry_and_item, 
-    create_optional_intvar, 
     create_duration_var, 
     no_repeated_items, 
     only_use_required_items)
-from app.agents.exercises_phase_components import RelaxationAttempt as RelaxationAttemptBase, State, ExerciseComponentsAgent
+from app.agents.exercises_phase_components import RelaxationAttempt, State, ExerciseComponentsAgent, declare_model_vars, declare_duration_vars
 
 _ = load_dotenv()
 
@@ -31,27 +30,8 @@ def get_exercises_for_pc(exercises, phase_component):
         exercises_for_pc = [i for i, _ in enumerate(exercises, start=1)]
     return exercises_for_pc
 
-class RelaxationAttempt(RelaxationAttemptBase):
-    def __init__(self, constraints_relaxed: Set[str], result_feasible: bool, 
-                 strain_ratio: Optional[int] = None,
-                 duration: Optional[int] = None,
-                 working_duration: Optional[int] = None,
-                 reasoning: Optional[str] = None, expected_impact: Optional[str] = None):
-        super().__init__(constraints_relaxed, result_feasible, strain_ratio, duration, working_duration, reasoning, expected_impact)
-        self.available_constraints = """
-- use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
-- base_strain_equals: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
-- use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
-- no_duplicate_exercises: Forces each exercise to only appear once in the schedule.
-- secs_equals: Forces the number of seconds per exercise to be between the minimum and maximum values allowed for the phase component.
-- reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
-- sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
-- rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
-- exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
-- minimize_strain: Objective to minimize the amount of strain overall.
-"""
-
 class ExerciseAgent(ExerciseComponentsAgent):
+
     def build_opt_model_node_2(self, state: State, config=None) -> dict:
         print(state["formatted"])
 
@@ -82,37 +62,17 @@ class ExerciseAgent(ExerciseComponentsAgent):
         max_base_strain = max(exercise["base_strain"] for exercise in exercises[1:])
         max_strain_scaled = ((max_seconds_per_exercise * (10 + max_base_strain) * max_reps) + (10 *max_rest * 5)) * max_sets
 
-        used_exercise_vars = []
-        base_strain_vars = []
-        exercise_vars = []
+        # Optional integer variable for the exercise type chosen at exercise i.
+        exercise_vars = declare_model_vars(model, "exercise", active_exercise_vars, max_exercises, 1, (exercise_amount - 1))
 
-        for i in range(max_exercises):
-            is_exercise_active_var = active_exercise_vars[i]
-
-            # Optional integer variable representing the exercise chosen at exercise i.
-            exercise_var_entry = create_optional_intvar(
-                model=model, activator=is_exercise_active_var,
-                value_if_inactive=0,
-                min_if_active=1,
-                max_if_active=exercise_amount - 1,
-                name_of_entry_var=f'exercise_{i}')
-
-            # Boolean variables indicating whether exercise j is used at exercise i.
-            used_exercise_vars_entry = [
-                model.NewBoolVar(f'exercise_{i}_is_exercise_{j}')
-                for j in range(exercise_amount)
-            ]
-
-            # Create an optional entry for the seconds per exercise variables.
-            base_strain_var_entry = create_optional_intvar(
-                model=model, activator=is_exercise_active_var,
-                min_if_active=min_base_strain,
-                max_if_active=max_base_strain,
-                name_of_entry_var=f'base_strain_{i}')
-
-            used_exercise_vars.append(used_exercise_vars_entry)
-            base_strain_vars.append(base_strain_var_entry)
-            exercise_vars.append(exercise_var_entry)
+        # Boolean variables indicating whether exercise type j is used at exercise i.
+        used_exercise_vars = [[
+            model.NewBoolVar(f'exercise_{i}_is_exercise_{j}')
+            for j in range(exercise_amount)]
+            for i in range(max_exercises)]
+        
+        # Optional integer variable for the base strain of the exercise chosen at exercise i.
+        base_strain_vars = declare_model_vars(model, "base_strain", active_exercise_vars, max_exercises, min_base_strain, max_base_strain)
 
         # Links the exercise variables and the exercises that can exist via the used exercises variables.
         link_entry_and_item(model = model, 

@@ -11,77 +11,11 @@ from app.agents.constraints import (
     frequency_within_min_max, 
     consecutive_bodyparts_for_component)
 
-from app.agents.base_agent import BaseAgent, BaseAgentState
+from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 
 _ = load_dotenv()
 
-class RelaxationAttempt:
-    def __init__(self, constraints_relaxed: Set[str], result_feasible: bool, 
-                 microcycle_duration: Optional[int] = None,
-                 reasoning: Optional[str] = None, expected_impact: Optional[str] = None):
-        self.constraints_relaxed = set(constraints_relaxed)
-        self.result_feasible = result_feasible
-        self.microcycle_duration = microcycle_duration
-        self.timestamp = datetime.now()
-        self.reasoning = reasoning
-        self.expected_impact = expected_impact
-
-def declare_model_vars(model, phase_components, weekday_availability, workout_length, microcycle_weekdays):
-    workout_availability = []
-    active_workday_vars = []
-    active_phase_components = []
-    duration_vars = []
-
-    # Each day in the microcycle
-    for index_for_day, day in enumerate(microcycle_weekdays):
-        workout_availability_for_day = weekday_availability[day]["availability"]
-        is_active_workday = model.NewBoolVar(f'day_{index_for_day}_active')
-
-        # Ensure that the workday is considered inactive if it is 0 hours long.
-        if workout_availability_for_day > 0:
-            model.Add(is_active_workday == True)
-        else:
-            model.Add(is_active_workday == False)
-
-        # Append the available time for a day. Make sure to convert it from hours to seconds.
-        workout_availability.append(workout_availability_for_day)
-        active_workday_vars.append(is_active_workday)
-        
-        active_phase_components_for_day = []
-        duration_vars_for_day = []
-
-        # Each phase component in the day.
-        for index_for_phase_component, phase_component in enumerate(phase_components):
-            is_phase_active_var = (model.NewBoolVar(
-                f'phase_component_{index_for_phase_component}_active_on_day_{index_for_day}'))
-
-            # Create the entry for phase component's duration
-            # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
-            duration_var_entry = create_optional_intvar(
-                model=model, activator=is_phase_active_var,
-                min_if_active=phase_component["duration_min"],
-                max_if_active=min(phase_component["duration_max"], workout_length),
-                name_of_entry_var=f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}')
-
-            active_phase_components_for_day.append(is_phase_active_var)
-            duration_vars_for_day.append(duration_var_entry)
-        
-        # Append the new row to the corresponding 2D arrays.
-        active_phase_components.append(active_phase_components_for_day)
-        duration_vars.append(duration_vars_for_day)
-    return (workout_availability, active_workday_vars, active_phase_components, duration_vars)
-
-
-class State(BaseAgentState):
-    parameter_input: dict
-
-class PhaseComponentAgent(BaseAgent):
-    def __init__(self, parameters={}, constraints={}):
-        super().__init__()
-        self.initial_state["parameter_input"]={
-            "parameters": parameters, 
-            "constraints": constraints}
-        self.available_constraints = """
+available_constraints = """
 - day_duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
 - day_duration_within_workout_length: Prevents workout from exceeding the length allowed for a workout.
 - use_workout_required_components: Forces all phase components required for a workout to be assigned in every workout.
@@ -91,6 +25,29 @@ class PhaseComponentAgent(BaseAgent):
 - minimize_duration_delta: Secondary objective to minimize the amount of spread of phase component durations.
 - maximize_exercise_time: Objective to maximize the amount of time spent overall.
 """
+
+class RelaxationAttempt(BaseRelaxationAttempt):
+    def __init__(self, 
+                 constraints_relaxed: Set[str], 
+                 result_feasible: bool, 
+                 microcycle_duration: Optional[int] = None,
+                 reasoning: Optional[str] = None, 
+                 expected_impact: Optional[str] = None):
+        super().__init__(constraints_relaxed, result_feasible, reasoning, expected_impact)        
+        self.microcycle_duration = microcycle_duration
+
+
+class State(BaseAgentState):
+    parameter_input: dict
+
+class PhaseComponentAgent(BaseAgent):
+    available_constraints = available_constraints
+
+    def __init__(self, parameters={}, constraints={}):
+        super().__init__()
+        self.initial_state["parameter_input"]={
+            "parameters": parameters, 
+            "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
         """Initialize optimization parameters and constraints."""
@@ -157,7 +114,38 @@ class PhaseComponentAgent(BaseAgent):
         workout_length = parameters["workout_length"]
         microcycle_weekdays = parameters["microcycle_weekdays"]
 
-        (workout_availability, active_workday_vars, active_phase_components, duration_vars) = declare_model_vars(model, phase_components, weekday_availability, workout_length, microcycle_weekdays)
+        workout_availability = [weekday_availability[day]["availability"] for day in microcycle_weekdays]
+
+        # Boolean variables indicating whether exercise i is active.
+        active_workday_vars = [
+            model.NewBoolVar(f'day_{index_for_day}_is_active') 
+            for index_for_day in range(len(microcycle_weekdays))]
+
+        # Ensure that the workday is considered inactive if it is 0 hours long.
+        for workout_availability_for_day, is_active_workday in zip(workout_availability, active_workday_vars):
+            if workout_availability_for_day > 0:
+                model.Add(is_active_workday == True)
+            else:
+                model.Add(is_active_workday == False)
+
+        # Boolean variables indicating whether phase component j is active on day i.
+        active_phase_components = [[
+            model.NewBoolVar(f'phase_component_{index_for_phase_component}_is_active_on_day_{index_for_day}')
+            for index_for_phase_component in range(len(phase_components))]
+            for index_for_day in range(len(microcycle_weekdays))]
+
+        # Create the entry for phase component's duration
+        # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
+        duration_vars = [[
+            create_optional_intvar(
+                model=model, 
+                activator = active_phase_components[index_for_day][index_for_phase_component],
+                min_if_active = phase_components[index_for_phase_component]["duration_min"],
+                max_if_active = min(phase_components[index_for_phase_component]["duration_max"], workout_length),
+                name_of_entry_var = f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}')
+            for index_for_phase_component in range(len(phase_components))]
+            for index_for_day in range(len(microcycle_weekdays))]
+
 
         # Apply active constraints ======================================
         state["logs"] += "\nBuilding model with constraints:\n"

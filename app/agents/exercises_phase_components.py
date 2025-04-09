@@ -13,23 +13,9 @@ from app.agents.constraints import (
     symmetry_breaking_constraints, 
     add_tight_bounds)
 
-from app.agents.base_agent import BaseAgent, BaseAgentState
+from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 
-class RelaxationAttempt:
-    def __init__(self, constraints_relaxed: Set[str], result_feasible: bool, 
-                 strain_ratio: Optional[int] = None,
-                 duration: Optional[int] = None,
-                 working_duration: Optional[int] = None,
-                 reasoning: Optional[str] = None, expected_impact: Optional[str] = None):
-        self.constraints_relaxed = set(constraints_relaxed)
-        self.result_feasible = result_feasible
-        self.strain_ratio = strain_ratio
-        self.duration = duration
-        self.working_duration = working_duration
-        self.timestamp = datetime.now()
-        self.reasoning = reasoning
-        self.expected_impact = expected_impact
-        self.available_constraints = """
+available_constraints = """
 - use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
 - base_strain_equals: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
 - use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
@@ -42,10 +28,46 @@ class RelaxationAttempt:
 - minimize_strain: Objective to minimize the amount of strain overall.
 """
 
+class RelaxationAttempt(BaseRelaxationAttempt):
+    def __init__(self, 
+                 constraints_relaxed: Set[str], 
+                 result_feasible: bool, 
+                 strain_ratio: Optional[int] = None,
+                 duration: Optional[int] = None,
+                 working_duration: Optional[int] = None,
+                 reasoning: Optional[str] = None, 
+                 expected_impact: Optional[str] = None):
+        super().__init__(constraints_relaxed, result_feasible, reasoning, expected_impact)        
+        self.strain_ratio = strain_ratio
+        self.duration = duration
+        self.working_duration = working_duration
+
+def declare_model_vars(model, name, active_vars, max_entries, min_if_active, max_if_active):
+    return [
+        create_optional_intvar(
+            model=model, activator=active_vars[i],
+            min_if_active=min_if_active,
+            max_if_active=max_if_active,
+            name_of_entry_var=f'{name}_{i}')
+        for i in range(max_entries)]
+
+def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars):
+    return [
+        create_duration_var(
+            model=model, i=i, 
+            max_duration=max_duration, 
+            seconds_per_exercise=seconds_per_exercise_vars[i], 
+            reps=reps_vars[i], 
+            sets=sets_vars[i], 
+            rest=rest_vars[i])
+        for i in range(max_entries)]
+
 class State(BaseAgentState):
     parameter_input: dict
 
 class ExerciseComponentsAgent(BaseAgent):
+    available_constraints = available_constraints
+
     def __init__(self, parameters={}, constraints={}):
         super().__init__()
         self.initial_state["parameter_input"]={
@@ -133,78 +155,27 @@ class ExerciseComponentsAgent(BaseAgent):
         max_rest = max(phase_component["rest_max"] for phase_component in phase_components[1:])
         max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
 
-        used_pc_vars = []
-        active_exercise_vars = []
-        seconds_per_exercise_vars = []
-        reps_vars = []
-        sets_vars = []
-        rest_vars = []
-        phase_component_vars = []
-        duration_vars = []
+        # Boolean variables indicating whether exercise i is active.
+        active_exercise_vars = [
+            model.NewBoolVar(f'exercise_{i}_is_active') 
+            for i in range(max_exercises)]
 
-        for i in range(max_exercises):
-            # Boolean variables indicating whether exercise i is active.
-            is_exercise_active_var = model.NewBoolVar(f'exercise_{i}_is_active')
+        # Optional integer variable for the phase component chosen at exercise i.
+        phase_component_vars = declare_model_vars(model, "phase_component", active_exercise_vars, max_exercises, 1, (phase_component_amount - 1))
 
-            # Optional integer variable representing the phase component chosen at exercise i.
-            phase_component_var_entry = create_optional_intvar(
-                model=model, activator=is_exercise_active_var,
-                value_if_inactive=0,
-                min_if_active=1,
-                max_if_active=phase_component_amount - 1,
-                name_of_entry_var=f'phase_component_{i}')
+        # Boolean variables indicating whether phase component j is used at exercise i.
+        used_pc_vars = [[
+            model.NewBoolVar(f'exercise_{i}_is_phase_component_{j}')
+            for j in range(phase_component_amount)]
+            for i in range(max_exercises)]
 
-            # Boolean variables indicating whether phase component j is used at exercise i.
-            used_pc_vars_entry = [
-                model.NewBoolVar(f'exercise_{i}_is_phase_component_{j}')
-                for j in range(phase_component_amount)
-            ]
+        # Optional integer variable for the phase component values chosen at exercise i.
+        seconds_per_exercise_vars = declare_model_vars(model, "seconds_per_exercise", active_exercise_vars, max_exercises, min_seconds_per_exercise, max_seconds_per_exercise)
+        reps_vars = declare_model_vars(model, "reps", active_exercise_vars, max_exercises, min_reps, max_reps)
+        sets_vars = declare_model_vars(model, "sets", active_exercise_vars, max_exercises, min_sets, max_sets)
+        rest_vars = declare_model_vars(model, "rest", active_exercise_vars, max_exercises, min_rest, max_rest)
 
-            # Create an optional entry for the seconds per exercise variables.
-            seconds_per_exercise_var_entry = create_optional_intvar(
-                model=model, activator=is_exercise_active_var,
-                min_if_active=min_seconds_per_exercise,
-                max_if_active=max_seconds_per_exercise,
-                name_of_entry_var=f'seconds_per_exercise_{i}')
-
-            # Create an optional entry for the reps variables.
-            reps_var_entry = create_optional_intvar(
-                model=model, activator=is_exercise_active_var,
-                min_if_active=min_reps,
-                max_if_active=max_reps,
-                name_of_entry_var=f'reps_{i}')
-
-            # Create an optional entry for the sets variables.
-            sets_var_entry = create_optional_intvar(
-                model=model, activator=is_exercise_active_var,
-                min_if_active=min_sets,
-                max_if_active=max_sets,
-                name_of_entry_var=f'sets_{i}')
-
-            # Create an optional entry for the rests variables.
-            rest_var_entry = create_optional_intvar(
-                model=model, activator=is_exercise_active_var,
-                min_if_active=min_rest,
-                max_if_active=max_rest,
-                name_of_entry_var=f'rest_{i}')
-
-            duration_var_entry = create_duration_var(
-                model=model, 
-                i=i, 
-                max_duration=workout_length, 
-                seconds_per_exercise=seconds_per_exercise_var_entry, 
-                reps=reps_var_entry, 
-                sets=sets_var_entry, 
-                rest=rest_var_entry)
-
-            active_exercise_vars.append(is_exercise_active_var)
-            used_pc_vars.append(used_pc_vars_entry)
-            seconds_per_exercise_vars.append(seconds_per_exercise_var_entry)
-            reps_vars.append(reps_var_entry)
-            sets_vars.append(sets_var_entry)
-            rest_vars.append(rest_var_entry)
-            phase_component_vars.append(phase_component_var_entry)
-            duration_vars.append(duration_var_entry)
+        duration_vars = declare_duration_vars(model, max_exercises, workout_length, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars)
 
         # Introduce dynamic selection variables
         num_exercises_used = model.NewIntVar(min_exercises, max_exercises, 'num_exercises_used')

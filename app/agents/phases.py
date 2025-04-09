@@ -12,21 +12,21 @@ from app.agents.constraints import (
     only_use_required_items, 
     use_all_required_items)
 
-from app.agents.base_agent import BaseAgent, BaseAgentState
+from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 
 _ = load_dotenv()
 
-class RelaxationAttempt:
-    def __init__(self, constraints_relaxed: Set[str], result_feasible: bool, 
-                 total_weeks_goal: Optional[int] = None, total_weeks_time: Optional[int] = None, 
-                 reasoning: Optional[str] = None, expected_impact: Optional[str] = None):
-        self.constraints_relaxed = set(constraints_relaxed)
-        self.result_feasible = result_feasible
+class RelaxationAttempt(BaseRelaxationAttempt):
+    def __init__(self, 
+                 constraints_relaxed: Set[str], 
+                 result_feasible: bool, 
+                 total_weeks_goal: Optional[int] = None, 
+                 total_weeks_time: Optional[int] = None, 
+                 reasoning: Optional[str] = None, 
+                 expected_impact: Optional[str] = None):
+        super().__init__(constraints_relaxed, result_feasible, reasoning, expected_impact)
         self.total_weeks_goal = total_weeks_goal
         self.total_weeks_time = total_weeks_time
-        self.timestamp = datetime.now()
-        self.reasoning = reasoning
-        self.expected_impact = expected_impact
 
 class State(BaseAgentState):
     parameter_input: dict
@@ -143,30 +143,30 @@ class PhaseAgent(BaseAgent):
         num_mesocycles_used = model.NewIntVar(min_mesocycles, max_mesocycles, 'num_mesocycles_used')
 
         constrain_active_entries_vars(model = model, 
-                                            entry_vars = mesocycle_vars, 
-                                            number_of_entries = max_mesocycles, 
-                                            duration_vars = duration_vars, 
-                                            active_entry_vars = active_mesocycle_vars)
+                                      entry_vars = mesocycle_vars, 
+                                      number_of_entries = max_mesocycles, 
+                                      duration_vars = duration_vars, 
+                                      active_entry_vars = active_mesocycle_vars)
         
 
         # Apply active constraints ======================================
         state["logs"] += "\nBuilding model with constraints:\n"
 
         link_entry_and_item(model = model, 
-                                    items = phases, 
-                                    entry_vars = mesocycle_vars, 
-                                    number_of_entries = max_mesocycles, 
-                                    used_vars = used_vars)
+                            items = phases, 
+                            entry_vars = mesocycle_vars, 
+                            number_of_entries = max_mesocycles, 
+                            used_vars = used_vars)
 
         # Constraint: The duration of a phase may only be a number of weeks between the minimum and maximum weeks allowed.
         if constraints["phase_within_min_max"]:
             entries_within_min_max(model = model, 
-                                        items = phases, 
-                                        minimum_key="element_minimum", 
-                                        maximum_key="element_maximum",
-                                        number_of_entries = max_mesocycles, 
-                                        used_vars = used_vars, 
-                                        duration_vars = duration_vars)
+                                   items = phases, 
+                                   minimum_key="element_minimum", 
+                                   maximum_key="element_maximum",
+                                   number_of_entries = max_mesocycles, 
+                                   used_vars = used_vars, 
+                                   duration_vars = duration_vars)
             state["logs"] += "- Phase duration within min and max allowed weeks applied.\n"
 
         # Ensure total time does not exceed the macrocycle_allowed_weeks
@@ -176,19 +176,19 @@ class PhaseAgent(BaseAgent):
         # Constraint: No consecutive phases
         if constraints["no_consecutive_same_phase"]:
             no_consecutive_identical_items(model = model, 
-                                                        entry_vars = mesocycle_vars, 
-                                                        active_entry_vars = active_mesocycle_vars)
+                                           entry_vars = mesocycle_vars, 
+                                           active_entry_vars = active_mesocycle_vars)
             state["logs"] += "- No consecutive phase of the same type applied.\n"
         
         # Constraint: No 6 phases without stabilization endurance
         if constraints["no_6_phases_without_stab_end"]:
             stab_end_index = 1
             no_n_items_without_desired_item(model = model, 
-                                                        allowed_n = 6, 
-                                                        desired_item_index = stab_end_index, 
-                                                        entry_vars = mesocycle_vars, 
-                                                        number_of_entries = max_mesocycles, 
-                                                        active_entry_vars = active_mesocycle_vars)
+                                            allowed_n = 6, 
+                                            desired_item_index = stab_end_index, 
+                                            entry_vars = mesocycle_vars, 
+                                            number_of_entries = max_mesocycles, 
+                                            active_entry_vars = active_mesocycle_vars)
             state["logs"] += "- No 6 phases without stabilization endurance applied.\n"
 
         # Constraint: First phase is stabilization endurance
@@ -208,8 +208,8 @@ class PhaseAgent(BaseAgent):
             required_phases.append(0) # Include the inactive state.
             
             only_use_required_items(model = model, 
-                                            required_items = required_phases, 
-                                            entry_vars = mesocycle_vars)
+                                    required_items = required_phases, 
+                                    entry_vars = mesocycle_vars)
             state["logs"] += "- Only use required phases applied.\n"
 
         # Constraint: Use all required phases at least once
@@ -217,8 +217,8 @@ class PhaseAgent(BaseAgent):
             required_phases = [i for i, phase in enumerate(phases) if phase["required_phase"]]
             
             use_all_required_items(model = model, 
-                                        required_items = required_phases, 
-                                        used_vars = used_vars)
+                                   required_items = required_phases, 
+                                   used_vars = used_vars)
             state["logs"] += "- Use every required phase at least once applied.\n"
 
         # Objective: Maximize time spent on goal phases
@@ -239,7 +239,6 @@ class PhaseAgent(BaseAgent):
                         goal_time_terms.append(goal_contrib)
 
             model.Add(goal_time == sum(goal_time_terms))
-
 
             # Secondary Objective: Maximize time spent in phases
             if constraints["maximize_phases"]:
