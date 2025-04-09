@@ -2,7 +2,12 @@ from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
-from app.agents.constraints import link_entry_and_item, create_optional_intvar, create_duration_var, no_repeated_items, only_use_required_items
+from app.agents.constraints import (
+    link_entry_and_item, 
+    create_optional_intvar, 
+    create_duration_var, 
+    no_repeated_items, 
+    only_use_required_items)
 from app.agents.exercises_phase_components import RelaxationAttempt as RelaxationAttemptBase, State, ExerciseComponentsAgent
 
 _ = load_dotenv()
@@ -85,7 +90,7 @@ class ExerciseAgent(ExerciseComponentsAgent):
             is_exercise_active_var = active_exercise_vars[i]
 
             # Optional integer variable representing the exercise chosen at exercise i.
-            model, exercise_var_entry = create_optional_intvar(
+            exercise_var_entry = create_optional_intvar(
                 model=model, activator=is_exercise_active_var,
                 value_if_inactive=0,
                 min_if_active=1,
@@ -99,7 +104,7 @@ class ExerciseAgent(ExerciseComponentsAgent):
             ]
 
             # Create an optional entry for the seconds per exercise variables.
-            model, base_strain_var_entry = create_optional_intvar(
+            base_strain_var_entry = create_optional_intvar(
                 model=model, activator=is_exercise_active_var,
                 min_if_active=min_base_strain,
                 max_if_active=max_base_strain,
@@ -110,11 +115,11 @@ class ExerciseAgent(ExerciseComponentsAgent):
             exercise_vars.append(exercise_var_entry)
 
         # Links the exercise variables and the exercises that can exist via the used exercises variables.
-        model = link_entry_and_item(model = model, 
-                                    items = exercises, 
-                                    entry_vars = exercise_vars, 
-                                    number_of_entries = max_exercises, 
-                                    used_vars = used_exercise_vars)
+        link_entry_and_item(model = model, 
+                            items = exercises, 
+                            entry_vars = exercise_vars, 
+                            number_of_entries = max_exercises, 
+                            used_vars = used_exercise_vars)
 
         # Apply active constraints ======================================
         state["logs"] += "\nBuilding model with constraints:\n"
@@ -126,19 +131,19 @@ class ExerciseAgent(ExerciseComponentsAgent):
                 exercises_for_pc.insert(0, 0)
                 conditions = [row[phase_component_index] for row in used_pc_vars]
 
-                model = only_use_required_items(model = model, 
-                                                required_items = exercises_for_pc, 
-                                                entry_vars = exercise_vars, 
-                                                active_entry_vars = active_exercise_vars, 
-                                                conditions = conditions)
+                only_use_required_items(model = model, 
+                                        required_items = exercises_for_pc, 
+                                        entry_vars = exercise_vars, 
+                                        active_entry_vars = active_exercise_vars, 
+                                        conditions = conditions)
             state["logs"] += "- Only use allowed exercises applied.\n"
 
         # Constraint: Ensure each exercise only appears once in the schedule
         if constraints["no_duplicate_exercises"]:
             required_phase_components = list(range(1, len(exercises)))
-            model = no_repeated_items(model = model, 
-                                      required_items = required_phase_components, 
-                                      used_vars = used_exercise_vars)
+            no_repeated_items(model = model, 
+                              required_items = required_phase_components, 
+                              used_vars = used_exercise_vars)
             state["logs"] += "- No duplicate exercises constraint applied.\n"
 
         # Objective: Maximize total duration of microcycle
@@ -163,27 +168,27 @@ class ExerciseAgent(ExerciseComponentsAgent):
                 non_zero_working_duration_var = model.NewIntVar(1, 10 * workout_length, f'working_duration_{i}')
                 working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
 
-                model, duration_var = create_duration_var(model=model, 
-                                                          i=i, 
-                                                          max_duration=max_strain_scaled, 
-                                                          seconds_per_exercise=seconds_per_exercise_var, 
-                                                          reps=reps_var, 
-                                                          sets=sets_var, 
-                                                          rest=rest_var,
-                                                          base_strain=base_strain_var,
-                                                          name="base_",
-                                                          scaled=10)
+                duration_var = create_duration_var(model=model, 
+                                                   i=i, 
+                                                   max_duration=max_strain_scaled, 
+                                                   seconds_per_exercise=seconds_per_exercise_var, 
+                                                   reps=reps_var, 
+                                                   sets=sets_var, 
+                                                   rest=rest_var,
+                                                   base_strain=base_strain_var,
+                                                   name="base_",
+                                                   scaled=10)
 
-                model, working_duration_var = create_duration_var(model=model, 
-                                                          i=i, 
-                                                          max_duration=max_strain_scaled, 
-                                                          seconds_per_exercise=seconds_per_exercise_var, 
-                                                          reps=reps_var, 
-                                                          sets=sets_var, 
-                                                          rest=0,
-                                                          base_strain=base_strain_var,
-                                                          name="working_",
-                                                          scaled=10)
+                working_duration_var = create_duration_var(model=model, 
+                                                           i=i, 
+                                                           max_duration=max_strain_scaled, 
+                                                           seconds_per_exercise=seconds_per_exercise_var, 
+                                                           reps=reps_var, 
+                                                           sets=sets_var, 
+                                                           rest=0,
+                                                           base_strain=base_strain_var,
+                                                           name="working_",
+                                                           scaled=10)
 
                 # Ensure no division by 0 occurs.
                 model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)

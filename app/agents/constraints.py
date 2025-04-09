@@ -7,7 +7,7 @@ def link_entry_and_item(model, items, entry_vars, number_of_entries, used_vars):
             # The corresponding entry_vars[i] must match the index j.
             model.Add(entry_vars[i] == j).OnlyEnforceIf(used_vars[i][j])
             model.Add(entry_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
-    return model
+    return None
 
 def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_active=1, value_if_inactive=0):
     # Enforce entry = 0 if the activator is off.
@@ -17,7 +17,7 @@ def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_acti
     model.Add(entry >= min_if_active).OnlyEnforceIf(activator)
     model.Add(entry <= max_if_active).OnlyEnforceIf(activator)
 
-    return model
+    return None
 
 
 # Method for the creation of what is essentially an optional variable. 
@@ -27,7 +27,7 @@ def create_optional_intvar(model, name_of_entry_var, activator, min_if_active=0,
     model = constrain_active_entry(model, entry=var_entry, activator=activator, 
                                    min_if_active=min_if_active, max_if_active=max_if_active, 
                                    value_if_inactive=value_if_inactive)
-    return model, var_entry
+    return var_entry
 
 
 # Create an intvar for an optional spread variable to try for later minimization.
@@ -45,7 +45,7 @@ def create_spread_intvar(model, entry_vars, entry_var_name, active_entry_vars, m
     # Minimize the spread
     spread_var = model.NewIntVar(0, max_value_allowed, f"{entry_var_name}_spread")
     model.Add(spread_var == max_entry_var - min_entry_var)
-    return model, spread_var
+    return spread_var
 
 # Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
 # This method performs the in between steps and returns the final duration variable.
@@ -76,7 +76,7 @@ def create_duration_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0
 
     # Completed constraint.
     model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
-    return model, duration_var_entry
+    return duration_var_entry
 
 
 # Define and create a list of variables to determine if an entry is active.
@@ -97,7 +97,7 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
         model.Add(duration_vars[i] >= 0).OnlyEnforceIf(active_entry_vars[i])
         model.Add(duration_vars[i] == 0).OnlyEnforceIf(active_entry_vars[i].Not())
     
-    return model
+    return None
 
 
 
@@ -117,7 +117,7 @@ def entries_equal(model, items, key, number_of_entries, used_vars, duration_vars
                 model, duration_vars[i], item,
                 key, used_vars[i][j]
             )
-    return model
+    return None
 
 
 def entry_within_min_max(model, var, item, min_key, max_key, condition=None):
@@ -140,7 +140,7 @@ def entries_within_min_max(model, items, minimum_key, maximum_key, number_of_ent
                 model, duration_vars[i], item,
                 minimum_key, maximum_key, used_vars[i][j]
             )
-    return model
+    return None
 
 # Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
 def frequency_within_min_max(model, phase_components, active_phase_components, minimum_key, maximum_key):
@@ -167,7 +167,7 @@ def frequency_within_min_max(model, phase_components, active_phase_components, m
             minimum_key, maximum_key,
             used_phase_components[phase_component_index]
         )
-    return model
+    return None
 
 # Constraint: The number of exercises may only be a number of exercises between the minimum and maximum exercises per bodypart allowed.
 def exercises_per_bodypart_within_min_max(model, required_items, items, minimum_key, maximum_key, used_vars):
@@ -179,7 +179,7 @@ def exercises_per_bodypart_within_min_max(model, required_items, items, minimum_
             model, sum(exercises_of_phase), items[item_index],
             minimum_key, maximum_key
         )
-    return model
+    return None
 
 # Adds constraint ensuring that, at least once within an 'n' frame window, the desired item must be at an entry.
 def no_n_items_without_desired_item(model, allowed_n, desired_item_index, entry_vars, number_of_entries, active_entry_vars=None):
@@ -205,7 +205,7 @@ def no_n_items_without_desired_item(model, allowed_n, desired_item_index, entry_
         
         # Ensures that at least one of the items in the window will be stabilization endurance.
         model.AddBoolOr(desired_item_in_window)
-    return model
+    return None
 
 # For each entry, add a constraint stating that it can't be the same item as the next entry.
 def no_consecutive_identical_items(model, entry_vars, active_entry_vars=None):
@@ -214,7 +214,7 @@ def no_consecutive_identical_items(model, entry_vars, active_entry_vars=None):
         constraint = model.Add(entry_vars[i] != entry_vars[i + 1])
         if active_entry_vars:
             constraint.OnlyEnforceIf(active_entry_vars[i], active_entry_vars[i + 1])
-    return model
+    return None
 
 # Constraint: Every bodypart division must be done consecutively for a phase component.
 def consecutive_bodyparts_for_component(model, phase_components, active_phase_components):
@@ -232,7 +232,7 @@ def consecutive_bodyparts_for_component(model, phase_components, active_phase_co
                 first_var = required_phase_components_for_day[0]
                 for var in required_phase_components_for_day[1:]:
                     model.Add(var == first_var)
-    return model
+    return None
 
 # Ensures that only required entrys will be used at any entry in the entry_set.
 def only_use_required_items(model, required_items, entry_vars, active_entry_vars=None, conditions=None):
@@ -246,21 +246,21 @@ def only_use_required_items(model, required_items, entry_vars, active_entry_vars
             condition.append(active_entry_vars[i])
         if condition != []:
             constraint.OnlyEnforceIf(condition)
-    return model
+    return None
 
 # Ensures that each required entry occurs at least once in the entry_set.
 def use_all_required_items(model, required_items, used_vars):
     for item_index in required_items:
         conditions = [row[item_index] for row in used_vars]
         model.AddBoolOr(conditions)
-    return model
+    return None
 
 # Ensures that an item only occurs once in the entry_set.
 def no_repeated_items(model, required_items, used_vars):
     for item_index in required_items:
         conditions = [row[item_index] for row in used_vars]
         model.Add(sum(conditions) <= 1)
-    return model
+    return None
 
 # Constraint: Force all phase components required in every workout to be included at least once.
 def use_workout_required_components(model, required_items, used_vars, active_entry_vars):
@@ -270,7 +270,7 @@ def use_workout_required_components(model, required_items, used_vars, active_ent
         for row, active_entry in zip(used_vars, active_entry_vars):
             # Set the active indicator for the phase to active on each active day
             model.Add(row[item_index] == True).OnlyEnforceIf(active_entry)
-    return model
+    return None
 
 # Constraint: The duration of a day may only be a number of hours between the allowed time.
 def day_duration_within_availability(model, duration_vars, availability):
@@ -278,7 +278,7 @@ def day_duration_within_availability(model, duration_vars, availability):
     for duration_vars_for_day, availability_for_day in zip(duration_vars, availability):
         # Ensure total time does not exceed the macrocycle_allowed_weeks
         model.Add(sum(duration_vars_for_day) <= availability_for_day)
-    return model
+    return None
 
 def symmetry_breaking_constraints(model, phase_component_vars, active_exercise_vars):
     """Add symmetry breaking constraints to reduce search space."""
@@ -291,9 +291,9 @@ def symmetry_breaking_constraints(model, phase_component_vars, active_exercise_v
         model.Add(phase_component_vars[i] <= phase_component_vars[i + 1]).OnlyEnforceIf([
             active_exercise_vars[i], active_exercise_vars[i + 1]
         ])
-    return model
+    return None
 
-def add_tight_bounds(model, phase_component_vars, used_pc_vars, phase_components):
+def add_tight_bounds_pc(model, phase_component_vars, used_pc_vars, phase_components):
     """Add tight bounds to variables to help the solver."""
     # Track used phase components
     phase_component_counts = {}
@@ -308,4 +308,4 @@ def add_tight_bounds(model, phase_component_vars, used_pc_vars, phase_components
         model.Add(counter == sum(row[pc_index] for row in used_pc_vars))
         phase_component_counts[pc_index] = counter
         
-    return model, phase_component_counts
+    return phase_component_counts

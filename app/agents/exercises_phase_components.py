@@ -11,7 +11,7 @@ from app.agents.constraints import (
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
     symmetry_breaking_constraints, 
-    add_tight_bounds)
+    add_tight_bounds_pc)
 
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
@@ -147,7 +147,7 @@ class ExerciseComponentsAgent(BaseAgent):
             is_exercise_active_var = model.NewBoolVar(f'exercise_{i}_is_active')
 
             # Optional integer variable representing the phase component chosen at exercise i.
-            model, phase_component_var_entry = create_optional_intvar(
+            phase_component_var_entry = create_optional_intvar(
                 model=model, activator=is_exercise_active_var,
                 value_if_inactive=0,
                 min_if_active=1,
@@ -161,34 +161,34 @@ class ExerciseComponentsAgent(BaseAgent):
             ]
 
             # Create an optional entry for the seconds per exercise variables.
-            model, seconds_per_exercise_var_entry = create_optional_intvar(
+            seconds_per_exercise_var_entry = create_optional_intvar(
                 model=model, activator=is_exercise_active_var,
                 min_if_active=min_seconds_per_exercise,
                 max_if_active=max_seconds_per_exercise,
                 name_of_entry_var=f'seconds_per_exercise_{i}')
 
             # Create an optional entry for the reps variables.
-            model, reps_var_entry = create_optional_intvar(
+            reps_var_entry = create_optional_intvar(
                 model=model, activator=is_exercise_active_var,
                 min_if_active=min_reps,
                 max_if_active=max_reps,
                 name_of_entry_var=f'reps_{i}')
 
             # Create an optional entry for the sets variables.
-            model, sets_var_entry = create_optional_intvar(
+            sets_var_entry = create_optional_intvar(
                 model=model, activator=is_exercise_active_var,
                 min_if_active=min_sets,
                 max_if_active=max_sets,
                 name_of_entry_var=f'sets_{i}')
 
             # Create an optional entry for the rests variables.
-            model, rest_var_entry = create_optional_intvar(
+            rest_var_entry = create_optional_intvar(
                 model=model, activator=is_exercise_active_var,
                 min_if_active=min_rest,
                 max_if_active=max_rest,
                 name_of_entry_var=f'rest_{i}')
 
-            model, duration_var_entry = create_duration_var(
+            duration_var_entry = create_duration_var(
                 model=model, 
                 i=i, 
                 max_duration=workout_length, 
@@ -211,18 +211,18 @@ class ExerciseComponentsAgent(BaseAgent):
         model.Add(num_exercises_used == sum(active_exercise_vars))
         
         # Links the phase components variables and the phase components via the used phase components variables.
-        model = link_entry_and_item(model = model, 
-                                    items = phase_components, 
-                                    entry_vars = phase_component_vars, 
-                                    number_of_entries = max_exercises, 
-                                    used_vars = used_pc_vars)
+        link_entry_and_item(model = model, 
+                            items = phase_components, 
+                            entry_vars = phase_component_vars, 
+                            number_of_entries = max_exercises, 
+                            used_vars = used_pc_vars)
         
         # Constrain the active exercises to be within the duration of the workout.
-        model = constrain_active_entries_vars(model = model, 
-                                              entry_vars = phase_component_vars, 
-                                              number_of_entries = max_exercises, 
-                                              duration_vars = duration_vars, 
-                                              active_entry_vars = active_exercise_vars)
+        constrain_active_entries_vars(model = model, 
+                                      entry_vars = phase_component_vars, 
+                                      number_of_entries = max_exercises, 
+                                      duration_vars = duration_vars, 
+                                      active_entry_vars = active_exercise_vars)
 
         # Apply active constraints ======================================
         state["logs"] += "\nBuilding model with constraints:\n"
@@ -235,67 +235,67 @@ class ExerciseComponentsAgent(BaseAgent):
         if constraints["use_all_phase_components"]:
             required_phase_components = list(range(1, len(phase_components)))
 
-            model = use_all_required_items(model = model, 
-                                           required_items = required_phase_components, 
-                                           used_vars = used_pc_vars)
+            use_all_required_items(model = model, 
+                                   required_items = required_phase_components, 
+                                   used_vars = used_pc_vars)
             state["logs"] += "- Use every required phase at least once applied.\n"
 
         # Constraint: The seconds per exercise of a phase component may only be between the minimum and maximum seconds per exercise allowed.
         if constraints["secs_equals"]:
-            model = entries_equal(model = model, 
-                                  items = phase_components, 
-                                  key="seconds_per_exercise", 
-                                  number_of_entries = max_exercises, 
-                                  used_vars = used_pc_vars, 
-                                  duration_vars = seconds_per_exercise_vars)
+            entries_equal(model = model, 
+                          items = phase_components, 
+                          key="seconds_per_exercise", 
+                          number_of_entries = max_exercises, 
+                          used_vars = used_pc_vars, 
+                          duration_vars = seconds_per_exercise_vars)
             state["logs"] += "- Seconds per exercise count within min and max allowed seconds per exercise applied.\n"
 
         # Constraint: The reps of a phase component may only be a number of reps between the minimum and maximum reps allowed.
         if constraints["reps_within_min_max"]:
-            model = entries_within_min_max(model = model, 
-                                           items = phase_components, 
-                                           minimum_key="reps_min", 
-                                           maximum_key="reps_max",
-                                           number_of_entries = max_exercises, 
-                                           used_vars = used_pc_vars, 
-                                           duration_vars = reps_vars)
+            entries_within_min_max(model = model, 
+                                   items = phase_components, 
+                                   minimum_key="reps_min", 
+                                   maximum_key="reps_max",
+                                   number_of_entries = max_exercises, 
+                                   used_vars = used_pc_vars, 
+                                   duration_vars = reps_vars)
             state["logs"] += "- Reps count within min and max allowed reps applied.\n"
 
         # Constraint: The sets of a phase component may only be a number of sets between the minimum and maximum sets allowed.
         if constraints["sets_within_min_max"]:
-            model = entries_within_min_max(model = model, 
-                                           items = phase_components, 
-                                           minimum_key="sets_min", 
-                                           maximum_key="sets_max",
-                                           number_of_entries = max_exercises, 
-                                           used_vars = used_pc_vars, 
-                                           duration_vars = sets_vars)
+            entries_within_min_max(model = model, 
+                                   items = phase_components, 
+                                   minimum_key="sets_min", 
+                                   maximum_key="sets_max",
+                                   number_of_entries = max_exercises, 
+                                   used_vars = used_pc_vars, 
+                                   duration_vars = sets_vars)
             state["logs"] += "- Sets count within min and max allowed sets applied.\n"
 
         # Constraint: The rest of a phase component may only be a number of rest between the minimum and maximum rest allowed.
         if constraints["rest_within_min_max"]:
-            model = entries_within_min_max(model = model, 
-                                           items = phase_components, 
-                                           minimum_key="rest_min", 
-                                           maximum_key="rest_max",
-                                           number_of_entries = max_exercises, 
-                                           used_vars = used_pc_vars, 
-                                           duration_vars = rest_vars)
+            entries_within_min_max(model = model, 
+                                   items = phase_components, 
+                                   minimum_key="rest_min", 
+                                   maximum_key="rest_max",
+                                   number_of_entries = max_exercises, 
+                                   used_vars = used_pc_vars, 
+                                   duration_vars = rest_vars)
             state["logs"] += "- Rest count within min and max allowed rest applied.\n"
 
         # Add symmetry breaking and tight bounds before applying main constraints
-        model = symmetry_breaking_constraints(model, phase_component_vars, active_exercise_vars)
-        model, phase_component_counts = add_tight_bounds(model, phase_component_vars, used_pc_vars, phase_components)
+        symmetry_breaking_constraints(model, phase_component_vars, active_exercise_vars)
+        phase_component_counts = add_tight_bounds_pc(model, phase_component_vars, used_pc_vars, phase_components)
 
         # Constraint: The numer of exercises may only be a number of exercises between the minimum and maximum exercises per bodypart allowed.
         if constraints["exercises_per_bodypart_within_min_max"]:
             required_phase_components = list(range(1, len(phase_components)))
-            model = exercises_per_bodypart_within_min_max(model=model, 
-                                                          required_items=required_phase_components, 
-                                                          items=phase_components, 
-                                                          minimum_key="exercises_per_bodypart_workout_min", 
-                                                          maximum_key="exercises_per_bodypart_workout_max", 
-                                                          used_vars=used_pc_vars)
+            exercises_per_bodypart_within_min_max(model=model, 
+                                                  required_items=required_phase_components, 
+                                                  items=phase_components, 
+                                                  minimum_key="exercises_per_bodypart_workout_min", 
+                                                  maximum_key="exercises_per_bodypart_workout_max", 
+                                                  used_vars=used_pc_vars)
             state["logs"] += "- Exercises count within min and max allowed exercises applied (optimized).\n"
 
         # Objective: Maximize total duration of microcycle
@@ -319,23 +319,23 @@ class ExerciseComponentsAgent(BaseAgent):
                 non_zero_working_duration_var = model.NewIntVar(1, 10 * workout_length, f'working_duration_{i}')
                 working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
 
-                model, duration_var = create_duration_var(model=model, 
-                                                          i=i, 
-                                                          max_duration=max_duration, 
-                                                          seconds_per_exercise=seconds_per_exercise_var, 
-                                                          reps=reps_var, 
-                                                          sets=sets_var, 
-                                                          rest=rest_var,
-                                                          name="base_")
+                duration_var = create_duration_var(model=model, 
+                                                   i=i, 
+                                                   max_duration=max_duration, 
+                                                   seconds_per_exercise=seconds_per_exercise_var, 
+                                                   reps=reps_var, 
+                                                   sets=sets_var, 
+                                                   rest=rest_var,
+                                                   name="base_")
 
-                model, working_duration_var = create_duration_var(model=model, 
-                                                                  i=i, 
-                                                                  max_duration=max_duration, 
-                                                                  seconds_per_exercise=seconds_per_exercise_var, 
-                                                                  reps=reps_var, 
-                                                                  sets=sets_var, 
-                                                                  rest=0,
-                                                                  name="working_")
+                working_duration_var = create_duration_var(model=model, 
+                                                           i=i, 
+                                                           max_duration=max_duration, 
+                                                           seconds_per_exercise=seconds_per_exercise_var, 
+                                                           reps=reps_var, 
+                                                           sets=sets_var, 
+                                                           rest=0,
+                                                           name="working_")
 
                 # Ensure no division by 0 occurs.
                 model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
