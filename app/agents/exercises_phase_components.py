@@ -11,7 +11,7 @@ from app.agents.constraints import (
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
     symmetry_breaking_constraints, 
-    add_tight_bounds_pc)
+    add_tight_bounds)
 
 from app.agents.base_agent import BaseAgent, BaseAgentState
 
@@ -285,7 +285,13 @@ class ExerciseComponentsAgent(BaseAgent):
 
         # Add symmetry breaking and tight bounds before applying main constraints
         symmetry_breaking_constraints(model, phase_component_vars, active_exercise_vars)
-        phase_component_counts = add_tight_bounds_pc(model, phase_component_vars, used_pc_vars, phase_components)
+        phase_component_counts = add_tight_bounds(model = model, 
+                                                  entry_vars = phase_component_vars, 
+                                                  used_vars = used_pc_vars, 
+                                                  items = phase_components, 
+                                                  minimum_key = "exercises_per_bodypart_workout_min", 
+                                                  maximum_key = "exercises_per_bodypart_workout_max", 
+                                                  name = "pc")
 
         # Constraint: The numer of exercises may only be a number of exercises between the minimum and maximum exercises per bodypart allowed.
         if constraints["exercises_per_bodypart_within_min_max"]:
