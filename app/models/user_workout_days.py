@@ -1,15 +1,12 @@
 from app import db
-from .mixins import OrderedMixin
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin, OrderedMixin
 
 # The phases that exist.
-class User_Workout_Days(db.Model, OrderedMixin):
+class User_Workout_Days(BaseModel, TableNameMixin, OrderedMixin):
     """The workout days belonging to a user's microcycle. This also acts as a join table between a microcycle and the phase components types."""
+    __table_args__ = {'comment': "Workout days for a microcycle."}
     # Fields
-    __table_args__ = {
-        'comment': "Workout days for a microcycle."
-    }
-    __tablename__ = "user_workout_days"
-    id = db.Column(db.Integer, primary_key=True)
     microcycle_id = db.Column(db.Integer, db.ForeignKey("user_microcycles.id", ondelete='CASCADE'), nullable=False)
     weekday_id = db.Column(db.Integer, db.ForeignKey("weekday_library.id", ondelete='CASCADE'), nullable=False)
 

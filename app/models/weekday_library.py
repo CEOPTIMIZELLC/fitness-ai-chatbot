@@ -1,16 +1,10 @@
 from app import db
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin, NameMixin
 
 # The days of the week.
-class Weekday_Library(db.Model):
-    __table_args__ = {
-        'comment': "The library of week days that exist."
-    }
-    # Fields
-    __tablename__ = "weekday_library"
-    id = db.Column(db.Integer, primary_key=True)
-    
-    name = db.Column(db.String(50), unique=True, nullable=False)
-
+class Weekday_Library(BaseModel, TableNameMixin, NameMixin):
+    __table_args__ = {'comment': "The library of week days that exist."}
     # Relationships
     availability = db.relationship(
         "User_Weekday_Availability", 

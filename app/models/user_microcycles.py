@@ -1,17 +1,14 @@
 from app import db
 from datetime import timedelta
 
-from .mixins import DateRangeMixin, OrderedMixin
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin, DateRangeMixin, OrderedMixin
 
 # The phases that exist.
-class User_Microcycles(db.Model, DateRangeMixin, OrderedMixin):
+class User_Microcycles(BaseModel, TableNameMixin, DateRangeMixin, OrderedMixin):
     """The microcycles belonging to a user's mesocycle."""
+    __table_args__ = {'comment': "Microcycles for a mesocycle."}
     # Fields
-    __table_args__ = {
-        'comment': "Microcycles for a mesocycle."
-    }
-    __tablename__ = "user_microcycles"
-    id = db.Column(db.Integer, primary_key=True)
     mesocycle_id = db.Column(db.Integer, db.ForeignKey("user_mesocycles.id", ondelete='CASCADE'), nullable=False)
 
     end_date = db.Column(

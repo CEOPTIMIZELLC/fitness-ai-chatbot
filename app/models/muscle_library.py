@@ -1,13 +1,9 @@
 from app import db
-from app.models.mixins import LibraryMixin
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin, NameMixin
 
-class Muscle_Library(db.Model, LibraryMixin):
-    __table_args__ = {
-        'comment': "The library of muscles."
-    }
-    # Fields
-    __tablename__ = "muscle_library"
-
+class Muscle_Library(BaseModel, TableNameMixin, NameMixin):
+    __table_args__ = {'comment': "The library of muscles."}
     # Relationships
     categories = db.relationship(
         "Muscle_Categories", 

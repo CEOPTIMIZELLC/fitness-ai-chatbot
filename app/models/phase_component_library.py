@@ -1,22 +1,16 @@
 from app import db
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin, NameMixin
 from sqlalchemy.ext.hybrid import hybrid_property
 
 # The components that exist.
-class Phase_Component_Library(db.Model):
-    __table_args__ = {
-        'comment': "The library of phase components that exists."
-    }
+class Phase_Component_Library(BaseModel, TableNameMixin, NameMixin):
+    __table_args__ = {'comment': "The library of phase components that exists."}
     # Fields
-    __tablename__ = "phase_component_library"
-    id = db.Column(db.Integer, primary_key=True)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
     component_id = db.Column(db.Integer, db.ForeignKey("component_library.id"), nullable=False)
     subcomponent_id = db.Column(db.Integer, db.ForeignKey("subcomponent_library.id"), nullable=False)
-
-    name = db.Column(
-        db.String(50), 
-        nullable=False, 
-        comment='The name of the phase and subcomponent combination.')
+    name = db.Column(db.String(255), nullable=False)
 
     reps_min = db.Column(
         db.Integer, 

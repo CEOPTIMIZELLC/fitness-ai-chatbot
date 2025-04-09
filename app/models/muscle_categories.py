@@ -1,13 +1,11 @@
 from app import db
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin
 
 # The components that exist for phase components.
-class Muscle_Categories(db.Model):
-    __table_args__ = {
-        'comment': "The join table for the different muscle groups that exist."
-    }
+class Muscle_Categories(BaseModel, TableNameMixin):
+    __table_args__ = {'comment': "The join table for the different muscle groups that exist."}
     # Fields
-    __tablename__ = "muscle_categories"
-    id = db.Column(db.Integer, primary_key=True)
     muscle_id = db.Column(db.Integer, db.ForeignKey("muscle_library.id", ondelete='CASCADE'), nullable=False)
     muscle_group_id = db.Column(db.Integer, db.ForeignKey("muscle_group_library.id", ondelete='CASCADE'), nullable=False)
     body_region_id = db.Column(db.Integer, db.ForeignKey("body_region_library.id", ondelete='CASCADE'), nullable=False)

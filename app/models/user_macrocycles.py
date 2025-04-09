@@ -2,17 +2,14 @@ from app import db
 from datetime import timedelta
 from sqlalchemy.dialects.postgresql import TEXT
 
-from .mixins import DateRangeMixin
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin, DateRangeMixin
 
 # The phases that exist.
-class User_Macrocycles(db.Model, DateRangeMixin):
+class User_Macrocycles(BaseModel, TableNameMixin, DateRangeMixin):
     """The macrocycles belonging to a user. This also acts as a join table between a user and the goal types."""
+    __table_args__ = {'comment': "Macrocycles that a user currently has or previously had planned out."}
     # Fields
-    __table_args__ = {
-        'comment': "Macrocycles that a user currently has or previously had planned out."
-    }
-    __tablename__ = "user_macrocycles"
-    id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     goal_id = db.Column(db.Integer, db.ForeignKey("goal_library.id"), nullable=False)
     goal = db.Column(

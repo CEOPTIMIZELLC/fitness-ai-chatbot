@@ -76,7 +76,7 @@ __all__ = [
     "Users", 
     ] 
 
-tables_dict = {table.__tablename__: table for table in db.Model.__subclasses__()}
+tables_dict = {table.__tablename__: table for table in db.Model.__subclasses__() if not table.__abstract__}
 
 def table_object(table_name):
     return tables_dict.get(table_name)

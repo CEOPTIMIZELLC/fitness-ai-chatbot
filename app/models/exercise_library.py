@@ -1,15 +1,12 @@
 from app import db
 from sqlalchemy.ext.hybrid import hybrid_property
-from app.models.mixins import LibraryMixin
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin, NameMixin
 
 # The exercises that exist.
-class Exercise_Library(db.Model, LibraryMixin):
+class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
+    __table_args__ = {'comment': "The library of exercises that exists."}
     # Fields
-    __table_args__ = {
-        'comment': "The library of exercises that exists."
-    }
-    __tablename__ = "exercise_library"
-
     base_strain = db.Column(
         db.Integer, 
         nullable=False, 

@@ -1,17 +1,13 @@
 from app import db
 from sqlalchemy.ext.hybrid import hybrid_property
-
-from .mixins import OrderedMixin
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin, OrderedMixin
 
 # The phases that exist.
-class User_Exercises(db.Model, OrderedMixin):
+class User_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     """The workout components belonging to a user's workout day. This also acts as a join table between a workout day and the phase components types."""
+    __table_args__ = {'comment': "Workout components for a workout day."}
     # Fields
-    __table_args__ = {
-        'comment': "Workout components for a workout day."
-    }
-    __tablename__ = "user_exercises"
-    id = db.Column(db.Integer, primary_key=True)
     workout_day_id = db.Column(db.Integer, db.ForeignKey("user_workout_days.id", ondelete='CASCADE'), nullable=False)
     phase_component_id = db.Column(db.Integer, db.ForeignKey("phase_component_library.id"), nullable=False)
     exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_library.id"), nullable=False)

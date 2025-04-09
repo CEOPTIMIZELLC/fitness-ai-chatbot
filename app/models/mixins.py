@@ -1,34 +1,38 @@
 from app import db
 from datetime import timedelta
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.declarative import declared_attr
 
+class TimestampMixin:
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
-class LibraryMixin:
-    id = db.Column(db.Integer, primary_key=True)
+class TableNameMixin:
+    # @classmethod
+    # def __tablename__(cls):
+    #     return cls.__name__.lower()
 
-    name = db.Column(
-        db.String(255), 
-        unique=True, 
-        nullable=False, 
-        comment='Name of the entry in the library.')
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
 
-
-class JoinTableMixin:
+class NameMixin:
+    name = db.Column(db.String(255), unique=True, nullable=False)
+    
     @classmethod
-    def create_relationship(cls, model_class, backref_name, cascade="all, delete-orphan"):
-        return db.relationship(
-            model_class,
-            back_populates=backref_name,
-            cascade=cascade
-        )
+    def get_by_name(cls, name):
+        return cls.query.filter_by(name=name).first()
 
-    @classmethod
-    def create_foreign_key(cls, table_name, ondelete='CASCADE'):
-        return db.Column(
-            db.Integer,
-            db.ForeignKey(f"{table_name}.id", ondelete=ondelete),
-            primary_key=True
-        )
+
+class DurationMixin:
+    @hybrid_property
+    def duration_in_weeks(self):
+        return (self.end_date - self.start_date).days // 7
+    
+    @hybrid_property
+    def duration_formatted(self):
+        total_duration = self.end_date - self.start_date
+        return f"{total_duration.days // 7} weeks {total_duration.days % 7} days"
 
 
 class DateRangeMixin:

@@ -1,13 +1,11 @@
 from app import db
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin
 
 # The components that exist and their bodyparts..
-class Phase_Component_Bodyparts(db.Model):
-    __table_args__ = {
-        'comment': "The library of phase components that exists."
-    }
+class Phase_Component_Bodyparts(BaseModel, TableNameMixin):
+    __table_args__ = {'comment': "The library of phase components that exists."}
     # Fields
-    __tablename__ = "phase_component_bodyparts"
-    id = db.Column(db.Integer, primary_key=True)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
     component_id = db.Column(db.Integer, db.ForeignKey("component_library.id"), nullable=False)
     bodypart_id = db.Column(db.Integer, db.ForeignKey("bodypart_library.id"), nullable=False)

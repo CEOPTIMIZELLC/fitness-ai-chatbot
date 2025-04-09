@@ -2,14 +2,13 @@ from app import db, bcrypt, login_manager
 from flask_login import UserMixin
 from datetime import timedelta
 from app import user_validate
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin
 
 from sqlalchemy.dialects.postgresql import TEXT
 
-class Users(db.Model, UserMixin):
-    __tablename__ = "users"
-
+class Users(BaseModel, TableNameMixin, UserMixin):
     # Fields 
-    id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String, nullable=False)
     first_name = db.Column(db.String, nullable=False)

@@ -1,13 +1,10 @@
 from app import db
+from app.models.mixins import TableNameMixin
 
 # The phases that exist.
-class Goal_Phase_Requirements(db.Model):
+class Goal_Phase_Requirements(db.Model, TableNameMixin):
+    __table_args__ = {'comment': "Whether a phase is required or a goal phase for a goal."}
     # Fields
-    __table_args__ = {
-        'comment': "Whether a phase is required or a goal phase for a goal."
-    }
-    __tablename__ = "goal_phase_requirements"
-
     goal_id = db.Column(db.Integer, db.ForeignKey("goal_library.id"), primary_key=True)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), primary_key=True)
 

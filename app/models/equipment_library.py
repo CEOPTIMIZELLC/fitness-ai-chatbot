@@ -1,14 +1,11 @@
 from app import db
-from app.models.mixins import LibraryMixin
+from app.models.base import BaseModel
+from app.models.mixins import TableNameMixin, NameMixin
 
 # The equipment that exist.
-class Equipment_Library(db.Model, LibraryMixin):
-    __table_args__ = {
-        'comment': "The library of equipment that exists."
-    }
+class Equipment_Library(BaseModel, TableNameMixin, NameMixin):
+    __table_args__ = {'comment': "The library of equipment that exists."}
     # Fields
-    __tablename__ = "equipment_library"
-    
     unit_of_measurement = db.Column(
         db.String(50), 
         nullable=True, 
