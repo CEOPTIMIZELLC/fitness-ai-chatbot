@@ -292,27 +292,26 @@ class ExerciseComponentsAgent(BaseAgent):
                 ) = values_for_exercise
                 # Create the entry for phase component's duration
                 # total_working_duration = (seconds_per_exercise * rep_count) * set_count
-                #working_duration_var = model.NewIntVar(0, workout_length, f'working_duration_{i}')
-                non_zero_working_duration_var = model.NewIntVar(1, 10 * workout_length, f'working_duration_{i}')
+                non_zero_working_duration_var = model.NewIntVar(1, max_duration, f'non_zero_working_duration_{i}')
                 working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
 
-                duration_var = create_duration_var(model=model, 
-                                                   i=i, 
-                                                   max_duration=max_duration, 
-                                                   seconds_per_exercise=seconds_per_exercise_var, 
-                                                   reps=reps_var, 
-                                                   sets=sets_var, 
-                                                   rest=rest_var,
-                                                   name="base_")
+                duration_var = create_duration_var(
+                    model=model, i=i, 
+                    max_duration=max_duration, 
+                    seconds_per_exercise=seconds_per_exercise_var, 
+                    reps=reps_var, 
+                    sets=sets_var, 
+                    rest=rest_var,
+                    name="base")
 
-                working_duration_var = create_duration_var(model=model, 
-                                                           i=i, 
-                                                           max_duration=max_duration, 
-                                                           seconds_per_exercise=seconds_per_exercise_var, 
-                                                           reps=reps_var, 
-                                                           sets=sets_var, 
-                                                           rest=0,
-                                                           name="working_")
+                working_duration_var = create_duration_var(
+                    model=model, i=i, 
+                    max_duration=max_duration, 
+                    seconds_per_exercise=seconds_per_exercise_var, 
+                    reps=reps_var, 
+                    sets=sets_var, 
+                    rest=0,
+                    name="working")
 
                 # Ensure no division by 0 occurs.
                 model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)

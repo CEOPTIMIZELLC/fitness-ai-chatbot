@@ -49,23 +49,58 @@ def create_spread_intvar(model, entry_vars, entry_var_name, active_entry_vars, m
 
 # Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
 # This method performs the in between steps and returns the final duration variable.
-# total_set_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count + rest_time) * set_count
-# total_set_duration = (seconds_per_exercise*(10+basestrain)* rep_count + 10*rest_time) * set_count
-def create_duration_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, base_strain=None, name="", scaled=1):
+# total_set_duration = (seconds_per_exercise * rep_count + rest_time) * set_count
+def create_duration_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, name=""):
+    if name != "":
+        name += "_"
+
+    # Create the entry for phase component's duration
+    # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
+    duration_var_entry = model.NewIntVar(0, max_duration, f'{name}duration_{i}')
+
+    # Temporary variable for seconds per exercise and the rep count. (seconds_per_exercise * rep_count)
+    seconds_per_exercise_and_reps = model.NewIntVar(0, max_duration, f'{name}seconds_per_exercise_and_rep_count_{i}')
+    model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, reps])
+
+    # Temporary variable for the previous product and the rest time. (seconds_per_exercise * rep_count + rest_time)
+    duration_with_rest = model.NewIntVar(0, max_duration, f'{name}duration_with_rest_{i}')
+
+    # In between step for added components.
+    model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * rest))
+
+    # Completed constraint.
+    model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
+    return duration_var_entry
+
+
+def _is_base_strain(model, i, base_strain=None, name="", scaled=1):
+    # In between step for base strain.
+    if base_strain != None:
+        scaled = 10 * scaled
+        scaled_base_strain = model.NewIntVar(0, scaled * scaled, f'{name}scaled_base_strain_{i}')
+        model.Add(scaled_base_strain == (scaled + base_strain))
+        return scaled_base_strain, scaled
+    else:
+        return 1, scaled
+
+
+# Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
+# This method performs the in between steps and returns the final duration variable.
+# total_set_duration = (seconds_per_exercise * (1 + .1 * basestrain) * rep_count + rest_time) * set_count
+# total_set_duration = (seconds_per_exercise * (10 + basestrain) * rep_count + 10 * rest_time) * set_count
+def create_exercise_intensity_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, base_strain=None, name="", scaled=1):
+    if name != "":
+        name += "_"
+
+    # In between step for base strain.
+    scaled_base_strain, scaled = _is_base_strain(model, i, base_strain, name, scaled)
+
     # Create the entry for phase component's duration
     # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
     duration_var_entry = model.NewIntVar(0, scaled * max_duration, f'{name}duration_{i}')
 
     # Temporary variable for seconds per exercise and the rep count. (seconds_per_exercise * rep_count)
     seconds_per_exercise_and_reps = model.NewIntVar(0, scaled * max_duration, f'{name}seconds_per_exercise_and_rep_count_{i}')
-    
-    # In between step for base strain.
-    if base_strain != None:
-        scaled_base_strain = model.NewIntVar(0, scaled * scaled, f'{name}scaled_base_strain_{i}')
-        model.Add(scaled_base_strain == (scaled + base_strain))
-    else:
-        scaled_base_strain = 1
-
     model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, scaled_base_strain, reps])
 
     # Temporary variable for the previous product and the rest time. (seconds_per_exercise * rep_count + rest_time)
@@ -77,7 +112,6 @@ def create_duration_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0
     # Completed constraint.
     model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
     return duration_var_entry
-
 
 # Define and create a list of variables to determine if an entry is active.
 # As well, this will constrain the possible items that an inactive entry can have to be an invalid one.

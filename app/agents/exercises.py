@@ -4,7 +4,7 @@ from typing import Set, Optional
 from dotenv import load_dotenv
 from app.agents.constraints import (
     link_entry_and_item, 
-    create_duration_var, 
+    create_exercise_intensity_var, 
     no_repeated_items, 
     only_use_required_items)
 from app.agents.exercises_phase_components import RelaxationAttempt, State, ExerciseComponentsAgent, declare_model_vars, declare_duration_vars
@@ -106,7 +106,7 @@ class ExerciseAgent(ExerciseComponentsAgent):
                               used_vars = used_exercise_vars)
             state["logs"] += "- No duplicate exercises constraint applied.\n"
 
-        # Objective: Maximize total duration of microcycle
+        # Objective: Maximize total strain of microcycle
         if constraints["minimize_strain"]:
             # List of contributions to goal time.
             strain_terms = []
@@ -122,44 +122,43 @@ class ExerciseAgent(ExerciseComponentsAgent):
                     sets_var, 
                     rest_var
                 ) = values_for_exercise
-                # Create the entry for phase component's duration
-                # total_working_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
-                #working_duration_var = model.NewIntVar(0, workout_length, f'working_duration_{i}')
-                non_zero_working_duration_var = model.NewIntVar(1, 10 * workout_length, f'working_duration_{i}')
-                working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
+                # Create the entry for phase component's intensity
+                # total_working_intensity = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
+                non_zero_working_intensity_var = model.NewIntVar(1, 10 * max_strain_scaled, f'non_zero_working_intensity_{i}')
+                working_intensity_is_0 = model.NewBoolVar(f'working_intensity_{i}_is_0')
 
-                duration_var = create_duration_var(model=model, 
-                                                   i=i, 
-                                                   max_duration=max_strain_scaled, 
-                                                   seconds_per_exercise=seconds_per_exercise_var, 
-                                                   reps=reps_var, 
-                                                   sets=sets_var, 
-                                                   rest=rest_var,
-                                                   base_strain=base_strain_var,
-                                                   name="base_",
-                                                   scaled=10)
+                intensity_var = create_exercise_intensity_var(
+                    model=model, 
+                    i=i, 
+                    max_duration=max_strain_scaled, 
+                    seconds_per_exercise=seconds_per_exercise_var, 
+                    reps=reps_var, 
+                    sets=sets_var, 
+                    rest=rest_var,
+                    base_strain=base_strain_var,
+                    name="base")
 
-                working_duration_var = create_duration_var(model=model, 
-                                                           i=i, 
-                                                           max_duration=max_strain_scaled, 
-                                                           seconds_per_exercise=seconds_per_exercise_var, 
-                                                           reps=reps_var, 
-                                                           sets=sets_var, 
-                                                           rest=0,
-                                                           base_strain=base_strain_var,
-                                                           name="working_",
-                                                           scaled=10)
+                working_intensity_var = create_exercise_intensity_var(
+                    model=model, 
+                    i=i, 
+                    max_duration=max_strain_scaled, 
+                    seconds_per_exercise=seconds_per_exercise_var, 
+                    reps=reps_var, 
+                    sets=sets_var, 
+                    rest=0,
+                    base_strain=base_strain_var,
+                    name="working")
 
                 # Ensure no division by 0 occurs.
-                model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
-                model.Add(non_zero_working_duration_var == working_duration_var).OnlyEnforceIf(working_duration_is_0.Not())
-                model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
-                model.Add(working_duration_var > 0).OnlyEnforceIf(working_duration_is_0.Not())
-                model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
-                model.Add(working_duration_var >= 1).OnlyEnforceIf(working_duration_is_0.Not())
+                model.Add(non_zero_working_intensity_var == 1).OnlyEnforceIf(working_intensity_is_0)
+                model.Add(non_zero_working_intensity_var == working_intensity_var).OnlyEnforceIf(working_intensity_is_0.Not())
+                model.Add(working_intensity_var == 0).OnlyEnforceIf(working_intensity_is_0)
+                model.Add(working_intensity_var > 0).OnlyEnforceIf(working_intensity_is_0.Not())
+                model.Add(working_intensity_var == 0).OnlyEnforceIf(working_intensity_is_0)
+                model.Add(working_intensity_var >= 1).OnlyEnforceIf(working_intensity_is_0.Not())
 
                 strain = model.NewIntVar(0, workout_length, f'strain_{i}')
-                model.AddDivisionEquality(strain, duration_var, non_zero_working_duration_var)
+                model.AddDivisionEquality(strain, intensity_var, non_zero_working_intensity_var)
 
                 strain_terms.append(strain)
 
