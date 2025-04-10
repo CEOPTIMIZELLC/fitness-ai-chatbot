@@ -73,27 +73,43 @@ def create_duration_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0
     return duration_var_entry
 
 
-def _is_base_strain(model, i, base_strain=None, name="", scaled=1):
-    # In between step for base strain.
+# In between step for intensity and base strain.
+def _is_intensity(model, i, name="", scaled=1, max_duration=0, intensity=None, base_strain=None):
+    scaled_intensity_value = 0
+    intensity_name = ""
+    scaled_count = 1
+
+    if intensity != None:
+        scaled_intensity_value += intensity
+        intensity_name += "intensity_"
+        scaled_count += 1
+
     if base_strain != None:
+        scaled_intensity_value += base_strain
+        intensity_name += "base_strain_"
+        scaled_count += 1
+
+    # If either were encountered, scale the intensity.
+    if scaled_count > 1:
         scaled = 10 * scaled
-        scaled_base_strain = model.NewIntVar(0, scaled * scaled, f'{name}scaled_base_strain_{i}')
-        model.Add(scaled_base_strain == (scaled + base_strain))
-        return scaled_base_strain, scaled
+        scaled_intensity_value += scaled
+        scaled_intensity = model.NewIntVar(0, scaled * max_duration, f'{name}scaled_{intensity_name}{i}')
+        model.Add(scaled_intensity == (scaled_intensity_value))
+        return scaled_intensity
     else:
-        return 1, scaled
+        return 1
 
 
 # Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
 # This method performs the in between steps and returns the final duration variable.
 # total_set_duration = (seconds_per_exercise * (1 + .1 * basestrain) * rep_count + rest_time) * set_count
 # total_set_duration = (seconds_per_exercise * (10 + basestrain) * rep_count + 10 * rest_time) * set_count
-def create_exercise_intensity_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, base_strain=None, name="", scaled=1):
+def create_exercise_intensity_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, intensity=None, base_strain=None, name="", scaled=1):
     if name != "":
         name += "_"
 
     # In between step for base strain.
-    scaled_base_strain, scaled = _is_base_strain(model, i, base_strain, name, scaled)
+    scaled_base_strain = _is_intensity(model, i, name, scaled, max_duration, intensity, base_strain)
 
     # Create the entry for phase component's duration
     # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
