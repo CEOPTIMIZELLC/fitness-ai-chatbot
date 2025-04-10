@@ -310,7 +310,6 @@ class PhaseComponentAgent(BaseAgent):
     def format_solution_node(self, state: State, config=None) -> dict:
         """Format the optimization results."""
         solution = state["solution"]
-
         parameters = state["parameters"]
 
         phase_components = parameters["phase_components"]

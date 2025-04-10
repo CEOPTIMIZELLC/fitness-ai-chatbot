@@ -415,7 +415,6 @@ class ExerciseComponentsAgent(BaseAgent):
         print("Formatting First Step")
         """Format the optimization results."""
         solution = state["solution"]
-
         parameters = state["parameters"]
 
         phase_components, projected_duration = parameters["phase_components"], parameters["projected_duration"]

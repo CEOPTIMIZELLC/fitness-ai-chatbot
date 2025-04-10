@@ -321,8 +321,10 @@ class PhaseAgent(BaseAgent):
     def format_solution_node(self, state: State, config=None) -> dict:
         """Format the optimization results."""
         solution = state["solution"]
-        macrocycle_allowed_weeks = state["parameters"]["macrocycle_allowed_weeks"]
-        phases = state["parameters"]["possible_phases"]
+        parameters = state["parameters"]
+
+        macrocycle_allowed_weeks = parameters["macrocycle_allowed_weeks"]
+        phases = parameters["possible_phases"]
         longest_string_size = len(max(phases, key=lambda d:len(d["name"]))["name"])
 
         
