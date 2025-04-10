@@ -50,25 +50,25 @@ def run_pipeline():
 
     runs = data.get("runs", 1)
     results = []
-    for i in range(runs):
+    for i in range(1, runs+1):
         result = {}
-        print(f"\nWORKOUT LENGTH RUN {i}==========================")
+        print(f"\n========================== WORKOUT LENGTH RUN {i} ==========================")
         result["workout_length"] = change_workout_length()[0].get_json()["message"]
-        print(f"\nUSER AVAILABILITY RUN {i}==========================")
+        print(f"\n========================== USER AVAILABILITY RUN {i} ==========================")
         change_weekday_availability()
         result["user_availability"] = get_user_weekday()[0].get_json()["weekdays"]
-        print(f"\nMACROCYCLES RUN {i}==========================")
+        print(f"\n========================== MACROCYCLES RUN {i} ==========================")
         result["user_macrocycles"] = change_goal()[0].get_json()
-        print(f"\nMESOCYCLES RUN {i}==========================")
+        print(f"\n========================== MESOCYCLES RUN {i} ==========================")
         result["user_mesocycles"] = mesocycle_phases()[0].get_json()["mesocycles"]["output"]
-        print(f"\nMICROCYCLES RUN {i}==========================")
+        print(f"\n========================== MICROCYCLES RUN {i} ==========================")
         result["user_microcycles"] = microcycle_initializer()[0].get_json()["microcycles"]
-        print(f"\nWORKOUT DAYS RUN {i}==========================")
+        print(f"\n========================== WORKOUT DAYS RUN {i} ==========================")
         result["user_workout_days"] = workout_day_initializer()[0].get_json()["workdays"]["output"]
-        print(f"\nEXERCISES RUN {i}==========================")
+        print(f"\n========================== EXERCISES RUN {i} ==========================")
         result["user_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
         results.append(result)
-        print(f"\nFINISHED RUN {i}==========================\n\n")
+        print(f"\n========================== FINISHED RUN {i} ==========================\n\n")
 
     return results
 
