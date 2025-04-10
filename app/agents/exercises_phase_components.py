@@ -192,12 +192,13 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "use_allowed_exercises": True,                  # Only use exercises that are allowed for the phase component and bodypart combination.
             "no_duplicate_exercises": True,                 # Ensure each exercise only appears once
             "use_all_phase_components": True,               # At least one exercise should be given each phase component.
-            "base_strain_equals": True,                     # The amount of base strain of the exercise may only be a number of weeks between the minimum and maximum base strain allowed for the exercise.
-            "secs_equals": True,                            # The number of seconds per exercise of the exercise may only be a number of weeks between the minimum and maximum seconds allowed for the phase component.
-            "reps_within_min_max": True,                    # The number of reps of the exercise may only be a number of weeks between the minimum and maximum reps allowed for the phase component.
-            "sets_within_min_max": True,                    # The number of sets of the exercise may only be a number of weeks between the minimum and maximum sets allowed for the phase component.
-            "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number of weeks between the minimum and maximum rest allowed for the phase component.
-            "exercises_per_bodypart_within_min_max": True,  # The number of exercises for the phase components of the exercise may only be a number of weeks between the minimum and maximum exercises per bodypart allowed for the phase component.
+            "base_strain_equals": True,                     # The amount of base strain of the exercise may only be a number equal to the base strain allowed for the exercise.
+            "secs_equals": True,                            # The number of seconds per exercise of the exercise may only be a number equal to the seconds allowed for the phase component.
+            "reps_within_min_max": True,                    # The number of reps of the exercise may only be a number between the minimum and maximum reps allowed for the phase component.
+            "sets_within_min_max": True,                    # The number of sets of the exercise may only be a number between the minimum and maximum sets allowed for the phase component.
+            "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number between the minimum and maximum rest allowed for the phase component.
+            "intensity_within_min_max": True,               # The amount of intensity for the exercise may only be a number between the minimum and maximum rest allowed for the phase component.
+            "exercises_per_bodypart_within_min_max": True,  # The number of exercises for the phase components of the exercise may only be a number between the minimum and maximum exercises per bodypart allowed for the phase component.
             "minimize_strain": True,                        # Objective function constraint
         }
 
