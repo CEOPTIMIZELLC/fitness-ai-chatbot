@@ -52,15 +52,23 @@ def run_pipeline():
     results = []
     for i in range(runs):
         result = {}
+        print(f"\nWORKOUT LENGTH RUN {i}==========================")
         result["workout_length"] = change_workout_length()[0].get_json()["message"]
+        print(f"\nUSER AVAILABILITY RUN {i}==========================")
         change_weekday_availability()
         result["user_availability"] = get_user_weekday()[0].get_json()["weekdays"]
+        print(f"\nMACROCYCLES RUN {i}==========================")
         result["user_macrocycles"] = change_goal()[0].get_json()
+        print(f"\nMESOCYCLES RUN {i}==========================")
         result["user_mesocycles"] = mesocycle_phases()[0].get_json()["mesocycles"]["output"]
+        print(f"\nMICROCYCLES RUN {i}==========================")
         result["user_microcycles"] = microcycle_initializer()[0].get_json()["microcycles"]
+        print(f"\nWORKOUT DAYS RUN {i}==========================")
         result["user_workout_days"] = workout_day_initializer()[0].get_json()["workdays"]["output"]
+        print(f"\nEXERCISES RUN {i}==========================")
         result["user_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
         results.append(result)
+        print(f"\nFINISHED RUN {i}==========================\n\n")
 
     return results
 
