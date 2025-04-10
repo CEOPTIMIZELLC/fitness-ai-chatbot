@@ -53,9 +53,8 @@ class BaseAgent:
         """Use LLM to analyze solver logs and suggest constraints to relax."""
         # Prepare history of what's been tried
         history = retrieve_relaxation_history(state["relaxation_attempts"])
-
         state = analyze_infeasibility(state, history, self.available_constraints)
-        
+
         return {
             "constraints": state["constraints"],
             "current_attempt": state["current_attempt"]
@@ -63,7 +62,7 @@ class BaseAgent:
 
     def create_optimization_graph(self, state_class: type[TState]):
         builder = StateGraph(state_class)
-        
+
         # Add common nodes
         builder.add_node("setup", self.setup_params_node)
         builder.add_node("build", self.build_opt_model_node)
@@ -75,7 +74,7 @@ class BaseAgent:
         builder.add_edge(START, "setup")
         builder.add_edge("setup", "build")
         builder.add_edge("build", "solve")
-        
+
         builder.add_conditional_edges(
             "solve",
             self.solution_router,
@@ -84,10 +83,10 @@ class BaseAgent:
                 "format": "format"
             }
         )
-        
+
         builder.add_edge("analyze", "build")
         builder.add_edge("format", END)
-        
+
         return builder.compile()
 
     def solution_router(self, state: TState, config=None):
@@ -99,3 +98,10 @@ class BaseAgent:
         # This will be overridden by child classes to provide their specific state class
         raise NotImplementedError("Child classes must implement run()")
 
+
+    def format_constraint_status(self, constraints: dict) -> str:
+        """Format the final constraint status section."""
+        formatted = "\nFinal Constraint Status:\n"
+        for constraint, active in constraints.items():
+            formatted += f"- {constraint}: {'Active' if active else 'Relaxed'}\n"
+        return formatted

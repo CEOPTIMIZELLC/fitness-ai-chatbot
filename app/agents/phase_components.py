@@ -26,6 +26,103 @@ available_constraints = """
 - maximize_exercise_time: Objective to maximize the amount of time spent overall.
 """
 
+def user_workout_time(weekday_availability, workout_length, microcycle_weekdays):
+    used_days = []
+
+    # Total time the user has to workout.
+    workout_time = 0
+    for day in microcycle_weekdays:
+        workout_availability = min(workout_length, weekday_availability[day]["availability"])
+        used_days.append({"used": False, "availability": workout_availability})
+        workout_time += workout_availability
+    return used_days, workout_time
+
+def format_class_specific_relaxation_history(formatted, attempt, workout_time, workout_length):
+    if workout_time is not None:
+        formatted += f"Total Hours Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
+    if workout_length is not None:
+        formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
+    if attempt.microcycle_duration is not None:
+        formatted += f"Total Time Used: {attempt.microcycle_duration  // 60} min {attempt.microcycle_duration  % 60} sec ({attempt.microcycle_duration} seconds)\n"
+    return formatted
+
+def format_relaxation_attempts(relaxation_attempts, formatted, workout_time, workout_length):
+    """Format the relaxation attempts history."""
+    formatted += "Relaxation Attempts:\n"
+    formatted += "-" * 40 + "\n"
+    for i, attempt in enumerate(relaxation_attempts, 1):
+        formatted += f"\nAttempt {i}:\n"
+        formatted += f"Constraints relaxed: {attempt.constraints_relaxed}\n"
+        formatted += f"Result: {'Feasible' if attempt.result_feasible else 'Infeasible'}\n"
+
+        formatted = format_class_specific_relaxation_history(formatted, attempt, workout_time, workout_length)
+
+        if attempt.reasoning:
+            formatted += f"Reasoning: {attempt.reasoning}\n"
+        if attempt.expected_impact:
+            formatted += f"Expected Impact: {attempt.expected_impact}\n"
+        formatted += f"Timestamp: {attempt.timestamp}\n"
+    return formatted
+
+def format_agent_output(solution, formatted, schedule, phase_components, used_days, workout_time, workout_length, weekday_availability, microcycle_weekdays):
+    final_output = []
+
+    longest_subcomponent_string_size = len(max(phase_components, key=lambda d:len(d["name"]))["name"])
+    longest_bodypart_string_size = len(max(phase_components, key=lambda d:len(d["bodypart"]))["bodypart"])
+    longest_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
+
+    phase_component_count = [0] * len(phase_components)
+
+    formatted += "\nFinal Training Schedule:\n"
+    formatted += "-" * 40 + "\n"
+
+    for component_count, (phase_component_index, workday_index, active_phase_components, duration_var) in enumerate(schedule):
+
+        phase_component = phase_components[phase_component_index]
+        phase_component_id = phase_component["id"]
+        bodypart_id = phase_component["bodypart_id"]
+        phase_component_name = phase_component["name"] + " " + phase_component["bodypart"] 
+
+        day_duration = duration_var
+
+        if active_phase_components:
+            final_output.append({
+                "workday_index": workday_index, 
+                "phase_component_index": phase_component_index, 
+                "phase_component_id": phase_component_id,
+                "bodypart_id": bodypart_id,
+                "active_phase_components": active_phase_components, 
+                "duration_var": duration_var
+            })
+
+            current_weekday = microcycle_weekdays[workday_index]
+
+            if not used_days[workday_index]["used"]:
+                formatted += f"\nDay {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {used_days[workday_index]["availability"]  // 60} min {used_days[workday_index]["availability"]  % 60} sec ({used_days[workday_index]["availability"]} seconds)\n"
+                used_days[workday_index]["used"] = True
+
+            # Count the number of occurrences of each phase component
+            phase_component_count[phase_component_index] += 1
+
+            formatted_duration = f"Duration: {(day_duration // 60):<{3}} min {(day_duration % 60):<{3}} sec\t"
+            formatted_duration_sec = f"{day_duration:<{5}} seconds ({phase_component["duration_min"]}-{phase_component["duration_max"]})"
+
+            formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name:<{longest_string_size+3}} {formatted_duration} {formatted_duration_sec}\n")
+        else:
+            formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t{phase_component_name:<{longest_string_size+3}} ----\n")
+
+    formatted += f"Phase Component Counts:\n"
+    for phase_component_index, phase_component_number in enumerate(phase_component_count):
+        phase_component = phase_components[phase_component_index]
+        formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart"]:<{longest_string_size+3}}: {phase_component_number} ({phase_component["frequency_per_microcycle_min"]} - {phase_component["frequency_per_microcycle_max"]})\n"
+    formatted += f"Total Time Used: {solution['microcycle_duration']  // 60} min {solution['microcycle_duration']  % 60} sec ({solution['microcycle_duration']}) seconds\n"
+    formatted += f"Total Time Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
+    formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
+
+    return final_output, formatted
+
+
+
 class RelaxationAttempt(BaseRelaxationAttempt):
     def __init__(self, 
                  constraints_relaxed: Set[str], 
@@ -33,7 +130,7 @@ class RelaxationAttempt(BaseRelaxationAttempt):
                  microcycle_duration: Optional[int] = None,
                  reasoning: Optional[str] = None, 
                  expected_impact: Optional[str] = None):
-        super().__init__(constraints_relaxed, result_feasible, reasoning, expected_impact)        
+        super().__init__(constraints_relaxed, result_feasible, reasoning, expected_impact)
         self.microcycle_duration = microcycle_duration
 
 
@@ -86,7 +183,7 @@ class PhaseComponentAgent(BaseAgent):
             parameters.update(parameter_input["parameters"])
         if "constraints" in parameter_input:
             constraints.update(parameter_input["constraints"])
-        
+
         return {
             "parameters": parameters,
             "constraints": constraints,
@@ -224,7 +321,7 @@ class PhaseComponentAgent(BaseAgent):
                 # Each phase component
                 for duration_vars_for_phase_component in duration_vars_for_day:
                     total_set_duration_for_day.append(duration_vars_for_phase_component)
-            
+
             # If minimizing the spread is a constraint, subtract it from the sum.
             total_duration_to_maximize = 1000 * sum(total_set_duration_for_day)
 
@@ -253,7 +350,7 @@ class PhaseComponentAgent(BaseAgent):
             model.Add((total_duration_to_maximize == solver.Value(total_duration_to_maximize)))
             model.Minimize(duration_spread_var)
             status = solver.Solve(model)
-        
+
         state["logs"] += f"\nSolver status: {status}\n"
         state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
 
@@ -284,7 +381,7 @@ class PhaseComponentAgent(BaseAgent):
                 "microcycle_duration": microcycle_duration,
                 "status": status
             }
-            
+
             # Record successful attempt
             attempt = RelaxationAttempt(
                 state["current_attempt"]["constraints"],
@@ -295,7 +392,7 @@ class PhaseComponentAgent(BaseAgent):
             )
             state["relaxation_attempts"].append(attempt)
             return {"solution": solution}
-        
+
         # Record unsuccessful attempt
         attempt = RelaxationAttempt(
             state["current_attempt"]["constraints"],
@@ -309,110 +406,31 @@ class PhaseComponentAgent(BaseAgent):
 
     def format_solution_node(self, state: State, config=None) -> dict:
         """Format the optimization results."""
-        solution = state["solution"]
-        parameters = state["parameters"]
+        solution, parameters = state["solution"], state["parameters"]
 
         phase_components = parameters["phase_components"]
         weekday_availability = parameters["weekday_availability"]
         workout_length = parameters["workout_length"]
         microcycle_weekdays = parameters["microcycle_weekdays"]
 
-        longest_subcomponent_string_size = len(max(phase_components, key=lambda d:len(d["name"]))["name"])
-        longest_bodypart_string_size = len(max(phase_components, key=lambda d:len(d["bodypart"]))["bodypart"])
-
-        longest_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
-
-        used_days = []
-        
-        # Total time the user has to workout.
-        workout_time = 0
-        for day in microcycle_weekdays:
-            workout_availability = min(workout_length, weekday_availability[day]["availability"])
-            used_days.append({"used": False, "availability": workout_availability})
-            workout_time += workout_availability
+        used_days, workout_time = user_workout_time(weekday_availability, workout_length, microcycle_weekdays)
 
         formatted = "Optimization Results:\n"
         formatted += "=" * 50 + "\n\n"
-        
+
         # Show relaxation attempts history
-        formatted += "Relaxation Attempts:\n"
-        formatted += "-" * 40 + "\n"
-        for i, attempt in enumerate(state["relaxation_attempts"], 1):
-            formatted += f"\nAttempt {i}:\n"
-            formatted += f"Constraints relaxed: {attempt.constraints_relaxed}\n"
-            formatted += f"Result: {'Feasible' if attempt.result_feasible else 'Infeasible'}\n"
-            if workout_time is not None:
-                formatted += f"Total Hours Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
-            if workout_length is not None:
-                formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
-            if attempt.microcycle_duration is not None:
-                formatted += f"Total Time Used: {attempt.microcycle_duration  // 60} min {attempt.microcycle_duration  % 60} sec ({attempt.microcycle_duration} seconds)\n"
-            if attempt.reasoning:
-                formatted += f"Reasoning: {attempt.reasoning}\n"
-            if attempt.expected_impact:
-                formatted += f"Expected Impact: {attempt.expected_impact}\n"
-            formatted += f"Timestamp: {attempt.timestamp}\n"
-        
-        final_output = []
-        phase_component_count = [0] * len(phase_components)
+        formatted = format_relaxation_attempts(state["relaxation_attempts"], formatted, workout_time, workout_length)
 
         if solution is None:
+            final_output = []
             formatted += "\nNo valid schedule found even with relaxed constraints.\n"
         else:
-            
             schedule = solution["schedule"]
-            
-            formatted += "\nFinal Training Schedule:\n"
-            formatted += "-" * 40 + "\n"
-
-            for component_count, (phase_component_index, workday_index, active_phase_components, duration_var) in enumerate(schedule):
-
-                phase_component = phase_components[phase_component_index]
-                phase_component_id = phase_component["id"]
-                bodypart_id = phase_component["bodypart_id"]
-                phase_component_name = phase_component["name"] + " " + phase_component["bodypart"] 
-
-                day_duration = duration_var
-
-                if active_phase_components:
-                    final_output.append({
-                        "workday_index": workday_index, 
-                        "phase_component_index": phase_component_index, 
-                        "phase_component_id": phase_component_id,
-                        "bodypart_id": bodypart_id,
-                        "active_phase_components": active_phase_components, 
-                        "duration_var": duration_var
-                    })
-
-                    current_weekday = microcycle_weekdays[workday_index]
-
-                    if not used_days[workday_index]["used"]:
-                        formatted += f"\nDay {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {used_days[workday_index]["availability"]  // 60} min {used_days[workday_index]["availability"]  % 60} sec ({used_days[workday_index]["availability"]} seconds)\n"
-                        used_days[workday_index]["used"] = True
-
-                    # Count the number of occurrences of each phase component
-                    phase_component_count[phase_component_index] += 1
-
-                    formatted_duration = f"Duration: {(day_duration // 60):<{3}} min {(day_duration % 60):<{3}} sec\t"
-                    formatted_duration_sec = f"{day_duration:<{5}} seconds ({phase_component["duration_min"]}-{phase_component["duration_max"]})"
-
-                    formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name:<{longest_string_size+3}} {formatted_duration} {formatted_duration_sec}\n")
-                else:
-                    formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t{phase_component_name:<{longest_string_size+3}} ----\n")
-
-            formatted += f"Phase Component Counts:\n"
-            for phase_component_index, phase_component_number in enumerate(phase_component_count):
-                phase_component = phase_components[phase_component_index]
-                formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart"]:<{longest_string_size+3}}: {phase_component_number} ({phase_component["frequency_per_microcycle_min"]} - {phase_component["frequency_per_microcycle_max"]})\n"
-            formatted += f"Total Time Used: {solution['microcycle_duration']  // 60} min {solution['microcycle_duration']  % 60} sec ({solution['microcycle_duration']}) seconds\n"
-            formatted += f"Total Time Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
-            formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
+            final_output, formatted = format_agent_output(solution, formatted, schedule, phase_components, used_days, workout_time, workout_length, weekday_availability, microcycle_weekdays)
 
             # Show final constraint status
-            formatted += "\nFinal Constraint Status:\n"
-            for constraint, active in state["constraints"].items():
-                formatted += f"- {constraint}: {'Active' if active else 'Relaxed'}\n"
-            
+            formatted += self.format_constraint_status(state["constraints"])
+
         return {"formatted": formatted, "output": final_output}
 
     def run(self):

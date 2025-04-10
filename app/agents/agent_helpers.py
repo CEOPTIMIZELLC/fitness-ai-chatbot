@@ -1,5 +1,8 @@
 from langchain_openai import ChatOpenAI
 
+def longest_string_size_for_key(items, key):
+    return len(max(items, key=lambda d:len(d[key]))[key])
+
 def retrieve_relaxation_history(relaxation_attempts):
     """Prepare the history of each relaxation attempt made."""
     history = []

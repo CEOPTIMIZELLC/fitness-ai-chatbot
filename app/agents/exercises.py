@@ -7,7 +7,8 @@ from app.agents.constraints import (
     create_exercise_intensity_var, 
     no_repeated_items, 
     only_use_required_items)
-from app.agents.exercises_phase_components import RelaxationAttempt, State, ExerciseComponentsAgent, declare_model_vars, declare_duration_vars
+from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, declare_model_vars, declare_duration_vars, format_relaxation_attempts
+from app.agents.agent_helpers import longest_string_size_for_key
 
 _ = load_dotenv()
 
@@ -30,7 +31,79 @@ def get_exercises_for_pc(exercises, phase_component):
         exercises_for_pc = [i for i, _ in enumerate(exercises, start=1)]
     return exercises_for_pc
 
-class ExerciseAgent(ExerciseComponentsAgent):
+def format_agent_output_2(solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length):
+    final_output = []
+
+    longest_subcomponent_string_size = longest_string_size_for_key(phase_components[1:], "name")
+    longest_bodypart_string_size = longest_string_size_for_key(phase_components[1:], "bodypart_name")
+    longest_pc_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
+
+    longest_exercise_string_size = longest_string_size_for_key(exercises[1:], "name")
+
+    phase_component_count = [0] * len(phase_components)
+
+    formatted += "\nFinal Training Schedule:\n"
+    formatted += "-" * 40 + "\n"
+
+    for component_count, (i, exercise_index, phase_component_index, 
+            active_exercises, base_strain, seconds_per_exercise, 
+            reps_var, sets_var, rest_var, 
+            duration, working_duration) in enumerate(schedule):
+
+        exercise = exercises[exercise_index]
+        phase_component = phase_components[phase_component_index]
+
+        phase_component_name = phase_component["name"] + " " + phase_component["bodypart_name"] 
+
+        #duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
+
+        if active_exercises:
+            final_output.append({
+                "i": i, 
+                "exercise_index": exercise_index,
+                "exercise_id": exercise["id"],
+                "phase_component_index": phase_component_index, 
+                "phase_component_id": phase_component["phase_component_id"],
+                "bodypart_id": phase_component["bodypart_id"],
+                "base_strain": base_strain, 
+                "seconds_per_exercise": seconds_per_exercise, 
+                "active_exercises": active_exercises, 
+                "reps_var": reps_var, 
+                "sets_var": sets_var, 
+                "rest_var": rest_var, 
+                "duration": duration,
+                "working_duration": working_duration
+            })
+
+            # Count the number of occurrences of each phase component
+            phase_component_count[phase_component_index] += 1
+
+            formatted_exercise = f"{exercise["name"]:<{longest_exercise_string_size+3}}"
+            formatted_phase_component = f"{phase_component_name:<{longest_pc_string_size+3}}"
+
+            formatted_duration = f"Duration: {duration // 60} min {duration % 60} sec ({duration} seconds)"
+            formatted_base_strain = f"Base Strain {base_strain:<{3}}\t"
+            formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
+            formatted_reps = f"Reps {reps_var} ({phase_component["reps_min"]}-{phase_component["reps_max"]})"
+            formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
+            formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
+
+            formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_exercise}{formatted_base_strain}{formatted_phase_component}{formatted_duration:<{45}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{20}}{formatted_rest:<{6}})\n")
+        else:
+            formatted += (f"Exercise {(component_count + 1):<{2}} ----\n")
+
+    formatted += f"Phase Component Counts:\n"
+    for phase_component_index, phase_component_number in enumerate(phase_component_count):
+        phase_component = phase_components[phase_component_index]
+        formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}: {phase_component_number} ({phase_component["exercises_per_bodypart_workout_min"]}-{phase_component["exercises_per_bodypart_workout_max"]})\n"
+    formatted += f"Total Strain: {solution['strain_ratio']}\n"
+    formatted += f"Projected Duration: {projected_duration // 60} min {projected_duration % 60} sec ({projected_duration}) seconds\n"
+    formatted += f"Total Duration: {solution['duration'] // 60} min {solution['duration'] % 60} sec ({solution['duration']}) seconds\n"
+    formatted += f"Total Work Duration: {solution['working_duration'] // 60} min {solution['working_duration']  % 60} sec ({solution['working_duration']}) seconds\n"
+    formatted += f"Workout Length Allowed: {workout_length // 60} min {workout_length % 60} sec ({workout_length} seconds)\n"
+    return final_output, formatted
+
+class ExerciseAgent(ExercisePhaseComponentAgent):
 
     def build_opt_model_node_2(self, state: State, config=None) -> dict:
         print(state["formatted"])
@@ -70,7 +143,7 @@ class ExerciseAgent(ExerciseComponentsAgent):
             model.NewBoolVar(f'exercise_{i}_is_exercise_{j}')
             for j in range(exercise_amount)]
             for i in range(max_exercises)]
-        
+
         # Optional integer variable for the base strain of the exercise chosen at exercise i.
         base_strain_vars = declare_model_vars(model, "base_strain", active_exercise_vars, max_exercises, min_base_strain, max_base_strain)
 
@@ -172,14 +245,13 @@ class ExerciseAgent(ExerciseComponentsAgent):
     def solve_model_node_2(self, state: State, config=None) -> dict:
         print("Solving Second Step")
         """Solve model and record relaxation attempt results."""
-        #return {"solution": "None"}
         model, exercise_vars, phase_component_vars, active_exercise_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars = state["opt_model"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
         # solver.parameters.log_search_progress = True
         status = solver.Solve(model)
-        
+
         state["logs"] += f"\nSolver status: {status}\n"
         state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
 
@@ -220,7 +292,7 @@ class ExerciseAgent(ExerciseComponentsAgent):
                 "strain_ratio": strain_ratio,
                 "status": status
             }
-            
+
             # Record successful attempt
             attempt = RelaxationAttempt(
                 state["current_attempt"]["constraints"],
@@ -233,7 +305,7 @@ class ExerciseAgent(ExerciseComponentsAgent):
             )
             state["relaxation_attempts"].append(attempt)
             return {"solution": solution}
-        
+
         # Record unsuccessful attempt
         attempt = RelaxationAttempt(
             state["current_attempt"]["constraints"],
@@ -250,116 +322,27 @@ class ExerciseAgent(ExerciseComponentsAgent):
     def format_solution_node_2(self, state: State, config=None) -> dict:
         print("Formatting Second Step")
         """Format the optimization results."""
-        solution = state["solution"]
-        parameters = state["parameters"]
+        solution, parameters = state["solution"], state["parameters"]
 
         exercises, phase_components, projected_duration = parameters["possible_exercises"], parameters["phase_components"], parameters["projected_duration"]
         workout_length = min(parameters["availability"], parameters["workout_length"])
 
-        longest_subcomponent_string_size = len(max(phase_components[1:], key=lambda d:len(d["name"]))["name"])
-        longest_bodypart_string_size = len(max(phase_components[1:], key=lambda d:len(d["bodypart_name"]))["bodypart_name"])
-
-        longest_pc_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
-        longest_exercise_string_size = len(max(exercises[1:], key=lambda d:len(d["name"]))["name"])
-
         # Total time the user has to workout.
         formatted = "Optimization Results:\n"
         formatted += "=" * 50 + "\n\n"
-        
+
         # Show relaxation attempts history
-        formatted += "Relaxation Attempts:\n"
-        formatted += "-" * 40 + "\n"
-        for i, attempt in enumerate(state["relaxation_attempts"], 1):
-            formatted += f"\nAttempt {i}:\n"
-            formatted += f"Constraints relaxed: {attempt.constraints_relaxed}\n"
-            formatted += f"Result: {'Feasible' if attempt.result_feasible else 'Infeasible'}\n"
-            if workout_length is not None:
-                formatted += f"Workout Length Allowed: {workout_length // 60} min {workout_length % 60} sec ({workout_length} seconds)\n"
-            if attempt.duration is not None:
-                formatted += f"Total Time Used: {attempt.duration // 60} min {attempt.duration % 60} sec ({attempt.duration} seconds)\n"
-            if attempt.working_duration is not None:
-                formatted += f"Total Time Worked: {attempt.working_duration // 60} min {attempt.working_duration % 60} sec ({attempt.working_duration} seconds)\n"
-            if attempt.strain_ratio is not None:
-                formatted += f"Total Strain: {attempt.strain_ratio}\n"
-            if attempt.reasoning:
-                formatted += f"Reasoning: {attempt.reasoning}\n"
-            if attempt.expected_impact:
-                formatted += f"Expected Impact: {attempt.expected_impact}\n"
-            formatted += f"Timestamp: {attempt.timestamp}\n"
-        
-        final_output = []
-        phase_component_count = [0] * len(phase_components)
+        formatted = format_relaxation_attempts(state["relaxation_attempts"], formatted, workout_length)
 
         if solution is None:
+            final_output = []
             formatted += "\nNo valid schedule found even with relaxed constraints.\n"
         else:
-            
             schedule = solution["schedule"]
-            
-            formatted += "\nFinal Training Schedule:\n"
-            formatted += "-" * 40 + "\n"
-            
-            for component_count, (i, exercise_index, phase_component_index, 
-                    active_exercises, base_strain, seconds_per_exercise, 
-                    reps_var, sets_var, rest_var, 
-                    duration, working_duration) in enumerate(schedule):
-
-                exercise = exercises[exercise_index]
-                phase_component = phase_components[phase_component_index]
-
-                phase_component_name = phase_component["name"] + " " + phase_component["bodypart_name"] 
-
-                #duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
-
-                if active_exercises:
-                    final_output.append({
-                        "i": i, 
-                        "exercise_index": exercise_index,
-                        "exercise_id": exercise["id"],
-                        "phase_component_index": phase_component_index, 
-                        "phase_component_id": phase_component["phase_component_id"],
-                        "bodypart_id": phase_component["bodypart_id"],
-                        "base_strain": base_strain, 
-                        "seconds_per_exercise": seconds_per_exercise, 
-                        "active_exercises": active_exercises, 
-                        "reps_var": reps_var, 
-                        "sets_var": sets_var, 
-                        "rest_var": rest_var, 
-                        "duration": duration,
-                        "working_duration": working_duration
-                    })
-
-                    # Count the number of occurrences of each phase component
-                    phase_component_count[phase_component_index] += 1
-
-                    formatted_exercise = f"{exercise["name"]:<{longest_exercise_string_size+3}}"
-                    formatted_phase_component = f"{phase_component_name:<{longest_pc_string_size+3}}"
-
-                    formatted_duration = f"Duration: {duration // 60} min {duration % 60} sec ({duration} seconds)"
-                    formatted_base_strain = f"Base Strain {base_strain:<{3}}\t"
-                    formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
-                    formatted_reps = f"Reps {reps_var} ({phase_component["reps_min"]}-{phase_component["reps_max"]})"
-                    formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
-                    formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
-
-                    formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_exercise}{formatted_base_strain}{formatted_phase_component}{formatted_duration:<{45}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{20}}{formatted_rest:<{6}})\n")
-                else:
-                    formatted += (f"Exercise {(component_count + 1):<{2}} ----\n")
-
-            formatted += f"Phase Component Counts:\n"
-            for phase_component_index, phase_component_number in enumerate(phase_component_count):
-                phase_component = phase_components[phase_component_index]
-                formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}: {phase_component_number} ({phase_component["exercises_per_bodypart_workout_min"]}-{phase_component["exercises_per_bodypart_workout_max"]})\n"
-            formatted += f"Total Strain: {solution['strain_ratio']}\n"
-            formatted += f"Projected Duration: {projected_duration // 60} min {projected_duration % 60} sec ({projected_duration}) seconds\n"
-            formatted += f"Total Duration: {solution['duration'] // 60} min {solution['duration'] % 60} sec ({solution['duration']}) seconds\n"
-            formatted += f"Total Work Duration: {solution['working_duration'] // 60} min {solution['working_duration']  % 60} sec ({solution['working_duration']}) seconds\n"
-            formatted += f"Workout Length Allowed: {workout_length // 60} min {workout_length % 60} sec ({workout_length} seconds)\n"
+            final_output, formatted = format_agent_output_2(solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length)
 
             # Show final constraint status
-            formatted += "\nFinal Constraint Status:\n"
-            for constraint, active in state["constraints"].items():
-                formatted += f"- {constraint}: {'Active' if active else 'Relaxed'}\n"
+            formatted += self.format_constraint_status(state["constraints"])
 
         return {"formatted": formatted, "output": final_output}
 
@@ -382,7 +365,7 @@ class ExerciseAgent(ExerciseComponentsAgent):
         builder.add_edge(START, "setup")
         builder.add_edge("setup", "build_1")
         builder.add_edge("build_1", "solve_1")
-        
+
         builder.add_conditional_edges(
             "solve_1",
             self.solution_router,

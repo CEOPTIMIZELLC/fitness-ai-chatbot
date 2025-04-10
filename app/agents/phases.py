@@ -16,6 +16,69 @@ from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentSta
 
 _ = load_dotenv()
 
+available_constraints = """
+- phase_2_is_str_end: Forces second phase to be strength endurance
+- only_use_required_phases: Only use phases that are required
+- use_all_required_phases: Use every required phase at least once
+- phase_duration_within_min_max: Forces the duration of a phase to be between the minimum and maximum values allowed.
+- no_consecutive_identical_phases: Prevents consecutive identical phases
+- no_n_phases_without_goal: Prevents n phases without including the goal phase
+- maximize_phases: Secondary objective to maximize the amount of time spent in phases in general.
+- maximize_goal_phase: Objective to maximize the amount of time spent in the goal phase.
+"""
+
+def format_class_specific_relaxation_history(formatted, attempt, macrocycle_allowed_weeks):
+    if macrocycle_allowed_weeks is not None:
+        formatted += f"Total Weeks Allowed: {macrocycle_allowed_weeks}\n"
+    if attempt.total_weeks_goal is not None:
+        formatted += f"Total Goal Time in Weeks: {attempt.total_weeks_goal}\n"
+    if attempt.total_weeks_time is not None:
+        formatted += f"Total Macrocycle Length in Weeks: {attempt.total_weeks_time}\n"
+    return formatted
+
+def format_relaxation_attempts(relaxation_attempts, formatted, macrocycle_allowed_weeks):
+    """Format the relaxation attempts history."""
+    formatted += "Relaxation Attempts:\n"
+    formatted += "-" * 40 + "\n"
+    for i, attempt in enumerate(relaxation_attempts, 1):
+        formatted += f"\nAttempt {i}:\n"
+        formatted += f"Constraints relaxed: {attempt.constraints_relaxed}\n"
+        formatted += f"Result: {'Feasible' if attempt.result_feasible else 'Infeasible'}\n"
+
+        formatted = format_class_specific_relaxation_history(formatted, attempt, macrocycle_allowed_weeks)  
+
+        if attempt.reasoning:
+            formatted += f"Reasoning: {attempt.reasoning}\n"
+        if attempt.expected_impact:
+            formatted += f"Expected Impact: {attempt.expected_impact}\n"
+        formatted += f"Timestamp: {attempt.timestamp}\n"
+    return formatted
+
+def format_agent_output(solution, formatted, schedule, phases, macrocycle_allowed_weeks):
+    final_output = []
+
+    longest_string_size = len(max(phases, key=lambda d:len(d["name"]))["name"])
+
+    formatted += "\nFinal Training Schedule:\n"
+    formatted += "-" * 40 + "\n"
+    for i, (phase_type, phase_duration) in enumerate(schedule):
+        phase_name = phases[phase_type]["name"]
+        final_output.append({
+            "name": phase_name,
+            "id": phases[phase_type]["id"],
+            "duration": phase_duration})
+        formatted_duration = f"Duration: {phase_duration} weeks"
+        formatted_goal_duration = f"Goal Duration: +{phase_duration if phases[phase_type]["is_goal_phase"] else 0} weeks"
+        formatted_phase_minimum = f"min: {phases[phase_type]["element_minimum"]}"
+        formatted_phase_maximum = f"max: {phases[phase_type]["element_maximum"]}"
+        formatted += (f"Mesocycle {i + 1}: \t{phase_name:<{longest_string_size+3}} ({formatted_duration}; {formatted_goal_duration}) [{formatted_phase_minimum} - {formatted_phase_maximum}]\n")
+    formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
+    formatted += f"Total Time Used: {solution['total_weeks_time']} weeks\n"
+    formatted += f"Total Time Allowed: {macrocycle_allowed_weeks} weeks\n"
+
+    return final_output, formatted
+
+
 class RelaxationAttempt(BaseRelaxationAttempt):
     def __init__(self, 
                  constraints_relaxed: Set[str], 
@@ -32,26 +95,18 @@ class State(BaseAgentState):
     parameter_input: dict
 
 class PhaseAgent(BaseAgent):
+    available_constraints = available_constraints
+
     def __init__(self, parameters={}, constraints={}):
         super().__init__()
         self.initial_state["parameter_input"]={
             "parameters": parameters, 
             "constraints": constraints}
-        self.available_constraints = """
-- phase_2_is_str_end: Forces second phase to be strength endurance
-- only_use_required_phases: Only use phases that are required
-- use_all_required_phases: Use every required phase at least once
-- phase_duration_within_min_max: Forces the duration of a phase to be between the minimum and maximum values allowed.
-- no_consecutive_identical_phases: Prevents consecutive identical phases
-- no_n_phases_without_goal: Prevents n phases without including the goal phase
-- maximize_phases: Secondary objective to maximize the amount of time spent in phases in general.
-- maximize_goal_phase: Objective to maximize the amount of time spent in the goal phase.
-"""
 
     def setup_params_node(self, state: State, config=None) -> dict:
 
         parameter_input = state.get("parameter_input", {})
-        
+
         """Initialize optimization parameters and constraints."""
         parameters = {
             "macrocycle_allowed_weeks": 43,
@@ -120,7 +175,7 @@ class PhaseAgent(BaseAgent):
         mesocycle_vars = [
             model.NewIntVar(0, phase_amount - 1, f'mesocycle_{i}') 
             for i in range(max_mesocycles)]
-        
+
         # Integer variable representing the duration of the phase in mesocycle i.
         duration_vars = [
             model.NewIntVar(0, macrocycle_allowed_weeks, f'duration_{i}') 
@@ -147,7 +202,7 @@ class PhaseAgent(BaseAgent):
                                       number_of_entries = max_mesocycles, 
                                       duration_vars = duration_vars, 
                                       active_entry_vars = active_mesocycle_vars)
-        
+
 
         # Apply active constraints ======================================
         state["logs"] += "\nBuilding model with constraints:\n"
@@ -179,7 +234,7 @@ class PhaseAgent(BaseAgent):
                                            entry_vars = mesocycle_vars, 
                                            active_entry_vars = active_mesocycle_vars)
             state["logs"] += "- No consecutive phase of the same type applied.\n"
-        
+
         # Constraint: No 6 phases without stabilization endurance
         if constraints["no_6_phases_without_stab_end"]:
             stab_end_index = 1
@@ -206,7 +261,7 @@ class PhaseAgent(BaseAgent):
             # Retrieves the index of all required phases.
             required_phases = [i for i, phase in enumerate(phases) if phase["required_phase"]]
             required_phases.append(0) # Include the inactive state.
-            
+
             only_use_required_items(model = model, 
                                     required_items = required_phases, 
                                     entry_vars = mesocycle_vars)
@@ -215,7 +270,7 @@ class PhaseAgent(BaseAgent):
         # Constraint: Use all required phases at least once
         if constraints["use_all_required_phases"]:
             required_phases = [i for i, phase in enumerate(phases) if phase["required_phase"]]
-            
+
             use_all_required_items(model = model, 
                                    required_items = required_phases, 
                                    used_vars = used_vars)
@@ -248,7 +303,7 @@ class PhaseAgent(BaseAgent):
 
                 # Define weighted objective
                 model.Maximize(1000 * goal_time + total_time)  # Prioritize goal_time first, then total_time
-                
+
             else:
                 # Maximize goal time
                 model.Maximize(goal_time)
@@ -267,23 +322,22 @@ class PhaseAgent(BaseAgent):
         solver = cp_model.CpSolver()
         # solver.parameters.log_search_progress = True
         status = solver.Solve(model)
-        
+
         state["logs"] += f"\nSolver status: {status}\n"
         state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
-        
+
         if status in (cp_model.FEASIBLE, cp_model.OPTIMAL):
-            total_weeks_goal = 0
-            total_weeks_time = 0
+            total_weeks_goal = total_weeks_time = 0
             schedule = []
             for i in range(len(mesocycle_vars)):
                 # Ensure that the mesocycle is active
                 if solver.Value(active_mesocycle_vars[i]):
                     phase_type = solver.Value(mesocycle_vars[i])
                     phase_duration = solver.Value(duration_vars[i])
-                    
+
                     # Sum of all mesocycle_vars.
                     total_weeks_time += phase_duration
-                    
+
                     schedule.append((phase_type, phase_duration))
                     if phases[phase_type]["is_goal_phase"]:
                         total_weeks_goal += phase_duration
@@ -293,7 +347,7 @@ class PhaseAgent(BaseAgent):
                 "total_weeks_time": total_weeks_time,
                 "status": status
             }
-            
+
             # Record successful attempt
             attempt = RelaxationAttempt(
                 state["current_attempt"]["constraints"],
@@ -305,7 +359,7 @@ class PhaseAgent(BaseAgent):
             )
             state["relaxation_attempts"].append(attempt)
             return {"solution": solution}
-        
+
         # Record unsuccessful attempt
         attempt = RelaxationAttempt(
             state["current_attempt"]["constraints"],
@@ -320,68 +374,26 @@ class PhaseAgent(BaseAgent):
 
     def format_solution_node(self, state: State, config=None) -> dict:
         """Format the optimization results."""
-        solution = state["solution"]
-        parameters = state["parameters"]
+        solution, parameters = state["solution"], state["parameters"]
 
         macrocycle_allowed_weeks = parameters["macrocycle_allowed_weeks"]
         phases = parameters["possible_phases"]
-        longest_string_size = len(max(phases, key=lambda d:len(d["name"]))["name"])
 
-        
         formatted = "Optimization Results:\n"
         formatted += "=" * 50 + "\n\n"
-        
+
         # Show relaxation attempts history
-        formatted += "Relaxation Attempts:\n"
-        formatted += "-" * 40 + "\n"
-        for i, attempt in enumerate(state["relaxation_attempts"], 1):
-            formatted += f"\nAttempt {i}:\n"
-            formatted += f"Constraints relaxed: {attempt.constraints_relaxed}\n"
-            formatted += f"Result: {'Feasible' if attempt.result_feasible else 'Infeasible'}\n"
-            if macrocycle_allowed_weeks is not None:
-                formatted += f"Total Weeks Allowed: {macrocycle_allowed_weeks}\n"
-            if attempt.total_weeks_goal is not None:
-                formatted += f"Total Goal Time in Weeks: {attempt.total_weeks_goal}\n"
-            if attempt.total_weeks_time is not None:
-                formatted += f"Total Macrocycle Length in Weeks: {attempt.total_weeks_time}\n"
-            if attempt.reasoning:
-                formatted += f"Reasoning: {attempt.reasoning}\n"
-            if attempt.expected_impact:
-                formatted += f"Expected Impact: {attempt.expected_impact}\n"
-            formatted += f"Timestamp: {attempt.timestamp}\n"
-        
-        final_output = []
+        formatted = format_relaxation_attempts(state["relaxation_attempts"], formatted, macrocycle_allowed_weeks)
 
         if solution is None:
+            final_output = []
             formatted += "\nNo valid schedule found even with relaxed constraints.\n"
         else:
-            
             schedule = solution["schedule"]
-            
-            formatted += "\nFinal Training Schedule:\n"
-            formatted += "-" * 40 + "\n"
-            
-            for meso, (phase_type, phase_duration) in enumerate(schedule):
-                phase_name = phases[phase_type]["name"]
-                final_output.append({
-                    "name": phase_name,
-                    "id": phases[phase_type]["id"],
-                    "duration": phase_duration
-                })
-                formatted_duration = f"Duration: {phase_duration} weeks"
-                formatted_goal_duration = f"Goal Duration: +{phase_duration if phases[phase_type]["is_goal_phase"] else 0} weeks"
-                formatted_phase_minimum = f"min: {phases[phase_type]["element_minimum"]}"
-                formatted_phase_maximum = f"max: {phases[phase_type]["element_maximum"]}"
-                formatted += (f"Mesocycle {meso + 1}: \t{phase_name:<{longest_string_size+3}} ({formatted_duration}; {formatted_goal_duration}) [{formatted_phase_minimum} - {formatted_phase_maximum}]\n")
-            formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
-            formatted += f"Total Time Used: {solution['total_weeks_time']} weeks\n"
-            formatted += f"Total Time Allowed: {macrocycle_allowed_weeks} weeks\n"
-            
+            final_output, formatted = format_agent_output(solution, formatted, schedule, phases, macrocycle_allowed_weeks)
+
             # Show final constraint status
-            formatted += "\nFinal Constraint Status:\n"
-            for constraint, active in state["constraints"].items():
-                formatted += f"- {constraint}: {'Active' if active else 'Relaxed'}\n"
-            
+            formatted += self.format_constraint_status(state["constraints"])
 
         return {"formatted": formatted, "output": final_output}
 
