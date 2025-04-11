@@ -74,6 +74,9 @@ def register_blueprints(app):
         from .routes import user_workout_exercises
         app.register_blueprint(user_workout_exercises.bp, url_prefix='/user_workout_exercises')
 
+        from .routes import user_exercises
+        app.register_blueprint(user_exercises.bp, url_prefix='/user_exercises')
+
 def initialize_database(app, db):
     with app.app_context():
         db.create_all()
