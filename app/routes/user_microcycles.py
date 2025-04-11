@@ -7,7 +7,7 @@ from datetime import timedelta
 
 bp = Blueprint('user_microcycles', __name__)
 
-from app.helper_functions.common_table_queries import current_mesocycle, current_microcycle
+from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 

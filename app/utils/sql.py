@@ -16,7 +16,7 @@ from flask import current_app
 
 from app import db
 from app.models import Users
-#from app.helper_functions.table_schema_cache import get_database_schema
+#from app.utils.table_schema_cache import get_database_schema
 
 
 class AgentState(TypedDict):

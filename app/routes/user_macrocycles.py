@@ -7,7 +7,7 @@ from app.models import Goal_Library, User_Macrocycles
 bp = Blueprint('user_macrocycles', __name__)
 
 from app.agents.goals import create_goal_classification_graph
-from app.helper_functions.common_table_queries import current_macrocycle
+from app.utils.common_table_queries import current_macrocycle
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 # Retrieve possible goal types.

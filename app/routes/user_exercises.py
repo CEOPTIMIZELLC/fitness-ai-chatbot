@@ -7,7 +7,7 @@ from app.models import Exercise_Library, Exercise_Component_Phases, Phase_Librar
 bp = Blueprint('user_exercises', __name__)
 
 from app.agents.exercises import Main as exercises_main
-from app.helper_functions.common_table_queries import current_workout_day
+from app.utils.common_table_queries import current_workout_day
 
 # ----------------------------------------- Phase_Components -----------------------------------------
 

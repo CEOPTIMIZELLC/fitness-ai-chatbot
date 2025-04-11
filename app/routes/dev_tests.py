@@ -5,8 +5,8 @@ from flask_login import current_user, login_required
 
 bp = Blueprint('dev_tests', __name__)
 
-from app.helper_functions.sql import sql_app
-from app.helper_functions.table_context_parser import context_retriever_app
+from app.utils.sql import sql_app
+from app.utils.table_context_parser import context_retriever_app
 
 # ----------------------------------------- Dev Tests -----------------------------------------
 

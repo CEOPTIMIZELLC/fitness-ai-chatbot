@@ -8,7 +8,7 @@ from datetime import timedelta
 bp = Blueprint('user_workout_days', __name__)
 
 from app.agents.phase_components import Main as phase_component_main
-from app.helper_functions.common_table_queries import current_microcycle, current_workout_day
+from app.utils.common_table_queries import current_microcycle, current_workout_day
 
 # ----------------------------------------- Workout Days -----------------------------------------
 

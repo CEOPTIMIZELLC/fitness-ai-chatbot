@@ -8,7 +8,7 @@ from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, Use
 bp = Blueprint('user_mesocycles', __name__)
 
 from app.agents.phases import Main as phase_main
-from app.helper_functions.common_table_queries import current_macrocycle, current_mesocycle
+from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
