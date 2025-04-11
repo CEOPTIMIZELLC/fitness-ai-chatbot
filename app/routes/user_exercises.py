@@ -53,7 +53,12 @@ def retrieve_exercises():
             "body_region_ids": exercise.all_body_region_ids,
             "bodypart_ids": exercise.all_bodypart_ids,
             "muscle_group_ids": exercise.all_muscle_group_ids,
-            "muscle_ids": exercise.all_muscle_ids
+            "muscle_ids": exercise.all_muscle_ids,
+            "supportive_equipment_ids": exercise.all_supportive_equipment,
+            "assistive_equipment_ids": exercise.all_assistive_equipment,
+            "weighted_equipment_ids": exercise.all_weighted_equipment,
+            "marking_equipment_ids": exercise.all_marking_equipment,
+            "other_equipment_ids": exercise.all_other_equipment,
         }
         possible_exercises_list.append(exercise_dict)
 
