@@ -1,6 +1,4 @@
 from app import db
-from .body_region_library import Body_Region_Library
-from .bodypart_library import Bodypart_Library
 from .equipment_library import Equipment_Library
 from .exercise_library import Exercise_Library
 from .exercise_component_phase import Exercise_Component_Phases
@@ -20,9 +18,14 @@ from .exercise_equipment import (
 
 from .goal_library import Goal_Library
 from .goal_phase_requirements import Goal_Phase_Requirements
-from .muscle_categories import Muscle_Categories
-from .muscle_group_library import Muscle_Group_Library
-from .muscle_library import Muscle_Library
+
+from .muscle_categories import (
+    Muscle_Categories,
+    Muscle_Library,
+    Muscle_Group_Library,
+    Bodypart_Library,
+    Body_Region_Library)
+
 from .phase_component_library import Phase_Component_Library
 from .phase_component_bodyparts import Phase_Component_Bodyparts
 from .component_library import Component_Library

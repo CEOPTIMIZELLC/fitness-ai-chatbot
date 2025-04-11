@@ -3,6 +3,9 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from app.models.base import BaseModel
 from app.models.mixins import TableNameMixin, OrderedMixin
 
+def comment_factory(comment):
+    return comment
+
 # The phases that exist.
 class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     """The workout components belonging to a user's workout day. This also acts as a join table between a workout day and the phase components types."""
@@ -11,26 +14,10 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     workout_day_id = db.Column(db.Integer, db.ForeignKey("user_workout_days.id", ondelete='CASCADE'), nullable=False)
     phase_component_id = db.Column(db.Integer, db.ForeignKey("phase_component_library.id"), nullable=False)
     exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_library.id"), nullable=False)
-
-    reps = db.Column(
-        db.Integer, 
-        nullable=False, 
-        comment='The number of repetitions for a single exercise for the phase subcomponent.')
-
-    sets = db.Column(
-        db.Integer, 
-        nullable=False, 
-        comment='The number of sets of repetitions for a single exercise for the phase subcomponent.')
-
-    intensity = db.Column(
-        db.Integer, 
-        comment='The amount of intensity for a single exercise for the phase subcomponent.')
-
-    rest = db.Column(
-        db.Integer, 
-        nullable=False, 
-        comment='The amount of time to rest for a single exercise for the phase subcomponent.')
-
+    reps = db.Column(db.Integer, nullable=False, comment='')
+    sets = db.Column(db.Integer, nullable=False, comment='')
+    intensity = db.Column(db.Integer, comment='')
+    rest = db.Column(db.Integer, nullable=False, comment='')
 
     # Seconds per exercise of the exercise.
     @hybrid_property
