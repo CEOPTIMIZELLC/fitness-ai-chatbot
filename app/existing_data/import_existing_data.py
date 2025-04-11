@@ -577,6 +577,7 @@ def Main(excel_file):
     di.exercise_muscle_groups()
     di.exercise_body_regions()
     di.exercise_bodyparts()
+    db.session.commit()
     return None
 
 if __name__ == "__main__":
