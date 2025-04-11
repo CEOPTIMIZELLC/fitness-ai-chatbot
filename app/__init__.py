@@ -50,6 +50,12 @@ def register_blueprints(app):
         from .routes import phase_components
         app.register_blueprint(phase_components.bp, url_prefix='/phase_components')
 
+        from .routes import components
+        app.register_blueprint(components.bp, url_prefix='/components')
+
+        from .routes import subcomponents
+        app.register_blueprint(subcomponents.bp, url_prefix='/subcomponents')
+
         from .routes import user_weekday_availability
         app.register_blueprint(user_weekday_availability.bp, url_prefix='/user_weekday_availability')
 
@@ -73,7 +79,7 @@ def initialize_database(app, db):
         db.create_all()
 
         # Initialize the record of the schema.
-        from .helper_functions.table_schema_cache import get_database_schema
+        from .utils.table_schema_cache import get_database_schema
         app.table_schema = get_database_schema(db)
 
 
