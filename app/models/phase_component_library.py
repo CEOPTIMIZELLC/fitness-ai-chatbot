@@ -99,8 +99,8 @@ class Phase_Component_Library(BaseModel, TableNameMixin, NameMixin):
     phases = db.relationship("Phase_Library", back_populates="phase_components")
     components = db.relationship("Component_Library", back_populates="phase_components")
     subcomponents = db.relationship("Subcomponent_Library", back_populates="phase_components")    
-    user_exercises = db.relationship(
-        "User_Exercises", 
+    user_workout_exercises = db.relationship(
+        "User_Workout_Exercises", 
         back_populates="phase_components", 
         cascade="all, delete-orphan")
 

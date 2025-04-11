@@ -25,7 +25,7 @@ class User_Workout_Days(BaseModel, TableNameMixin, OrderedMixin):
         cascade="all, delete-orphan")
 
     exercises = db.relationship(
-        "User_Exercises", 
+        "User_Workout_Exercises", 
         back_populates="workout_days", 
         cascade="all, delete-orphan")
 

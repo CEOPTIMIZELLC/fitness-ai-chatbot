@@ -4,7 +4,7 @@ from app.models.base import BaseModel
 from app.models.mixins import TableNameMixin, OrderedMixin
 
 # The phases that exist.
-class User_Exercises(BaseModel, TableNameMixin, OrderedMixin):
+class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     """The workout components belonging to a user's workout day. This also acts as a join table between a workout day and the phase components types."""
     __table_args__ = {'comment': "Workout components for a workout day."}
     # Fields
@@ -69,8 +69,8 @@ class User_Exercises(BaseModel, TableNameMixin, OrderedMixin):
 
     # Relationships
     workout_days = db.relationship("User_Workout_Days", back_populates="exercises")
-    exercises = db.relationship("Exercise_Library", back_populates="user_exercises")
-    phase_components = db.relationship("Phase_Component_Library", back_populates="user_exercises")
+    exercises = db.relationship("Exercise_Library", back_populates="user_workout_exercises")
+    phase_components = db.relationship("Phase_Component_Library", back_populates="user_workout_exercises")
 
     def to_dict(self):
         return {

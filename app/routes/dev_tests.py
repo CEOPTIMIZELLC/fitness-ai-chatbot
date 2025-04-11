@@ -19,7 +19,7 @@ def check_pipeline():
     from app.routes.user_mesocycles import get_user_current_mesocycles
     from app.routes.user_microcycles import get_user_current_microcycles
     from app.routes.user_workout_days import get_user_current_workout_days
-    from app.routes.user_exercises import get_user_current_exercises
+    from app.routes.user_workout_exercises import get_user_current_exercises
 
     result = {}
     result["user_availability"] = get_user_weekday()[0].get_json()["weekdays"]
@@ -27,7 +27,7 @@ def check_pipeline():
     result["user_mesocycles"] = get_user_current_mesocycles()[0].get_json()["phases"]
     result["user_microcycles"] = get_user_current_microcycles()[0].get_json()["microcycles"]
     result["user_workout_days"] = get_user_current_workout_days()[0].get_json()["phase_components"]
-    result["user_exercises"] = get_user_current_exercises()[0].get_json()["exercises"]
+    result["user_workout_exercises"] = get_user_current_exercises()[0].get_json()["exercises"]
     return result
 
 
@@ -41,7 +41,7 @@ def run_pipeline():
     from app.routes.user_mesocycles import mesocycle_phases
     from app.routes.user_microcycles import microcycle_initializer
     from app.routes.user_workout_days import workout_day_initializer
-    from app.routes.user_exercises import exercise_initializer
+    from app.routes.user_workout_exercises import exercise_initializer
 
     # Input is a json.
     data = request.get_json()
@@ -66,7 +66,7 @@ def run_pipeline():
         print(f"\n========================== WORKOUT DAYS RUN {i} ==========================")
         result["user_workout_days"] = workout_day_initializer()[0].get_json()["workdays"]["output"]
         print(f"\n========================== EXERCISES RUN {i} ==========================")
-        result["user_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
+        result["user_workout_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
         results.append(result)
         print(f"\n========================== FINISHED RUN {i} ==========================\n\n")
 

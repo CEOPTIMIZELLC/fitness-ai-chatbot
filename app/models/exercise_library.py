@@ -74,8 +74,8 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
         back_populates="exercises", 
         cascade="all, delete-orphan")
 
-    user_exercises = db.relationship(
-        "User_Exercises", 
+    user_workout_exercises = db.relationship(
+        "User_Workout_Exercises", 
         back_populates="exercises", 
         cascade="all, delete-orphan")
 

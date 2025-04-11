@@ -2,17 +2,17 @@ from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Exercise_Library, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Weekday_Availability, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Exercises
+from app.models import Exercise_Library, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Weekday_Availability, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Workout_Exercises
 
-bp = Blueprint('user_exercises', __name__)
+bp = Blueprint('user_workout_exercises', __name__)
 
 from app.agents.exercises import Main as exercises_main
 from app.utils.common_table_queries import current_workout_day
 
 # ----------------------------------------- Phase_Components -----------------------------------------
 
-def delete_old_user_exercises(workout_day_id):
-    db.session.query(User_Exercises).filter_by(workout_day_id=workout_day_id).delete()
+def delete_old_user_workout_exercises(workout_day_id):
+    db.session.query(User_Workout_Exercises).filter_by(workout_day_id=workout_day_id).delete()
     print("Successfully deleted")
 
 # Retrieve the phase types and their corresponding constraints for a goal.
@@ -137,7 +137,7 @@ def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
     new_exercises = []
     for i, exercise in enumerate(exercises_output, start=1):
         # Create a new exercise entry.
-        new_exercise = User_Exercises(
+        new_exercise = User_Workout_Exercises(
             workout_day_id = workout_day_id,
             phase_component_id = exercise["phase_component_id"],
             exercise_id = exercise["exercise_id"],
@@ -156,11 +156,11 @@ def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
 # Retrieve phase components
 @bp.route('/', methods=['GET'])
 @login_required
-def get_user_exercises():
-    user_exercises = User_Exercises.query.join(User_Workout_Days).join(User_Microcycles).join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=current_user.id).all()
+def get_user_workout_exercises():
+    user_workout_exercises = User_Workout_Exercises.query.join(User_Workout_Days).join(User_Microcycles).join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=current_user.id).all()
     result = []
-    for user_exercise in user_exercises:
-        result.append(user_exercise.to_dict())
+    for user_workout_exercise in user_workout_exercises:
+        result.append(user_workout_exercise.to_dict())
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Retrieve phase components
@@ -169,9 +169,9 @@ def get_user_exercises():
 def get_user_current_exercises():
     result = []
     user_workout_day = current_workout_day(current_user.id)
-    user_exercises = user_workout_day.exercises
-    for user_exercise in user_exercises:
-        result.append(user_exercise.to_dict())
+    user_workout_exercises = user_workout_day.exercises
+    for user_workout_exercise in user_workout_exercises:
+        result.append(user_workout_exercise.to_dict())
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Assigns exercises to workouts.
@@ -184,7 +184,7 @@ def exercise_initializer():
 
     user_workout_day = current_workout_day(current_user.id)
 
-    delete_old_user_exercises(user_workout_day.id)
+    delete_old_user_workout_exercises(user_workout_day.id)
 
     # Retrieve user components
     user_workout_components = user_workout_day.workout_components
@@ -213,9 +213,9 @@ def exercise_initializer():
     result = exercises_main(parameters, constraints)
     print(result["formatted"])
 
-    user_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
+    user_workout_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
 
-    db.session.add_all(user_exercises)
+    db.session.add_all(user_workout_exercises)
     db.session.commit()
 
     return jsonify({"status": "success", "exercises": result}), 200
