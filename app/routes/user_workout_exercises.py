@@ -2,7 +2,20 @@ from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Exercise_Library, Exercise_Component_Phases, Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, User_Weekday_Availability, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days, User_Workout_Exercises
+from app.models import (
+    Exercise_Library, 
+    Exercise_Component_Phases, 
+    Phase_Library, 
+    Phase_Component_Library, 
+    Phase_Component_Bodyparts, 
+    User_Exercises, 
+    User_Weekday_Availability, 
+    User_Macrocycles, 
+    User_Mesocycles, 
+    User_Microcycles, 
+    User_Workout_Days, 
+    User_Workout_Exercises
+)
 
 bp = Blueprint('user_workout_exercises', __name__)
 
@@ -21,9 +34,11 @@ def retrieve_exercises():
     results = (
         db.session.query(
             Exercise_Library,
+            User_Exercises, 
             Exercise_Component_Phases,
         )
         .join(Exercise_Component_Phases, Exercise_Library.id == Exercise_Component_Phases.exercise_id)
+        .join(User_Exercises, User_Exercises.exercise_id == Exercise_Library.id)
         .all()
     )
 
@@ -42,7 +57,7 @@ def retrieve_exercises():
         }
     ]
 
-    for exercise, phase in results:
+    for exercise, user_exercise, phase in results:
         exercise_dict = {
             "id": exercise.id,
             "name": exercise.name.lower(),
@@ -59,7 +74,9 @@ def retrieve_exercises():
             "weighted_equipment_ids": exercise.all_weighted_equipment,
             "marking_equipment_ids": exercise.all_marking_equipment,
             "other_equipment_ids": exercise.all_other_equipment,
+            "one_rep_max": user_exercise.one_rep_max,
         }
+        print(exercise_dict["name"], exercise_dict["component_id"], exercise_dict["subcomponent_id"], exercise_dict["one_rep_max"])
         possible_exercises_list.append(exercise_dict)
 
 
