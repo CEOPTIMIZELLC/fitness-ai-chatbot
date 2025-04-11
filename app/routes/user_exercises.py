@@ -16,29 +16,6 @@ def delete_old_user_exercises(workout_day_id):
     print("Successfully deleted")
 
 # Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_possible_phase_components(phase_id):
-    # Retrieve all possible phase components that can be selected.
-    possible_phase_components = (
-        Phase_Component_Library.query
-        .join(Phase_Library)
-        .filter(Phase_Library.id == phase_id)
-        .order_by(Phase_Component_Library.id.asc())
-        .all()
-    )
-    return possible_phase_components
-
-# Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_phase_component_bodyparts(phase_id):
-    # Retrieve all possible phase components that can be selected.
-    possible_phase_component_bodyparts = (
-        Phase_Component_Bodyparts.query
-        .filter(Phase_Component_Bodyparts.phase_id == phase_id)
-        .order_by(Phase_Component_Bodyparts.id.asc())
-        .all()
-    )
-    return possible_phase_component_bodyparts
-
-# Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_exercises():
     # Retrieve all possible exercises with their component phases
     results = (
