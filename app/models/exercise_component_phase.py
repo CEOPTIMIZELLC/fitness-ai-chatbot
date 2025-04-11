@@ -8,8 +8,8 @@ class Exercise_Component_Phases(db.Model, TableNameMixin):
 
     # Fields
     exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_library.id", ondelete='CASCADE'), primary_key=True)
-    component_id = db.Column(db.Integer, db.ForeignKey("component_library.id", ondelete='CASCADE'), nullable=False)
-    subcomponent_id = db.Column(db.Integer, db.ForeignKey("subcomponent_library.id", ondelete='CASCADE'), nullable=False)
+    component_id = db.Column(db.Integer, db.ForeignKey("component_library.id", ondelete='CASCADE'), primary_key=True)
+    subcomponent_id = db.Column(db.Integer, db.ForeignKey("subcomponent_library.id", ondelete='CASCADE'), primary_key=True)
 
     # Relationships
     exercises = db.relationship("Exercise_Library", back_populates="component_phases")
