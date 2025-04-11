@@ -63,6 +63,11 @@ class Users(BaseModel, TableNameMixin, UserMixin):
         back_populates="users", 
         cascade="all, delete-orphan")
 
+    exercises = db.relationship(
+        "User_Exercises", 
+        back_populates="users", 
+        cascade="all, delete-orphan")
+
     availability = db.relationship(
         "User_Weekday_Availability", 
         back_populates="users", 

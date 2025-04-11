@@ -32,6 +32,7 @@ from .component_library import Component_Library
 from .subcomponent_library import Subcomponent_Library
 from .phase_library import Phase_Library
 from .user_equipment import User_Equipment
+from .user_exercises import User_Exercises
 from .user_macrocycles import User_Macrocycles
 from .user_mesocycles import User_Mesocycles
 from .user_microcycles import User_Microcycles
@@ -68,6 +69,7 @@ __all__ = [
     "Subcomponent_Library", 
     "Phase_Library", 
     "User_Equipment", 
+    "User_Exercises", 
     "User_Macrocycles", 
     "User_Mesocycles", 
     "User_Microcycles", 
