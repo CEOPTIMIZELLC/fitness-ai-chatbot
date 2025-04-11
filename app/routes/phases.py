@@ -1,5 +1,6 @@
 from flask import jsonify, Blueprint
 
+from app import db
 from app.models import Phase_Library
 
 bp = Blueprint('phases', __name__)
@@ -18,7 +19,7 @@ def get_phase_list():
 # Show phases based on id.
 @bp.route('/<phase_id>', methods=['GET'])
 def read_phase(phase_id):
-    phase = Phase_Library.query.filter_by(id=phase_id).first()
+    phase = db.session.get(Phase_Library, phase_id)
     if not phase:
         return jsonify({"status": "error", "message": "Phase " + phase_id + " not found."}), 404
-    return jsonify(phase.to_dict()), 200
+    return jsonify({"status": "success", "phases": phase.to_dict()}), 200

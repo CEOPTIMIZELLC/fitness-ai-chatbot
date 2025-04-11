@@ -110,17 +110,6 @@ def get_user_current_mesocycle():
         return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
     return jsonify({"status": "success", "phases": user_mesocycle.to_dict()}), 200
 
-
-# Show phases based on id.
-@bp.route('/<phase_id>', methods=['GET'])
-@login_required
-def read_user_mesocycle(phase_id):
-    phase = Phase_Library.query.filter_by(id=phase_id).first()
-    if not phase:
-        return jsonify({"status": "error", "message": "Phase " + phase_id + " not found."}), 404
-    return jsonify(phase.to_dict()), 200
-
-
 # Testing for the parameter programming for mesocycle labeling.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required

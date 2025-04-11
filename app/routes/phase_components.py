@@ -1,5 +1,5 @@
 from flask import request, jsonify, Blueprint
-
+from app import db
 from app.models import Phase_Component_Library, Component_Library, Subcomponent_Library
 
 bp = Blueprint('phase_components', __name__)
@@ -44,10 +44,10 @@ def get_phase_components_list():
 # Show phase components based on id.
 @bp.route('/phase_components/<phase_component_id>', methods=['GET'])
 def read_phase_component(phase_component_id):
-    phase_component = Phase_Component_Library.query.filter_by(id=phase_component_id).first()
+    phase_component = db.session.get(Phase_Component_Library, phase_component_id)
     if not phase_component:
         return jsonify({"status": "error", "message": "Phase Component " + phase_component_id + " not found."}), 404
-    return jsonify(phase_component.to_dict()), 200
+    return jsonify({"status": "success", "phase_components": phase_component.to_dict()}), 200
 
 
 # Retrieve phase components
@@ -62,10 +62,10 @@ def get_components_list():
 # Show phase components based on id.
 @bp.route('/components/<component_id>', methods=['GET'])
 def read_component(component_id):
-    component = Component_Library.query.filter_by(id=component_id).first()
+    component = db.session.get(Component_Library, component_id)
     if not component:
         return jsonify({"status": "error", "message": "Phase Component " + component_id + " not found."}), 404
-    return jsonify(component.to_dict()), 200
+    return jsonify({"status": "success", "components": component.to_dict()}), 200
 
 
 # Retrieve phase subcomponents
@@ -80,7 +80,7 @@ def get_subcomponents_list():
 # Show phase subcomponents based on id.
 @bp.route('/subcomponents/<subcomponent_id>', methods=['GET'])
 def read_subcomponent(subcomponent_id):
-    subcomponent = Subcomponent_Library.query.filter_by(id=subcomponent_id).first()
+    subcomponent = db.session.get(Subcomponent_Library, subcomponent_id)
     if not subcomponent:
         return jsonify({"status": "error", "message": "Phase Component " + subcomponent_id + " not found."}), 404
-    return jsonify(subcomponent.to_dict()), 200
+    return jsonify({"status": "success", "subcomponents": subcomponent.to_dict()}), 200

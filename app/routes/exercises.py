@@ -24,10 +24,10 @@ def get_exercise_list():
 # Show exercises based on id.
 @bp.route('/<exercise_id>', methods=['GET'])
 def read_exercise(exercise_id):
-    exercise = Exercise_Library.query.filter_by(id=exercise_id).first()
+    exercise = db.session.get(Exercise_Library, exercise_id)
     if not exercise:
         return jsonify({"status": "error", "message": "Exercise " + exercise_id + " not found."}), 404
-    return jsonify(exercise.to_dict()), 200
+    return jsonify({"status": "success", "exercises": exercise.to_dict()}), 200
 
 
 # Testing for the SQL to add and check training equipment.
