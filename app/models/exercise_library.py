@@ -155,6 +155,36 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
         
         return list(set(direct_ids | category_ids))
 
+    @hybrid_property
+    def all_supportive_equipment(self):
+        return [equipment.to_dict() for equipment in self.supportive_equipment]
+
+    @hybrid_property
+    def all_assistive_equipment(self):
+        return [equipment.to_dict() for equipment in self.assistive_equipment]
+
+    @hybrid_property
+    def all_weighted_equipment(self):
+        return [equipment.to_dict() for equipment in self.weighted_equipment]
+
+    @hybrid_property
+    def all_marking_equipment(self):
+        return [equipment.to_dict() for equipment in self.marking_equipment]
+
+    @hybrid_property
+    def all_other_equipment(self):
+        return [equipment.to_dict() for equipment in self.other_equipment]
+
+    @hybrid_property
+    def all_equipment(self):
+        return {
+            "supportive_equipment": self.all_supportive_equipment, 
+            "assistive_equipment": self.all_assistive_equipment, 
+            "weighted_equipment": self.all_weighted_equipment, 
+            "marking_equipment": self.all_marking_equipment, 
+            "other_equipment": self.all_other_equipment, 
+        }
+
     def to_dict(self):
         return {
             "id": self.id, 
@@ -170,5 +200,5 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
             "muscle_group_ids": self.all_muscle_group_ids, 
             "bodypart_ids": self.all_bodypart_ids, 
             "body_region_ids": self.all_body_region_ids, 
+            "equipment": self.all_equipment, 
         }
-    
