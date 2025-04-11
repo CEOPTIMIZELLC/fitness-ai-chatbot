@@ -10,7 +10,7 @@ class User_Macrocycles(BaseModel, TableNameMixin, DateRangeMixin):
     """The macrocycles belonging to a user. This also acts as a join table between a user and the goal types."""
     __table_args__ = {'comment': "Macrocycles that a user currently has or previously had planned out."}
     # Fields
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete='CASCADE'), nullable=False)
     goal_id = db.Column(db.Integer, db.ForeignKey("goal_library.id"), nullable=False)
     goal = db.Column(
         TEXT, 

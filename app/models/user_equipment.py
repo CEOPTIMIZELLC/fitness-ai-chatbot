@@ -7,8 +7,8 @@ class User_Equipment(BaseModel, TableNameMixin):
     __table_args__ = {'comment': "The equipment that a user has to be able to perform exercises."}
 
     # Fields
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    equipment_id = db.Column(db.Integer, db.ForeignKey("equipment_library.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete='CASCADE'), nullable=False)
+    equipment_id = db.Column(db.Integer, db.ForeignKey("equipment_library.id", ondelete='CASCADE'), nullable=False)
     measurement = db.Column(db.Integer, nullable=False)
 
     # Relationships
@@ -19,6 +19,7 @@ class User_Equipment(BaseModel, TableNameMixin):
         return {
             "id": self.id, 
             "user_id": self.user_id, 
+            "equipment_id": self.equipment_id, 
             "equipment_name": self.equipment.name, 
             "measurement": self.measurement, 
             "unit_of_measurement": self.equipment.unit_of_measurement
