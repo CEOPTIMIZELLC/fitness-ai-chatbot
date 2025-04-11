@@ -27,62 +27,62 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
     component_phases = db.relationship(
         "Exercise_Component_Phases", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     muscles = db.relationship(
         "Exercise_Muscles", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     muscle_groups = db.relationship(
         "Exercise_Muscle_Groups", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     bodyparts = db.relationship(
         "Exercise_Bodyparts", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     body_regions = db.relationship(
         "Exercise_Body_Regions", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     supportive_equipment = db.relationship(
         "Exercise_Supportive_Equipment", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     assistive_equipment = db.relationship(
         "Exercise_Assistive_Equipment", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     weighted_equipment = db.relationship(
         "Exercise_Weighted_Equipment", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     marking_equipment = db.relationship(
         "Exercise_Marking_Equipment", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     other_equipment = db.relationship(
         "Exercise_Other_Equipment", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     user_workout_exercises = db.relationship(
         "User_Workout_Exercises", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     users = db.relationship(
         "User_Exercises", 
         back_populates="exercises", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     @hybrid_property
     def all_muscle_ids(self):

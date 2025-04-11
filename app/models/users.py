@@ -61,22 +61,22 @@ class Users(BaseModel, TableNameMixin, UserMixin):
     equipment = db.relationship(
         "User_Equipment", 
         back_populates="users", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     exercises = db.relationship(
         "User_Exercises", 
         back_populates="users", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     availability = db.relationship(
         "User_Weekday_Availability", 
         back_populates="users", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     macrocycles = db.relationship(
         "User_Macrocycles", 
         back_populates="users", 
-        cascade="all, delete-orphan")
+        cascade="all, delete")
 
     def to_dict(self):
         return {

@@ -43,6 +43,8 @@ from .user_weekday_availability import User_Weekday_Availability
 from .weekday_library import Weekday_Library
 from .users import Users
 
+from .signals import *
+
 __all__ = [
     "Body_Region_Library", 
     "Bodypart_Library", 
