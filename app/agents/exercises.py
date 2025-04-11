@@ -20,13 +20,13 @@ def get_exercises_for_pc(exercises, phase_component):
             and ((1 in exercise['bodypart_ids']) or
                  (phase_component["bodypart_id"] in exercise["bodypart_ids"])))]
     if (exercises_for_pc == []) and (phase_component["bodypart_id"] == 1):
-        print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, if total body, include all.")
+        print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises for this bodypart, include all exercises for this component phase if it's total body.")
         exercises_for_pc = [
             i for i, exercise in enumerate(exercises, start=1)
             if (exercise['component_id']==phase_component["component_id"] 
                 and exercise['subcomponent_id']==phase_component["subcomponent_id"])]
     if exercises_for_pc == []:
-        print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises, include all.")
+        print(f"{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']} {phase_component['bodypart_name']} has no exercises at all, include all exercises.")
         exercises_for_pc = [i for i, _ in enumerate(exercises, start=1)]
     return exercises_for_pc
 
