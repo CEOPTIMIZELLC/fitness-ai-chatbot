@@ -188,7 +188,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         max_rest = max(phase_component["rest_max"] for phase_component in phase_components[1:])
         min_base_strain = min(exercise["base_strain"] for exercise in exercises[1:])
         max_base_strain = max(exercise["base_strain"] for exercise in exercises[1:])
-        max_intensity = max((phase_component["intensity_max"] or 1) for phase_component in phase_components[1:])
+        max_intensity = 100
         max_strain_scaled = ((max_seconds_per_exercise * (10 + max_intensity + max_base_strain) * max_reps) + (10 *max_rest * 5)) * max_sets
 
         # Maximum amount of time that the workout may last
@@ -219,8 +219,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         # Integer variable representing the intensity chosen at exercise i.
         intensity_vars = [
             model.NewIntVar((phase_components[pc_index]["intensity_min"] or 1), (phase_components[pc_index]["intensity_max"] or 100), f'intensity_{i}')
-            if phase_components[pc_index]["intensity_min"] is not None and phase_components[pc_index]["intensity_max"] is not None
-            else None
             for i, pc_index in enumerate(phase_component_ids)]
 
         # Integer variable representing the exercise chosen at exercise i.
