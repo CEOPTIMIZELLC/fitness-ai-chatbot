@@ -1,7 +1,6 @@
 from flask import jsonify, Blueprint
-
-from app import db
 from app.models import Goal_Library
+from app.utils.db_helpers import get_all_items, get_item_by_id
 
 bp = Blueprint('goals', __name__)
 
@@ -10,16 +9,13 @@ bp = Blueprint('goals', __name__)
 # Retrieve goals
 @bp.route('/', methods=['GET'])
 def get_goal_list():
-    goals = Goal_Library.query.all()
-    result = []
-    for goal in goals:
-        result.append(goal.to_dict())
+    result = get_all_items(Goal_Library)
     return jsonify({"status": "success", "goals": result}), 200
 
 # Show goals based on id.
 @bp.route('/<goal_id>', methods=['GET'])
 def read_goal(goal_id):
-    goal = db.session.get(Goal_Library, goal_id)
-    if not goal:
+    result = get_item_by_id(Goal_Library, goal_id)
+    if not result:
         return jsonify({"status": "error", "message": "Goal " + goal_id + " not found."}), 404
-    return jsonify({"status": "success", "goals": goal.to_dict()}), 200
+    return jsonify({"status": "success", "goals": result}), 200

@@ -7,6 +7,7 @@ from sqlalchemy.sql import func, distinct
 
 from app import db
 from app.models import Exercise_Library, Equipment_Library, User_Equipment
+from app.utils.db_helpers import get_all_items, get_item_by_id
 
 bp = Blueprint('exercises', __name__)
 
@@ -15,19 +16,16 @@ bp = Blueprint('exercises', __name__)
 # Retrieve exercises
 @bp.route('/', methods=['GET'])
 def get_exercise_list():
-    exercises = Exercise_Library.query.all()
-    result = []
-    for exercise in exercises:
-        result.append(exercise.to_dict())
+    result = get_all_items(Exercise_Library)
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Show exercises based on id.
 @bp.route('/<exercise_id>', methods=['GET'])
 def read_exercise(exercise_id):
-    exercise = db.session.get(Exercise_Library, exercise_id)
-    if not exercise:
+    result = get_item_by_id(Exercise_Library, exercise_id)
+    if not result:
         return jsonify({"status": "error", "message": "Exercise " + exercise_id + " not found."}), 404
-    return jsonify({"status": "success", "exercises": exercise.to_dict()}), 200
+    return jsonify({"status": "success", "exercises": result}), 200
 
 
 # Testing for the SQL to add and check training equipment.
