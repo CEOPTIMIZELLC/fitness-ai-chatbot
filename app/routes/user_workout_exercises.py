@@ -1,3 +1,4 @@
+import random
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
@@ -82,34 +83,8 @@ def retrieve_exercises():
 
     return possible_exercises_list
 
-def construct_user_workout_components_list(user_workout_components):
-    user_workout_components_list = [{
-        "id": 0,
-        "name": "Inactive",
-        "bodypart_name": "Inactive",
-        "duration": 0,
-        "duration_min": 0,
-        "duration_max": 0,
-        'reps_min': 0, 
-        'reps_max': 0, 
-        'sets_min': 0, 
-        'sets_max': 0, 
-        'seconds_per_exercise': 0, 
-        'intensity_min': 0, 
-        'intensity_max': 0, 
-        'rest_min': 0, 
-        'rest_max': 0,
-        'exercises_per_bodypart_workout_min': 0,
-        'exercises_per_bodypart_workout_max': 0,
-        'exercise_selection_note': None
-    }]
-
-    # Convert the query into a list of dictionaries, adding the information for the phase restrictions.
-    for user_workout_component in user_workout_components:
-        workout_data = user_workout_component.to_dict()
-        phase_component_data = user_workout_component.phase_components.to_dict()
-
-        user_workout_components_list.append({
+def user_component_dict(workout_data, phase_component_data):
+    return {
             "workout_component_id": workout_data["id"],
             "workout_day_id": workout_data["workout_day_id"],
             "bodypart_id": workout_data["bodypart_id"],
@@ -145,8 +120,36 @@ def construct_user_workout_components_list(user_workout_components):
             "exercises_per_bodypart_workout_min": phase_component_data["exercises_per_bodypart_workout_min"],
             "exercises_per_bodypart_workout_max": phase_component_data["exercises_per_bodypart_workout_max"],
             "exercise_selection_note": phase_component_data["exercise_selection_note"],
-  
-        })
+        }
+
+def construct_user_workout_components_list(user_workout_components):
+    user_workout_components_list = [{
+        "id": 0,
+        "name": "Inactive",
+        "bodypart_name": "Inactive",
+        "duration": 0,
+        "duration_min": 0,
+        "duration_max": 0,
+        'reps_min': 0, 
+        'reps_max': 0, 
+        'sets_min': 0, 
+        'sets_max': 0, 
+        'seconds_per_exercise': 0, 
+        'intensity_min': 0, 
+        'intensity_max': 0, 
+        'rest_min': 0, 
+        'rest_max': 0,
+        'exercises_per_bodypart_workout_min': 0,
+        'exercises_per_bodypart_workout_max': 0,
+        'exercise_selection_note': None
+    }]
+
+    # Convert the query into a list of dictionaries, adding the information for the phase restrictions.
+    for user_workout_component in user_workout_components:
+        workout_data = user_workout_component.to_dict()
+        phase_component_data = user_workout_component.phase_components.to_dict()
+
+        user_workout_components_list.append(user_component_dict(workout_data, phase_component_data))
     
     return user_workout_components_list
 
@@ -237,60 +240,15 @@ def exercise_initializer():
 
     return jsonify({"status": "success", "exercises": result}), 200
 
-# Using the information for the phase components, generate the phase components with the minimum and maximum possible values.
-def construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts):
-    possible_phase_components_list = []
 
-    # Convert the query into a list of dictionaries.
-    for possible_phase_component in possible_phase_components:
-        # If the phase component is resistance, append it multiple times.
-        if possible_phase_component.component_id == 6:
-            for possible_phase_component_bodypart in possible_phase_component_bodyparts:
-                possible_phase_components_list.append({
-                    "id": possible_phase_component.id,
-                    "name": possible_phase_component.name,
-                    "required_every_workout": possible_phase_component.required_every_workout,
-                    "required_within_microcycle": possible_phase_component.required_within_microcycle,
-                    "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
-                    "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
-                    "duration_min": (
-                        (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.min_duration),
-                    "duration_max": (
-                        (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.max_duration),
-                    "bodypart_id": possible_phase_component_bodypart.bodypart_id, 
-                    "bodypart": possible_phase_component_bodypart.bodyparts.name
-                    })
-        # Append only once for full body if any other phase component.
-        else:
-            possible_phase_components_list.append({
-                "id": possible_phase_component.id,
-                "name": possible_phase_component.name,
-                "required_every_workout": possible_phase_component.required_every_workout,
-                "required_within_microcycle": possible_phase_component.required_within_microcycle,
-                "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
-                "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
-                "duration_min": (
-                    (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.min_duration),
-                "duration_max": (
-                    (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.max_duration),
-                "bodypart_id": 1, "bodypart": "total_body"
-            })
-    
-    return possible_phase_components_list
+def retrieve_duration_for_test(duration_min, exercise_min=1, exercises_max=1):
+    exercises_per_bodypart = random.randint(exercise_min, 
+                                            exercises_max)
 
-
-
-
-
-
-
-
-
-
+    duration = exercises_per_bodypart * duration_min
+    return duration
 
 def construct_user_workout_components_list_for_test(possible_phase_components, possible_phase_component_bodyparts, availability, projected_duration):
-    import random
-
     workout_component_id = 0
     user_workout_components_list = [{
         "id": 0,
@@ -321,84 +279,42 @@ def construct_user_workout_components_list_for_test(possible_phase_components, p
         # If the phase component is resistance, append it multiple times.
         if possible_phase_component.component_id == 6:
             for possible_phase_component_bodypart in possible_phase_component_bodyparts:
-                exercises_per_bodypart = random.randint((phase_component_data["exercises_per_bodypart_workout_min"] or 1), 
-                                                        (phase_component_data["exercises_per_bodypart_workout_max"] or 1))
+                duration = retrieve_duration_for_test(phase_component_data["duration_min"], 
+                                                      (phase_component_data["exercises_per_bodypart_workout_min"] or 1), 
+                                                      (phase_component_data["exercises_per_bodypart_workout_max"] or 1))
 
-                duration = exercises_per_bodypart * phase_component_data["duration_min"]
                 if duration <= availability:
                     workout_component_id += 1
                     availability -= duration
                     projected_duration += duration
-                    user_workout_components_list.append({
-                        "workout_component_id": workout_component_id,
-                        "workout_day_id": 0,
-                        "bodypart_id": possible_phase_component_bodypart.bodypart_id,
-                        "bodypart_name": possible_phase_component_bodypart.bodyparts.name,
-                        "duration": duration,
-                        "duration_min": phase_component_data["duration_min"],
-                        "duration_max": phase_component_data["duration_max"],
-
-                        "phase_component_id": phase_component_data["id"],
-                        "phase_name": phase_component_data["phase_name"],
-                        "component_id": phase_component_data["component_id"],
-                        "component_name": phase_component_data["component_name"],
-                        "subcomponent_id": phase_component_data["subcomponent_id"],
-                        "subcomponent_name": phase_component_data["subcomponent_name"],
-                        "name": phase_component_data["name"],
-                        "reps_min": phase_component_data["reps_min"],
-                        "reps_max": phase_component_data["reps_max"],
-                        "sets_min": phase_component_data["sets_min"],
-                        "sets_max": phase_component_data["sets_max"],
-                        "tempo": phase_component_data["tempo"],
-                        "seconds_per_exercise": phase_component_data["seconds_per_exercise"],
-                        "intensity_min": phase_component_data["intensity_min"],
-                        "intensity_max": phase_component_data["intensity_max"],
-                        "rest_min": phase_component_data["rest_min"] // 5,     # Adjusted so that rest is a multiple of 5.
-                        "rest_max": phase_component_data["rest_max"] // 5,     # Adjusted so that rest is a multiple of 5.
-                        "exercises_per_bodypart_workout_min": phase_component_data["exercises_per_bodypart_workout_min"],
-                        "exercises_per_bodypart_workout_max": phase_component_data["exercises_per_bodypart_workout_max"],
-                        "exercise_selection_note": phase_component_data["exercise_selection_note"],
-                    })
+                    user_workout_components_list.append(user_component_dict(
+                        {
+                            "id": workout_component_id,
+                            "workout_day_id": 0,
+                            "bodypart_id": possible_phase_component_bodypart.bodypart_id,
+                            "bodypart_name": possible_phase_component_bodypart.bodyparts.name,
+                            "duration": duration
+                        },
+                        phase_component_data))
         # Append only once for full body if any other phase component.
         else:
-            exercises_per_bodypart = random.randint((phase_component_data["exercises_per_bodypart_workout_min"] or 1), 
-                                                    (phase_component_data["exercises_per_bodypart_workout_max"] or 1))
-
-            duration = exercises_per_bodypart * phase_component_data["duration_min"]
+            duration = retrieve_duration_for_test(phase_component_data["duration_min"], 
+                                                  (phase_component_data["exercises_per_bodypart_workout_min"] or 1), 
+                                                  (phase_component_data["exercises_per_bodypart_workout_max"] or 1))
             if duration <= availability:
                 workout_component_id += 1
                 availability -= duration
                 projected_duration += duration
-                user_workout_components_list.append({
-                    "workout_component_id": workout_component_id,
-                    "workout_day_id": 0,
-                    "bodypart_id": 1,
-                    "bodypart_name": "total_body",
-                    "duration": duration,
-                    "duration_min": phase_component_data["duration_min"],
-                    "duration_max": phase_component_data["duration_max"],
-
-                    "phase_component_id": phase_component_data["id"],
-                    "phase_name": phase_component_data["phase_name"],
-                    "component_id": phase_component_data["component_id"],
-                    "component_name": phase_component_data["component_name"],
-                    "subcomponent_id": phase_component_data["subcomponent_id"],
-                    "subcomponent_name": phase_component_data["subcomponent_name"],
-                    "name": phase_component_data["name"],
-                    "reps_min": phase_component_data["reps_min"],
-                    "reps_max": phase_component_data["reps_max"],
-                    "sets_min": phase_component_data["sets_min"],
-                    "sets_max": phase_component_data["sets_max"],
-                    "tempo": phase_component_data["tempo"],
-                    "seconds_per_exercise": phase_component_data["seconds_per_exercise"],
-                    "intensity_min": phase_component_data["intensity_min"],
-                    "intensity_max": phase_component_data["intensity_max"],
-                    "rest_min": phase_component_data["rest_min"] // 5,     # Adjusted so that rest is a multiple of 5.
-                    "rest_max": phase_component_data["rest_max"] // 5,     # Adjusted so that rest is a multiple of 5.
-                    "exercises_per_bodypart_workout_min": phase_component_data["exercises_per_bodypart_workout_min"],
-                    "exercises_per_bodypart_workout_max": phase_component_data["exercises_per_bodypart_workout_max"],
-                    "exercise_selection_note": phase_component_data["exercise_selection_note"],
-                })    
+                user_workout_components_list.append(user_component_dict(
+                    {    
+                        "id": workout_component_id,
+                        "workout_day_id": 0,
+                        "bodypart_id": 1,
+                        "bodypart_name": "total_body",
+                        "duration": duration
+                    },
+                    phase_component_data
+                ))
     return user_workout_components_list, availability, projected_duration
 
 
