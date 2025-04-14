@@ -226,12 +226,6 @@ def exercise_initializer():
     parameters["workout_length"] = int(current_user.workout_length.total_seconds())
     parameters["possible_exercises"] = retrieve_exercises()
 
-    # for i in parameters["phase_components"]:
-    #     print(i)
-    # for i in parameters["possible_exercises"]:
-    #     print(i)
-    # print(parameters["projected_duration"])
-
     result = []
     result = exercises_main(parameters, constraints)
     print(result["formatted"])
@@ -415,8 +409,7 @@ def construct_user_workout_components_list_for_test(possible_phase_components, p
 # Testing for the parameter programming for mesocycle labeling.
 @bp.route('/test', methods=['GET', 'POST'])
 def exercise_classification_test():
-    from app.routes.user_workout_days import retrieve_possible_phase_components, retrieve_phase_component_bodyparts, construct_phase_component_list
-    import random
+    from app.routes.user_workout_days import retrieve_possible_phase_components, retrieve_phase_component_bodyparts
 
     test_results = []
 
@@ -438,7 +431,6 @@ def exercise_classification_test():
         while True:
             availability = min(parameters["availability"], parameters["workout_length"])
             projected_duration = 0
-            workout_phase_components=[]
 
             # Retrieve all possible phase component body parts.
             possible_phase_component_bodyparts = retrieve_phase_component_bodyparts(phase.id)
