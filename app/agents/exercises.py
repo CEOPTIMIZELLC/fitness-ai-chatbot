@@ -85,7 +85,7 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
         formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
         formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
         formatted_intensity = ""
-        if intensity_var:
+        if intensity_var != None:
             formatted_intensity = f"Intensity {intensity_var} ({phase_component["intensity_min"]}-{phase_component["intensity_max"]})"
 
         formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_exercise}{formatted_base_strain}{formatted_phase_component}{formatted_duration:<{45}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{20}}{formatted_rest:<{20}}{formatted_intensity:<{6}})\n")
@@ -219,6 +219,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         # Integer variable representing the intensity chosen at exercise i.
         intensity_vars = [
             model.NewIntVar((phase_components[pc_index]["intensity_min"] or 1), (phase_components[pc_index]["intensity_max"] or 100), f'intensity_{i}')
+            if phase_components[pc_index]["intensity_min"] is not None and phase_components[pc_index]["intensity_max"] is not None
+            else model.NewIntVar(0, 0, f'intensity_{i}')
             for i, pc_index in enumerate(phase_component_ids)]
 
         # Integer variable representing the exercise chosen at exercise i.
