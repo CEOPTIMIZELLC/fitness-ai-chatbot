@@ -68,6 +68,7 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
             "sets_var": sets_var, 
             "rest_var": rest_var, 
             "intensity_var": intensity_var, 
+            "training_weight": exercise["one_rep_max"] * (intensity_var/100),
             "duration": duration,
             "working_duration": working_duration
         })
@@ -86,9 +87,10 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
         formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
         formatted_intensity = ""
         if intensity_var != None:
+            formatted_training_weight = f"Training Weight: {exercise["one_rep_max"] * (intensity_var/100)}"
             formatted_intensity = f"Intensity {intensity_var} ({phase_component["intensity_min"]}-{phase_component["intensity_max"]})"
 
-        formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_exercise}{formatted_base_strain}{formatted_phase_component}{formatted_duration:<{45}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{20}}{formatted_rest:<{20}}{formatted_intensity:<{6}})\n")
+        formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_exercise}{formatted_base_strain}{formatted_phase_component}{formatted_duration:<{45}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{15}}{formatted_rest:<{20}}{formatted_training_weight:<{25}}{formatted_intensity:<{6}})\n")
 
     formatted += f"Phase Component Counts:\n"
     for phase_component_index, phase_component_number in enumerate(phase_component_count):
