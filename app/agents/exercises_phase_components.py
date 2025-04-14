@@ -182,6 +182,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "availability": 0,
             "workout_length": 0,
             "projected_duration": 0,
+            "projected_duration": 0,
+            "one_rep_max_improvement_percentage": 0,
             "phase_components": [],
             "possible_exercises": []
         }

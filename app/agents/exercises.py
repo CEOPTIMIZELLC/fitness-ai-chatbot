@@ -7,9 +7,8 @@ from app.agents.constraints import (
     create_exercise_intensity_var, 
     no_repeated_items, 
     only_use_required_items, 
-    entries_equal, 
-    entries_within_min_max)
-from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, declare_model_vars, declare_duration_vars, format_relaxation_attempts
+    entries_equal)
+from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, declare_duration_vars, format_relaxation_attempts
 from app.agents.agent_helpers import longest_string_size_for_key
 
 _ = load_dotenv()
@@ -35,31 +34,42 @@ def get_exercises_for_pc(exercises, phase_component):
 # Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
 # This method performs the in between steps and returns the final variable for the right side of the one rep formula.
 # 1RM < (weight * (30 + reps)) / 30
-def weight_rep_construction(model, i, 
-                            one_rep_max, min_one_rep_max, max_one_rep_max, 
-                            reps, min_reps, max_reps, 
-                            weight, min_weight, max_weight, 
-                            name=""):
+def weight_rep_construction(model, i, one_rep_max, max_one_rep_max, 
+                            reps, max_reps, weight, max_weight, 
+                            name="", one_rep_max_improvement_percentage=1):
+    if name != "": name += "_"
+
+    # 100 * 1RM due to weight being scaled up
+    one_rep_max_scaled_var = model.NewIntVar(0, 100 * max_one_rep_max, f'{name}one_rep_max_scaled{i}')
+    model.AddMultiplicationEquality(one_rep_max_scaled_var, [100, one_rep_max])
+
+    # 30 + reps
+    reps_plus_30_var = model.NewIntVar(0, 30 + max_reps, f'{name}reps_plus_30_{i}')
+    model.Add(reps_plus_30_var == 30 + reps)
+
+    # weight * (30 + reps)
+    weight_times_reps_plus_30_var = model.NewIntVar(0, max_weight * (30 + max_reps), f'{name}weight_times_reps_plus_30_{i}')
+    model.AddMultiplicationEquality(weight_times_reps_plus_30_var, [weight, reps_plus_30_var])
+
+    # Completed constraint.
+    # 1RM < weight * (30 + reps)) / 30
+    new_one_rep_max_var = model.NewIntVar(0, max_weight * (30 + max_reps) // 30, f'{name}new_1RM_{i}')
+    model.AddDivisionEquality(new_one_rep_max_var, weight_times_reps_plus_30_var, 30)
+    
+    # 1RM + 1 < (weight * (30 + reps)) / 30
+    model.Add(new_one_rep_max_var > (one_rep_max_scaled_var + one_rep_max_improvement_percentage))
+
     return None
 
-def one_rep_max_increase(model, 
-                         one_rep_max_vars, min_one_rep_max, max_one_rep_max, 
-                         reps_vars, min_reps, max_reps, 
-                         training_weight_vars, min_weight, max_weight):
+def one_rep_max_increase(model, one_rep_max_vars, max_one_rep_max, reps_vars, max_reps, training_weight_vars, max_weight, one_rep_max_improvement_percentage=1):
     # Link the exercise variables and the training weight variables by ensuring the training weight is equal to the one rep max * intensity for the exercise chose at exercise i.
     for i, (one_rep_max_var, reps_var, training_weight_var) in enumerate(zip(one_rep_max_vars, reps_vars, training_weight_vars)):
         if training_weight_var != None:
-            weight_rep_construction(model=model, 
-                                    i=i, 
-                                    one_rep_max=one_rep_max_var, 
-                                    min_one_rep_max=min_one_rep_max, 
-                                    max_one_rep_max=max_one_rep_max, 
-                                    reps=reps_var, 
-                                    min_reps=min_reps, 
-                                    max_reps=max_reps, 
-                                    weight=training_weight_var, 
-                                    min_weight=min_weight, 
-                                    max_weight=max_weight)
+            weight_rep_construction(model=model, i=i, 
+                                    one_rep_max=one_rep_max_var, max_one_rep_max=max_one_rep_max, 
+                                    reps=reps_var, max_reps=max_reps, 
+                                    weight=training_weight_var, max_weight=max_weight, 
+                                    one_rep_max_improvement_percentage=one_rep_max_improvement_percentage)
     return None
 
 
@@ -203,6 +213,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         constraints = state["constraints"]
         model = cp_model.CpModel()
 
+        one_rep_max_improvement_percentage = "one_rep_max_improvement_percentage"
+
         exercises = parameters["possible_exercises"]
         exercise_amount = len(exercises)
 
@@ -222,7 +234,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         # Upper bound on number of exercises (greedy estimation)
         max_exercises = len(phase_component_ids)
         max_seconds_per_exercise = max(phase_component["seconds_per_exercise"] for phase_component in phase_components[1:])
-        min_reps = min(phase_component["reps_min"] for phase_component in phase_components[1:])
         max_reps = max(phase_component["reps_max"] for phase_component in phase_components[1:])
         max_sets = max(phase_component["sets_max"] for phase_component in phase_components[1:])
         max_rest = max(phase_component["rest_max"] for phase_component in phase_components[1:])
@@ -233,8 +244,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         max_one_rep_max = max(exercise["one_rep_max"] for exercise in exercises[1:])
         min_training_weight_scaled = min_one_rep_max * 1
         max_training_weight_scaled = max_one_rep_max * max_intensity
-        # min_one_rep_max = 100 * min_one_rep_max
-        # max_one_rep_max = 100 * max_one_rep_max
         max_strain_scaled = ((max_seconds_per_exercise * (10 + max_intensity + max_base_strain) * max_reps) + (10 *max_rest * 5)) * max_sets
 
         # Maximum amount of time that the workout may last
@@ -358,13 +367,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         if constraints["one_rep_max_increase"]:
             one_rep_max_increase(model=model, 
                                  one_rep_max_vars=one_rep_max_vars, 
-                                 min_one_rep_max=min_one_rep_max, 
                                  max_one_rep_max=max_one_rep_max, 
                                  reps_vars=reps_vars, 
-                                 min_reps=min_reps, 
                                  max_reps=max_reps, 
                                  training_weight_vars=training_weight_vars, 
-                                 min_weight=min_training_weight_scaled, 
                                  max_weight=max_training_weight_scaled)
             state["logs"] += "- One rep max increase constraint applied.\n"
 
@@ -464,18 +470,18 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
                 schedule.append((
                     i, 
-                    solver.Value(exercise_vars[i]), 
-                    phase_component_vars[i], 
-                    solver.Value(base_strain_vars[i]), 
-                    seconds_per_exercise_current, 
-                    reps_vars_current, 
-                    sets_vars_current, 
-                    solver.Value(rest_vars[i]) * 5, 
-                    intensity_var_current, 
-                    solver.Value(one_rep_max_vars[i]),
-                    training_weight_var_current / 100,
-                    duration_vars_current,
-                    working_duration_vars_current
+                    solver.Value(exercise_vars[i]),         # Index of the exercise chosen.
+                    phase_component_vars[i],                # Index of the phase component chosen.
+                    solver.Value(base_strain_vars[i]),      # Base strain of the exercise chosen.
+                    seconds_per_exercise_current,           # Seconds per exercise of the exercise chosen.
+                    reps_vars_current,                      # Reps of the exercise chosen.
+                    sets_vars_current,                      # Sets of the exercise chosen.
+                    solver.Value(rest_vars[i]) * 5,         # Rest of the exercise chosen.
+                    intensity_var_current,                  # Intensity of the exercise chosen.
+                    solver.Value(one_rep_max_vars[i]),      # 1RM of the exercise chosen.
+                    training_weight_var_current / 100,      # Training weight of the exercise chosen.
+                    duration_vars_current,                  # Duration of the exercise chosen.
+                    working_duration_vars_current           # Working duration of the exercise chosen.
                 ))
                 duration += duration_vars_current
                 working_duration += working_duration_vars_current

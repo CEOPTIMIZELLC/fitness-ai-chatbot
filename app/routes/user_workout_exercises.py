@@ -285,6 +285,7 @@ def exercise_initializer():
 
     parameters["projected_duration"] = projected_duration
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
+    parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = int(availability.availability.total_seconds())
     parameters["workout_length"] = int(current_user.workout_length.total_seconds())
     parameters["possible_exercises"] = retrieve_exercises()
@@ -321,6 +322,7 @@ def exercise_classification_test():
 
     parameters["availability"] = 50 * 60
     parameters["workout_length"] = 30 * 60
+    parameters["one_rep_max_improvement_percentage"] = 25
 
     for phase in phases:
         while True:
