@@ -26,7 +26,7 @@ available_constraints = """
 - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
 - rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
 - exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
-- one_rep_max_increase: Forces the one rep max to increase by a certain percentage.
+- exercise_volume_increase: Forces the volume of an exercise to increase by a certain percentage.
 - minimize_strain: Objective to minimize the amount of strain overall.
 """
 
@@ -183,7 +183,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "workout_length": 0,
             "projected_duration": 0,
             "projected_duration": 0,
-            "one_rep_max_improvement_percentage": 0,
+            "exercise_volume_improvement_percentage": 0,
             "phase_components": [],
             "possible_exercises": []
         }
@@ -203,7 +203,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number between the minimum and maximum rest allowed for the phase component.
             "intensity_within_min_max": True,               # The amount of intensity for the exercise may only be a number between the minimum and maximum rest allowed for the phase component.
             "exercises_per_bodypart_within_min_max": True,  # The number of exercises for the phase components of the exercise may only be a number between the minimum and maximum exercises per bodypart allowed for the phase component.
-            "one_rep_max_increase": True,                   # The one rep max for the exercise must be an increase from the current one rep max.
+            "exercise_volume_increase": True,               # The volume of the exercise must be an increase from the current volume.
             "minimize_strain": True,                        # Objective function constraint
         }
 

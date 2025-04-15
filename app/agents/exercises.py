@@ -36,7 +36,7 @@ def get_exercises_for_pc(exercises, phase_component):
 # 1RM < (weight * (30 + reps)) / 30
 def weight_rep_construction(model, i, one_rep_max, max_one_rep_max, 
                             reps, max_reps, weight, max_weight, 
-                            name="", one_rep_max_improvement_percentage=1):
+                            name="", exercise_volume_improvement_percentage=1):
     if name != "": name += "_"
 
     # 100 * 1RM due to weight being scaled up
@@ -57,11 +57,11 @@ def weight_rep_construction(model, i, one_rep_max, max_one_rep_max,
     model.AddDivisionEquality(new_one_rep_max_var, weight_times_reps_plus_30_var, 30)
     
     # 1RM + 1 < (weight * (30 + reps)) / 30
-    model.Add(new_one_rep_max_var > (one_rep_max_scaled_var + one_rep_max_improvement_percentage))
+    model.Add(new_one_rep_max_var > (one_rep_max_scaled_var + exercise_volume_improvement_percentage))
 
     return None
 
-def one_rep_max_increase(model, one_rep_max_vars, max_one_rep_max, reps_vars, max_reps, training_weight_vars, max_weight, one_rep_max_improvement_percentage=1):
+def one_rep_max_increase(model, one_rep_max_vars, max_one_rep_max, reps_vars, max_reps, training_weight_vars, max_weight, exercise_volume_improvement_percentage=1):
     # Link the exercise variables and the training weight variables by ensuring the training weight is equal to the one rep max * intensity for the exercise chose at exercise i.
     for i, (one_rep_max_var, reps_var, training_weight_var) in enumerate(zip(one_rep_max_vars, reps_vars, training_weight_vars)):
         if training_weight_var != None:
@@ -69,7 +69,7 @@ def one_rep_max_increase(model, one_rep_max_vars, max_one_rep_max, reps_vars, ma
                                     one_rep_max=one_rep_max_var, max_one_rep_max=max_one_rep_max, 
                                     reps=reps_var, max_reps=max_reps, 
                                     weight=training_weight_var, max_weight=max_weight, 
-                                    one_rep_max_improvement_percentage=one_rep_max_improvement_percentage)
+                                    exercise_volume_improvement_percentage=exercise_volume_improvement_percentage)
     return None
 
 
@@ -123,9 +123,9 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
         formatted_exercise = f"{exercise["name"]:<{longest_exercise_string_size+3}}"
         formatted_phase_component = f"{phase_component_name:<{longest_pc_string_size+3}}"
 
-        formatted_duration = f"Duration: {duration // 60} min {duration % 60} sec ({duration} seconds)"
-        formatted_base_strain = f"Base Strain {base_strain:<{3}}\t"
-        formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
+        formatted_duration = f"Dur: {duration} seconds"
+        formatted_base_strain = f"BStrain {base_strain:<{5}}"
+        formatted_seconds_per_exercises = f"Sec/Ex {seconds_per_exercise:<{5}}"
         formatted_reps = f"Reps {reps_var} ({phase_component["reps_min"]}-{phase_component["reps_max"]})"
         formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
         formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
@@ -134,10 +134,10 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
         formatted_intensity = ""
         if intensity_var != None:
             formatted_one_rep_max = f"1RM: {one_rep_max_var} -> {round((training_weight_var * (30 + reps_var)) / 30, 2)}"
-            formatted_training_weight = f"Training Weight: {training_weight_var}"
-            formatted_intensity = f"Intensity {intensity_var} ({phase_component["intensity_min"]}-{phase_component["intensity_max"]})"
+            formatted_training_weight = f"Wgt: {training_weight_var}"
+            formatted_intensity = f"Int: {intensity_var} ({phase_component["intensity_min"] or "na"}-{phase_component["intensity_max"] or "na"})"
 
-        formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_exercise}{formatted_base_strain}{formatted_phase_component}{formatted_duration:<{45}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{15}}{formatted_rest:<{20}}{formatted_one_rep_max:<{15}}{formatted_training_weight:<{25}}{formatted_intensity:<{6}})\n")
+        formatted += (f"Ex {(component_count + 1):<{2}}: {formatted_exercise}{formatted_phase_component}{formatted_base_strain}{formatted_duration:<{20}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{15}}{formatted_rest+")":<{20}}{formatted_one_rep_max:<{17}}{formatted_training_weight:<{12}}{formatted_intensity:<{6}}\n")
 
     formatted += f"Phase Component Counts:\n"
     for phase_component_index, phase_component_number in enumerate(phase_component_count):
@@ -213,7 +213,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         constraints = state["constraints"]
         model = cp_model.CpModel()
 
-        one_rep_max_improvement_percentage = "one_rep_max_improvement_percentage"
+        exercise_volume_improvement_percentage = parameters["exercise_volume_improvement_percentage"]
 
         exercises = parameters["possible_exercises"]
         exercise_amount = len(exercises)
@@ -362,17 +362,17 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                               required_items = required_phase_components, 
                               used_vars = used_exercise_vars)
             state["logs"] += "- No duplicate exercises constraint applied.\n"
-        
-        # Constraint: 
-        if constraints["one_rep_max_increase"]:
-            one_rep_max_increase(model=model, 
-                                 one_rep_max_vars=one_rep_max_vars, 
-                                 max_one_rep_max=max_one_rep_max, 
-                                 reps_vars=reps_vars, 
-                                 max_reps=max_reps, 
-                                 training_weight_vars=training_weight_vars, 
-                                 max_weight=max_training_weight_scaled)
-            state["logs"] += "- One rep max increase constraint applied.\n"
+
+        # # Constraint: The 1RM of an exercise may only increase by a certain percentage.
+        # if constraints["one_rep_max_increase"]:
+        #     one_rep_max_increase(model=model, 
+        #                          one_rep_max_vars=one_rep_max_vars, 
+        #                          max_one_rep_max=max_one_rep_max, 
+        #                          reps_vars=reps_vars, 
+        #                          max_reps=max_reps, 
+        #                          training_weight_vars=training_weight_vars, 
+        #                          max_weight=max_training_weight_scaled)
+        #     state["logs"] += "- One rep max increase constraint applied.\n"
 
 
         # Objective: Maximize total strain of microcycle
