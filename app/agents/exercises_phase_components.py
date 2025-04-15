@@ -15,6 +15,7 @@ from app.agents.constraints import (
 
 from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 from app.agents.agent_helpers import longest_string_size_for_key
+from app.utils.min_and_max_in_dict import get_item_bounds
 
 available_constraints = """
 - use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
@@ -162,6 +163,14 @@ def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise
             name=name)
         for i in range(max_entries)]
 
+def get_phase_component_bounds(phase_components):
+    return {
+        'seconds_per_exercise': get_item_bounds("seconds_per_exercise", "seconds_per_exercise", phase_components),
+        'reps': get_item_bounds("reps_min", "reps_max", phase_components),
+        'sets': get_item_bounds("sets_min", "sets_max", phase_components),
+        'rest': get_item_bounds("rest_min", "rest_max", phase_components)
+    }
+
 class State(BaseAgentState):
     parameter_input: dict
 
@@ -250,14 +259,12 @@ class ExercisePhaseComponentAgent(BaseAgent):
         # Upper bound on number of exercises (greedy estimation)
         min_exercises = sum((phase_component["exercises_per_bodypart_workout_min"] or 1) for phase_component in phase_components[1:])
         max_exercises = sum((phase_component["exercises_per_bodypart_workout_max"] or 1) for phase_component in phase_components[1:])
-        min_seconds_per_exercise = min(phase_component["seconds_per_exercise"] for phase_component in phase_components[1:])
-        max_seconds_per_exercise = max(phase_component["seconds_per_exercise"] for phase_component in phase_components[1:])
-        min_reps = min(phase_component["reps_min"] for phase_component in phase_components[1:])
-        max_reps = max(phase_component["reps_max"] for phase_component in phase_components[1:])
-        min_sets = min(phase_component["sets_min"] for phase_component in phase_components[1:])
-        max_sets = max(phase_component["sets_max"] for phase_component in phase_components[1:])
-        min_rest = min(phase_component["rest_min"] for phase_component in phase_components[1:])
-        max_rest = max(phase_component["rest_max"] for phase_component in phase_components[1:])
+        pc_bounds = get_phase_component_bounds(phase_components[1:])
+
+        min_seconds_per_exercise, max_seconds_per_exercise = pc_bounds["seconds_per_exercise"]["min"], pc_bounds["seconds_per_exercise"]["max"]
+        min_reps, max_reps = pc_bounds["reps"]["min"], pc_bounds["reps"]["max"]
+        min_sets, max_sets = pc_bounds["sets"]["min"], pc_bounds["sets"]["max"]
+        min_rest, max_rest = pc_bounds["rest"]["min"], pc_bounds["rest"]["max"]
         max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
 
         # Boolean variables indicating whether exercise i is active.
@@ -280,7 +287,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
         sets_vars = declare_model_vars(model, "sets", active_exercise_vars, max_exercises, min_sets, max_sets)
         rest_vars = declare_model_vars(model, "rest", active_exercise_vars, max_exercises, min_rest, max_rest)
 
-        duration_vars = declare_duration_vars(model, max_exercises, workout_length, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars)
+        # duration_vars = declare_duration_vars(model, max_exercises, workout_length, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars)
+        duration_vars = declare_duration_vars(model, max_exercises, workout_length, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, name="base")
+        working_duration_vars = declare_duration_vars(model, max_exercises, workout_length, seconds_per_exercise_vars, reps_vars, sets_vars, name="working")
 
         # Introduce dynamic selection variables
         num_exercises_used = model.NewIntVar(min_exercises, max_exercises, 'num_exercises_used')
@@ -387,36 +396,11 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
             # Creates strain_time, which will hold the total strain over the workout.
             strain_time = model.NewIntVar(0, max_exercises * workout_length, 'strain_time')
-            for i, values_for_exercise in enumerate(zip(active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars)):
-                (
-                    active_exercise_var, 
-                    seconds_per_exercise_var, 
-                    reps_var, 
-                    sets_var, 
-                    rest_var
-                ) = values_for_exercise
+            for i, (duration_var, working_duration_var) in enumerate(zip(duration_vars, working_duration_vars)):
                 # Create the entry for phase component's duration
                 # total_working_duration = (seconds_per_exercise * rep_count) * set_count
                 non_zero_working_duration_var = model.NewIntVar(1, max_duration, f'non_zero_working_duration_{i}')
                 working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
-
-                duration_var = create_duration_var(
-                    model=model, i=i, 
-                    max_duration=max_duration, 
-                    seconds_per_exercise=seconds_per_exercise_var, 
-                    reps=reps_var, 
-                    sets=sets_var, 
-                    rest=rest_var,
-                    name="base")
-
-                working_duration_var = create_duration_var(
-                    model=model, i=i, 
-                    max_duration=max_duration, 
-                    seconds_per_exercise=seconds_per_exercise_var, 
-                    reps=reps_var, 
-                    sets=sets_var, 
-                    rest=0,
-                    name="working")
 
                 # Ensure no division by 0 occurs.
                 model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
@@ -436,13 +420,13 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
             state["logs"] += "- Minimizing the strain time used in workout.\n"
 
-        return {"opt_model": (model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars)}
+        return {"opt_model": (model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
         print("Solving First Step")
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
-        model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars = state["opt_model"]
+        model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -461,18 +445,15 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
                 # Ensure that the phase component is active.
                 if(solver.Value(active_exercise_vars[i])):
-                    seconds_per_exercise_current = solver.Value(seconds_per_exercise_vars[i])
-                    reps_vars_current = solver.Value(reps_vars[i])
-                    sets_vars_current = solver.Value(sets_vars[i])
                     duration_vars_current = solver.Value(duration_vars[i])
-                    working_duration_vars_current = (seconds_per_exercise_current * reps_vars_current * sets_vars_current)
+                    working_duration_vars_current = solver.Value(working_duration_vars[i])
                     schedule.append((
                         i, 
                         solver.Value(phase_component_vars[i]), 
                         solver.Value(active_exercise_vars[i]), 
-                        seconds_per_exercise_current, 
-                        reps_vars_current, 
-                        sets_vars_current, 
+                        solver.Value(seconds_per_exercise_vars[i]), 
+                        solver.Value(reps_vars[i]), 
+                        solver.Value(sets_vars[i]), 
                         solver.Value(rest_vars[i]) * 5, 
                         duration_vars_current,
                         working_duration_vars_current

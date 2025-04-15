@@ -8,8 +8,9 @@ from app.agents.constraints import (
     no_repeated_items, 
     only_use_required_items, 
     entries_equal)
-from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, declare_duration_vars, format_relaxation_attempts
+from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, declare_duration_vars, format_relaxation_attempts, get_phase_component_bounds
 from app.agents.agent_helpers import longest_string_size_for_key
+from app.utils.min_and_max_in_dict import get_item_bounds
 
 _ = load_dotenv()
 
@@ -125,8 +126,6 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
 
     formatted += (f"{formatted_number_header}{formatted_exercise_header}{formatted_base_strain_header}{formatted_phase_component_stats}{formatted_improvement_metrics}\n")
 
-
-
     for component_count, (i, exercise_index, phase_component_index, 
             base_strain, seconds_per_exercise, 
             reps_var, sets_var, rest_var, intensity_var, one_rep_max_var, 
@@ -227,11 +226,18 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
     formatted += f"Workout Length Allowed: {workout_length // 60} min {workout_length % 60} sec ({workout_length} seconds)\n"
     return final_output, formatted
 
+def get_exercise_bounds(exercises):
+    return {
+        'base_strain': get_item_bounds("base_strain", "base_strain", exercises),
+        'intensity': {"min": 1, "max": 100},
+        'one_rep_max': get_item_bounds("one_rep_max", "one_rep_max", exercises)
+    }
+
 class ExerciseAgent(ExercisePhaseComponentAgent):
     def solve_model_node_temp(self, state: State, config=None) -> dict:
         print("Solving First Step")
         """Solve model and record relaxation attempt results."""
-        model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars = state["opt_model"]
+        model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -257,7 +263,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                         solver.Value(reps_vars[i]), 
                         solver.Value(sets_vars[i]), 
                         solver.Value(rest_vars[i]) * 5, 
-                        solver.Value(duration_vars[i])
+                        solver.Value(duration_vars[i]), 
+                        solver.Value(working_duration_vars[i])
                     ))
             schedule = sorted(schedule, key=lambda x: x[1])
             solution = {
@@ -300,33 +307,29 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         schedule_old = state["solution"]["schedule"]
 
-        phase_component_ids = []
-
-        for (_, phase_component_index, _, _, _, _, _, _) in (schedule_old):
-            phase_component_ids.append(phase_component_index)
+        phase_component_ids = [phase_component_index for (_, phase_component_index, _, _, _, _, _, _, _) in (schedule_old)]
 
 
         # Define variables =====================================
 
         # Upper bound on number of exercises (greedy estimation)
         max_exercises = len(phase_component_ids)
-        min_seconds_per_exercise = min(phase_component["seconds_per_exercise"] for phase_component in phase_components[1:])
-        max_seconds_per_exercise = max(phase_component["seconds_per_exercise"] for phase_component in phase_components[1:])
-        min_reps = min(phase_component["reps_min"] for phase_component in phase_components[1:])
-        max_reps = max(phase_component["reps_max"] for phase_component in phase_components[1:])
-        min_sets = min(phase_component["sets_min"] for phase_component in phase_components[1:])
-        max_sets = max(phase_component["sets_max"] for phase_component in phase_components[1:])
-        min_rest = min(phase_component["rest_min"] for phase_component in phase_components[1:])
-        max_rest = max(phase_component["rest_max"] for phase_component in phase_components[1:])
+
+        pc_bounds = get_phase_component_bounds(phase_components[1:])
+
+        min_seconds_per_exercise, max_seconds_per_exercise = pc_bounds["seconds_per_exercise"]["min"], pc_bounds["seconds_per_exercise"]["max"]
+        min_reps, max_reps = pc_bounds["reps"]["min"], pc_bounds["reps"]["max"]
+        min_sets, max_sets = pc_bounds["sets"]["min"], pc_bounds["sets"]["max"]
+        min_rest, max_rest = pc_bounds["rest"]["min"], pc_bounds["rest"]["max"]
 
         min_duration = ((min_seconds_per_exercise * min_reps) + (min_rest * 5)) * min_sets
         max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
 
-        max_intensity = 100
-        min_base_strain = min(exercise["base_strain"] for exercise in exercises[1:])
-        max_base_strain = max(exercise["base_strain"] for exercise in exercises[1:])
-        min_one_rep_max = min(exercise["one_rep_max"] for exercise in exercises[1:])
-        max_one_rep_max = max(exercise["one_rep_max"] for exercise in exercises[1:])
+        exercise_bounds = get_exercise_bounds(exercises[1:])
+
+        min_base_strain, max_base_strain = exercise_bounds["base_strain"]["min"], exercise_bounds["base_strain"]["max"]
+        min_intensity, max_intensity = exercise_bounds["intensity"]["min"], exercise_bounds["intensity"]["max"]
+        min_one_rep_max, max_one_rep_max = exercise_bounds["one_rep_max"]["min"], exercise_bounds["one_rep_max"]["max"]
 
         min_training_weight_scaled = min_one_rep_max * 1
         max_training_weight_scaled = max_one_rep_max * max_intensity
