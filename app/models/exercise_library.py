@@ -201,9 +201,4 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
             "body_position": self.body_position, 
             "option_for_added_weight": self.option_for_added_weight, 
             "proprioceptive_progressions": self.proprioceptive_progressions, 
-            "muscle_ids": self.all_muscle_ids, 
-            "muscle_group_ids": self.all_muscle_group_ids, 
-            "bodypart_ids": self.all_bodypart_ids, 
-            "body_region_ids": self.all_body_region_ids, 
-            "equipment": self.all_equipment, 
         }
