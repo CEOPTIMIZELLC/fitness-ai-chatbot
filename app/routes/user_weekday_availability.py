@@ -30,7 +30,7 @@ def retrieve_weekday_types():
 # Retrieve current user's weekdays
 @bp.route('/', methods=['GET'])
 @login_required
-def get_user_weekday():
+def get_user_weekday_list():
     user_availability = current_user.availability
     result = []
     for weekday in user_availability:

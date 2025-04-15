@@ -15,20 +15,20 @@ def delete_old_user_microcycles(mesocycle_id):
     db.session.query(User_Microcycles).filter_by(mesocycle_id=mesocycle_id).delete()
     print("Successfully deleted")
 
-# Retrieve microcycles
+# Retrieve current user's microcycles
 @bp.route('/', methods=['GET'])
 @login_required
-def get_user_microcycles():
+def get_user_microcycles_list():
     user_microcycles = User_Microcycles.query.join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=current_user.id).all()
     result = []
     for user_microcycle in user_microcycles:
         result.append(user_microcycle.to_dict())
     return jsonify({"status": "success", "microcycles": result}), 200
 
-# Retrieve microcycles
+# Retrieve user's current mesocycle's microcycles
 @bp.route('/current_list', methods=['GET'])
 @login_required
-def get_user_current_microcycles():
+def get_user_current_microcycles_list():
     result = []
     user_mesocycle = current_mesocycle(current_user.id)
     user_microcycles = user_mesocycle.microcycles
@@ -39,14 +39,14 @@ def get_user_current_microcycles():
 # Retrieve user's current microcycle
 @bp.route('/current', methods=['GET'])
 @login_required
-def get_user_current_microcycle():
+def read_user_current_microcycle():
     user_microcycle = current_microcycle(current_user.id)
     if not user_microcycle:
-        return jsonify({"status": "error", "message": "No active micro found."}), 404
-    return jsonify({"status": "success", "microcycle": user_microcycle.to_dict()}), 200
+        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
+    return jsonify({"status": "success", "microcycles": user_microcycle.to_dict()}), 200
 
 
-# Gives four mirocycles for mesocycle.
+# Gives four microcycles for mesocycle.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def microcycle_initializer():
@@ -65,7 +65,7 @@ def microcycle_initializer():
 
     microcycles = []
 
-    # Create a 
+    # Create a microcycle for each week in the mesocycle.
     for i in range(microcycle_count):
         microcycle_end = microcycle_start + microcycle_duration
         new_microcycle = User_Microcycles(

@@ -33,30 +33,30 @@ def alter_macrocycle(goal_id, new_goal):
     user_macro.goal_id = goal_id
     db.session.commit()
 
-# Retrieve current user's goals
+# Retrieve current user's macrocycles
 @bp.route('/', methods=['GET'])
 @login_required
-def get_user_goal():
+def get_user_macrocycle_list():
     user_macros = current_user.macrocycles
     result = []
-    for goal in user_macros:
-        result.append(goal.to_dict())
-    return jsonify({"status": "success", "goals": result}), 200
+    for macrocycle in user_macros:
+        result.append(macrocycle.to_dict())
+    return jsonify({"status": "success", "macrocycles": result}), 200
 
 
-# Retrieve current user's goals
+# Retrieve current user's macrocycles
 @bp.route('/current', methods=['GET'])
 @login_required
-def get_user_current_macrocycle():
+def read_user_current_macrocycle():
     user_macro = current_macrocycle(current_user.id)
     if not user_macro:
-        return jsonify({"status": "error", "message": "No active goal found."}), 404
-    return jsonify({"status": "success", "goals": user_macro.to_dict()}), 200
+        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
+    return jsonify({"status": "success", "macrocycles": user_macro.to_dict()}), 200
 
-# Change the current user's goal.
+# Change the current user's macrocycle.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
-def change_goal():
+def change_macrocycle():
     # Input is a json.
     data = request.get_json()
     if not data:
@@ -65,11 +65,11 @@ def change_goal():
     if ('goal' not in data):
         return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
     
-    # There are only so many types a goal can be classified as, with all of them being stored.
+    # There are only so many goal types a macrocycle can be classified as, with all of them being stored.
     goal_types = retrieve_goal_types()
     goal_app = create_goal_classification_graph()
 
-    # Invoke with new goal and possible goal types.
+    # Invoke with new macrocycle and possible goal types.
     state = goal_app.invoke(
         {
             "new_goal": data.get("goal", ""), 
@@ -77,9 +77,9 @@ def change_goal():
             "attempts": 0
         })
     
-    # Change the current user's goal and the goal type if a new one can be assigned.
+    # Change the current user's macrocycle and the goal type if a new one can be assigned.
     if state["goal_id"]:
-        # Add a new goal if posting.
+        # Add a new macrocycle if posting.
         if (request.method == 'POST'):
             new_macrocycle(state["goal_id"], state["new_goal"])
         else:

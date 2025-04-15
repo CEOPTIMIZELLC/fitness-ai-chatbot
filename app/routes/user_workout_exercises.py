@@ -233,20 +233,20 @@ def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
     return new_exercises
 
 
-# Retrieve phase components
+# Retrieve current user's workout exercises
 @bp.route('/', methods=['GET'])
 @login_required
-def get_user_workout_exercises():
+def get_user_workout_exercises_list():
     user_workout_exercises = User_Workout_Exercises.query.join(User_Workout_Days).join(User_Microcycles).join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=current_user.id).all()
     result = []
     for user_workout_exercise in user_workout_exercises:
         result.append(user_workout_exercise.to_dict())
     return jsonify({"status": "success", "exercises": result}), 200
 
-# Retrieve phase components
+# Retrieve user's current microcycle's workout exercises
 @bp.route('/current_list', methods=['GET'])
 @login_required
-def get_user_current_exercises():
+def get_user_current_exercises_list():
     result = []
     user_workout_day = current_workout_day(current_user.id)
     user_workout_exercises = user_workout_day.exercises

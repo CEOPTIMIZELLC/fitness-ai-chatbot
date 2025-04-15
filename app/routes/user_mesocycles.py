@@ -79,38 +79,38 @@ def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_sta
         order += 1
     return user_phases
 
-# Retrieve phases
+# Retrieve current user's mesocycles
 @bp.route('/', methods=['GET'])
 @login_required
-def get_user_mesocycles():
+def get_user_mesocycles_list():
     user_mesocycles = User_Mesocycles.query.join(User_Macrocycles).filter_by(user_id=current_user.id).all()
     result = []
     for user_mesocycle in user_mesocycles:
         result.append(user_mesocycle.to_dict())
-    return jsonify({"status": "success", "phases": result}), 200
+    return jsonify({"status": "success", "mesocycles": result}), 200
 
-# Retrieve user's current macrocycles's phases
+# Retrieve user's current macrocycles's mesocycles
 @bp.route('/current_list', methods=['GET'])
 @login_required
-def get_user_current_mesocycles():
+def get_user_current_mesocycles_list():
     result = []
     user_macrocycle = current_macrocycle(current_user.id)
     user_mesocycles = user_macrocycle.mesocycles
     for user_mesocycle in user_mesocycles:
         result.append(user_mesocycle.to_dict())
-    return jsonify({"status": "success", "phases": result}), 200
+    return jsonify({"status": "success", "mesocycles": result}), 200
 
 
-# Retrieve user's current phase
+# Retrieve user's current mesocycle
 @bp.route('/current', methods=['GET'])
 @login_required
-def get_user_current_mesocycle():
+def read_user_current_mesocycle():
     user_mesocycle = current_mesocycle(current_user.id)
     if not user_mesocycle:
         return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
-    return jsonify({"status": "success", "phases": user_mesocycle.to_dict()}), 200
+    return jsonify({"status": "success", "mesocycles": user_mesocycle.to_dict()}), 200
 
-# Testing for the parameter programming for mesocycle labeling.
+# Perform parameter programming for mesocycle labeling.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def mesocycle_phases():
