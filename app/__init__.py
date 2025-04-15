@@ -38,6 +38,9 @@ def register_blueprints(app):
         from .routes import dev_tests
         app.register_blueprint(dev_tests.bp, url_prefix='/dev_tests')
 
+        from .routes import equipment
+        app.register_blueprint(equipment.bp, url_prefix='/equipment')
+
         from .routes import exercises
         app.register_blueprint(exercises.bp, url_prefix='/exercises')
 
@@ -76,6 +79,9 @@ def register_blueprints(app):
 
         from .routes import user_exercises
         app.register_blueprint(user_exercises.bp, url_prefix='/user_exercises')
+        
+        from .routes import user_equipment
+        app.register_blueprint(user_equipment.bp, url_prefix='/user_equipment')
 
 def initialize_database(app, db):
     with app.app_context():
