@@ -59,36 +59,39 @@ dummy_phase_component = {
     'exercise_selection_note': None
 }
 
-def user_component_dict(workout_data, phase_component_data):
+def user_component_dict(workout, phase_component):
     """Format the user workout component data."""
     return {
-        "workout_component_id": workout_data["id"],
-        "workout_day_id": workout_data["workout_day_id"],
-        "bodypart_id": workout_data["bodypart_id"],
-        "bodypart_name": workout_data["bodypart_name"],
-        "duration": workout_data["duration"],
-        "duration_min": phase_component_data["duration_min"],
-        "duration_max": phase_component_data["duration_max"],
-        "phase_component_id": phase_component_data["id"],
-        "phase_name": phase_component_data["phase_name"],
-        "component_id": phase_component_data["component_id"],
-        "component_name": phase_component_data["component_name"],
-        "subcomponent_id": phase_component_data["subcomponent_id"],
-        "subcomponent_name": phase_component_data["subcomponent_name"],
-        "name": phase_component_data["name"],
-        "reps_min": phase_component_data["reps_min"],
-        "reps_max": phase_component_data["reps_max"],
-        "sets_min": phase_component_data["sets_min"],
-        "sets_max": phase_component_data["sets_max"],
-        "tempo": phase_component_data["tempo"],
-        "seconds_per_exercise": phase_component_data["seconds_per_exercise"],
-        "intensity_min": phase_component_data["intensity_min"],
-        "intensity_max": phase_component_data["intensity_max"],
-        "rest_min": phase_component_data["rest_min"] // 5,     # Adjusted so that rest is a multiple of 5.
-        "rest_max": phase_component_data["rest_max"] // 5,     # Adjusted so that rest is a multiple of 5.
-        "exercises_per_bodypart_workout_min": phase_component_data["exercises_per_bodypart_workout_min"],
-        "exercises_per_bodypart_workout_max": phase_component_data["exercises_per_bodypart_workout_max"],
-        "exercise_selection_note": phase_component_data["exercise_selection_note"],
+        "workout_component_id": workout.id,
+        "workout_day_id": workout.workout_day_id,
+        "bodypart_id": workout.bodypart_id,
+        "bodypart_name": workout.bodyparts.name,
+        "duration": workout.duration,
+        "duration_min": phase_component.duration_min,
+        "duration_max": phase_component.duration_max,
+        "phase_component_id": phase_component.id,
+        "phase_name": phase_component.phases.name,
+        "component_id": phase_component.component_id,
+        "component_name": phase_component.components.name,
+        "subcomponent_id": phase_component.subcomponent_id,
+        "subcomponent_name": phase_component.subcomponents.name,
+        "density_priority": phase_component.subcomponents.density,
+        "volume_priority": phase_component.subcomponents.volume,
+        "load_priority": phase_component.subcomponents.load,
+        "name": phase_component.name,
+        "reps_min": phase_component.reps_min,
+        "reps_max": phase_component.reps_max,
+        "sets_min": phase_component.sets_min,
+        "sets_max": phase_component.sets_max,
+        "tempo": phase_component.tempo,
+        "seconds_per_exercise": phase_component.seconds_per_exercise,
+        "intensity_min": phase_component.intensity_min,
+        "intensity_max": phase_component.intensity_max,
+        "rest_min": phase_component.rest_min // 5,      # Adjusted so that rest is a multiple of 5.
+        "rest_max": phase_component.rest_max // 5,      # Adjusted so that rest is a multiple of 5.
+        "exercises_per_bodypart_workout_min": phase_component.exercises_per_bodypart_workout_min,
+        "exercises_per_bodypart_workout_max": phase_component.exercises_per_bodypart_workout_max,
+        "exercise_selection_note": phase_component.exercise_selection_note,
     }
 
 def exercise_dict(exercise, user_exercise, phase):
@@ -138,10 +141,20 @@ def retrieve_exercises():
     possible_exercises_list = [dummy_exercise]
 
     for exercise, user_exercise, phase in results:
-        # print(exercise_dict["name"], exercise_dict["component_id"], exercise_dict["subcomponent_id"], exercise_dict["one_rep_max"])
         possible_exercises_list.append(exercise_dict(exercise, user_exercise, phase))
+    return possible_exercises_list
 
+# Retrieve the phase types and their corresponding constraints for a goal.
+def retrieve_available_exercises():
+    from app.utils.common_table_queries import user_available_exercises_with_user_exercise_info
 
+    # Retrieve all possible exercises with their component phases
+    results = user_available_exercises_with_user_exercise_info(current_user.id)
+
+    possible_exercises_list = [dummy_exercise]
+
+    for exercise, user_exercise, phase in results:
+        possible_exercises_list.append(exercise_dict(exercise, user_exercise, phase))
     return possible_exercises_list
 
 def construct_user_workout_components_list(user_workout_components):
@@ -149,10 +162,7 @@ def construct_user_workout_components_list(user_workout_components):
 
     # Convert the query into a list of dictionaries, adding the information for the phase restrictions.
     for user_workout_component in user_workout_components:
-        workout_data = user_workout_component.to_dict()
-        phase_component_data = user_workout_component.phase_components.to_dict()
-
-        user_workout_components_list.append(user_component_dict(workout_data, phase_component_data))
+        user_workout_components_list.append(user_component_dict(user_workout_component, user_workout_component.phase_components))
     
     return user_workout_components_list
 
@@ -199,7 +209,7 @@ def construct_user_workout_components_list_for_test(possible_phase_components, p
                 availability -= duration
                 projected_duration += duration
                 user_workout_components_list.append(user_component_dict(
-                    {    
+                    {
                         "id": workout_component_id,
                         "workout_day_id": 0,
                         "bodypart_id": 1,
@@ -298,17 +308,27 @@ def exercise_initializer():
 
     result = []
     result = exercises_main(parameters, constraints)
+    output = result["output"]
     print(result["formatted"])
 
-    user_workout_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
-
-    # output = result["output"]
-
-    # for i in output:
-    #     print(i)
+    user_workout_exercises = agent_output_to_sqlalchemy_model(output, user_workout_day.id)
 
     db.session.add_all(user_workout_exercises)
     db.session.commit()
+
+    for exercise in output:
+        user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise["exercise_id"]})
+
+        new_one_rep_max = round((exercise["training_weight"] * (30 + exercise["reps_var"])) / 30, 2)
+
+        # Only replace if the new one rep max is larger.
+        user_exercise.one_rep_max = max(user_exercise.one_rep_max, new_one_rep_max)
+        user_exercise.one_rep_load = new_one_rep_max
+        user_exercise.volume = exercise["volume"]
+        user_exercise.density = exercise["density"]
+        user_exercise.intensity = exercise["intensity_var"]
+
+        db.session.commit()
 
     return jsonify({"status": "success", "exercises": result}), 200
 
