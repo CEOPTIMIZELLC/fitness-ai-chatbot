@@ -11,18 +11,18 @@ from app.routes.auth import register
 # ----------------------------------------- Database Manipulation -----------------------------------------
 
 
-def create_db():
-    """Creates the database."""
-    db.create_all()
+# def create_db():
+#     """Creates the database."""
+#     db.create_all()
 
-def drop_db():
-    """Drops the database."""
-    db.drop_all()
+# def drop_db():
+#     """Drops the database."""
+#     db.drop_all()
 
-def recreate_db():
-    """Same as running drop_db() and create_db()."""
-    drop_db()
-    create_db()
+# def recreate_db():
+#     """Same as running drop_db() and create_db()."""
+#     drop_db()
+#     create_db()
 
 
 # Get all table names in the database
@@ -37,12 +37,19 @@ def get_table_names():
 def get_table_schema():
     return current_app.table_schema
 
-# Database initialization
-@bp.route('/init_db', methods=['GET','POST'])
-def initialize_db():
-    
-    drop_db()
-    create_db()
+# Database drop
+@bp.route('/drop_db', methods=['GET','POST'])
+def drop_db():
+    """Drops the database."""
+    db.drop_all()
+
+    return jsonify({"status": "success", "message": "Database DROPPED!"}), 200
+
+# Database creation
+@bp.route('/create_db', methods=['GET','POST'])
+def create_db():
+    """Creates the database."""
+    db.create_all()
 
     from app.existing_data.import_existing_data import Main as import_data_main
 
@@ -64,7 +71,17 @@ def initialize_db():
 
     current_app.table_schema = get_database_schema(db)
 
-    return "Database CREATED!"
+    return jsonify({"status": "success", "message": "Database CREATED!"}), 200
+
+# Database reinitialization
+@bp.route('/init_db', methods=['GET','POST'])
+def initialize_db():
+
+    results = []
+    
+    results.append(drop_db()[0].get_json()["message"])
+    results.append(create_db()[0].get_json()["message"])
+    return jsonify({"status": "success", "message": results}), 200
 
 # Table Reader
 @bp.route('/read_all_tables', methods=['GET'])
@@ -84,7 +101,7 @@ def read_all_tables():
         for i in result:
             print(i)
         final_result[table_name] = result
-    return {"status": "success", "results": final_result}, 200
+    return jsonify({"status": "success", "results": final_result}), 200
 
 # Table Reader
 @bp.route('/read_table', methods=['GET'])
@@ -110,4 +127,4 @@ def read_table():
     print(f"Table: {table_name}")
     for i in result:
         print(i)
-    return {"status": "success", "results": result}, 200
+    return jsonify({"status": "success", "results": result}), 200
