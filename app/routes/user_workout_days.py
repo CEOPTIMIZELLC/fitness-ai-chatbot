@@ -56,9 +56,9 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
                     "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
                     "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
                     "duration_min": (
-                        (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.min_duration),
+                        (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.duration_min),
                     "duration_max": (
-                        (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.max_duration),
+                        (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.duration_max),
                     "bodypart_id": possible_phase_component_bodypart.bodypart_id, 
                     "bodypart": possible_phase_component_bodypart.bodyparts.name
                     })
@@ -72,9 +72,9 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
                 "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
                 "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
                 "duration_min": (
-                    (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.min_duration),
+                    (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.duration_min),
                 "duration_max": (
-                    (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.max_duration),
+                    (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.duration_max),
                 "bodypart_id": 1, "bodypart": "total_body"
             })
     
