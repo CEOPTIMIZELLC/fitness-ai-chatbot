@@ -85,11 +85,35 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
     phase_component_count = [0] * len(phase_components)
 
     formatted += "\nFinal Training Schedule:\n"
-    formatted += "-" * 40 + "\n"
+    formatted += "-" * 120 + "\n"
+
+    formatted_number_header = f"{"#":<{3}}"
+    formatted_exercise_header = f"| {"Exercise":<{longest_exercise_string_size+2}}"
+    formatted_phase_component_header = f"| {"Phase Component":<{longest_pc_string_size+2}}"
+    formatted_duration_header = f"| {"Duration":<{25}}"
+    formatted_working_duration_header = f"| {"WDuration":<{25}}"
+    formatted_base_strain_header = f"| {"BStrain":<{8}}"
+    formatted_seconds_per_exercises_header = f"| {"(Sec/Exercise":<{14}}"
+    formatted_reps_header = f"| {"Reps":<{12}}"
+    formatted_sets_header = f"| {"Sets":<{8}}"
+    formatted_rest_header = f"| {"Rest)":<{15}}"
+    formatted_one_rep_max_header = f"| {"1RM":<{15}}"
+    formatted_training_weight_header = f"| {"Weight":<{10}}"
+    formatted_intensity_header = f"| {"Intensity":<{13}}"
+    formatted_volume_header = f"| {"Volume":<{10}}"
+    formatted_density_header = f"| {"Density":<{10}}"
+
+    formatted_phase_component_stats = f"{formatted_phase_component_header}{formatted_duration_header}{formatted_working_duration_header}{formatted_seconds_per_exercises_header}{formatted_reps_header}{formatted_sets_header}{formatted_rest_header}"
+    formatted_improvement_metrics = f"{formatted_one_rep_max_header}{formatted_training_weight_header}{formatted_intensity_header}{formatted_volume_header}{formatted_density_header}"
+
+    formatted += (f"{formatted_number_header}{formatted_exercise_header}{formatted_base_strain_header}{formatted_phase_component_stats}{formatted_improvement_metrics}\n")
+
+
 
     for component_count, (i, exercise_index, phase_component_index, 
             base_strain, seconds_per_exercise, 
-            reps_var, sets_var, rest_var, intensity_var, one_rep_max_var, training_weight_var, 
+            reps_var, sets_var, rest_var, intensity_var, one_rep_max_var, 
+            training_weight_var, volume_var, density_var, 
             duration, working_duration) in enumerate(schedule):
 
         exercise = exercises[exercise_index]
@@ -113,6 +137,8 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
             "intensity_var": intensity_var, 
             "one_rep_max_var": one_rep_max_var,
             "training_weight": training_weight_var,
+            "volume": volume_var,
+            "density": density_var,
             "duration": duration,
             "working_duration": working_duration
         })
@@ -120,24 +146,58 @@ def format_agent_output_2(solution, formatted, schedule, phase_components, exerc
         # Count the number of occurrences of each phase component
         phase_component_count[phase_component_index] += 1
 
-        formatted_exercise = f"{exercise["name"]:<{longest_exercise_string_size+3}}"
-        formatted_phase_component = f"{phase_component_name:<{longest_pc_string_size+3}}"
+        formatted_component_count = f"{component_count + 1}"
+        number_str = f"{formatted_component_count:<{len(formatted_number_header)}}"
 
-        formatted_duration = f"Dur: {duration} seconds"
-        formatted_base_strain = f"BStrain {base_strain:<{5}}"
-        formatted_seconds_per_exercises = f"Sec/Ex {seconds_per_exercise:<{5}}"
-        formatted_reps = f"Reps {reps_var} ({phase_component["reps_min"]}-{phase_component["reps_max"]})"
-        formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
-        formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
+        formatted_exercise = f"| {exercise["name"]}"
+        exercise_str = f"{formatted_exercise:<{len(formatted_exercise_header)}}"
+
+        formatted_phase_component = f"| {phase_component_name}"
+        phase_component_str = f"{formatted_phase_component:<{len(formatted_phase_component_header)}}"
+
+        formatted_duration = f"| {duration // 60} min {duration % 60} sec ({duration} sec)"
+        duration_str = f"{formatted_duration:<{len(formatted_duration_header)}}"
+
+        formatted_working_duration = f"| {working_duration // 60} min {working_duration % 60} sec ({working_duration} sec)"
+        working_duration_str = f"{formatted_working_duration:<{len(formatted_working_duration_header)}}"
+
+        formatted_base_strain = f"| {base_strain}"
+        base_strain_str = f"{formatted_base_strain:<{len(formatted_base_strain_header)}}"
+
+        formatted_seconds_per_exercises = f"| ({seconds_per_exercise} sec"
+        seconds_per_exercises_str = f"{formatted_seconds_per_exercises:<{len(formatted_seconds_per_exercises_header)}}"
+
+        formatted_reps = f"| {reps_var} ({phase_component["reps_min"]}-{phase_component["reps_max"]})"
+        reps_str = f"{formatted_reps:<{len(formatted_reps_header)}}"
+
+        formatted_sets = f"| {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
+        sets_str = f"{formatted_sets:<{len(formatted_sets_header)}}"
+
+        formatted_rest = f"| {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
+        rest_str = f"{formatted_rest+")":<{len(formatted_rest_header)}}"
+
         formatted_one_rep_max = ""
         formatted_training_weight = ""
+
         formatted_intensity = ""
         if intensity_var != None:
-            formatted_one_rep_max = f"1RM: {one_rep_max_var} -> {round((training_weight_var * (30 + reps_var)) / 30, 2)}"
-            formatted_training_weight = f"Wgt: {training_weight_var}"
-            formatted_intensity = f"Int: {intensity_var} ({phase_component["intensity_min"] or "na"}-{phase_component["intensity_max"] or "na"})"
+            formatted_one_rep_max = f"{one_rep_max_var} -> {round((training_weight_var * (30 + reps_var)) / 30, 2)}"
+            formatted_training_weight = f"{training_weight_var}"
+            formatted_intensity = f"{intensity_var} ({phase_component["intensity_min"] or "nan"}-{phase_component["intensity_max"] or "nan"})"
+        one_rep_max_str = f"{"| " + formatted_one_rep_max:<{len(formatted_one_rep_max_header)}}"
+        training_weight_str = f"{"| " + formatted_training_weight:<{len(formatted_training_weight_header)}}"
+        intensity_str = f"{"| " + formatted_intensity:<{len(formatted_intensity_header)}}"
 
-        formatted += (f"Ex {(component_count + 1):<{2}}: {formatted_exercise}{formatted_phase_component}{formatted_base_strain}{formatted_duration:<{20}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{15}}{formatted_rest+")":<{20}}{formatted_one_rep_max:<{17}}{formatted_training_weight:<{12}}{formatted_intensity:<{6}}\n")
+        formatted_volume = f"| {volume_var}"
+        volume_str = f"{formatted_volume:<{len(formatted_volume_header)}}"
+
+        formatted_density = f"| {density_var}"
+        density_str = f"{formatted_density:<{len(formatted_density_header)}}"
+
+        formatted_phase_component_stats = f"{phase_component_str}{duration_str}{working_duration_str}{seconds_per_exercises_str}{reps_str}{sets_str}{rest_str}"
+        formatted_improvement_metrics = f"{one_rep_max_str}{training_weight_str}{intensity_str}{volume_str}{density_str}"
+
+        formatted += (f"{number_str}{exercise_str}{base_strain_str}{formatted_phase_component_stats}{formatted_improvement_metrics}\n")
 
     formatted += f"Phase Component Counts:\n"
     for phase_component_index, phase_component_number in enumerate(phase_component_count):
@@ -233,17 +293,33 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Upper bound on number of exercises (greedy estimation)
         max_exercises = len(phase_component_ids)
+        min_seconds_per_exercise = min(phase_component["seconds_per_exercise"] for phase_component in phase_components[1:])
         max_seconds_per_exercise = max(phase_component["seconds_per_exercise"] for phase_component in phase_components[1:])
+        min_reps = min(phase_component["reps_min"] for phase_component in phase_components[1:])
         max_reps = max(phase_component["reps_max"] for phase_component in phase_components[1:])
+        min_sets = min(phase_component["sets_min"] for phase_component in phase_components[1:])
         max_sets = max(phase_component["sets_max"] for phase_component in phase_components[1:])
+        min_rest = min(phase_component["rest_min"] for phase_component in phase_components[1:])
         max_rest = max(phase_component["rest_max"] for phase_component in phase_components[1:])
+
+        min_duration = ((min_seconds_per_exercise * min_reps) + (min_rest * 5)) * min_sets
+        max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
+
         max_intensity = 100
         min_base_strain = min(exercise["base_strain"] for exercise in exercises[1:])
         max_base_strain = max(exercise["base_strain"] for exercise in exercises[1:])
         min_one_rep_max = min(exercise["one_rep_max"] for exercise in exercises[1:])
         max_one_rep_max = max(exercise["one_rep_max"] for exercise in exercises[1:])
+
         min_training_weight_scaled = min_one_rep_max * 1
         max_training_weight_scaled = max_one_rep_max * max_intensity
+
+        min_volume = min_reps * min_sets
+        max_volume = max_reps * max_sets * max_training_weight_scaled
+
+        min_density = min_duration // max_duration
+        max_density = (max_duration // min_duration) + 1
+
         max_strain_scaled = ((max_seconds_per_exercise * (10 + max_intensity + max_base_strain) * max_reps) + (10 *max_rest * 5)) * max_sets
 
         # Maximum amount of time that the workout may last
@@ -269,7 +345,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             model.NewIntVar(phase_components[pc_index]["rest_min"], phase_components[pc_index]["rest_max"], f'rest_{i}') 
             for i, pc_index in enumerate(phase_component_ids)]
 
-        duration_vars = declare_duration_vars(model, max_exercises, workout_length, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars)
+        duration_vars = declare_duration_vars(model, max_exercises, workout_length, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, name="base")
+        working_duration_vars = declare_duration_vars(model, max_exercises, workout_length, seconds_per_exercise_vars, reps_vars, sets_vars, name="working")
 
         # Integer variable representing the intensity chosen at exercise i.
         intensity_vars = [
@@ -311,6 +388,45 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             if training_weight_var != None :
                 for exercise, exercise_for_exercise_var in zip(exercises[1:], used_exercise_var[1:]):
                     model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var)
+
+        # Integer variable representing the volume for exercise i.
+        volume_vars = [
+            model.NewIntVar(min_volume, max_volume, f'volume_{i}')
+            for i in range(max_exercises)]
+
+        # Link the exercise variables and the volume variables by ensuring the volume is equal to the reps * sets * training weight for the exercise chose at exercise i.
+        for reps_var, sets_var, training_weight_var, volume_var in zip(reps_vars, sets_vars, training_weight_vars, volume_vars):
+            if training_weight_var != None:
+                model.AddMultiplicationEquality(volume_var, [reps_var, sets_var, training_weight_var])
+            else:
+                model.AddMultiplicationEquality(volume_var, [reps_var, sets_var])
+
+        # Integer variable representing the density for exercise i.
+        density_vars = [
+            model.NewIntVar(min_density, 100 * max_density, f'density_{i}')
+            for i in range(max_exercises)]
+        
+        # Link the exercise variables and the density variables by ensuring the density is equal to the duration / working duration for the exercise chose at exercise i.
+        for i, (duration_var, working_duration_var, density_var) in enumerate(zip(duration_vars, working_duration_vars, density_vars)):
+            # Create a boolean variable to track if working_duration is 0
+            working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
+            
+            # Create an intermediate variable that will be 1 when working_duration is 0, 
+            # and will be working_duration otherwise
+            non_zero_working_duration_var = model.NewIntVar(1, max_duration, 'non_zero_working_duration_{i}')
+            
+            # Link the conditions
+            model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
+            model.Add(non_zero_working_duration_var == working_duration_var).OnlyEnforceIf(working_duration_is_0.Not())
+            model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
+            model.Add(working_duration_var > 0).OnlyEnforceIf(working_duration_is_0.Not())
+            
+            # Now we can safely do the division (scaled up by 100 to avoid floating point)
+            model.AddDivisionEquality(density_var, 100 * duration_var, non_zero_working_duration_var)
+            
+            # Set density to 0 when working_duration is 0
+            model.Add(density_var == 0).OnlyEnforceIf(working_duration_is_0)
+
 
         # Links the exercise variables and the exercises that can exist via the used exercises variables.
         link_entry_and_item(model = model, 
@@ -381,7 +497,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             strain_terms = []
 
             # Creates strain_time, which will hold the total strain over the workout.
-            strain_time = model.NewIntVar(0, max_exercises * workout_length, 'strain_time')
+            strain_time = model.NewIntVar(0, 100 * max_exercises * workout_length, 'strain_time')
             for i, values_for_exercise in enumerate(zip(base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars)):
                 (
                     base_strain_var,
@@ -393,8 +509,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 ) = values_for_exercise
                 # Create the entry for phase component's intensity
                 # total_working_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
-                non_zero_working_duration_var = model.NewIntVar(1, max_strain_scaled, f'non_zero_working_duration_{i}')
-                working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
+                non_zero_working_duration_var = model.NewIntVar(1, max_strain_scaled, f'non_zero_working_strained_duration_{i}')
+                working_duration_is_0 = model.NewBoolVar(f'working_strained_duration_{i}_is_0')
 
                 duration_var = create_exercise_intensity_var(
                     model=model, 
@@ -406,7 +522,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                     rest=rest_var,
                     intensity=intensity_var,
                     base_strain=base_strain_var,
-                    name="base")
+                    name="base_strained")
 
                 working_duration_var = create_exercise_intensity_var(
                     model=model, 
@@ -418,7 +534,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                     rest=0,
                     intensity=intensity_var,
                     base_strain=base_strain_var,
-                    name="working")
+                    name="working_strained")
 
                 # Ensure no division by 0 occurs.
                 model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
@@ -428,8 +544,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
                 model.Add(working_duration_var >= 1).OnlyEnforceIf(working_duration_is_0.Not())
 
-                strain = model.NewIntVar(0, workout_length, f'strain_{i}')
-                model.AddDivisionEquality(strain, duration_var, non_zero_working_duration_var)
+                strain = model.NewIntVar(0, 100 * workout_length, f'strain_{i}')
+                model.AddDivisionEquality(strain, 100 * duration_var, non_zero_working_duration_var)
 
                 strain_terms.append(strain)
 
@@ -438,12 +554,12 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
             state["logs"] += "- Minimizing the strain time used in workout.\n"
 
-        return {"opt_model": (model, exercise_vars, phase_component_ids, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, one_rep_max_vars, training_weight_vars, duration_vars)}
+        return {"opt_model": (model, exercise_vars, phase_component_ids, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, one_rep_max_vars, training_weight_vars, volume_vars, density_vars, duration_vars, working_duration_vars)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
         print("Solving Second Step")
         """Solve model and record relaxation attempt results."""
-        model, exercise_vars, phase_component_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, one_rep_max_vars, training_weight_vars, duration_vars = state["opt_model"]
+        model, exercise_vars, phase_component_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, one_rep_max_vars, training_weight_vars, volume_vars, density_vars, duration_vars, working_duration_vars = state["opt_model"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -460,28 +576,30 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             for i in range(len(duration_vars)):
 
                 # Ensure that the phase component is active.
-                seconds_per_exercise_current = solver.Value(seconds_per_exercise_vars[i])
-                reps_vars_current = solver.Value(reps_vars[i])
-                sets_vars_current = solver.Value(sets_vars[i])
                 intensity_var_current = solver.Value(intensity_vars[i]) if intensity_vars[i] is not None else 0
                 training_weight_var_current = solver.Value(training_weight_vars[i]) if training_weight_vars[i] is not None else 0
+                volume_var_current = solver.Value(volume_vars[i])
+                if training_weight_vars[i] is not None:
+                    volume_var_current /= 100
                 duration_vars_current = solver.Value(duration_vars[i])
-                working_duration_vars_current = (seconds_per_exercise_current * reps_vars_current * sets_vars_current)
+                working_duration_vars_current = solver.Value(working_duration_vars[i])
 
                 schedule.append((
                     i, 
-                    solver.Value(exercise_vars[i]),         # Index of the exercise chosen.
-                    phase_component_vars[i],                # Index of the phase component chosen.
-                    solver.Value(base_strain_vars[i]),      # Base strain of the exercise chosen.
-                    seconds_per_exercise_current,           # Seconds per exercise of the exercise chosen.
-                    reps_vars_current,                      # Reps of the exercise chosen.
-                    sets_vars_current,                      # Sets of the exercise chosen.
-                    solver.Value(rest_vars[i]) * 5,         # Rest of the exercise chosen.
-                    intensity_var_current,                  # Intensity of the exercise chosen.
-                    solver.Value(one_rep_max_vars[i]),      # 1RM of the exercise chosen.
-                    training_weight_var_current / 100,      # Training weight of the exercise chosen.
-                    duration_vars_current,                  # Duration of the exercise chosen.
-                    working_duration_vars_current           # Working duration of the exercise chosen.
+                    solver.Value(exercise_vars[i]),                 # Index of the exercise chosen.
+                    phase_component_vars[i],                        # Index of the phase component chosen.
+                    solver.Value(base_strain_vars[i]),              # Base strain of the exercise chosen.
+                    solver.Value(seconds_per_exercise_vars[i]),     # Seconds per exercise of the exercise chosen.
+                    solver.Value(reps_vars[i]),                     # Reps of the exercise chosen.
+                    solver.Value(sets_vars[i]),                     # Sets of the exercise chosen.
+                    solver.Value(rest_vars[i]) * 5,                 # Rest of the exercise chosen.
+                    intensity_var_current,                          # Intensity of the exercise chosen.
+                    solver.Value(one_rep_max_vars[i]),              # 1RM of the exercise chosen.
+                    training_weight_var_current / 100,              # Training weight of the exercise chosen.
+                    volume_var_current,                             # Volume of the exercise chosen.
+                    solver.Value(density_vars[i]) / 100,            # Density of the exercise chosen.
+                    duration_vars_current,                          # Duration of the exercise chosen.
+                    working_duration_vars_current,                  # Working duration of the exercise chosen.
                 ))
                 duration += duration_vars_current
                 working_duration += working_duration_vars_current
