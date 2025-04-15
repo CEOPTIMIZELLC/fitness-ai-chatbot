@@ -18,6 +18,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     sets = db.Column(db.Integer, nullable=False, comment='')
     intensity = db.Column(db.Integer, comment='')
     rest = db.Column(db.Integer, nullable=False, comment='')
+    weight = db.Column(db.Integer, comment='')
 
     # Seconds per exercise of the exercise.
     @hybrid_property
@@ -38,6 +39,17 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     @hybrid_property
     def working_duration(self):
         return self.seconds_per_exercise * self.reps * self.sets
+    
+    # Volume of the exercise.
+    @hybrid_property
+    def volume(self):
+        return self.reps * self.sets * (self.weight or 1)
+
+    # Density of the exercise.
+    @hybrid_property
+    def density(self):
+        return self.duration / self.working_duration
+
 
     # Duration of the exercise based on the formula adjusted with strain.
     @hybrid_property
@@ -74,8 +86,11 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
             "sets": self.sets, 
             "intensity": self.intensity, 
             "rest": self.rest, 
+            "weight": self.weight, 
             "duration": self.duration, 
             "working_duration": self.working_duration, 
+            "volume": self.volume, 
+            "density": self.density, 
             "strained_duration": self.strained_duration, 
             "strained_working_duration": self.strained_working_duration, 
             "strain": self.strain
