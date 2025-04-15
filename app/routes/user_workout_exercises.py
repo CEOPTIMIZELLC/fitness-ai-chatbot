@@ -60,22 +60,15 @@ dummy_phase_component = {
 }
 
 def user_component_dict(workout_data, phase_component_data):
+    """Format the user workout component data."""
     return {
         "workout_component_id": workout_data["id"],
         "workout_day_id": workout_data["workout_day_id"],
         "bodypart_id": workout_data["bodypart_id"],
         "bodypart_name": workout_data["bodypart_name"],
         "duration": workout_data["duration"],
-        "duration_min": (
-            (phase_component_data["exercises_per_bodypart_workout_min"] or 1)
-            * (phase_component_data["seconds_per_exercise"] * phase_component_data["reps_min"] + phase_component_data["rest_min"]) 
-            * phase_component_data["sets_min"]
-        ),
-        "duration_max": (
-            (phase_component_data["exercises_per_bodypart_workout_max"] or 1)
-            * (phase_component_data["seconds_per_exercise"] * phase_component_data["reps_max"] + phase_component_data["rest_max"]) 
-            * phase_component_data["sets_max"]),
-
+        "duration_min": phase_component_data["duration_min"],
+        "duration_max": phase_component_data["duration_max"],
         "phase_component_id": phase_component_data["id"],
         "phase_name": phase_component_data["phase_name"],
         "component_id": phase_component_data["component_id"],
@@ -99,6 +92,7 @@ def user_component_dict(workout_data, phase_component_data):
     }
 
 def exercise_dict(exercise, user_exercise, phase):
+    """Format the exercise data."""
     return {
         "id": exercise.id,
         "name": exercise.name.lower(),
@@ -176,13 +170,13 @@ def construct_user_workout_components_list_for_test(possible_phase_components, p
     for possible_phase_component in possible_phase_components:
         # workout_data = user_workout_component.to_dict()
         phase_component_data = possible_phase_component.to_dict()
+        exercises_per_bodypart_min = phase_component_data["exercises_per_bodypart_workout_min"] or 1
+        exercises_per_bodypart_max = phase_component_data["exercises_per_bodypart_workout_max"] or 1
 
         # If the phase component is resistance, append it multiple times.
         if possible_phase_component.component_id == 6:
             for possible_phase_component_bodypart in possible_phase_component_bodyparts:
-                duration = retrieve_duration_for_test(phase_component_data["duration_min"], 
-                                                      (phase_component_data["exercises_per_bodypart_workout_min"] or 1), 
-                                                      (phase_component_data["exercises_per_bodypart_workout_max"] or 1))
+                duration = retrieve_duration_for_test(phase_component_data["duration_min"], exercises_per_bodypart_min, exercises_per_bodypart_max)
 
                 if duration <= availability:
                     workout_component_id += 1
@@ -199,9 +193,7 @@ def construct_user_workout_components_list_for_test(possible_phase_components, p
                         phase_component_data))
         # Append only once for full body if any other phase component.
         else:
-            duration = retrieve_duration_for_test(phase_component_data["duration_min"], 
-                                                  (phase_component_data["exercises_per_bodypart_workout_min"] or 1), 
-                                                  (phase_component_data["exercises_per_bodypart_workout_max"] or 1))
+            duration = retrieve_duration_for_test(phase_component_data["duration_min"], exercises_per_bodypart_min, exercises_per_bodypart_max)
             if duration <= availability:
                 workout_component_id += 1
                 availability -= duration
@@ -243,7 +235,15 @@ def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_workout_exercises_list():
-    user_workout_exercises = User_Workout_Exercises.query.join(User_Workout_Days).join(User_Microcycles).join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=current_user.id).all()
+    user_workout_exercises = (
+        User_Workout_Exercises.query
+        .join(User_Workout_Days)
+        .join(User_Microcycles)
+        .join(User_Mesocycles)
+        .join(User_Macrocycles)
+        .filter_by(user_id=current_user.id)
+        .all())
+
     result = []
     for user_workout_exercise in user_workout_exercises:
         result.append(user_workout_exercise.to_dict())
