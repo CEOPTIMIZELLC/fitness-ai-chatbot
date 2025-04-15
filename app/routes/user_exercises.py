@@ -42,19 +42,5 @@ def read_user_exercise(exercise_id):
 @login_required
 def get_available_exercises():
     available_exercises = user_available_exercises(current_user.id)
-
-
-    for exercise in available_exercises:
-
-        supportive_equipment = [equipment.equipment.name for equipment in exercise.supportive_equipment]
-        assistive_equipment = [equipment.equipment.name for equipment in exercise.assistive_equipment]
-        weighted_equipment = [equipment.equipment.name for equipment in exercise.weighted_equipment]
-        marking_equipment = [equipment.equipment.name for equipment in exercise.marking_equipment]
-        other_equipment = [equipment.equipment.name for equipment in exercise.other_equipment]
-        equipment = supportive_equipment + assistive_equipment + weighted_equipment + marking_equipment + other_equipment
-
-        print(exercise.name, equipment)
-
-
     result = [exercise.to_dict() for exercise in available_exercises]
     return jsonify({"status": "success", "exercises": result}), 200
