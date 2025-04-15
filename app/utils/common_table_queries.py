@@ -6,6 +6,8 @@ from app.models import (
     User_Microcycles, 
     User_Workout_Days, 
     User_Equipment, 
+    User_Exercises, 
+    Exercise_Component_Phases, 
     Exercise_Library, 
     Exercise_Supportive_Equipment, 
     Exercise_Assistive_Equipment, 
@@ -113,5 +115,50 @@ def user_available_exercises(user_id):
         .distinct()
         .all()
     )
+    return available_exercises
 
+
+# Retrieve all exercises that the user is able to perform, joined with user exercise information and component phases.
+def user_available_exercises_with_user_exercise_info(user_id):
+    user_equipment = (
+        db.session.query(User_Equipment.equipment_id)
+        .filter(User_Equipment.user_id == user_id)
+        .scalar_subquery()
+    )
+
+    # Main query to get exercises where either:
+    # 1. The exercise requires no equipment at all, or
+    # 2. The user has all required equipment for the exercise
+    available_exercises = (
+        db.session.query(Exercise_Library, User_Exercises, Exercise_Component_Phases)
+        .join(User_Exercises, Exercise_Library.id == User_Exercises.exercise_id)
+        .join(Exercise_Component_Phases, Exercise_Library.id == Exercise_Component_Phases.exercise_id)
+        .outerjoin(Exercise_Supportive_Equipment)
+        .outerjoin(Exercise_Assistive_Equipment)
+        .outerjoin(Exercise_Weighted_Equipment)
+        .outerjoin(Exercise_Marking_Equipment)
+        .outerjoin(Exercise_Other_Equipment)
+        .filter(
+            # Either no equipment is required (all equipment relationships are NULL)
+            ((Exercise_Supportive_Equipment.exercise_id.is_(None)) &
+             (Exercise_Assistive_Equipment.exercise_id.is_(None)) &
+             (Exercise_Weighted_Equipment.exercise_id.is_(None)) &
+             (Exercise_Marking_Equipment.exercise_id.is_(None)) &
+             (Exercise_Other_Equipment.exercise_id.is_(None)))
+            |
+            # Or all required equipment is owned by the user
+            ((Exercise_Supportive_Equipment.equipment_id.in_(user_equipment) | 
+              Exercise_Supportive_Equipment.equipment_id.is_(None)) &
+             (Exercise_Assistive_Equipment.equipment_id.in_(user_equipment) | 
+              Exercise_Assistive_Equipment.equipment_id.is_(None)) &
+             (Exercise_Weighted_Equipment.equipment_id.in_(user_equipment) | 
+              Exercise_Weighted_Equipment.equipment_id.is_(None)) &
+             (Exercise_Marking_Equipment.equipment_id.in_(user_equipment) | 
+              Exercise_Marking_Equipment.equipment_id.is_(None)) &
+             (Exercise_Other_Equipment.equipment_id.in_(user_equipment) | 
+              Exercise_Other_Equipment.equipment_id.is_(None)))
+        )
+        .distinct()
+        .all()
+    )
     return available_exercises
