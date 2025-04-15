@@ -31,47 +31,64 @@ def get_exercises_for_pc(exercises, phase_component):
         exercises_for_pc = [i for i, _ in enumerate(exercises, start=1)]
     return exercises_for_pc
 
-# Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
-# This method performs the in between steps and returns the final variable for the right side of the one rep formula.
-# 1RM < (weight * (30 + reps)) / 30
-def weight_rep_construction(model, i, one_rep_max, max_one_rep_max, 
-                            reps, max_reps, weight, max_weight, 
-                            name="", exercise_volume_improvement_percentage=1):
-    if name != "": name += "_"
-
-    # 100 * 1RM due to weight being scaled up
-    one_rep_max_scaled_var = model.NewIntVar(0, 100 * max_one_rep_max, f'{name}one_rep_max_scaled{i}')
-    model.AddMultiplicationEquality(one_rep_max_scaled_var, [100, one_rep_max])
-
-    # 30 + reps
-    reps_plus_30_var = model.NewIntVar(0, 30 + max_reps, f'{name}reps_plus_30_{i}')
-    model.Add(reps_plus_30_var == 30 + reps)
-
-    # weight * (30 + reps)
-    weight_times_reps_plus_30_var = model.NewIntVar(0, max_weight * (30 + max_reps), f'{name}weight_times_reps_plus_30_{i}')
-    model.AddMultiplicationEquality(weight_times_reps_plus_30_var, [weight, reps_plus_30_var])
-
-    # Completed constraint.
-    # 1RM < weight * (30 + reps)) / 30
-    new_one_rep_max_var = model.NewIntVar(0, max_weight * (30 + max_reps) // 30, f'{name}new_1RM_{i}')
-    model.AddDivisionEquality(new_one_rep_max_var, weight_times_reps_plus_30_var, 30)
-    
-    # 1RM + 1 < (weight * (30 + reps)) / 30
-    model.Add(new_one_rep_max_var > (one_rep_max_scaled_var + exercise_volume_improvement_percentage))
-
-    return None
-
-def one_rep_max_increase(model, one_rep_max_vars, max_one_rep_max, reps_vars, max_reps, training_weight_vars, max_weight, exercise_volume_improvement_percentage=1):
+def constrain_training_weight_vars(model, intensity_vars, exercises, training_weight_vars, used_exercise_vars):
     # Link the exercise variables and the training weight variables by ensuring the training weight is equal to the one rep max * intensity for the exercise chose at exercise i.
-    for i, (one_rep_max_var, reps_var, training_weight_var) in enumerate(zip(one_rep_max_vars, reps_vars, training_weight_vars)):
-        if training_weight_var != None:
-            weight_rep_construction(model=model, i=i, 
-                                    one_rep_max=one_rep_max_var, max_one_rep_max=max_one_rep_max, 
-                                    reps=reps_var, max_reps=max_reps, 
-                                    weight=training_weight_var, max_weight=max_weight, 
-                                    exercise_volume_improvement_percentage=exercise_volume_improvement_percentage)
+    for intensity_var, training_weight_var, used_exercise_var in zip(intensity_vars, training_weight_vars, used_exercise_vars):
+        if training_weight_var != None :
+            for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
+                model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var)
     return None
 
+def constrain_volume_vars(model, volume_vars, reps_vars, sets_vars, training_weight_vars):
+    # Link the exercise variables and the volume variables by ensuring the volume is equal to the reps * sets * training weight for the exercise chose at exercise i.
+    for reps_var, sets_var, training_weight_var, volume_var in zip(reps_vars, sets_vars, training_weight_vars, volume_vars):
+        if training_weight_var != None:
+            model.AddMultiplicationEquality(volume_var, [reps_var, sets_var, training_weight_var])
+        else:
+            model.AddMultiplicationEquality(volume_var, [reps_var, sets_var])
+    return None
+
+def constrain_density_vars(model, density_vars, duration_vars, working_duration_vars, max_duration):
+    # Link the exercise variables and the density variables by ensuring the density is equal to the duration / working duration for the exercise chose at exercise i.
+    for i, (duration_var, working_duration_var, density_var) in enumerate(zip(duration_vars, working_duration_vars, density_vars)):
+        # Create a boolean variable to track if working_duration is 0
+        working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
+        
+        # Create an intermediate variable that will be 1 when working_duration is 0 and will be working_duration otherwise
+        non_zero_working_duration_var = model.NewIntVar(1, max_duration, 'non_zero_working_duration_{i}')
+        
+        # Link the conditions
+        model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
+        model.Add(non_zero_working_duration_var == working_duration_var).OnlyEnforceIf(working_duration_is_0.Not())
+        model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
+        model.Add(working_duration_var > 0).OnlyEnforceIf(working_duration_is_0.Not())
+        
+        # Now we can safely do the division (scaled up by 100 to avoid floating point)
+        model.AddDivisionEquality(density_var, 100 * duration_var, non_zero_working_duration_var)
+        
+        # Set density to 0 when working_duration is 0
+        model.Add(density_var == 0).OnlyEnforceIf(working_duration_is_0)
+    return None
+
+def enforce_increase_for_exercise(model, i, exercises, key, used_exercise_var, duration_vars):
+    for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
+        model.Add(duration_vars[i] >= exercise[key]).OnlyEnforceIf(exercise_for_exercise_var)
+    return None
+
+def ensure_increase_for_subcomponent(model, exercises, phase_component_ids, phase_components, used_exercise_vars, volume_vars, density_vars, intensity_vars):
+    for i, (pc_index, used_exercise_var) in enumerate(zip(phase_component_ids, used_exercise_vars)):
+        # If the priority is volume, then ensure that the volume is greater than the volume of the exercise that is chosen.
+        if phase_components[pc_index]["volume_priority"] == 1:
+            enforce_increase_for_exercise(model, i, exercises, "volume", used_exercise_var, volume_vars)
+
+        # If the priority is density, then ensure that the density is greater than the density of the exercise that is chosen.
+        elif phase_components[pc_index]["density_priority"] == 1:
+            enforce_increase_for_exercise(model, i, exercises, "density", used_exercise_var, density_vars)
+        
+        # If the priority is load, then ensure that the intensity is greater than the intensity of the exercise that is chosen.
+        elif phase_components[pc_index]["load_priority"] == 1:
+            enforce_increase_for_exercise(model, i, exercises, "intensity", used_exercise_var, intensity_vars)
+    return None
 
 def format_agent_output_2(solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length):
     final_output = []
@@ -383,50 +400,19 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             else None
             for i, intensity_var in enumerate(intensity_vars)]
 
-        # Link the exercise variables and the training weight variables by ensuring the training weight is equal to the one rep max * intensity for the exercise chose at exercise i.
-        for intensity_var, training_weight_var, used_exercise_var in zip(intensity_vars, training_weight_vars, used_exercise_vars):
-            if training_weight_var != None :
-                for exercise, exercise_for_exercise_var in zip(exercises[1:], used_exercise_var[1:]):
-                    model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var)
-
         # Integer variable representing the volume for exercise i.
         volume_vars = [
             model.NewIntVar(min_volume, max_volume, f'volume_{i}')
             for i in range(max_exercises)]
-
-        # Link the exercise variables and the volume variables by ensuring the volume is equal to the reps * sets * training weight for the exercise chose at exercise i.
-        for reps_var, sets_var, training_weight_var, volume_var in zip(reps_vars, sets_vars, training_weight_vars, volume_vars):
-            if training_weight_var != None:
-                model.AddMultiplicationEquality(volume_var, [reps_var, sets_var, training_weight_var])
-            else:
-                model.AddMultiplicationEquality(volume_var, [reps_var, sets_var])
 
         # Integer variable representing the density for exercise i.
         density_vars = [
             model.NewIntVar(min_density, 100 * max_density, f'density_{i}')
             for i in range(max_exercises)]
         
-        # Link the exercise variables and the density variables by ensuring the density is equal to the duration / working duration for the exercise chose at exercise i.
-        for i, (duration_var, working_duration_var, density_var) in enumerate(zip(duration_vars, working_duration_vars, density_vars)):
-            # Create a boolean variable to track if working_duration is 0
-            working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
-            
-            # Create an intermediate variable that will be 1 when working_duration is 0, 
-            # and will be working_duration otherwise
-            non_zero_working_duration_var = model.NewIntVar(1, max_duration, 'non_zero_working_duration_{i}')
-            
-            # Link the conditions
-            model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
-            model.Add(non_zero_working_duration_var == working_duration_var).OnlyEnforceIf(working_duration_is_0.Not())
-            model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
-            model.Add(working_duration_var > 0).OnlyEnforceIf(working_duration_is_0.Not())
-            
-            # Now we can safely do the division (scaled up by 100 to avoid floating point)
-            model.AddDivisionEquality(density_var, 100 * duration_var, non_zero_working_duration_var)
-            
-            # Set density to 0 when working_duration is 0
-            model.Add(density_var == 0).OnlyEnforceIf(working_duration_is_0)
-
+        constrain_training_weight_vars(model, intensity_vars, exercises[1:], training_weight_vars, used_exercise_vars)
+        constrain_volume_vars(model, volume_vars, reps_vars, sets_vars, training_weight_vars)
+        constrain_density_vars(model, density_vars, duration_vars, working_duration_vars, max_duration)
 
         # Links the exercise variables and the exercises that can exist via the used exercises variables.
         link_entry_and_item(model = model, 
@@ -479,16 +465,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                               used_vars = used_exercise_vars)
             state["logs"] += "- No duplicate exercises constraint applied.\n"
 
-        # # Constraint: The 1RM of an exercise may only increase by a certain percentage.
-        # if constraints["one_rep_max_increase"]:
-        #     one_rep_max_increase(model=model, 
-        #                          one_rep_max_vars=one_rep_max_vars, 
-        #                          max_one_rep_max=max_one_rep_max, 
-        #                          reps_vars=reps_vars, 
-        #                          max_reps=max_reps, 
-        #                          training_weight_vars=training_weight_vars, 
-        #                          max_weight=max_training_weight_scaled)
-        #     state["logs"] += "- One rep max increase constraint applied.\n"
+        # Constraint: The desired metric of an exercise must be an increase from the current metric.
+        if constraints["exercise_metric_increase"]:
+            ensure_increase_for_subcomponent(model, exercises[1:], phase_component_ids, phase_components, used_exercise_vars, volume_vars, density_vars, intensity_vars)
+            state["logs"] += "- Exercise metric increase constraint applied.\n"
 
 
         # Objective: Maximize total strain of microcycle
