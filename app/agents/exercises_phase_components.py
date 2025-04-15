@@ -150,7 +150,7 @@ def declare_model_vars(model, name, active_vars, max_entries, min_if_active, max
             name_of_entry_var=f'{name}_{i}')
         for i in range(max_entries)]
 
-def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars):
+def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars=None, name=""):
     return [
         create_duration_var(
             model=model, i=i, 
@@ -158,7 +158,8 @@ def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise
             seconds_per_exercise=seconds_per_exercise_vars[i], 
             reps=reps_vars[i], 
             sets=sets_vars[i], 
-            rest=rest_vars[i])
+            rest=rest_vars[i] if rest_vars is not None else 0,
+            name=name)
         for i in range(max_entries)]
 
 class State(BaseAgentState):
