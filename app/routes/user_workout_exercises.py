@@ -59,52 +59,6 @@ dummy_phase_component = {
     'exercise_selection_note': None
 }
 
-
-def delete_old_user_workout_exercises(workout_day_id):
-    db.session.query(User_Workout_Exercises).filter_by(workout_day_id=workout_day_id).delete()
-    print("Successfully deleted")
-
-# Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_exercises():
-    # Retrieve all possible exercises with their component phases
-    results = (
-        db.session.query(
-            Exercise_Library,
-            User_Exercises, 
-            Exercise_Component_Phases,
-        )
-        .join(Exercise_Component_Phases, Exercise_Library.id == Exercise_Component_Phases.exercise_id)
-        .join(User_Exercises, User_Exercises.exercise_id == Exercise_Library.id)
-        .all()
-    )
-
-    possible_exercises_list = [dummy_exercise]
-
-    for exercise, user_exercise, phase in results:
-        exercise_dict = {
-            "id": exercise.id,
-            "name": exercise.name.lower(),
-            "base_strain": exercise.base_strain,
-            "technical_difficulty": exercise.technical_difficulty,
-            "component_id": phase.component_id,
-            "subcomponent_id": phase.subcomponent_id,
-            "body_region_ids": exercise.all_body_region_ids,
-            "bodypart_ids": exercise.all_bodypart_ids,
-            "muscle_group_ids": exercise.all_muscle_group_ids,
-            "muscle_ids": exercise.all_muscle_ids,
-            "supportive_equipment_ids": exercise.all_supportive_equipment,
-            "assistive_equipment_ids": exercise.all_assistive_equipment,
-            "weighted_equipment_ids": exercise.all_weighted_equipment,
-            "marking_equipment_ids": exercise.all_marking_equipment,
-            "other_equipment_ids": exercise.all_other_equipment,
-            "one_rep_max": user_exercise.one_rep_max,
-        }
-        # print(exercise_dict["name"], exercise_dict["component_id"], exercise_dict["subcomponent_id"], exercise_dict["one_rep_max"])
-        possible_exercises_list.append(exercise_dict)
-
-
-    return possible_exercises_list
-
 def user_component_dict(workout_data, phase_component_data):
     return {
         "workout_component_id": workout_data["id"],
@@ -143,6 +97,58 @@ def user_component_dict(workout_data, phase_component_data):
         "exercises_per_bodypart_workout_max": phase_component_data["exercises_per_bodypart_workout_max"],
         "exercise_selection_note": phase_component_data["exercise_selection_note"],
     }
+
+def exercise_dict(exercise, user_exercise, phase):
+    return {
+        "id": exercise.id,
+        "name": exercise.name.lower(),
+        "base_strain": exercise.base_strain,
+        "technical_difficulty": exercise.technical_difficulty,
+        "component_id": phase.component_id,
+        "subcomponent_id": phase.subcomponent_id,
+        "body_region_ids": exercise.all_body_region_ids,
+        "bodypart_ids": exercise.all_bodypart_ids,
+        "muscle_group_ids": exercise.all_muscle_group_ids,
+        "muscle_ids": exercise.all_muscle_ids,
+        "supportive_equipment_ids": exercise.all_supportive_equipment,
+        "assistive_equipment_ids": exercise.all_assistive_equipment,
+        "weighted_equipment_ids": exercise.all_weighted_equipment,
+        "marking_equipment_ids": exercise.all_marking_equipment,
+        "other_equipment_ids": exercise.all_other_equipment,
+        "one_rep_max": user_exercise.one_rep_max, 
+        "one_rep_load": user_exercise.one_rep_load, 
+        "volume": user_exercise.volume, 
+        "density": user_exercise.density, 
+        "intensity": user_exercise.intensity,
+    }
+
+
+def delete_old_user_workout_exercises(workout_day_id):
+    db.session.query(User_Workout_Exercises).filter_by(workout_day_id=workout_day_id).delete()
+    print("Successfully deleted")
+
+# Retrieve the phase types and their corresponding constraints for a goal.
+def retrieve_exercises():
+    # Retrieve all possible exercises with their component phases
+    results = (
+        db.session.query(
+            Exercise_Library,
+            User_Exercises, 
+            Exercise_Component_Phases,
+        )
+        .join(Exercise_Component_Phases, Exercise_Library.id == Exercise_Component_Phases.exercise_id)
+        .join(User_Exercises, User_Exercises.exercise_id == Exercise_Library.id)
+        .all()
+    )
+
+    possible_exercises_list = [dummy_exercise]
+
+    for exercise, user_exercise, phase in results:
+        # print(exercise_dict["name"], exercise_dict["component_id"], exercise_dict["subcomponent_id"], exercise_dict["one_rep_max"])
+        possible_exercises_list.append(exercise_dict(exercise, user_exercise, phase))
+
+
+    return possible_exercises_list
 
 def construct_user_workout_components_list(user_workout_components):
     user_workout_components_list = [dummy_phase_component]
@@ -295,6 +301,11 @@ def exercise_initializer():
     print(result["formatted"])
 
     user_workout_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
+
+    # output = result["output"]
+
+    # for i in output:
+    #     print(i)
 
     db.session.add_all(user_workout_exercises)
     db.session.commit()
