@@ -6,9 +6,9 @@ from app.models.mixins import TableNameMixin, NameMixin
 class Subcomponent_Library(BaseModel, TableNameMixin, NameMixin):
     __table_args__ = {'comment': "The library of subcomponents that exist for phase components."}
     # Fields
-    density = db.Column(db.Integer, nullable=False, comment='')
-    volume = db.Column(db.Integer, nullable=False, comment='')
-    load = db.Column(db.Integer, nullable=False, comment='')
+    density = db.Column(db.Integer, nullable=False, comment='Order that density increase should be prioritized.')
+    volume = db.Column(db.Integer, nullable=False, comment='Order that volume increase should be prioritized.')
+    load = db.Column(db.Integer, nullable=False, comment='Order that load increase should be prioritized.')
     explanation = db.Column(db.String(255), comment='')
 
     # Relationships
