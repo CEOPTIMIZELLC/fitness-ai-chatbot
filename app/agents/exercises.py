@@ -8,8 +8,8 @@ from app.agents.constraints import (
     no_repeated_items, 
     only_use_required_items, 
     entries_equal)
-from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, declare_duration_vars, format_relaxation_attempts, get_phase_component_bounds
-from app.agents.agent_helpers import longest_string_size_for_key
+from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, declare_duration_vars, get_phase_component_bounds
+from app.utils.longest_string import longest_string_size_for_key
 from app.utils.min_and_max_in_dict import get_item_bounds
 
 _ = load_dotenv()
@@ -90,141 +90,6 @@ def ensure_increase_for_subcomponent(model, exercises, phase_component_ids, phas
         elif phase_components[pc_index]["load_priority"] == 1:
             enforce_increase_for_exercise(model, i, exercises, "intensity", used_exercise_var, intensity_vars)
     return None
-
-def format_agent_output_2(solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length):
-    final_output = []
-
-    longest_subcomponent_string_size = longest_string_size_for_key(phase_components[1:], "name")
-    longest_bodypart_string_size = longest_string_size_for_key(phase_components[1:], "bodypart_name")
-    longest_pc_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
-
-    longest_exercise_string_size = longest_string_size_for_key(exercises[1:], "name")
-
-    phase_component_count = [0] * len(phase_components)
-
-    formatted += "\nFinal Training Schedule:\n"
-    formatted += "-" * 120 + "\n"
-
-    formatted_number_header = f"{"#":<{3}}"
-    formatted_exercise_header = f"| {"Exercise":<{longest_exercise_string_size+2}}"
-    formatted_phase_component_header = f"| {"Phase Component":<{longest_pc_string_size+2}}"
-    formatted_duration_header = f"| {"Duration":<{25}}"
-    formatted_working_duration_header = f"| {"WDuration":<{25}}"
-    formatted_base_strain_header = f"| {"BStrain":<{8}}"
-    formatted_seconds_per_exercises_header = f"| {"(Sec/Exercise":<{14}}"
-    formatted_reps_header = f"| {"Reps":<{12}}"
-    formatted_sets_header = f"| {"Sets":<{8}}"
-    formatted_rest_header = f"| {"Rest)":<{15}}"
-    formatted_one_rep_max_header = f"| {"1RM":<{15}}"
-    formatted_training_weight_header = f"| {"Weight":<{10}}"
-    formatted_intensity_header = f"| {"Intensity":<{13}}"
-    formatted_volume_header = f"| {"Volume":<{10}}"
-    formatted_density_header = f"| {"Density":<{10}}"
-
-    formatted_phase_component_stats = f"{formatted_phase_component_header}{formatted_duration_header}{formatted_working_duration_header}{formatted_seconds_per_exercises_header}{formatted_reps_header}{formatted_sets_header}{formatted_rest_header}"
-    formatted_improvement_metrics = f"{formatted_one_rep_max_header}{formatted_training_weight_header}{formatted_intensity_header}{formatted_volume_header}{formatted_density_header}"
-
-    formatted += (f"{formatted_number_header}{formatted_exercise_header}{formatted_base_strain_header}{formatted_phase_component_stats}{formatted_improvement_metrics}\n")
-
-    for component_count, (i, exercise_index, phase_component_index, 
-            base_strain, seconds_per_exercise, 
-            reps_var, sets_var, rest_var, intensity_var, one_rep_max_var, 
-            training_weight_var, volume_var, density_var, 
-            duration, working_duration) in enumerate(schedule):
-
-        exercise = exercises[exercise_index]
-        phase_component = phase_components[phase_component_index]
-
-        phase_component_name = phase_component["name"] + " " + phase_component["bodypart_name"] 
-
-        #duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
-        final_output.append({
-            "i": i, 
-            "exercise_index": exercise_index,
-            "exercise_id": exercise["id"],
-            "phase_component_index": phase_component_index, 
-            "phase_component_id": phase_component["phase_component_id"],
-            "bodypart_id": phase_component["bodypart_id"],
-            "base_strain": base_strain, 
-            "seconds_per_exercise": seconds_per_exercise, 
-            "reps_var": reps_var, 
-            "sets_var": sets_var, 
-            "rest_var": rest_var, 
-            "intensity_var": intensity_var, 
-            "one_rep_max_var": one_rep_max_var,
-            "training_weight": training_weight_var,
-            "volume": volume_var,
-            "density": density_var,
-            "duration": duration,
-            "working_duration": working_duration
-        })
-
-        # Count the number of occurrences of each phase component
-        phase_component_count[phase_component_index] += 1
-
-        formatted_component_count = f"{component_count + 1}"
-        number_str = f"{formatted_component_count:<{len(formatted_number_header)}}"
-
-        formatted_exercise = f"| {exercise["name"]}"
-        exercise_str = f"{formatted_exercise:<{len(formatted_exercise_header)}}"
-
-        formatted_phase_component = f"| {phase_component_name}"
-        phase_component_str = f"{formatted_phase_component:<{len(formatted_phase_component_header)}}"
-
-        formatted_duration = f"| {duration // 60} min {duration % 60} sec ({duration} sec)"
-        duration_str = f"{formatted_duration:<{len(formatted_duration_header)}}"
-
-        formatted_working_duration = f"| {working_duration // 60} min {working_duration % 60} sec ({working_duration} sec)"
-        working_duration_str = f"{formatted_working_duration:<{len(formatted_working_duration_header)}}"
-
-        formatted_base_strain = f"| {base_strain}"
-        base_strain_str = f"{formatted_base_strain:<{len(formatted_base_strain_header)}}"
-
-        formatted_seconds_per_exercises = f"| ({seconds_per_exercise} sec"
-        seconds_per_exercises_str = f"{formatted_seconds_per_exercises:<{len(formatted_seconds_per_exercises_header)}}"
-
-        formatted_reps = f"| {reps_var} ({phase_component["reps_min"]}-{phase_component["reps_max"]})"
-        reps_str = f"{formatted_reps:<{len(formatted_reps_header)}}"
-
-        formatted_sets = f"| {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
-        sets_str = f"{formatted_sets:<{len(formatted_sets_header)}}"
-
-        formatted_rest = f"| {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
-        rest_str = f"{formatted_rest+")":<{len(formatted_rest_header)}}"
-
-        formatted_one_rep_max = ""
-        formatted_training_weight = ""
-
-        formatted_intensity = ""
-        if intensity_var != None:
-            formatted_one_rep_max = f"{one_rep_max_var} -> {round((training_weight_var * (30 + reps_var)) / 30, 2)}"
-            formatted_training_weight = f"{training_weight_var}"
-            formatted_intensity = f"{intensity_var} ({phase_component["intensity_min"] or "nan"}-{phase_component["intensity_max"] or "nan"})"
-        one_rep_max_str = f"{"| " + formatted_one_rep_max:<{len(formatted_one_rep_max_header)}}"
-        training_weight_str = f"{"| " + formatted_training_weight:<{len(formatted_training_weight_header)}}"
-        intensity_str = f"{"| " + formatted_intensity:<{len(formatted_intensity_header)}}"
-
-        formatted_volume = f"| {volume_var}"
-        volume_str = f"{formatted_volume:<{len(formatted_volume_header)}}"
-
-        formatted_density = f"| {density_var}"
-        density_str = f"{formatted_density:<{len(formatted_density_header)}}"
-
-        formatted_phase_component_stats = f"{phase_component_str}{duration_str}{working_duration_str}{seconds_per_exercises_str}{reps_str}{sets_str}{rest_str}"
-        formatted_improvement_metrics = f"{one_rep_max_str}{training_weight_str}{intensity_str}{volume_str}{density_str}"
-
-        formatted += (f"{number_str}{exercise_str}{base_strain_str}{formatted_phase_component_stats}{formatted_improvement_metrics}\n")
-
-    formatted += f"Phase Component Counts:\n"
-    for phase_component_index, phase_component_number in enumerate(phase_component_count):
-        phase_component = phase_components[phase_component_index]
-        formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}: {phase_component_number} ({phase_component["exercises_per_bodypart_workout_min"]}-{phase_component["exercises_per_bodypart_workout_max"]})\n"
-    formatted += f"Total Strain: {solution['strain_ratio']}\n"
-    formatted += f"Projected Duration: {projected_duration // 60} min {projected_duration % 60} sec ({projected_duration}) seconds\n"
-    formatted += f"Total Duration: {solution['duration'] // 60} min {solution['duration'] % 60} sec ({solution['duration']}) seconds\n"
-    formatted += f"Total Work Duration: {solution['working_duration'] // 60} min {solution['working_duration']  % 60} sec ({solution['working_duration']}) seconds\n"
-    formatted += f"Workout Length Allowed: {workout_length // 60} min {workout_length % 60} sec ({workout_length} seconds)\n"
-    return final_output, formatted
 
 def get_exercise_bounds(exercises):
     return {
@@ -539,6 +404,142 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         return {"opt_model": (model, exercise_vars, phase_component_ids, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, one_rep_max_vars, training_weight_vars, volume_vars, density_vars, duration_vars, working_duration_vars)}
 
+    def format_agent_output_2(self, solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length):
+        final_output = []
+
+        longest_subcomponent_string_size = longest_string_size_for_key(phase_components[1:], "name")
+        longest_bodypart_string_size = longest_string_size_for_key(phase_components[1:], "bodypart_name")
+        longest_pc_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
+
+        longest_exercise_string_size = longest_string_size_for_key(exercises[1:], "name")
+
+        phase_component_count = [0] * len(phase_components)
+
+        formatted += "\nFinal Training Schedule:\n"
+        formatted += "-" * 120 + "\n"
+
+        formatted_number_header = f"{"#":<{3}}"
+        formatted_exercise_header = f"| {"Exercise":<{longest_exercise_string_size+2}}"
+        formatted_phase_component_header = f"| {"Phase Component":<{longest_pc_string_size+2}}"
+        formatted_duration_header = f"| {"Duration":<{25}}"
+        formatted_working_duration_header = f"| {"WDuration":<{25}}"
+        formatted_base_strain_header = f"| {"BStrain":<{8}}"
+        formatted_seconds_per_exercises_header = f"| {"(Sec/Exercise":<{14}}"
+        formatted_reps_header = f"| {"Reps":<{12}}"
+        formatted_sets_header = f"| {"Sets":<{8}}"
+        formatted_rest_header = f"| {"Rest)":<{15}}"
+        formatted_one_rep_max_header = f"| {"1RM":<{15}}"
+        formatted_training_weight_header = f"| {"Weight":<{10}}"
+        formatted_intensity_header = f"| {"Intensity":<{13}}"
+        formatted_volume_header = f"| {"Volume":<{10}}"
+        formatted_density_header = f"| {"Density":<{10}}"
+
+        formatted_phase_component_stats = f"{formatted_phase_component_header}{formatted_duration_header}{formatted_working_duration_header}{formatted_seconds_per_exercises_header}{formatted_reps_header}{formatted_sets_header}{formatted_rest_header}"
+        formatted_improvement_metrics = f"{formatted_one_rep_max_header}{formatted_training_weight_header}{formatted_intensity_header}{formatted_volume_header}{formatted_density_header}"
+
+        formatted += (f"{formatted_number_header}{formatted_exercise_header}{formatted_base_strain_header}{formatted_phase_component_stats}{formatted_improvement_metrics}\n")
+
+        for component_count, (i, exercise_index, phase_component_index, 
+                base_strain, seconds_per_exercise, 
+                reps_var, sets_var, rest_var, intensity_var, one_rep_max_var, 
+                training_weight_var, volume_var, density_var, 
+                duration, working_duration) in enumerate(schedule):
+
+            exercise = exercises[exercise_index]
+            phase_component = phase_components[phase_component_index]
+
+            phase_component_name = phase_component["name"] + " " + phase_component["bodypart_name"] 
+
+            #duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
+            final_output.append({
+                "i": i, 
+                "exercise_index": exercise_index,
+                "exercise_id": exercise["id"],
+                "phase_component_index": phase_component_index, 
+                "phase_component_id": phase_component["phase_component_id"],
+                "bodypart_id": phase_component["bodypart_id"],
+                "base_strain": base_strain, 
+                "seconds_per_exercise": seconds_per_exercise, 
+                "reps_var": reps_var, 
+                "sets_var": sets_var, 
+                "rest_var": rest_var, 
+                "intensity_var": intensity_var, 
+                "one_rep_max_var": one_rep_max_var,
+                "training_weight": training_weight_var,
+                "volume": volume_var,
+                "density": density_var,
+                "duration": duration,
+                "working_duration": working_duration
+            })
+
+            # Count the number of occurrences of each phase component
+            phase_component_count[phase_component_index] += 1
+
+            formatted_component_count = f"{component_count + 1}"
+            number_str = f"{formatted_component_count:<{len(formatted_number_header)}}"
+
+            formatted_exercise = f"| {exercise["name"]}"
+            exercise_str = f"{formatted_exercise:<{len(formatted_exercise_header)}}"
+
+            formatted_phase_component = f"| {phase_component_name}"
+            phase_component_str = f"{formatted_phase_component:<{len(formatted_phase_component_header)}}"
+
+            formatted_duration = f"| {duration // 60} min {duration % 60} sec ({duration} sec)"
+            duration_str = f"{formatted_duration:<{len(formatted_duration_header)}}"
+
+            formatted_working_duration = f"| {working_duration // 60} min {working_duration % 60} sec ({working_duration} sec)"
+            working_duration_str = f"{formatted_working_duration:<{len(formatted_working_duration_header)}}"
+
+            formatted_base_strain = f"| {base_strain}"
+            base_strain_str = f"{formatted_base_strain:<{len(formatted_base_strain_header)}}"
+
+            formatted_seconds_per_exercises = f"| ({seconds_per_exercise} sec"
+            seconds_per_exercises_str = f"{formatted_seconds_per_exercises:<{len(formatted_seconds_per_exercises_header)}}"
+
+            formatted_reps = f"| {reps_var} ({phase_component["reps_min"]}-{phase_component["reps_max"]})"
+            reps_str = f"{formatted_reps:<{len(formatted_reps_header)}}"
+
+            formatted_sets = f"| {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
+            sets_str = f"{formatted_sets:<{len(formatted_sets_header)}}"
+
+            formatted_rest = f"| {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
+            rest_str = f"{formatted_rest+")":<{len(formatted_rest_header)}}"
+
+            formatted_one_rep_max = ""
+            formatted_training_weight = ""
+
+            formatted_intensity = ""
+            if intensity_var != None:
+                formatted_one_rep_max = f"{one_rep_max_var} -> {round((training_weight_var * (30 + reps_var)) / 30, 2)}"
+                formatted_training_weight = f"{training_weight_var}"
+                formatted_intensity = f"{intensity_var} ({phase_component["intensity_min"] or "nan"}-{phase_component["intensity_max"] or "nan"})"
+            one_rep_max_str = f"{"| " + formatted_one_rep_max:<{len(formatted_one_rep_max_header)}}"
+            training_weight_str = f"{"| " + formatted_training_weight:<{len(formatted_training_weight_header)}}"
+            intensity_str = f"{"| " + formatted_intensity:<{len(formatted_intensity_header)}}"
+
+            formatted_volume = f"| {volume_var}"
+            volume_str = f"{formatted_volume:<{len(formatted_volume_header)}}"
+
+            formatted_density = f"| {density_var}"
+            density_str = f"{formatted_density:<{len(formatted_density_header)}}"
+
+            formatted_phase_component_stats = f"{phase_component_str}{duration_str}{working_duration_str}{seconds_per_exercises_str}{reps_str}{sets_str}{rest_str}"
+            formatted_improvement_metrics = f"{one_rep_max_str}{training_weight_str}{intensity_str}{volume_str}{density_str}"
+
+            formatted += (f"{number_str}{exercise_str}{base_strain_str}{formatted_phase_component_stats}{formatted_improvement_metrics}\n")
+
+        formatted += f"Phase Component Counts:\n"
+        for phase_component_index, phase_component_number in enumerate(phase_component_count):
+            phase_component = phase_components[phase_component_index]
+            formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}: {phase_component_number} ({phase_component["exercises_per_bodypart_workout_min"]}-{phase_component["exercises_per_bodypart_workout_max"]})\n"
+        formatted += f"Total Strain: {solution['strain_ratio']}\n"
+        formatted += f"Projected Duration: {projected_duration // 60} min {projected_duration % 60} sec ({projected_duration}) seconds\n"
+        formatted += f"Total Duration: {solution['duration'] // 60} min {solution['duration'] % 60} sec ({solution['duration']}) seconds\n"
+        formatted += f"Total Work Duration: {solution['working_duration'] // 60} min {solution['working_duration']  % 60} sec ({solution['working_duration']}) seconds\n"
+        formatted += f"Workout Length Allowed: {workout_length // 60} min {workout_length % 60} sec ({workout_length} seconds)\n"
+        return final_output, formatted
+
+
     def solve_model_node(self, state: State, config=None) -> dict:
         print("Solving Second Step")
         """Solve model and record relaxation attempt results."""
@@ -635,14 +636,14 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         formatted += "=" * 50 + "\n\n"
 
         # Show relaxation attempts history
-        formatted = format_relaxation_attempts(state["relaxation_attempts"], formatted, workout_length)
+        formatted = self.format_relaxation_attempts(state["relaxation_attempts"], formatted, workout_length)
 
         if solution is None:
             final_output = []
             formatted += "\nNo valid schedule found even with relaxed constraints.\n"
         else:
             schedule = solution["schedule"]
-            final_output, formatted = format_agent_output_2(solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length)
+            final_output, formatted = self.format_agent_output_2(solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length)
 
             # Show final constraint status
             formatted += self.format_constraint_status(state["constraints"])

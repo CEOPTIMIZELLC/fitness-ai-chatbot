@@ -98,6 +98,23 @@ class BaseAgent:
         # This will be overridden by child classes to provide their specific state class
         raise NotImplementedError("Child classes must implement run()")
 
+    def format_relaxation_attempts(self, relaxation_attempts, formatted, *args):
+        """Format the relaxation attempts history."""
+        formatted += "Relaxation Attempts:\n"
+        formatted += "-" * 40 + "\n"
+        for i, attempt in enumerate(relaxation_attempts, 1):
+            formatted += f"\nAttempt {i}:\n"
+            formatted += f"Constraints relaxed: {attempt.constraints_relaxed}\n"
+            formatted += f"Result: {'Feasible' if attempt.result_feasible else 'Infeasible'}\n"
+
+            formatted = self.format_class_specific_relaxation_history(formatted, attempt, *args)
+
+            if attempt.reasoning:
+                formatted += f"Reasoning: {attempt.reasoning}\n"
+            if attempt.expected_impact:
+                formatted += f"Expected Impact: {attempt.expected_impact}\n"
+            formatted += f"Timestamp: {attempt.timestamp}\n"
+        return formatted
 
     def format_constraint_status(self, constraints: dict) -> str:
         """Format the final constraint status section."""
