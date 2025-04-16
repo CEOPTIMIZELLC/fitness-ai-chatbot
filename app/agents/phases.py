@@ -1,5 +1,4 @@
 from ortools.sat.python import cp_model
-from datetime import datetime
 from typing import Set, Optional
 from dotenv import load_dotenv
 

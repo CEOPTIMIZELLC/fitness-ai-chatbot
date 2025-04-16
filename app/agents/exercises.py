@@ -1,13 +1,14 @@
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
-from typing import Set, Optional
 from dotenv import load_dotenv
+
 from app.agents.constraints import (
     link_entry_and_item, 
     create_exercise_intensity_var, 
     no_repeated_items, 
     only_use_required_items, 
     entries_equal)
+
 from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, declare_duration_vars, get_phase_component_bounds
 from app.utils.longest_string import longest_string_size_for_key
 from app.utils.min_and_max_in_dict import get_item_bounds
