@@ -70,7 +70,9 @@ def get_phase_component_bounds(phase_components):
         'seconds_per_exercise': get_item_bounds("seconds_per_exercise", "seconds_per_exercise", phase_components),
         'reps': get_item_bounds("reps_min", "reps_max", phase_components),
         'sets': get_item_bounds("sets_min", "sets_max", phase_components),
-        'rest': get_item_bounds("rest_min", "rest_max", phase_components)
+        'rest': get_item_bounds("rest_min", "rest_max", phase_components),
+        'duration': get_item_bounds("duration_min", "duration_max", phase_components),
+        'working_duration': get_item_bounds("working_duration_min", "working_duration_max", phase_components)
     }
 
 class State(BaseAgentState):
@@ -167,7 +169,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
         min_reps, max_reps = pc_bounds["reps"]["min"], pc_bounds["reps"]["max"]
         min_sets, max_sets = pc_bounds["sets"]["min"], pc_bounds["sets"]["max"]
         min_rest, max_rest = pc_bounds["rest"]["min"], pc_bounds["rest"]["max"]
-        max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
+        # max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
+        min_duration, max_duration = pc_bounds["duration"]["min"], pc_bounds["duration"]["max"]
+        min_working_duration, max_working_duration = pc_bounds["working_duration"]["min"], pc_bounds["working_duration"]["max"]
 
         # Boolean variables indicating whether exercise i is active.
         active_exercise_vars = [
