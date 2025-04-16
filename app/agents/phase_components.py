@@ -368,7 +368,6 @@ class PhaseComponentAgent(BaseAgent):
 
         longest_subcomponent_string_size = longest_string_size_for_key(phase_components, "name")
         longest_bodypart_string_size = longest_string_size_for_key(phase_components, "bodypart")
-        longest_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
 
         phase_component_count = [0] * len(phase_components)
 
