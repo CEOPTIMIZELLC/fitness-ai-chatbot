@@ -441,10 +441,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 duration, working_duration) in enumerate(schedule):
 
             phase_component = phase_components[phase_component_index]
-
             phase_component_name = phase_component["name"] + " " + phase_component["bodypart_name"] 
-
-            #duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
 
             if active_exercises:
                 final_output.append({
