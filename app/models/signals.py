@@ -13,7 +13,7 @@ def connect_user_to_exercises(mapper, connection, user):
         {
             'user_id': user.id,
             'exercise_id': exercise.id,
-            'one_rep_max': 5
+            'one_rep_max': 10
         }
         for exercise in exercises
     ]
@@ -37,7 +37,7 @@ def connect_exercise_to_users(mapper, connection, exercise):
         {
             'user_id': user.id,
             'exercise_id': exercise.id,
-            'one_rep_max': 5
+            'one_rep_max': 10
         }
         for user in users
     ]
