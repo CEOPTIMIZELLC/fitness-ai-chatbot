@@ -95,6 +95,16 @@ class Phase_Component_Library(BaseModel, TableNameMixin, NameMixin):
     def duration_max(self):
         return (self.seconds_per_exercise * self.reps_max + self.rest_max) * self.sets_max
 
+    # Working duration of the phase component based on the formula for the minimum values allowed.
+    @hybrid_property
+    def working_duration_min(self):
+        return self.seconds_per_exercise * self.reps_min * self.sets_min
+        
+    # Working duration of the phase component based on the formula for the maximum values allowed.
+    @hybrid_property
+    def working_duration_max(self):
+        return self.seconds_per_exercise * self.reps_max * self.sets_max
+
     # Relationships
     phases = db.relationship("Phase_Library", back_populates="phase_components")
     components = db.relationship("Component_Library", back_populates="phase_components")
@@ -137,5 +147,7 @@ class Phase_Component_Library(BaseModel, TableNameMixin, NameMixin):
             "exercises_per_bodypart_workout_max": self.exercises_per_bodypart_workout_max, 
             "duration_min": self.duration_min, 
             "duration_max": self.duration_max, 
+            "working_duration_min": self.working_duration_min, 
+            "working_duration_max": self.working_duration_max, 
             "exercise_selection_note": self.exercise_selection_note
         }
