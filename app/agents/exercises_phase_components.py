@@ -324,6 +324,79 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         return {"opt_model": (model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars)}
 
+    def solve_model_node(self, state: State, config=None) -> dict:
+        print("Solving First Step")
+        """Solve model and record relaxation attempt results."""
+        #return {"solution": "None"}
+        model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
+
+        solver = cp_model.CpSolver()
+        solver.parameters.num_search_workers = 24
+        #solver.parameters.log_search_progress = True
+        status = solver.Solve(model)
+
+        state["logs"] += f"\nSolver status: {status}\n"
+        state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
+
+        if status in (cp_model.FEASIBLE, cp_model.OPTIMAL):
+            strain_ratio = duration = working_duration = 0
+            schedule = []
+            # Each day in the microcycle
+            for i in range(len(duration_vars)):
+                model.AddHint(phase_component_vars[i], solver.Value(phase_component_vars[i]))
+
+                # Ensure that the phase component is active.
+                if(solver.Value(active_exercise_vars[i])):
+                    duration_vars_current = solver.Value(duration_vars[i])
+                    working_duration_vars_current = solver.Value(working_duration_vars[i])
+                    schedule.append((
+                        i, 
+                        solver.Value(phase_component_vars[i]), 
+                        solver.Value(active_exercise_vars[i]), 
+                        solver.Value(seconds_per_exercise_vars[i]), 
+                        solver.Value(reps_vars[i]), 
+                        solver.Value(sets_vars[i]), 
+                        solver.Value(rest_vars[i]) * 5, 
+                        duration_vars_current,
+                        working_duration_vars_current
+                    ))
+                    duration += duration_vars_current
+                    working_duration += working_duration_vars_current
+                    strain_ratio += duration_vars_current/working_duration_vars_current
+            schedule = sorted(schedule, key=lambda x: x[1])
+            solution = {
+                "schedule": schedule,
+                "duration": duration,
+                "working_duration": working_duration,
+                "strain_ratio": strain_ratio,
+                "status": status
+            }
+
+            # Record successful attempt
+            attempt = RelaxationAttempt(
+                state["current_attempt"]["constraints"],
+                True,
+                strain_ratio,
+                duration,
+                working_duration,
+                state["current_attempt"]["reasoning"],
+                state["current_attempt"]["expected_impact"]
+            )
+            state["relaxation_attempts"].append(attempt)
+            return {"solution": solution}
+
+        # Record unsuccessful attempt
+        attempt = RelaxationAttempt(
+            state["current_attempt"]["constraints"],
+            False,
+            None,
+            None,
+            None,
+            state["current_attempt"]["reasoning"],
+            state["current_attempt"]["expected_impact"]
+        )
+        state["relaxation_attempts"].append(attempt)
+        return {"solution": None}
 
     def format_class_specific_relaxation_history(self, formatted, attempt, workout_length):
         if workout_length is not None:
@@ -400,80 +473,6 @@ class ExercisePhaseComponentAgent(BaseAgent):
         formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
 
         return final_output, formatted
-
-    def solve_model_node(self, state: State, config=None) -> dict:
-        print("Solving First Step")
-        """Solve model and record relaxation attempt results."""
-        #return {"solution": "None"}
-        model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
-
-        solver = cp_model.CpSolver()
-        solver.parameters.num_search_workers = 24
-        #solver.parameters.log_search_progress = True
-        status = solver.Solve(model)
-
-        state["logs"] += f"\nSolver status: {status}\n"
-        state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
-
-        if status in (cp_model.FEASIBLE, cp_model.OPTIMAL):
-            strain_ratio = duration = working_duration = 0
-            schedule = []
-            # Each day in the microcycle
-            for i in range(len(duration_vars)):
-                model.AddHint(phase_component_vars[i], solver.Value(phase_component_vars[i]))
-
-                # Ensure that the phase component is active.
-                if(solver.Value(active_exercise_vars[i])):
-                    duration_vars_current = solver.Value(duration_vars[i])
-                    working_duration_vars_current = solver.Value(working_duration_vars[i])
-                    schedule.append((
-                        i, 
-                        solver.Value(phase_component_vars[i]), 
-                        solver.Value(active_exercise_vars[i]), 
-                        solver.Value(seconds_per_exercise_vars[i]), 
-                        solver.Value(reps_vars[i]), 
-                        solver.Value(sets_vars[i]), 
-                        solver.Value(rest_vars[i]) * 5, 
-                        duration_vars_current,
-                        working_duration_vars_current
-                    ))
-                    duration += duration_vars_current
-                    working_duration += working_duration_vars_current
-                    strain_ratio += duration_vars_current/working_duration_vars_current
-            schedule = sorted(schedule, key=lambda x: x[1])
-            solution = {
-                "schedule": schedule,
-                "duration": duration,
-                "working_duration": working_duration,
-                "strain_ratio": strain_ratio,
-                "status": status
-            }
-
-            # Record successful attempt
-            attempt = RelaxationAttempt(
-                state["current_attempt"]["constraints"],
-                True,
-                strain_ratio,
-                duration,
-                working_duration,
-                state["current_attempt"]["reasoning"],
-                state["current_attempt"]["expected_impact"]
-            )
-            state["relaxation_attempts"].append(attempt)
-            return {"solution": solution}
-
-        # Record unsuccessful attempt
-        attempt = RelaxationAttempt(
-            state["current_attempt"]["constraints"],
-            False,
-            None,
-            None,
-            None,
-            state["current_attempt"]["reasoning"],
-            state["current_attempt"]["expected_impact"]
-        )
-        state["relaxation_attempts"].append(attempt)
-        return {"solution": None}
 
     def format_solution_node(self, state: State, config=None) -> dict:
         print("Formatting First Step")
