@@ -22,12 +22,14 @@ def get_exercises_for_pc(exercises, phase_component):
             and exercise['subcomponent_id']==phase_component["subcomponent_id"]
             and ((1 in exercise['bodypart_ids']) or
                  (phase_component["bodypart_id"] in exercise["bodypart_ids"])))]
+
     if (exercises_for_pc == []) and (phase_component["bodypart_id"] == 1):
         print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises for this component phase if it's total body.")
         exercises_for_pc = [
             i for i, exercise in enumerate(exercises, start=1)
             if (exercise['component_id']==phase_component["component_id"] 
                 and exercise['subcomponent_id']==phase_component["subcomponent_id"])]
+
     if exercises_for_pc == []:
         print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' still has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises.")
         exercises_for_pc = [i for i, _ in enumerate(exercises, start=1)]
@@ -54,22 +56,22 @@ def constrain_density_vars(model, density_vars, duration_vars, working_duration_
     # Link the exercise variables and the density variables by ensuring the density is equal to the duration / working duration for the exercise chose at exercise i.
     for i, (duration_var, working_duration_var, density_var) in enumerate(zip(duration_vars, working_duration_vars, density_vars)):
         # Create a boolean variable to track if working_duration is 0
-        working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
+        base_duration_is_0 = model.NewBoolVar(f'base_duration_{i}_is_0')
         
         # Create an intermediate variable that will be 1 when working_duration is 0 and will be working_duration otherwise
-        non_zero_working_duration_var = model.NewIntVar(1, max_duration, 'non_zero_working_duration_{i}')
+        non_zero_base_duration_var = model.NewIntVar(1, max_duration, 'non_zero_base_duration_{i}')
         
         # Link the conditions
-        model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
-        model.Add(non_zero_working_duration_var == working_duration_var).OnlyEnforceIf(working_duration_is_0.Not())
-        model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
-        model.Add(working_duration_var > 0).OnlyEnforceIf(working_duration_is_0.Not())
+        model.Add(non_zero_base_duration_var == 1).OnlyEnforceIf(base_duration_is_0)
+        model.Add(non_zero_base_duration_var == duration_var).OnlyEnforceIf(base_duration_is_0.Not())
+        model.Add(duration_var == 0).OnlyEnforceIf(base_duration_is_0)
+        model.Add(duration_var > 0).OnlyEnforceIf(base_duration_is_0.Not())
         
         # Now we can safely do the division (scaled up by 100 to avoid floating point)
-        model.AddDivisionEquality(density_var, 100 * duration_var, non_zero_working_duration_var)
+        model.AddDivisionEquality(density_var, 100 * working_duration_var, non_zero_base_duration_var)
         
         # Set density to 0 when working_duration is 0
-        model.Add(density_var == 0).OnlyEnforceIf(working_duration_is_0)
+        model.Add(density_var == 0).OnlyEnforceIf(base_duration_is_0)
     return None
 
 def enforce_increase_for_exercise(model, i, exercises, key, used_exercise_var, duration_vars):
