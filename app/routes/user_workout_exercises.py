@@ -45,6 +45,8 @@ dummy_phase_component = {
     "duration": 0,
     "duration_min": 0,
     "duration_max": 0,
+    "working_duration_min": 0,
+    "working_duration_max": 0,
     'reps_min': 0, 
     'reps_max': 0, 
     'sets_min': 0, 
@@ -69,6 +71,8 @@ def user_component_dict(workout, phase_component):
         "duration": workout.duration,
         "duration_min": phase_component.duration_min,
         "duration_max": phase_component.duration_max,
+        "working_duration_min": phase_component.working_duration_min,
+        "working_duration_max": phase_component.working_duration_max,
         "phase_component_id": phase_component.id,
         "phase_name": phase_component.phases.name,
         "component_id": phase_component.component_id,
@@ -112,11 +116,12 @@ def exercise_dict(exercise, user_exercise, phase):
         "weighted_equipment_ids": exercise.all_weighted_equipment,
         "marking_equipment_ids": exercise.all_marking_equipment,
         "other_equipment_ids": exercise.all_other_equipment,
-        "one_rep_max": user_exercise.one_rep_max, 
-        "one_rep_load": user_exercise.one_rep_load, 
-        "volume": user_exercise.volume, 
-        "density": user_exercise.density, 
-        "intensity": user_exercise.intensity,
+        "one_rep_max": int(user_exercise.one_rep_max * 100), 
+        "one_rep_load": int(user_exercise.one_rep_load), 
+        "volume": int(user_exercise.volume), 
+        "density": int(user_exercise.density), 
+        "intensity": int(user_exercise.intensity),
+        "performance": int(user_exercise.performance),
     }
 
 
@@ -311,24 +316,24 @@ def exercise_initializer():
     output = result["output"]
     print(result["formatted"])
 
-    user_workout_exercises = agent_output_to_sqlalchemy_model(output, user_workout_day.id)
+    # user_workout_exercises = agent_output_to_sqlalchemy_model(output, user_workout_day.id)
 
-    db.session.add_all(user_workout_exercises)
-    db.session.commit()
+    # db.session.add_all(user_workout_exercises)
+    # db.session.commit()
 
-    for exercise in output:
-        user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise["exercise_id"]})
+    # for exercise in output:
+    #     user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise["exercise_id"]})
 
-        new_one_rep_max = round((exercise["training_weight"] * (30 + exercise["reps_var"])) / 30, 2)
+    #     new_one_rep_max = round((exercise["training_weight"] * (30 + exercise["reps_var"])) / 30, 2)
 
-        # Only replace if the new one rep max is larger.
-        user_exercise.one_rep_max = max(user_exercise.one_rep_max, new_one_rep_max)
-        user_exercise.one_rep_load = new_one_rep_max
-        user_exercise.volume = exercise["volume"]
-        user_exercise.density = exercise["density"]
-        user_exercise.intensity = exercise["intensity_var"]
+    #     # Only replace if the new one rep max is larger.
+    #     user_exercise.one_rep_max = max(user_exercise.one_rep_max, new_one_rep_max)
+    #     user_exercise.one_rep_load = new_one_rep_max
+    #     user_exercise.volume = exercise["volume"]
+    #     user_exercise.density = exercise["density"]
+    #     user_exercise.intensity = exercise["intensity_var"]
 
-        db.session.commit()
+    #     db.session.commit()
 
     return jsonify({"status": "success", "exercises": result}), 200
 
