@@ -338,16 +338,17 @@ class PhaseAgent(BaseAgent):
         formatted += "\nFinal Training Schedule:\n"
         formatted += "-" * 40 + "\n"
         for i, (phase_type, phase_duration) in enumerate(schedule):
-            phase_name = phases[phase_type]["name"]
+            phase = phases[phase_type]
             final_output.append({
-                "name": phase_name,
-                "id": phases[phase_type]["id"],
-                "duration": phase_duration})
-            formatted_duration = f"Duration: {phase_duration} weeks"
-            formatted_goal_duration = f"Goal Duration: +{phase_duration if phases[phase_type]["is_goal_phase"] else 0} weeks"
-            formatted_phase_minimum = f"min: {phases[phase_type]["element_minimum"]}"
-            formatted_phase_maximum = f"max: {phases[phase_type]["element_maximum"]}"
-            formatted += (f"Mesocycle {i + 1}: \t{phase_name:<{longest_string_size+3}} ({formatted_duration}; {formatted_goal_duration}) [{formatted_phase_minimum} - {formatted_phase_maximum}]\n")
+                "name": phase["name"],
+                "id": phase["id"],
+                "duration": phase_duration
+            })
+            
+            formatted_duration = f"Duration: {self._format_range(phase_duration, phase['element_minimum'], phase['element_maximum'])} weeks"
+            formatted_goal_duration = f"Goal Duration: +{phase_duration if phase['is_goal_phase'] else 0} weeks"
+            formatted += (f"Mesocycle {i + 1}: \t{phase['name']:<{longest_string_size+3}} ({formatted_duration}; {formatted_goal_duration})\n")
+            
         formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
         formatted += f"Total Time Used: {solution['total_weeks_time']} weeks\n"
         formatted += f"Total Time Allowed: {macrocycle_allowed_weeks} weeks\n"

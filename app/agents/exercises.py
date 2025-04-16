@@ -404,6 +404,90 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         return {"opt_model": (model, exercise_vars, phase_component_ids, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, one_rep_max_vars, training_weight_vars, volume_vars, density_vars, duration_vars, working_duration_vars)}
 
+    def solve_model_node(self, state: State, config=None) -> dict:
+        print("Solving Second Step")
+        """Solve model and record relaxation attempt results."""
+        model, exercise_vars, phase_component_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, one_rep_max_vars, training_weight_vars, volume_vars, density_vars, duration_vars, working_duration_vars = state["opt_model"]
+
+        solver = cp_model.CpSolver()
+        solver.parameters.num_search_workers = 24
+        # solver.parameters.log_search_progress = True
+        status = solver.Solve(model)
+
+        state["logs"] += f"\nSolver status: {status}\n"
+        state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
+
+        if status in (cp_model.FEASIBLE, cp_model.OPTIMAL):
+            strain_ratio = duration = working_duration = 0
+            schedule = []
+            # Each day in the microcycle
+            for i in range(len(duration_vars)):
+
+                # Ensure that the phase component is active.
+                intensity_var_current = solver.Value(intensity_vars[i]) if intensity_vars[i] is not None else 0
+                training_weight_var_current = solver.Value(training_weight_vars[i]) if training_weight_vars[i] is not None else 0
+                volume_var_current = solver.Value(volume_vars[i])
+                if training_weight_vars[i] is not None:
+                    volume_var_current /= 100
+                duration_vars_current = solver.Value(duration_vars[i])
+                working_duration_vars_current = solver.Value(working_duration_vars[i])
+
+                schedule.append((
+                    i, 
+                    solver.Value(exercise_vars[i]),                 # Index of the exercise chosen.
+                    phase_component_vars[i],                        # Index of the phase component chosen.
+                    solver.Value(base_strain_vars[i]),              # Base strain of the exercise chosen.
+                    solver.Value(seconds_per_exercise_vars[i]),     # Seconds per exercise of the exercise chosen.
+                    solver.Value(reps_vars[i]),                     # Reps of the exercise chosen.
+                    solver.Value(sets_vars[i]),                     # Sets of the exercise chosen.
+                    solver.Value(rest_vars[i]) * 5,                 # Rest of the exercise chosen.
+                    intensity_var_current,                          # Intensity of the exercise chosen.
+                    solver.Value(one_rep_max_vars[i]),              # 1RM of the exercise chosen.
+                    training_weight_var_current / 100,              # Training weight of the exercise chosen.
+                    volume_var_current,                             # Volume of the exercise chosen.
+                    solver.Value(density_vars[i]) / 100,            # Density of the exercise chosen.
+                    duration_vars_current,                          # Duration of the exercise chosen.
+                    working_duration_vars_current,                  # Working duration of the exercise chosen.
+                ))
+                duration += duration_vars_current
+                working_duration += working_duration_vars_current
+                strain_ratio += duration_vars_current/working_duration_vars_current
+            schedule = sorted(schedule, key=lambda x: x[2])
+            solution = {
+                "schedule": schedule,
+                "duration": duration,
+                "working_duration": working_duration,
+                "strain_ratio": strain_ratio,
+                "status": status
+            }
+
+            # Record successful attempt
+            attempt = RelaxationAttempt(
+                state["current_attempt"]["constraints"],
+                True,
+                strain_ratio,
+                duration,
+                working_duration,
+                state["current_attempt"]["reasoning"],
+                state["current_attempt"]["expected_impact"]
+            )
+            state["relaxation_attempts"].append(attempt)
+            return {"solution": solution}
+
+        # Record unsuccessful attempt
+        attempt = RelaxationAttempt(
+            state["current_attempt"]["constraints"],
+            False,
+            None,
+            None,
+            None,
+            state["current_attempt"]["reasoning"],
+            state["current_attempt"]["expected_impact"]
+        )
+        state["relaxation_attempts"].append(attempt)
+        return {"solution": None}
+
+
     def format_agent_output_2(self, solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length):
         final_output = []
 
@@ -531,97 +615,15 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         formatted += f"Phase Component Counts:\n"
         for phase_component_index, phase_component_number in enumerate(phase_component_count):
             phase_component = phase_components[phase_component_index]
-            formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}: {phase_component_number} ({phase_component["exercises_per_bodypart_workout_min"]}-{phase_component["exercises_per_bodypart_workout_max"]})\n"
+            phase_component_name = f"{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}"
+            formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}\n"
         formatted += f"Total Strain: {solution['strain_ratio']}\n"
-        formatted += f"Projected Duration: {projected_duration // 60} min {projected_duration % 60} sec ({projected_duration}) seconds\n"
-        formatted += f"Total Duration: {solution['duration'] // 60} min {solution['duration'] % 60} sec ({solution['duration']}) seconds\n"
-        formatted += f"Total Work Duration: {solution['working_duration'] // 60} min {solution['working_duration']  % 60} sec ({solution['working_duration']}) seconds\n"
-        formatted += f"Workout Length Allowed: {workout_length // 60} min {workout_length % 60} sec ({workout_length} seconds)\n"
+        formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
+        formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
+        formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
+        formatted += f"Workout Length Allowed: {self._format_duration(workout_length)}\n"
         return final_output, formatted
 
-
-    def solve_model_node(self, state: State, config=None) -> dict:
-        print("Solving Second Step")
-        """Solve model and record relaxation attempt results."""
-        model, exercise_vars, phase_component_vars, base_strain_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, one_rep_max_vars, training_weight_vars, volume_vars, density_vars, duration_vars, working_duration_vars = state["opt_model"]
-
-        solver = cp_model.CpSolver()
-        solver.parameters.num_search_workers = 24
-        # solver.parameters.log_search_progress = True
-        status = solver.Solve(model)
-
-        state["logs"] += f"\nSolver status: {status}\n"
-        state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
-
-        if status in (cp_model.FEASIBLE, cp_model.OPTIMAL):
-            strain_ratio = duration = working_duration = 0
-            schedule = []
-            # Each day in the microcycle
-            for i in range(len(duration_vars)):
-
-                # Ensure that the phase component is active.
-                intensity_var_current = solver.Value(intensity_vars[i]) if intensity_vars[i] is not None else 0
-                training_weight_var_current = solver.Value(training_weight_vars[i]) if training_weight_vars[i] is not None else 0
-                volume_var_current = solver.Value(volume_vars[i])
-                if training_weight_vars[i] is not None:
-                    volume_var_current /= 100
-                duration_vars_current = solver.Value(duration_vars[i])
-                working_duration_vars_current = solver.Value(working_duration_vars[i])
-
-                schedule.append((
-                    i, 
-                    solver.Value(exercise_vars[i]),                 # Index of the exercise chosen.
-                    phase_component_vars[i],                        # Index of the phase component chosen.
-                    solver.Value(base_strain_vars[i]),              # Base strain of the exercise chosen.
-                    solver.Value(seconds_per_exercise_vars[i]),     # Seconds per exercise of the exercise chosen.
-                    solver.Value(reps_vars[i]),                     # Reps of the exercise chosen.
-                    solver.Value(sets_vars[i]),                     # Sets of the exercise chosen.
-                    solver.Value(rest_vars[i]) * 5,                 # Rest of the exercise chosen.
-                    intensity_var_current,                          # Intensity of the exercise chosen.
-                    solver.Value(one_rep_max_vars[i]),              # 1RM of the exercise chosen.
-                    training_weight_var_current / 100,              # Training weight of the exercise chosen.
-                    volume_var_current,                             # Volume of the exercise chosen.
-                    solver.Value(density_vars[i]) / 100,            # Density of the exercise chosen.
-                    duration_vars_current,                          # Duration of the exercise chosen.
-                    working_duration_vars_current,                  # Working duration of the exercise chosen.
-                ))
-                duration += duration_vars_current
-                working_duration += working_duration_vars_current
-                strain_ratio += duration_vars_current/working_duration_vars_current
-            schedule = sorted(schedule, key=lambda x: x[2])
-            solution = {
-                "schedule": schedule,
-                "duration": duration,
-                "working_duration": working_duration,
-                "strain_ratio": strain_ratio,
-                "status": status
-            }
-
-            # Record successful attempt
-            attempt = RelaxationAttempt(
-                state["current_attempt"]["constraints"],
-                True,
-                strain_ratio,
-                duration,
-                working_duration,
-                state["current_attempt"]["reasoning"],
-                state["current_attempt"]["expected_impact"]
-            )
-            state["relaxation_attempts"].append(attempt)
-            return {"solution": solution}
-
-        # Record unsuccessful attempt
-        attempt = RelaxationAttempt(
-            state["current_attempt"]["constraints"],
-            False,
-            None,
-            None,
-            None,
-            state["current_attempt"]["reasoning"],
-            state["current_attempt"]["expected_impact"]
-        )
-        state["relaxation_attempts"].append(attempt)
-        return {"solution": None}
 
     def format_solution_node_2(self, state: State, config=None) -> dict:
         print("Formatting Second Step")

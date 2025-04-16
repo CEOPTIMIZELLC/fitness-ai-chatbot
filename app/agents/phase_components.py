@@ -343,9 +343,7 @@ class PhaseComponentAgent(BaseAgent):
         for component_count, (phase_component_index, workday_index, active_phase_components, duration_var) in enumerate(schedule):
 
             phase_component = phase_components[phase_component_index]
-            phase_component_id = phase_component["id"]
-            bodypart_id = phase_component["bodypart_id"]
-            phase_component_name = phase_component["name"] + " " + phase_component["bodypart"] 
+            phase_component_name = f"{phase_component["name"]:<{longest_subcomponent_string_size+3}} {phase_component["bodypart"]:<{longest_bodypart_string_size+3}}"
 
             day_duration = duration_var
 
@@ -353,8 +351,8 @@ class PhaseComponentAgent(BaseAgent):
                 final_output.append({
                     "workday_index": workday_index, 
                     "phase_component_index": phase_component_index, 
-                    "phase_component_id": phase_component_id,
-                    "bodypart_id": bodypart_id,
+                    "phase_component_id": phase_component["id"],
+                    "bodypart_id": phase_component["bodypart_id"],
                     "active_phase_components": active_phase_components, 
                     "duration_var": duration_var
                 })
@@ -362,26 +360,27 @@ class PhaseComponentAgent(BaseAgent):
                 current_weekday = microcycle_weekdays[workday_index]
 
                 if not used_days[workday_index]["used"]:
-                    formatted += f"\nDay {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {used_days[workday_index]["availability"]  // 60} min {used_days[workday_index]["availability"]  % 60} sec ({used_days[workday_index]["availability"]} seconds)\n"
+                    formatted += f"\nDay {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])}\n"
                     used_days[workday_index]["used"] = True
 
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
-                formatted_duration = f"Duration: {(day_duration // 60):<{3}} min {(day_duration % 60):<{3}} sec\t"
-                formatted_duration_sec = f"{day_duration:<{5}} seconds ({phase_component["duration_min"]}-{phase_component["duration_max"]})"
+                formatted_duration = f"Duration: {self._format_duration(day_duration)}\t"
+                formatted_duration_sec = f"{self._format_range(str(day_duration) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}"
 
-                formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name:<{longest_string_size+3}} {formatted_duration} {formatted_duration_sec}\n")
+                formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name} {formatted_duration} {formatted_duration_sec}\n")
             else:
-                formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t{phase_component_name:<{longest_string_size+3}} ----\n")
+                formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t{phase_component_name} ----\n")
 
         formatted += f"Phase Component Counts:\n"
         for phase_component_index, phase_component_number in enumerate(phase_component_count):
             phase_component = phase_components[phase_component_index]
-            formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart"]:<{longest_string_size+3}}: {phase_component_number} ({phase_component["frequency_per_microcycle_min"]} - {phase_component["frequency_per_microcycle_max"]})\n"
-        formatted += f"Total Time Used: {solution['microcycle_duration']  // 60} min {solution['microcycle_duration']  % 60} sec ({solution['microcycle_duration']}) seconds\n"
-        formatted += f"Total Time Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
-        formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
+            phase_component_name = f"{phase_component["name"]:<{longest_subcomponent_string_size+3}} {phase_component["bodypart"]:<{longest_bodypart_string_size+3}}"
+            formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])}\n"
+        formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
+        formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
+        formatted += f"Workout Length Allowed: {self._format_duration(workout_length)}\n"
 
         return final_output, formatted
 

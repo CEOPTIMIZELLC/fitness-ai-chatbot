@@ -49,6 +49,20 @@ class BaseAgent:
             "current_attempt": {"constraints": set(), "reasoning": None, "expected_impact": None}
         }
 
+    def _format_duration(self, seconds: int) -> str:
+        """Format duration in minutes and seconds"""
+        return f"{seconds // 60} min {seconds % 60} sec ({seconds} sec)"
+
+    def _format_range(self, value, min_val, max_val) -> str:
+        """Format a value with its allowed range"""
+        return f"{value} ({min_val}-{max_val})"
+
+    def _create_formatted_field(self, label: str, value: str, header_length: int) -> str:
+        """Helper method to create consistently formatted fields"""
+        prefix = "| " if label != "#" else ""
+        formatted = f"{prefix}{value}"
+        return f"{formatted:<{header_length}}"
+
     def analyze_infeasibility_node(self, state: TState, config=None) -> dict:
         """Use LLM to analyze solver logs and suggest constraints to relax."""
         # Prepare history of what's been tried

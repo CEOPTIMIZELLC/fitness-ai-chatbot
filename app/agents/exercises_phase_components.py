@@ -379,11 +379,11 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
                 formatted_phase_component = f"{phase_component_name:<{longest_pc_string_size+3}}"
 
-                formatted_duration = f"Duration: {duration // 60} min {duration % 60} sec ({duration} seconds)"
+                formatted_duration = f"Duration: {self._format_duration(duration)}"
                 formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
-                formatted_reps = f"Reps {reps_var} ({phase_component["reps_min"]}-{phase_component["reps_max"]})"
-                formatted_sets = f"Sets {sets_var} ({phase_component["sets_min"]}-{phase_component["sets_max"]})"
-                formatted_rest = f"Rest {rest_var} ({phase_component["rest_min"] * 5}-{phase_component["rest_max"] * 5})"
+                formatted_reps = f"Reps {self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"])}"
+                formatted_sets = f"Sets {self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"])}"
+                formatted_rest = f"Rest {self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5)}"
 
                 formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_phase_component}{formatted_duration:<{45}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{20}}{formatted_rest:<{6}})\n")
             else:
@@ -392,12 +392,12 @@ class ExercisePhaseComponentAgent(BaseAgent):
         formatted += f"Phase Component Counts:\n"
         for phase_component_index, phase_component_number in enumerate(phase_component_count):
             phase_component = phase_components[phase_component_index]
-            formatted += f"\t{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}: {phase_component_number} ({phase_component["exercises_per_bodypart_workout_min"]}-{phase_component["exercises_per_bodypart_workout_max"]})\n"
+            phase_component_name = f"{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}"
+            formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}\n"
         formatted += f"Total Strain: {solution['strain_ratio']}\n"
-        formatted += f"Projected Duration: {projected_duration // 60} min {projected_duration % 60} sec ({projected_duration}) seconds\n"
-        formatted += f"Total Duration: {solution['duration'] // 60} min {solution['duration'] % 60} sec ({solution['duration']}) seconds\n"
-        formatted += f"Total Work Duration: {solution['working_duration'] // 60} min {solution['working_duration']  % 60} sec ({solution['working_duration']}) seconds\n"
-        formatted += f"Workout Length Allowed: {workout_length // 60} min {workout_length % 60} sec ({workout_length} seconds)\n"
+        formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
+        formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
+        formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
 
         return final_output, formatted
 
