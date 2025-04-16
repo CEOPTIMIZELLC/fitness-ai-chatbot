@@ -99,6 +99,32 @@ class BaseAgent:
             formatted += f"- {constraint}: {'Active' if active else 'Relaxed'}\n"
         return formatted
 
+    def format_solution_node(self, state: TState, config=None) -> dict:
+        """Format the optimization results."""
+        solution, parameters = state["solution"], state["parameters"]
+        
+        # Get parameters specific to each formatter
+        relaxation_attempts_args = self.get_relaxation_formatting_parameters(parameters)
+        agent_output_args = self.get_model_formatting_parameters(parameters)
+        
+        formatted = "Optimization Results:\n"
+        formatted += "=" * 50 + "\n\n"
+
+        # Show relaxation attempts history
+        formatted = self.format_relaxation_attempts(state["relaxation_attempts"], formatted, *relaxation_attempts_args)
+
+        if solution is None:
+            final_output = []
+            formatted += "\nNo valid schedule found even with relaxed constraints.\n"
+        else:
+            schedule = solution["schedule"]
+            final_output, formatted = self.format_agent_output(solution, formatted, schedule, *agent_output_args)
+
+            # Show final constraint status
+            formatted += self.format_constraint_status(state["constraints"])
+
+        return {"formatted": formatted, "output": final_output}
+
     def create_optimization_graph(self, state_class: type[TState]):
         builder = StateGraph(state_class)
 

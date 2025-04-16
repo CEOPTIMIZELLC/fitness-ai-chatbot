@@ -318,6 +318,42 @@ class PhaseComponentAgent(BaseAgent):
         state["relaxation_attempts"].append(attempt)
         return {"solution": None}
 
+    def get_relaxation_formatting_parameters(self, parameters):
+        weekday_availability = parameters["weekday_availability"]
+        workout_length = parameters["workout_length"]
+        microcycle_weekdays = parameters["microcycle_weekdays"]
+        
+        _, workout_time = user_workout_time(
+            weekday_availability, 
+            workout_length, 
+            microcycle_weekdays
+        )
+        
+        return [
+            workout_time,
+            workout_length,
+        ]
+
+    def get_model_formatting_parameters(self, parameters):
+        weekday_availability = parameters["weekday_availability"]
+        workout_length = parameters["workout_length"]
+        microcycle_weekdays = parameters["microcycle_weekdays"]
+        
+        used_days, workout_time = user_workout_time(
+            weekday_availability, 
+            workout_length, 
+            microcycle_weekdays
+        )
+        
+        return [
+            parameters["phase_components"],
+            used_days,
+            workout_time,
+            workout_length,
+            weekday_availability,
+            microcycle_weekdays
+        ]
+
     def format_class_specific_relaxation_history(self, formatted, attempt, workout_time, workout_length):
         if workout_time is not None:
             formatted += f"Total Hours Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
@@ -382,35 +418,6 @@ class PhaseComponentAgent(BaseAgent):
         formatted += f"Workout Length Allowed: {self._format_duration(workout_length)}\n"
 
         return final_output, formatted
-
-    def format_solution_node(self, state: State, config=None) -> dict:
-        """Format the optimization results."""
-        solution, parameters = state["solution"], state["parameters"]
-
-        phase_components = parameters["phase_components"]
-        weekday_availability = parameters["weekday_availability"]
-        workout_length = parameters["workout_length"]
-        microcycle_weekdays = parameters["microcycle_weekdays"]
-
-        used_days, workout_time = user_workout_time(weekday_availability, workout_length, microcycle_weekdays)
-
-        formatted = "Optimization Results:\n"
-        formatted += "=" * 50 + "\n\n"
-
-        # Show relaxation attempts history
-        formatted = self.format_relaxation_attempts(state["relaxation_attempts"], formatted, workout_time, workout_length)
-
-        if solution is None:
-            final_output = []
-            formatted += "\nNo valid schedule found even with relaxed constraints.\n"
-        else:
-            schedule = solution["schedule"]
-            final_output, formatted = self.format_agent_output(solution, formatted, schedule, phase_components, used_days, workout_time, workout_length, weekday_availability, microcycle_weekdays)
-
-            # Show final constraint status
-            formatted += self.format_constraint_status(state["constraints"])
-
-        return {"formatted": formatted, "output": final_output}
 
     def run(self):
         graph = self.create_optimization_graph(State)

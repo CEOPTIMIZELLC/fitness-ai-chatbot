@@ -320,6 +320,17 @@ class PhaseAgent(BaseAgent):
         state["relaxation_attempts"].append(attempt)
         return {"solution": None}
 
+    def get_relaxation_formatting_parameters(self, parameters):
+        return [
+            parameters["macrocycle_allowed_weeks"],
+        ]
+
+    def get_model_formatting_parameters(self, parameters):
+        return [
+            parameters["possible_phases"], 
+            parameters["macrocycle_allowed_weeks"],
+        ]
+
     def format_class_specific_relaxation_history(self, formatted, attempt, macrocycle_allowed_weeks):
         if macrocycle_allowed_weeks is not None:
             formatted += f"Total Weeks Allowed: {macrocycle_allowed_weeks}\n"
@@ -353,31 +364,6 @@ class PhaseAgent(BaseAgent):
         formatted += f"Total Time Allowed: {macrocycle_allowed_weeks} weeks\n"
 
         return final_output, formatted
-
-    def format_solution_node(self, state: State, config=None) -> dict:
-        """Format the optimization results."""
-        solution, parameters = state["solution"], state["parameters"]
-
-        macrocycle_allowed_weeks = parameters["macrocycle_allowed_weeks"]
-        phases = parameters["possible_phases"]
-
-        formatted = "Optimization Results:\n"
-        formatted += "=" * 50 + "\n\n"
-
-        # Show relaxation attempts history
-        formatted = self.format_relaxation_attempts(state["relaxation_attempts"], formatted, macrocycle_allowed_weeks)
-
-        if solution is None:
-            final_output = []
-            formatted += "\nNo valid schedule found even with relaxed constraints.\n"
-        else:
-            schedule = solution["schedule"]
-            final_output, formatted = self.format_agent_output(solution, formatted, schedule, phases, macrocycle_allowed_weeks)
-
-            # Show final constraint status
-            formatted += self.format_constraint_status(state["constraints"])
-
-        return {"formatted": formatted, "output": final_output}
 
     def run(self):
         graph = self.create_optimization_graph(State)

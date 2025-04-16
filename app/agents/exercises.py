@@ -488,8 +488,16 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         state["relaxation_attempts"].append(attempt)
         return {"solution": None}
 
+    def get_model_formatting_parameters(self, parameters):
+        workout_length = min(parameters["availability"], parameters["workout_length"])
+        return [
+            parameters["phase_components"],
+            parameters["possible_exercises"],
+            parameters["projected_duration"],
+            workout_length
+        ]
 
-    def format_agent_output_2(self, solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length):
+    def format_agent_output(self, solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length):
         final_output = []
 
         longest_subcomponent_string_size = longest_string_size_for_key(phase_components[1:], "name")
@@ -625,35 +633,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         formatted += f"Workout Length Allowed: {self._format_duration(workout_length)}\n"
         return final_output, formatted
 
-
-    def format_solution_node_2(self, state: State, config=None) -> dict:
-        print("Formatting Second Step")
-        """Format the optimization results."""
-        solution, parameters = state["solution"], state["parameters"]
-
-        exercises, phase_components, projected_duration = parameters["possible_exercises"], parameters["phase_components"], parameters["projected_duration"]
-        workout_length = min(parameters["availability"], parameters["workout_length"])
-
-        # Total time the user has to workout.
-        formatted = "Optimization Results:\n"
-        formatted += "=" * 50 + "\n\n"
-
-        # Show relaxation attempts history
-        formatted = self.format_relaxation_attempts(state["relaxation_attempts"], formatted, workout_length)
-
-        if solution is None:
-            final_output = []
-            formatted += "\nNo valid schedule found even with relaxed constraints.\n"
-        else:
-            schedule = solution["schedule"]
-            final_output, formatted = self.format_agent_output_2(solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length)
-
-            # Show final constraint status
-            formatted += self.format_constraint_status(state["constraints"])
-
-        return {"formatted": formatted, "output": final_output}
-
-
     def create_optimization_graph(self, state_class):
         builder = StateGraph(state_class)
 
@@ -665,7 +644,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         builder.add_node("build_2", self.build_opt_model_node_2)
         builder.add_node("solve_2", self.solve_model_node)
-        builder.add_node("format", self.format_solution_node_2)
+        builder.add_node("format", self.format_solution_node)
 
         # Add common edges
         builder.add_edge(START, "setup")
