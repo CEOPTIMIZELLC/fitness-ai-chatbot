@@ -121,7 +121,7 @@ def exercise_dict(exercise, user_exercise, phase):
         "volume": int(user_exercise.volume), 
         "density": int(user_exercise.density), 
         "intensity": int(user_exercise.intensity),
-        "performance": int(user_exercise.performance * 100),
+        "performance": int(user_exercise.performance * (100 * 100 * 100)),
     }
 
 
