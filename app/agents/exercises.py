@@ -15,24 +15,30 @@ from app.utils.min_and_max_in_dict import get_item_bounds
 
 _ = load_dotenv()
 
+def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):
+    return [i for i, exercise in enumerate(exercises, start=1) 
+            if all(f(exercise, phase_component) for f in conditions)]
+
 def get_exercises_for_pc(exercises, phase_component):
-    exercises_for_pc = [
-        i for i, exercise in enumerate(exercises, start=1)
-        if (exercise['component_id']==phase_component["component_id"] 
-            and exercise['subcomponent_id']==phase_component["subcomponent_id"]
-            and ((1 in exercise['bodypart_ids']) or
-                 (phase_component["bodypart_id"] in exercise["bodypart_ids"])))]
+    conditions = [lambda exercise, phase_component: exercise['component_id'] == phase_component["component_id"],
+                  lambda exercise, phase_component: exercise['subcomponent_id'] == phase_component["subcomponent_id"],
+                  lambda exercise, phase_component: (1 in exercise['bodypart_ids']) or (phase_component["bodypart_id"] in exercise["bodypart_ids"])]
+
+    exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions)
+    print_check = False
 
     if (exercises_for_pc == []) and (phase_component["bodypart_id"] == 1):
         print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises for this component phase if it's total body.")
-        exercises_for_pc = [
-            i for i, exercise in enumerate(exercises, start=1)
-            if (exercise['component_id']==phase_component["component_id"] 
-                and exercise['subcomponent_id']==phase_component["subcomponent_id"])]
+        print_check = True
+        exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:2])
 
     if exercises_for_pc == []:
         print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' still has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises.")
-        exercises_for_pc = [i for i, _ in enumerate(exercises, start=1)]
+        print_check = True
+        exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component)
+    
+    if print_check:
+        print("")
     return exercises_for_pc
 
 def constrain_training_weight_vars(model, intensity_vars, exercises, training_weight_vars, used_exercise_vars):
