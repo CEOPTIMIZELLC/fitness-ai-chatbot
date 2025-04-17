@@ -1,6 +1,7 @@
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from dotenv import load_dotenv
+import math
 
 from app.agents.constraints import (
     link_entry_and_item, 
@@ -14,6 +15,9 @@ from app.utils.longest_string import longest_string_size_for_key
 from app.utils.min_and_max_in_dict import get_item_bounds
 
 _ = load_dotenv()
+
+def duration_calculation(seconds_per_exercise, reps, sets, rest=0):
+    return (seconds_per_exercise * reps + (rest * 5)) * sets
 
 def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):
     return [i for i, exercise in enumerate(exercises, start=1) 
@@ -55,7 +59,7 @@ def constrain_volume_vars(model, volume_vars, reps_vars, sets_vars, training_wei
         if training_weight_var != None:
             model.AddMultiplicationEquality(volume_var, [reps_var, sets_var, training_weight_var])
         else:
-            model.AddMultiplicationEquality(volume_var, [reps_var, sets_var])
+            model.AddMultiplicationEquality(volume_var, [reps_var, sets_var, 100 * 100])
     return None
 
 def constrain_density_vars(model, density_vars, duration_vars, working_duration_vars, max_duration):
@@ -80,16 +84,9 @@ def constrain_density_vars(model, density_vars, duration_vars, working_duration_
         model.Add(density_var == 0).OnlyEnforceIf(base_duration_is_0)
     return None
 
-def constrain_performance_vars(model, performance_vars, volume_vars, density_vars, training_weight_vars, min_volume, max_volume):
-    for i, (volume_var, density_var, performance_var, training_weight_var) in enumerate(zip(volume_vars, density_vars, performance_vars, training_weight_vars)):
-        # Scale down volume if weight is included
-        if training_weight_var != None:
-            scale_down_by = 100
-            volume_var_scaled = model.NewIntVar(min_volume // scale_down_by, max_volume // scale_down_by, f'volume_{i}_scaled_down')
-            model.AddDivisionEquality(volume_var_scaled, volume_var, scale_down_by)
-            model.AddMultiplicationEquality(performance_var, [volume_var_scaled, density_var])
-        else:
-            model.AddMultiplicationEquality(performance_var, [volume_var, density_var])
+def constrain_performance_vars(model, performance_vars, volume_vars, density_vars):
+    for volume_var, density_var, performance_var in zip(volume_vars, density_vars, performance_vars):
+        model.AddMultiplicationEquality(performance_var, [volume_var, density_var])
     return None
 
 def ensure_increase_for_subcomponent(model, exercises, used_exercise_vars, performance_vars):
@@ -295,7 +292,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         constrain_training_weight_vars(model, intensity_vars, exercises[1:], training_weight_vars, used_exercise_vars)
         constrain_volume_vars(model, volume_vars, reps_vars, sets_vars, training_weight_vars)
         constrain_density_vars(model, density_vars, duration_vars, working_duration_vars, max_duration)
-        constrain_performance_vars(model, performance_vars, volume_vars, density_vars, training_weight_vars, min_volume, max_volume)
+        constrain_performance_vars(model, performance_vars, volume_vars, density_vars)
 
         # Links the exercise variables and the exercises that can exist via the used exercises variables.
         link_entry_and_item(model = model, 
@@ -441,32 +438,26 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 # Ensure that the phase component is active.
                 intensity_var_current = solver.Value(intensity_vars[i]) if intensity_vars[i] is not None else 0
                 training_weight_var_current = solver.Value(training_weight_vars[i]) if training_weight_vars[i] is not None else 0
-                volume_var_current = solver.Value(volume_vars[i])
-                performance_var_current = solver.Value(performance_vars[i])
-                if training_weight_vars[i] is not None:
-                    # Scaled down due to scaling up of intensity AND training weight.
-                    volume_var_current /= (100 * 100)
-                    performance_var_current /= 100
                 duration_vars_current = solver.Value(duration_vars[i])
                 working_duration_vars_current = solver.Value(working_duration_vars[i])
 
                 schedule.append((
                     i, 
-                    solver.Value(exercise_vars[i]),                         # Index of the exercise chosen.
-                    phase_component_vars[i],                                # Index of the phase component chosen.
-                    solver.Value(base_strain_vars[i]),                      # Base strain of the exercise chosen.
-                    solver.Value(seconds_per_exercise_vars[i]),             # Seconds per exercise of the exercise chosen.
-                    solver.Value(reps_vars[i]),                             # Reps of the exercise chosen.
-                    solver.Value(sets_vars[i]),                             # Sets of the exercise chosen.
-                    solver.Value(rest_vars[i]) * 5,                         # Rest of the exercise chosen.
-                    intensity_var_current,                                  # Intensity of the exercise chosen.
-                    round(solver.Value(one_rep_max_vars[i]) / 100, 2),      # 1RM of the exercise chosen. Scaled down due to scaling up of intensity.
-                    round(training_weight_var_current / (100 * 100), 2),    # Training weight of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
-                    round(volume_var_current, 2),                           # Volume of the exercise chosen.
-                    round(solver.Value(density_vars[i]) / 100, 2),          # Density of the exercise chosen. Scaled down due to scaling up division.
-                    round(performance_var_current / 100, 2),                # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
-                    duration_vars_current,                                  # Duration of the exercise chosen.
-                    working_duration_vars_current,                          # Working duration of the exercise chosen.
+                    solver.Value(exercise_vars[i]),                                     # Index of the exercise chosen.
+                    phase_component_vars[i],                                            # Index of the phase component chosen.
+                    solver.Value(base_strain_vars[i]),                                  # Base strain of the exercise chosen.
+                    solver.Value(seconds_per_exercise_vars[i]),                         # Seconds per exercise of the exercise chosen.
+                    solver.Value(reps_vars[i]),                                         # Reps of the exercise chosen.
+                    solver.Value(sets_vars[i]),                                         # Sets of the exercise chosen.
+                    solver.Value(rest_vars[i]) * 5,                                     # Rest of the exercise chosen.
+                    intensity_var_current,                                              # Intensity of the exercise chosen.
+                    round(solver.Value(one_rep_max_vars[i]) / 100, 2),                  # 1RM of the exercise chosen. Scaled down due to scaling up of intensity.
+                    round(training_weight_var_current / (100 * 100), 2),                # Training weight of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                    round(solver.Value(volume_vars[i]) / (100 * 100), 2),               # Volume of the exercise chosen.
+                    round(solver.Value(density_vars[i]) / 100, 2),                      # Density of the exercise chosen. Scaled down due to scaling up division.
+                    round(solver.Value(performance_vars[i]) / (100 * 100 * 100), 2),    # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                    duration_vars_current,                                              # Duration of the exercise chosen.
+                    working_duration_vars_current,                                      # Working duration of the exercise chosen.
                 ))
                 duration += duration_vars_current
                 working_duration += working_duration_vars_current
@@ -532,8 +523,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         formatted_number_header = f"{"#":<{3}}"
         formatted_exercise_header = f"| {"Exercise":<{longest_exercise_string_size+2}}"
         formatted_phase_component_header = f"| {"Phase Component":<{longest_pc_string_size+2}}"
-        formatted_duration_header = f"| {"Duration":<{25}}"
-        formatted_working_duration_header = f"| {"WDuration":<{25}}"
+        formatted_duration_header = f"| {"Duration":<{10}}"
+        formatted_working_duration_header = f"| {"WDuration":<{10}}"
         formatted_base_strain_header = f"| {"BStrain":<{8}}"
         formatted_seconds_per_exercises_header = f"| {"(Sec/Exercise":<{14}}"
         formatted_reps_header = f"| {"Reps":<{12}}"
@@ -542,8 +533,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         formatted_one_rep_max_header = f"| {"1RM":<{15}}"
         formatted_training_weight_header = f"| {"Weight":<{10}}"
         formatted_intensity_header = f"| {"Intensity":<{13}}"
-        formatted_volume_header = f"| {"Volume":<{15}}"
-        formatted_density_header = f"| {"Density":<{15}}"
+        formatted_volume_header = f"| {"Volume":<{25}}"
+        formatted_density_header = f"| {"Density":<{20}}"
         formatted_performance_header = f"| {"Performance":<{15}}"
 
         formatted_phase_component_stats = f"{formatted_phase_component_header}{formatted_duration_header}{formatted_working_duration_header}{formatted_seconds_per_exercises_header}{formatted_reps_header}{formatted_sets_header}{formatted_rest_header}"
@@ -597,10 +588,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             formatted_phase_component = f"| {phase_component_name}"
             phase_component_str = f"{formatted_phase_component:<{len(formatted_phase_component_header)}}"
 
-            formatted_duration = f"| {duration // 60} min {duration % 60} sec ({duration} sec)"
+            formatted_duration = f"| {duration} sec"
             duration_str = f"{formatted_duration:<{len(formatted_duration_header)}}"
 
-            formatted_working_duration = f"| {working_duration // 60} min {working_duration % 60} sec ({working_duration} sec)"
+            formatted_working_duration = f"| {working_duration} sec"
             working_duration_str = f"{formatted_working_duration:<{len(formatted_working_duration_header)}}"
 
             formatted_base_strain = f"| {base_strain}"
@@ -622,21 +613,30 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             formatted_training_weight = ""
 
             formatted_intensity = ""
-            if intensity_var != None:
+            volume_max = phase_component["reps_max"] * phase_component["sets_max"]
+            print("Volume max:", volume_max, "=", phase_component["reps_max"], "*", phase_component["sets_max"])
+            if intensity_var:
+                volume_max = math.floor(volume_max * (exercise["one_rep_max"] / 100) * ((phase_component["intensity_max"] or 100) / 100))
                 formatted_one_rep_max = f"{one_rep_max_var} -> {round((training_weight_var * (30 + reps_var)) / 30, 2)}"
                 formatted_training_weight = f"{training_weight_var}"
                 formatted_intensity = f"{intensity_var} ({phase_component["intensity_min"] or "nan"}-{phase_component["intensity_max"] or "nan"})"
+
             one_rep_max_str = f"{"| " + formatted_one_rep_max:<{len(formatted_one_rep_max_header)}}"
             training_weight_str = f"{"| " + formatted_training_weight:<{len(formatted_training_weight_header)}}"
             intensity_str = f"{"| " + formatted_intensity:<{len(formatted_intensity_header)}}"
 
-            formatted_volume = f"| {exercise["volume"]} -> {volume_var}"
+            formatted_volume = f"| {exercise["volume"]} -> {volume_var} (>={volume_max})"
             volume_str = f"{formatted_volume:<{len(formatted_volume_header)}}"
 
-            formatted_density = f"| {exercise["density"]} -> {density_var}"
+            duration_max = duration_calculation(phase_component["seconds_per_exercise"], phase_component["reps_max"], phase_component["sets_max"], phase_component["rest_min"])
+            working_duration_max = duration_calculation(phase_component["seconds_per_exercise"], phase_component["reps_max"], phase_component["sets_max"])
+            density_max = math.floor((working_duration_max / duration_max) * 100) / 100
+
+            formatted_density = f"| {exercise["density"]} -> {density_var} (>={density_max})"
             density_str = f"{formatted_density:<{len(formatted_density_header)}}"
 
-            formatted_performance = f"| {exercise["performance"] / 100} -> {performance_var}"
+            performance_max = math.floor(volume_max * density_max * 100) / 100
+            formatted_performance = f"| {(exercise["performance"] / (100 * 100 * 100))} -> {performance_var} (>={performance_max})"
             performance_str = f"{formatted_performance:<{len(formatted_performance_header)}}"
 
             formatted_phase_component_stats = f"{phase_component_str}{duration_str}{working_duration_str}{seconds_per_exercises_str}{reps_str}{sets_str}{rest_str}"
