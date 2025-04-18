@@ -104,6 +104,30 @@ class Phase_Component_Library(BaseModel, TableNameMixin, NameMixin):
     @hybrid_property
     def working_duration_max(self):
         return self.seconds_per_exercise * self.reps_max * self.sets_max
+    
+    # Volume of the phase component based on the formula for the minimum values allowed.
+    @hybrid_property
+    def volume_min(self):
+        return self.reps_min * self.sets_min
+    
+    # Volume of the phase component based on the formula for the maximum values allowed.
+    @hybrid_property
+    def volume_max(self):
+        return self.reps_max * self.sets_max
+
+    # Density of the phase component based on the formula for the minimum values allowed.
+    @hybrid_property
+    def density_min(self):
+        # Uses the max rest due to more rest making the density smaller.
+        duration = (self.seconds_per_exercise * self.reps_min + self.rest_max) * self.sets_min
+        return self.working_duration_min / duration
+
+    # Density of the phase component based on the formula for the maximum values allowed.
+    @hybrid_property
+    def density_max(self):
+        # Uses the min rest due to less rest making the density larger.
+        duration = (self.seconds_per_exercise * self.reps_max + self.rest_min) * self.sets_max
+        return self.working_duration_max / duration
 
     # Relationships
     phases = db.relationship("Phase_Library", back_populates="phase_components")
@@ -149,5 +173,9 @@ class Phase_Component_Library(BaseModel, TableNameMixin, NameMixin):
             "duration_max": self.duration_max, 
             "working_duration_min": self.working_duration_min, 
             "working_duration_max": self.working_duration_max, 
+            "volume_min": self.volume_min, 
+            "volume_max": self.volume_max, 
+            "density_min": self.density_min, 
+            "density_max": self.density_max, 
             "exercise_selection_note": self.exercise_selection_note
         }

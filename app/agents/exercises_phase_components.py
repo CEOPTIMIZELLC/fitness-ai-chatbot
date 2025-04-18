@@ -71,6 +71,8 @@ def get_phase_component_bounds(phase_components):
         'reps': get_item_bounds("reps_min", "reps_max", phase_components),
         'sets': get_item_bounds("sets_min", "sets_max", phase_components),
         'rest': get_item_bounds("rest_min", "rest_max", phase_components),
+        'volume': get_item_bounds("volume_min", "volume_max", phase_components),
+        'density': get_item_bounds("density_min", "density_max", phase_components),
         'duration': get_item_bounds("duration_min", "duration_max", phase_components),
         'working_duration': get_item_bounds("working_duration_min", "working_duration_max", phase_components)
     }
