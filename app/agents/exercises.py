@@ -16,9 +16,6 @@ from app.utils.min_and_max_in_dict import get_item_bounds
 
 _ = load_dotenv()
 
-def duration_calculation(seconds_per_exercise, reps, sets, rest=0):
-    return (seconds_per_exercise * reps + (rest * 5)) * sets
-
 def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):
     return [i for i, exercise in enumerate(exercises, start=1) 
             if all(f(exercise, phase_component) for f in conditions)]
@@ -89,10 +86,29 @@ def constrain_performance_vars(model, performance_vars, volume_vars, density_var
         model.AddMultiplicationEquality(performance_var, [volume_var, density_var])
     return None
 
-def ensure_increase_for_subcomponent(model, exercises, used_exercise_vars, performance_vars):
-    for performance_var, used_exercise_var in zip(performance_vars, used_exercise_vars):
-        for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
-            model.Add(performance_var >= exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var)
+def ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, used_exercise_vars, performance_vars, training_weight_vars):
+    for phase_component_index, performance_var, used_exercise_var, training_weight_var in zip(phase_component_ids, performance_vars, used_exercise_vars, training_weight_vars):
+        phase_component = phase_components[phase_component_index]
+        volume_max = phase_component["volume_max"]
+        density_max = phase_component["density_max"]
+
+        for exercise_index, (exercise, exercise_for_exercise_var) in enumerate(zip(exercises[1:], used_exercise_var[1:])):
+            if training_weight_var != None:
+                volume_max_training = math.floor(volume_max  * (phase_component["intensity_max"] or 100) * exercise["one_rep_max"])
+                performance_max = volume_max_training * density_max
+            else:
+                # Scale up to match the scale of the training weight volume
+                volume_max_training = volume_max  * (100 * 100)
+                performance_max = volume_max_training * density_max
+
+            # Check to ensure that the performance doesn't exceed the maximum.
+            performance_not_at_max = model.NewBoolVar(f'exercise_{exercise_index}_performance_max_for_pc_{phase_component_index}')
+            model.Add(performance_var < performance_max).OnlyEnforceIf(performance_not_at_max)          # Performance must be less than or equal to the maximum performance possible.
+            model.Add(performance_var >= performance_max).OnlyEnforceIf(performance_not_at_max.Not())   # Performance is greater than the maximum performance possible.
+
+            # If the maximum is going to be reached, do not exceed it.
+            model.Add(performance_var > exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var, performance_not_at_max)
+            model.Add(performance_var == exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var, performance_not_at_max.Not())
     return None
 
 def get_exercise_bounds(exercises):
@@ -187,26 +203,25 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         pc_bounds = get_phase_component_bounds(phase_components[1:])
 
         max_seconds_per_exercise = pc_bounds["seconds_per_exercise"]["max"]
-        min_reps, max_reps = pc_bounds["reps"]["min"], pc_bounds["reps"]["max"]
-        min_sets, max_sets = pc_bounds["sets"]["min"], pc_bounds["sets"]["max"]
+        max_reps = pc_bounds["reps"]["max"]
+        max_sets = pc_bounds["sets"]["max"]
         max_rest = pc_bounds["rest"]["max"]
+        min_volume, max_volume = pc_bounds["volume"]["min"], pc_bounds["volume"]["max"]
+        min_density, max_density = pc_bounds["density"]["min"], pc_bounds["density"]["max"]
 
         max_duration = pc_bounds["duration"]["max"]
 
         exercise_bounds = get_exercise_bounds(exercises[1:])
 
         min_base_strain, max_base_strain = exercise_bounds["base_strain"]["min"], exercise_bounds["base_strain"]["max"]
-        min_intensity, max_intensity = exercise_bounds["intensity"]["min"], exercise_bounds["intensity"]["max"]
+        min_intensity, max_intensity = 1, 100 #exercise_bounds["intensity"]["min"], exercise_bounds["intensity"]["max"]
         min_one_rep_max, max_one_rep_max = exercise_bounds["one_rep_max"]["min"], exercise_bounds["one_rep_max"]["max"]
 
-        min_training_weight_scaled = min_one_rep_max * 1
+        min_training_weight_scaled = min_one_rep_max * min_intensity
         max_training_weight_scaled = max_one_rep_max * max_intensity
 
-        min_volume = min_reps * min_sets * min(min_training_weight_scaled, 1)
-        max_volume = max_reps * max_sets * max_training_weight_scaled
-
-        min_density = 0
-        max_density = 100
+        min_volume = min_volume * min(min_training_weight_scaled, 1)
+        max_volume = max_volume * max_training_weight_scaled
 
         max_strain_scaled = ((max_seconds_per_exercise * (10 + max_intensity + max_base_strain) * max_reps) + (10 *max_rest * 5)) * max_sets
 
@@ -280,10 +295,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         density_vars = [
             model.NewIntVar(min_density, max_density, f'density_{i}')
             for i in range(max_exercises)]
-        
-        print("Density:", min_density, max_density)
-        print("Volume:", min_volume, max_volume)
-        
+
         # Integer variable representing the performance of the user.
         performance_vars = [
             model.NewIntVar(min_density * min_volume, max_density * max_volume, f'performance_{i}')
@@ -347,7 +359,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Constraint: The desired metric of an exercise must be an increase from the current metric.
         if constraints["exercise_metric_increase"]:
-            ensure_increase_for_subcomponent(model, exercises[1:], used_exercise_vars, performance_vars)
+            ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, used_exercise_vars, performance_vars, training_weight_vars)
             state["logs"] += "- Exercise metric increase constraint applied.\n"
 
 
@@ -534,8 +546,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         formatted_training_weight_header = f"| {"Weight":<{10}}"
         formatted_intensity_header = f"| {"Intensity":<{13}}"
         formatted_volume_header = f"| {"Volume":<{25}}"
-        formatted_density_header = f"| {"Density":<{20}}"
-        formatted_performance_header = f"| {"Performance":<{15}}"
+        formatted_density_header = f"| {"Density":<{25}}"
+        formatted_performance_header = f"| {"Performance":<{30}}"
 
         formatted_phase_component_stats = f"{formatted_phase_component_header}{formatted_duration_header}{formatted_working_duration_header}{formatted_seconds_per_exercises_header}{formatted_reps_header}{formatted_sets_header}{formatted_rest_header}"
         formatted_improvement_metrics = f"{formatted_one_rep_max_header}{formatted_training_weight_header}{formatted_intensity_header}{formatted_volume_header}{formatted_density_header}{formatted_performance_header}"
@@ -613,8 +625,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             formatted_training_weight = ""
 
             formatted_intensity = ""
-            volume_max = phase_component["reps_max"] * phase_component["sets_max"]
-            print("Volume max:", volume_max, "=", phase_component["reps_max"], "*", phase_component["sets_max"])
+            volume_max = phase_component["volume_max"]
             if intensity_var:
                 volume_max = math.floor(volume_max * (exercise["one_rep_max"] / 100) * ((phase_component["intensity_max"] or 100) / 100))
                 formatted_one_rep_max = f"{one_rep_max_var} -> {round((training_weight_var * (30 + reps_var)) / 30, 2)}"
@@ -625,14 +636,12 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             training_weight_str = f"{"| " + formatted_training_weight:<{len(formatted_training_weight_header)}}"
             intensity_str = f"{"| " + formatted_intensity:<{len(formatted_intensity_header)}}"
 
-            formatted_volume = f"| {exercise["volume"]} -> {volume_var} (>={volume_max})"
+            formatted_volume = f"| {exercise["volume"] / (100 * 100)} -> {volume_var} (>={volume_max})"
             volume_str = f"{formatted_volume:<{len(formatted_volume_header)}}"
 
-            duration_max = duration_calculation(phase_component["seconds_per_exercise"], phase_component["reps_max"], phase_component["sets_max"], phase_component["rest_min"])
-            working_duration_max = duration_calculation(phase_component["seconds_per_exercise"], phase_component["reps_max"], phase_component["sets_max"])
-            density_max = math.floor((working_duration_max / duration_max) * 100) / 100
+            density_max = phase_component["density_max"] / 100
 
-            formatted_density = f"| {exercise["density"]} -> {density_var} (>={density_max})"
+            formatted_density = f"| {exercise["density"] / 100} -> {density_var} (>={density_max})"
             density_str = f"{formatted_density:<{len(formatted_density_header)}}"
 
             performance_max = math.floor(volume_max * density_max * 100) / 100
