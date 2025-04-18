@@ -318,7 +318,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Ensure total time is within two minutes of the originally calculated duration.
         model.Add(sum(duration_vars) <= workout_length)
-        model.Add(sum(duration_vars) >= (projected_duration - (2 * 60)))
+        model.Add(sum(duration_vars) >= (workout_length - (2 * 60)))
 
         # Constraint: The base strain of an exercise may only be equal to the base strain allowed for the exercise.
         if constraints["base_strain_equals"]:
