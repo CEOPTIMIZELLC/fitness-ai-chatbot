@@ -69,10 +69,6 @@ def user_component_dict(workout, phase_component):
         "bodypart_id": workout.bodypart_id,
         "bodypart_name": workout.bodyparts.name,
         "duration": workout.duration,
-        "duration_min": phase_component.duration_min,
-        "duration_max": phase_component.duration_max,
-        "working_duration_min": phase_component.working_duration_min,
-        "working_duration_max": phase_component.working_duration_max,
         "phase_component_id": phase_component.id,
         "phase_name": phase_component.phases.name,
         "component_id": phase_component.component_id,
@@ -91,8 +87,16 @@ def user_component_dict(workout, phase_component):
         "seconds_per_exercise": phase_component.seconds_per_exercise,
         "intensity_min": phase_component.intensity_min,
         "intensity_max": phase_component.intensity_max,
-        "rest_min": phase_component.rest_min // 5,      # Adjusted so that rest is a multiple of 5.
-        "rest_max": phase_component.rest_max // 5,      # Adjusted so that rest is a multiple of 5.
+        "rest_min": phase_component.rest_min // 5,                          # Adjusted so that rest is a multiple of 5.
+        "rest_max": phase_component.rest_max // 5,                          # Adjusted so that rest is a multiple of 5.
+        "duration_min": phase_component.duration_min,
+        "duration_max": phase_component.duration_max,
+        "working_duration_min": phase_component.working_duration_min,
+        "working_duration_max": phase_component.working_duration_max,
+        "volume_min": phase_component.volume_min,
+        "volume_max": phase_component.volume_max,
+        "density_min": int(phase_component.density_min * 100),              # Scaled up to avoid floating point errors from model.
+        "density_max": int(phase_component.density_max * 100),              # Scaled up to avoid floating point errors from model.
         "exercises_per_bodypart_workout_min": phase_component.exercises_per_bodypart_workout_min,
         "exercises_per_bodypart_workout_max": phase_component.exercises_per_bodypart_workout_max,
         "exercise_selection_note": phase_component.exercise_selection_note,
@@ -116,12 +120,12 @@ def exercise_dict(exercise, user_exercise, phase):
         "weighted_equipment_ids": exercise.all_weighted_equipment,
         "marking_equipment_ids": exercise.all_marking_equipment,
         "other_equipment_ids": exercise.all_other_equipment,
-        "one_rep_max": int(user_exercise.one_rep_max * 100), 
-        "one_rep_load": int(user_exercise.one_rep_load), 
-        "volume": int(user_exercise.volume), 
-        "density": int(user_exercise.density), 
+        "one_rep_max": int(user_exercise.one_rep_max * 100),                    # Scaled up to avoid floating point errors from model.
+        "one_rep_load": int(user_exercise.one_rep_load * 100),                  # Scaled up to avoid floating point errors from model.
+        "volume": int(user_exercise.volume * (100 * 100)),                      # Scaled up to avoid floating point errors from model.
+        "density": int(user_exercise.density * 100),                            # Scaled up to avoid floating point errors from model.
         "intensity": int(user_exercise.intensity),
-        "performance": int(user_exercise.performance * (100 * 100 * 100)),
+        "performance": int(user_exercise.performance * (100 * 100 * 100)),      # Scaled up to avoid floating point errors from model.
     }
 
 
