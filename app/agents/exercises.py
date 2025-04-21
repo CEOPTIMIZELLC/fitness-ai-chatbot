@@ -543,10 +543,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         formatted_sets_header = f"| {"Sets":<{8}}"
         formatted_rest_header = f"| {"Rest)":<{15}}"
         formatted_one_rep_max_header = f"| {"1RM":<{15}}"
-        formatted_training_weight_header = f"| {"Weight":<{10}}"
+        formatted_training_weight_header = f"| {"Weight":<{8}}"
         formatted_intensity_header = f"| {"Intensity":<{13}}"
-        formatted_volume_header = f"| {"Volume":<{25}}"
-        formatted_density_header = f"| {"Density":<{25}}"
+        formatted_volume_header = f"| {"Volume":<{22}}"
+        formatted_density_header = f"| {"Density":<{22}}"
         formatted_performance_header = f"| {"Performance":<{30}}"
 
         formatted_phase_component_stats = f"{formatted_phase_component_header}{formatted_duration_header}{formatted_working_duration_header}{formatted_seconds_per_exercises_header}{formatted_reps_header}{formatted_sets_header}{formatted_rest_header}"
