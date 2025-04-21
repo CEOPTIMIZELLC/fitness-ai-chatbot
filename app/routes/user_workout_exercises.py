@@ -118,6 +118,7 @@ def exercise_dict(exercise, user_exercise, phase):
         "supportive_equipment_ids": exercise.all_supportive_equipment,
         "assistive_equipment_ids": exercise.all_assistive_equipment,
         "weighted_equipment_ids": exercise.all_weighted_equipment,
+        "is_weighted": exercise.is_weighted,
         "marking_equipment_ids": exercise.all_marking_equipment,
         "other_equipment_ids": exercise.all_other_equipment,
         "one_rep_max": int(user_exercise.one_rep_max * 100),                    # Scaled up to avoid floating point errors from model.
@@ -320,27 +321,27 @@ def exercise_initializer():
     output = result["output"]
     print(result["formatted"])
 
-    user_workout_exercises = agent_output_to_sqlalchemy_model(output, user_workout_day.id)
+    # user_workout_exercises = agent_output_to_sqlalchemy_model(output, user_workout_day.id)
 
-    db.session.add_all(user_workout_exercises)
-    db.session.commit()
+    # db.session.add_all(user_workout_exercises)
+    # db.session.commit()
 
-    for exercise in output:
-        user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise["exercise_id"]})
+    # for exercise in output:
+    #     user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise["exercise_id"]})
 
-        new_one_rep_max = round((exercise["training_weight"] * (30 + exercise["reps_var"])) / 30, 2)
+    #     new_one_rep_max = round((exercise["training_weight"] * (30 + exercise["reps_var"])) / 30, 2)
 
-        # Only replace if the new one rep max is larger.
-        user_exercise.one_rep_max = max(user_exercise.one_rep_max, new_one_rep_max)
-        user_exercise.one_rep_load = new_one_rep_max
-        user_exercise.volume = exercise["volume"]
-        user_exercise.density = exercise["density"]
-        user_exercise.intensity = exercise["intensity_var"]
+    #     # Only replace if the new one rep max is larger.
+    #     user_exercise.one_rep_max = max(user_exercise.one_rep_max, new_one_rep_max)
+    #     user_exercise.one_rep_load = new_one_rep_max
+    #     user_exercise.volume = exercise["volume"]
+    #     user_exercise.density = exercise["density"]
+    #     user_exercise.intensity = exercise["intensity_var"]
 
-        # Only replace if the new performance is larger.
-        user_exercise.performance = max(user_exercise.performance, exercise["performance"])
+    #     # Only replace if the new performance is larger.
+    #     user_exercise.performance = max(user_exercise.performance, exercise["performance"])
 
-        db.session.commit()
+    #     db.session.commit()
 
     return jsonify({"status": "success", "exercises": result}), 200
 

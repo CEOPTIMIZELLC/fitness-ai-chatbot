@@ -171,6 +171,10 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
     @hybrid_property
     def all_weighted_equipment(self):
         return [equipment.to_dict() for equipment in self.weighted_equipment]
+    
+    @hybrid_property
+    def is_weighted(self):
+        return len(self.weighted_equipment) > 0
 
     @hybrid_property
     def all_marking_equipment(self):
@@ -200,5 +204,6 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
             "sides": self.sides, 
             "body_position": self.body_position, 
             "option_for_added_weight": self.option_for_added_weight, 
+            "is_weighted": self.is_weighted, 
             "proprioceptive_progressions": self.proprioceptive_progressions, 
         }
