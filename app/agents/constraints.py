@@ -1,4 +1,21 @@
 
+# Integer variable representing the metric for the phase component chosen at exercise i.
+def intvar_list_from_phase_components(model, ids, phase_components, name_of_metric, min_key, max_key):
+    return [
+        model.NewIntVar(phase_components[pc_index][min_key], 
+                        phase_components[pc_index][max_key], 
+                        f'{name_of_metric}_{i}') 
+        for i, pc_index in enumerate(ids)]
+
+# Integer variable representing the metric chosen at element i.
+def intvar_list_from_elements(model, number_of_elements, name_of_metric, min_value, max_value):
+    return [
+        model.NewIntVar(min_value, 
+                        max_value, 
+                        f'{name_of_metric}_{i}') 
+        for i in range(number_of_elements)]
+
+
 # Links each entry and item with the "used" variables, determining if item j is the item at entry i.
 def link_entry_and_item(model, items, entry_vars, number_of_entries, used_vars):
     for i in range(number_of_entries):
@@ -29,7 +46,6 @@ def create_optional_intvar(model, name_of_entry_var, activator, min_if_active=0,
                                    value_if_inactive=value_if_inactive)
     return var_entry
 
-
 # Create an intvar for an optional spread variable to try for later minimization.
 def create_spread_intvar(model, entry_vars, entry_var_name, active_entry_vars, max_value_allowed):
     min_entry_var = model.NewIntVar(0, max_value_allowed, f"min_{entry_var_name}")
@@ -46,88 +62,6 @@ def create_spread_intvar(model, entry_vars, entry_var_name, active_entry_vars, m
     spread_var = model.NewIntVar(0, max_value_allowed, f"{entry_var_name}_spread")
     model.Add(spread_var == max_entry_var - min_entry_var)
     return spread_var
-
-# Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
-# This method performs the in between steps and returns the final duration variable.
-# total_set_duration = (seconds_per_exercise * rep_count + rest_time) * set_count
-def create_duration_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, name=""):
-    if name != "":
-        name += "_"
-
-    # Create the entry for phase component's duration
-    # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
-    duration_var_entry = model.NewIntVar(0, max_duration, f'{name}duration_{i}')
-
-    # Temporary variable for seconds per exercise and the rep count. (seconds_per_exercise * rep_count)
-    seconds_per_exercise_and_reps = model.NewIntVar(0, max_duration, f'{name}seconds_per_exercise_and_rep_count_{i}')
-    model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, reps])
-
-    # Temporary variable for the previous product and the rest time. (seconds_per_exercise * rep_count + rest_time)
-    duration_with_rest = model.NewIntVar(0, max_duration, f'{name}duration_with_rest_{i}')
-
-    # In between step for added components.
-    model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * rest))
-
-    # Completed constraint.
-    model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
-    return duration_var_entry
-
-
-# In between step for intensity and base strain.
-def _is_intensity(model, i, name="", scaled=1, max_duration=0, intensity=None, base_strain=None):
-    scaled_intensity_value = 0
-    intensity_name = ""
-    scaled_count = 1
-
-    if intensity != None:
-        scaled_intensity_value += intensity
-        intensity_name += "intensity_"
-        scaled_count += 1
-
-    if base_strain != None:
-        scaled_intensity_value += base_strain
-        intensity_name += "base_strain_"
-        scaled_count += 1
-
-    # If either were encountered, scale the intensity.
-    if scaled_count > 1:
-        scaled = 10 * scaled
-        scaled_intensity_value += scaled
-        scaled_intensity = model.NewIntVar(0, scaled * max_duration, f'{name}scaled_{intensity_name}{i}')
-        model.Add(scaled_intensity == (scaled_intensity_value))
-        return scaled_intensity
-    else:
-        return 1
-
-
-# Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
-# This method performs the in between steps and returns the final duration variable.
-# total_set_duration = (seconds_per_exercise * (1 + .1 * basestrain) * rep_count + rest_time) * set_count
-# total_set_duration = (seconds_per_exercise * (10 + basestrain) * rep_count + 10 * rest_time) * set_count
-def create_exercise_intensity_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, intensity=None, base_strain=None, name="", scaled=1):
-    if name != "":
-        name += "_"
-
-    # In between step for base strain.
-    scaled_base_strain = _is_intensity(model, i, name, scaled, max_duration, intensity, base_strain)
-
-    # Create the entry for phase component's duration
-    # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
-    duration_var_entry = model.NewIntVar(0, scaled * max_duration, f'{name}duration_{i}')
-
-    # Temporary variable for seconds per exercise and the rep count. (seconds_per_exercise * rep_count)
-    seconds_per_exercise_and_reps = model.NewIntVar(0, scaled * max_duration, f'{name}seconds_per_exercise_and_rep_count_{i}')
-    model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, scaled_base_strain, reps])
-
-    # Temporary variable for the previous product and the rest time. (seconds_per_exercise * rep_count + rest_time)
-    duration_with_rest = model.NewIntVar(0, scaled * max_duration, f'{name}duration_with_rest_{i}')
-
-    # In between step for added components.
-    model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * scaled * rest))
-
-    # Completed constraint.
-    model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
-    return duration_var_entry
 
 # Define and create a list of variables to determine if an entry is active.
 # As well, this will constrain the possible items that an inactive entry can have to be an invalid one.
@@ -148,8 +82,6 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
         model.Add(duration_vars[i] == 0).OnlyEnforceIf(active_entry_vars[i].Not())
     
     return None
-
-
 
 def entry_equals(model, var, item, key, condition=None):
     """Generic function to add equals constraints with optional condition."""
