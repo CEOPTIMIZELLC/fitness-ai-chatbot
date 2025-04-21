@@ -29,34 +29,66 @@ def get_exercises_for_pc(exercises, phase_component):
     print_check = False
 
     if (exercises_for_pc == []) and (phase_component["bodypart_id"] == 1):
-        print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises for this component phase if it's total body.")
+        # print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises for this component phase if it's total body.")
         print_check = True
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:2])
 
     if exercises_for_pc == []:
-        print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' still has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises.")
+        # print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' still has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises.")
         print_check = True
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component)
     
-    if print_check:
-        print("")
+    # if print_check:
+    #     print("")
     return exercises_for_pc
 
-def constrain_training_weight_vars(model, intensity_vars, exercises, training_weight_vars, used_exercise_vars):
-    # Link the exercise variables and the training weight variables by ensuring the training weight is equal to the one rep max * intensity for the exercise chose at exercise i.
-    for intensity_var, training_weight_var, used_exercise_var in zip(intensity_vars, training_weight_vars, used_exercise_vars):
-        if training_weight_var != None :
-            for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
-                model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var)
+# Indicate that an exercise chosen is weighted if the exercise is a weighted exercise.
+def constrain_weighted_exercises_var(model, used_exercise_vars, weighted_exercise_vars, weighted_exercise_indices):
+    for used_exercise_var, weighted_exercise_var in zip(used_exercise_vars, weighted_exercise_vars):
+        weighted_exercise_used = [used_exercise_var[i] for i in weighted_exercise_indices]
+        weighted_exercise_not_used = [used_exercise_var[i].Not() for i in weighted_exercise_indices]
+
+        # If any weighted exercise is selected, has_weighted_exercise should be True
+        model.AddBoolOr(weighted_exercise_used).OnlyEnforceIf(weighted_exercise_var)
+        model.AddBoolAnd(weighted_exercise_not_used).OnlyEnforceIf(weighted_exercise_var.Not())
     return None
 
-def constrain_volume_vars(model, volume_vars, reps_vars, sets_vars, training_weight_vars):
+# Only allow intensity if a weighted exercise is selected. Otherwise, intensity is 0.
+def constrain_intensity_vars(model, intensity_vars, phase_component_ids, phase_components, weighted_exercise_vars):
+    # For each exercise position
+    for intensity_var, pc_index, has_weighted_exercise in zip(intensity_vars, phase_component_ids, weighted_exercise_vars):
+        # Get minimum intensity for this phase component (default to 1 if not specified)
+        min_intensity = phase_components[pc_index]["intensity_min"] or 1
+        
+        # Constrain intensity based on weighted exercise selection
+        model.Add(intensity_var >= min_intensity).OnlyEnforceIf(has_weighted_exercise)
+        model.Add(intensity_var == 0).OnlyEnforceIf(has_weighted_exercise.Not())
+    return None
+
+def constrain_training_weight_vars(model, intensity_vars, exercises, training_weight_vars, used_exercise_vars, weighted_exercise_vars):
+    # Link the exercise variables and the training weight variables by ensuring the training weight is equal to the one rep max * intensity for the exercise chose at exercise i.
+    for intensity_var, training_weight_var, used_exercise_var, has_weighted_exercise in zip(intensity_vars, training_weight_vars, used_exercise_vars, weighted_exercise_vars):
+        
+        # Training weight is 0 if no weighted exercise is selected
+        model.Add(training_weight_var == 0).OnlyEnforceIf(has_weighted_exercise.Not())
+        for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
+            if exercise["is_weighted"]:
+                model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var, has_weighted_exercise)
+            # else:
+            #     model.Add(training_weight_var == 0).OnlyEnforceIf(exercise_for_exercise_var)
+    return None
+
+def constrain_volume_vars(model, volume_vars, max_volume, reps_vars, sets_vars, training_weight_vars, weighted_exercise_vars):
     # Link the exercise variables and the volume variables by ensuring the volume is equal to the reps * sets * training weight for the exercise chose at exercise i.
-    for reps_var, sets_var, training_weight_var, volume_var in zip(reps_vars, sets_vars, training_weight_vars, volume_vars):
-        if training_weight_var != None:
-            model.AddMultiplicationEquality(volume_var, [reps_var, sets_var, training_weight_var])
-        else:
-            model.AddMultiplicationEquality(volume_var, [reps_var, sets_var, 100 * 100])
+    for i, (reps_var, sets_var, training_weight_var, volume_var, has_weighted_exercise) in enumerate(zip(reps_vars, sets_vars, training_weight_vars, volume_vars, weighted_exercise_vars)):
+        volume_var_if_unloaded = model.NewIntVar(0, max_volume, f'temp_volume_{i}_unloaded')
+        model.AddMultiplicationEquality(volume_var_if_unloaded, [reps_var, sets_var, 100 * 100])
+
+        volume_var_if_loaded = model.NewIntVar(0, max_volume, f'temp_volume_{i}_loaded')
+        model.AddMultiplicationEquality(volume_var_if_loaded, [reps_var, sets_var, training_weight_var])
+
+        model.Add(volume_var == volume_var_if_loaded).OnlyEnforceIf(has_weighted_exercise)
+        model.Add(volume_var == volume_var_if_unloaded).OnlyEnforceIf(has_weighted_exercise.Not())
     return None
 
 def constrain_density_vars(model, density_vars, duration_vars, working_duration_vars, max_duration):
@@ -93,8 +125,8 @@ def ensure_increase_for_subcomponent(model, exercises, phase_components, phase_c
         density_max = phase_component["density_max"]
 
         for exercise_index, (exercise, exercise_for_exercise_var) in enumerate(zip(exercises[1:], used_exercise_var[1:])):
-            if training_weight_var != None:
-                volume_max_training = math.floor(volume_max  * (phase_component["intensity_max"] or 100) * exercise["one_rep_max"])
+            if exercise["is_weighted"]:
+                volume_max_training = round(volume_max  * (phase_component["intensity_max"] or 100) * exercise["one_rep_max"])
                 performance_max = volume_max_training * density_max
             else:
                 # Scale up to match the scale of the training weight volume
@@ -253,9 +285,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Integer variable representing the intensity chosen at exercise i.
         intensity_vars = [
-            model.NewIntVar((phase_components[pc_index]["intensity_min"] or 1), (phase_components[pc_index]["intensity_max"] or 100), f'intensity_{i}')
-            if phase_components[pc_index]["intensity_min"] is not None and phase_components[pc_index]["intensity_max"] is not None
-            else None #model.NewIntVar(0, 0, f'intensity_{i}')
+            model.NewIntVar(0, (phase_components[pc_index]["intensity_max"] or 100), f'intensity_{i}')
             for i, pc_index in enumerate(phase_component_ids)]
 
         # Integer variable representing the exercise chosen at exercise i.
@@ -281,10 +311,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Integer variable representing the training weight for the intensity chosen at exercise i.
         training_weight_vars = [
-            model.NewIntVar(min_training_weight_scaled, max_training_weight_scaled, f'training_weight_{i}')
-            if intensity_var is not None
-            else None
-            for i, intensity_var in enumerate(intensity_vars)]
+            model.NewIntVar(0, max_training_weight_scaled, f'training_weight_{i}')
+            for i in range(max_exercises)]
 
         # Integer variable representing the volume for exercise i.
         volume_vars = [
@@ -300,9 +328,19 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         performance_vars = [
             model.NewIntVar(min_density * min_volume, max_density * max_volume, f'performance_{i}')
             for i in range(max_exercises)]
+
+        # Get the indices of the weighted exercises.
+        weighted_exercise_indices = [i for i, exercise in enumerate(exercises[1:], start=1) if exercise["is_weighted"]]
+
+        # Boolean variable representing whether exercise i is weighted.
+        weighted_exercise_vars = [
+            model.NewBoolVar(f'exercise_{i}_is_weighted') 
+            for i in range(max_exercises)]
         
-        constrain_training_weight_vars(model, intensity_vars, exercises[1:], training_weight_vars, used_exercise_vars)
-        constrain_volume_vars(model, volume_vars, reps_vars, sets_vars, training_weight_vars)
+        constrain_weighted_exercises_var(model, used_exercise_vars, weighted_exercise_vars, weighted_exercise_indices)
+        constrain_intensity_vars(model, intensity_vars, phase_component_ids, phase_components, weighted_exercise_vars)
+        constrain_training_weight_vars(model, intensity_vars, exercises[1:], training_weight_vars, used_exercise_vars, weighted_exercise_vars)
+        constrain_volume_vars(model, volume_vars, max_volume, reps_vars, sets_vars, training_weight_vars, weighted_exercise_vars)
         constrain_density_vars(model, density_vars, duration_vars, working_duration_vars, max_duration)
         constrain_performance_vars(model, performance_vars, volume_vars, density_vars)
 
@@ -448,8 +486,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             for i in range(len(duration_vars)):
 
                 # Ensure that the phase component is active.
-                intensity_var_current = solver.Value(intensity_vars[i]) if intensity_vars[i] is not None else 0
-                training_weight_var_current = solver.Value(training_weight_vars[i]) if training_weight_vars[i] is not None else 0
                 duration_vars_current = solver.Value(duration_vars[i])
                 working_duration_vars_current = solver.Value(working_duration_vars[i])
 
@@ -462,9 +498,9 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                     solver.Value(reps_vars[i]),                                         # Reps of the exercise chosen.
                     solver.Value(sets_vars[i]),                                         # Sets of the exercise chosen.
                     solver.Value(rest_vars[i]) * 5,                                     # Rest of the exercise chosen.
-                    intensity_var_current,                                              # Intensity of the exercise chosen.
+                    solver.Value(intensity_vars[i]),                                    # Intensity of the exercise chosen.
                     round(solver.Value(one_rep_max_vars[i]) / 100, 2),                  # 1RM of the exercise chosen. Scaled down due to scaling up of intensity.
-                    round(training_weight_var_current / (100 * 100), 2),                # Training weight of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                    round(solver.Value(training_weight_vars[i]) / (100 * 100), 2),      # Training weight of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
                     round(solver.Value(volume_vars[i]) / (100 * 100), 2),               # Volume of the exercise chosen.
                     round(solver.Value(density_vars[i]) / 100, 2),                      # Density of the exercise chosen. Scaled down due to scaling up division.
                     round(solver.Value(performance_vars[i]) / (100 * 100 * 100), 2),    # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
@@ -627,10 +663,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             formatted_intensity = ""
             volume_max = phase_component["volume_max"]
             if intensity_var:
-                volume_max = math.floor(volume_max * (exercise["one_rep_max"] / 100) * ((phase_component["intensity_max"] or 100) / 100))
+                volume_max = round(volume_max * (exercise["one_rep_max"] / 100) * ((phase_component["intensity_max"] or 100) / 100))
                 formatted_one_rep_max = f"{one_rep_max_var} -> {round((training_weight_var * (30 + reps_var)) / 30, 2)}"
                 formatted_training_weight = f"{training_weight_var}"
-                formatted_intensity = f"{intensity_var} ({phase_component["intensity_min"] or "nan"}-{phase_component["intensity_max"] or "nan"})"
+                formatted_intensity = f"{intensity_var} ({phase_component["intensity_min"] or 1}-{phase_component["intensity_max"] or 100})"
 
             one_rep_max_str = f"{"| " + formatted_one_rep_max:<{len(formatted_one_rep_max_header)}}"
             training_weight_str = f"{"| " + formatted_training_weight:<{len(formatted_training_weight_header)}}"
@@ -644,7 +680,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             formatted_density = f"| {exercise["density"] / 100} -> {density_var} (>={density_max})"
             density_str = f"{formatted_density:<{len(formatted_density_header)}}"
 
-            performance_max = math.floor(volume_max * density_max * 100) / 100
+            performance_max = round(volume_max * density_max * 100) / 100
             formatted_performance = f"| {(exercise["performance"] / (100 * 100 * 100))} -> {performance_var} (>={performance_max})"
             performance_str = f"{formatted_performance:<{len(formatted_performance_header)}}"
 
