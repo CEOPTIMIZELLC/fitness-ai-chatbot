@@ -6,11 +6,12 @@ from app.agents.constraints import (
     link_entry_and_item, 
     constrain_active_entries_vars, 
     create_optional_intvar, 
-    create_duration_var, 
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
     symmetry_breaking_constraints, 
     add_tight_bounds)
+
+from app.agents.exercise_model_specific_constraints import create_duration_var
 
 from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 from app.utils.longest_string import longest_string_size_for_key
@@ -313,8 +314,6 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 # Ensure no division by 0 occurs.
                 model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
                 model.Add(non_zero_working_duration_var == working_duration_var).OnlyEnforceIf(working_duration_is_0.Not())
-                model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
-                model.Add(working_duration_var > 0).OnlyEnforceIf(working_duration_is_0.Not())
                 model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
                 model.Add(working_duration_var >= 1).OnlyEnforceIf(working_duration_is_0.Not())
 
