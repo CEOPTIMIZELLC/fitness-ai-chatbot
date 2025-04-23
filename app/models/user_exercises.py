@@ -22,31 +22,46 @@ class User_Exercises(db.Model, TableNameMixin):
     exercises = db.relationship("Exercise_Library", back_populates="users")
 
     def has_equipment(self, required_equipment):
-        # If no supportive equipment is required, return True
+        # If no equipment is required, return True
         if not required_equipment:
             return True
         
-        # Get all equipment IDs owned by the user
-        user_equipment_ids = {eq.equipment_id for eq in self.users.equipment}
+        # Create a dictionary of user equipment with their quantities
+        user_equipment = {}
+        for eq in self.users.equipment:
+            if eq.equipment_id not in user_equipment:
+                user_equipment[eq.equipment_id] = 0
+            user_equipment[eq.equipment_id] += 1
         
         # Group equipment by relationship
         equipment_by_relationship = {}
         for eq in required_equipment:
             relationship = eq.equipment_relationship or 'None'  # Default to 'None' if no relationship
             if relationship not in equipment_by_relationship:
-                equipment_by_relationship[relationship] = set()
-            equipment_by_relationship[relationship].add(eq.equipment_id)
+                equipment_by_relationship[relationship] = []
+            equipment_by_relationship[relationship].append({
+                'equipment_id': eq.equipment_id,
+                'quantity': eq.quantity or 1  # Default to 1 if quantity not specified
+            })
         
         # Check each relationship group
-        for relationship, equipment_ids in equipment_by_relationship.items():
+        for relationship, equipment_list in equipment_by_relationship.items():
             if relationship in ['or', 'Or', 'OR']:
-                # Must have AT LEAST ONE equipment in this group
-                if not any(eq_id in user_equipment_ids for eq_id in equipment_ids):
+                # Must have AT LEAST ONE equipment in this group with sufficient quantity
+                has_one = False
+                for eq in equipment_list:
+                    user_quantity = user_equipment.get(eq['equipment_id'], 0)
+                    if user_quantity >= eq['quantity']:
+                        has_one = True
+                        break
+                if not has_one:
                     return False
             else:
-                # Must have ALL equipment in this group
-                if not equipment_ids.issubset(user_equipment_ids):
-                    return False
+                # Must have ALL equipment in this group with sufficient quantities
+                for eq in equipment_list:
+                    user_quantity = user_equipment.get(eq['equipment_id'], 0)
+                    if user_quantity < eq['quantity']:
+                        return False
 
         return True
 
@@ -94,5 +109,5 @@ class User_Exercises(db.Model, TableNameMixin):
             "has_weighted_equipment": self.has_weighted_equipment,
             "has_marking_equipment": self.has_marking_equipment,
             "has_other_equipment": self.has_other_equipment,
-            "has_all_equipment": self.has_all_equipment,
+            # "has_all_equipment": self.has_all_equipment,
         }
