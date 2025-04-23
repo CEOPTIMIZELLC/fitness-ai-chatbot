@@ -98,6 +98,7 @@ class Data_Importer:
         self.phase_components_df = sheets["phases_components"]
         self.phase_component_bodyparts_df = sheets["component-phase_bodypart"]
         self.exercises_df = sheets["Exercises"]
+        self.exercises_df.drop_duplicates(subset=["Exercise"], inplace=True)
         self.equipment_df = pd.DataFrame(self.exercises_df[["Supportive Equipment", 
                                                             "Assistive Equipment", 
                                                             "Weighted Equipment", 
