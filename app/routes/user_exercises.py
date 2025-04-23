@@ -9,6 +9,7 @@ from sqlalchemy.sql import func, distinct
 
 from app.models import Equipment_Library
 
+from app.utils.common_table_queries import user_possible_exercises
 from app.utils.common_table_queries import user_available_exercises
 from app.utils.common_table_queries import current_workout_day
 
@@ -26,7 +27,6 @@ def get_user_exercise_list():
     for user_exercise in user_exercises:
         result.append(user_exercise.to_dict())
     return jsonify({"status": "success", "user_exercises": result}), 200
-
 
 # Retrieve current user's exercises.
 @bp.route('/<exercise_id>', methods=['GET'])
@@ -55,5 +55,15 @@ def get_user_current_exercise_list():
 @login_required
 def get_available_exercises():
     available_exercises = user_available_exercises(current_user.id)
-    result = [exercise.to_dict() for exercise in available_exercises]
+    result = [exercise.to_dict() 
+              for exercise in available_exercises]
+    return jsonify({"status": "success", "exercises": result}), 200
+
+# Retrieve current user's exercises.
+@bp.route('/possible', methods=['GET'])
+@login_required
+def get_user_possible_exercise_list():
+    available_exercises = user_possible_exercises(current_user.id)
+    result = [exercise.to_dict() 
+              for exercise in available_exercises]
     return jsonify({"status": "success", "exercises": result}), 200

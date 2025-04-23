@@ -21,7 +21,8 @@ from app.models import (
 bp = Blueprint('user_workout_exercises', __name__)
 
 from app.agents.exercises import Main as exercises_main
-from app.utils.common_table_queries import current_workout_day
+from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
+
 
 # ----------------------------------------- Phase_Components -----------------------------------------
 
@@ -156,10 +157,8 @@ def retrieve_exercises():
 
 # Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_available_exercises():
-    from app.utils.common_table_queries import user_available_exercises_with_user_exercise_info
-
     # Retrieve all possible exercises with their component phases
-    results = user_available_exercises_with_user_exercise_info(current_user.id)
+    results = user_possible_exercises_with_user_exercise_info(current_user.id)
 
     possible_exercises_list = [dummy_exercise]
 
@@ -314,7 +313,7 @@ def exercise_initializer():
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = int(availability.availability.total_seconds())
     parameters["workout_length"] = int(current_user.workout_length.total_seconds())
-    parameters["possible_exercises"] = retrieve_exercises()
+    parameters["possible_exercises"] = retrieve_available_exercises()
 
     result = []
     result = exercises_main(parameters, constraints)
