@@ -10,13 +10,14 @@ from sqlalchemy.sql import func, distinct
 from app.models import Equipment_Library
 
 from app.utils.common_table_queries import user_available_exercises
+from app.utils.common_table_queries import current_workout_day
 
 
 bp = Blueprint('user_exercises', __name__)
 
 # ----------------------------------------- User Exercises -----------------------------------------
 
-# Retrieve current user's goals
+# Retrieve current user's exercises.
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_exercise_list():
@@ -27,7 +28,7 @@ def get_user_exercise_list():
     return jsonify({"status": "success", "user_exercises": result}), 200
 
 
-# Retrieve current user's goals
+# Retrieve current user's exercises.
 @bp.route('/<exercise_id>', methods=['GET'])
 @login_required
 def read_user_exercise(exercise_id):
@@ -36,6 +37,18 @@ def read_user_exercise(exercise_id):
         return jsonify({"status": "error", "message": f"No active exercise of {exercise_id} found for current user."}), 404
     return jsonify({"status": "success", "user_exercises": user_exercise.to_dict()}), 200
 
+# Retrieve current user's exercises for current workout.
+@bp.route('/current', methods=['GET'])
+@login_required
+def get_user_current_exercise_list():
+    result = []
+    user_workout_day = current_workout_day(current_user.id)
+    workout_exercises = user_workout_day.exercises
+
+    for exercise in workout_exercises:
+        user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise.exercise_id})
+        result.append(user_exercise.to_dict())
+    return jsonify({"status": "success", "user_exercises": result}), 200
 
 # Retrieve available exercises for the current user
 @bp.route('/available', methods=['GET'])

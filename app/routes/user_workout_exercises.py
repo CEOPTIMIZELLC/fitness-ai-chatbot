@@ -243,8 +243,8 @@ def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
             order = i,
             reps = exercise["reps_var"],
             sets = exercise["sets_var"],
-            intensity = 0,
-            rest = exercise["rest_var"]
+            intensity = exercise["intensity_var"],
+            rest = exercise["rest_var"],
         )
 
         new_exercises.append(new_exercise)
@@ -326,25 +326,47 @@ def exercise_initializer():
     db.session.add_all(user_workout_exercises)
     db.session.commit()
 
-    for exercise in output:
-        user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise["exercise_id"]})
+    return jsonify({"status": "success", "exercises": result}), 200
 
-        new_one_rep_max = round((exercise["training_weight"] * (30 + exercise["reps_var"])) / 30, 2)
+# Update user exercises if workout is completed.
+@bp.route('/workout_completed', methods=['POST', 'PATCH'])
+@login_required
+def complete_workout():
+    result = []
+    user_workout_day = current_workout_day(current_user.id)
+    workout_exercises = user_workout_day.exercises
+
+    for exercise in workout_exercises:
+        user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise.exercise_id})
+
+        new_weight = exercise.weight or 0
+
+        new_one_rep_max = round((new_weight * (30 + exercise.reps)) / 30, 2)
 
         # Only replace if the new one rep max is larger.
         user_exercise.one_rep_max = max(user_exercise.one_rep_max, new_one_rep_max)
         user_exercise.one_rep_load = new_one_rep_max
-        user_exercise.volume = exercise["volume"]
-        user_exercise.density = exercise["density"]
-        user_exercise.intensity = exercise["intensity_var"]
+        user_exercise.volume = exercise.volume
+        user_exercise.density = exercise.density
+        user_exercise.intensity = exercise.intensity
 
         # Only replace if the new performance is larger.
-        user_exercise.performance = max(user_exercise.performance, exercise["performance"])
+        user_exercise.performance = max(user_exercise.performance, exercise.performance)
 
         db.session.commit()
 
-    return jsonify({"status": "success", "exercises": result}), 200
+        result.append(user_exercise.to_dict())
 
+    return jsonify({"status": "success", "user_exercises": result}), 200
+
+# Combine Exercise Initializer and Complete Workout for testing.
+@bp.route('/initialize_and_complete', methods=['POST', 'PATCH'])
+@login_required
+def initialize_and_complete():
+    result = {}
+    result["user_workout_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
+    result["user_exercises"] = complete_workout()[0].get_json()["user_exercises"]
+    return jsonify({"status": "success", "output": result}), 200
 
 # Testing for the parameter programming for mesocycle labeling.
 @bp.route('/test', methods=['GET', 'POST'])

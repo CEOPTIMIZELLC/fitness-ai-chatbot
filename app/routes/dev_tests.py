@@ -20,6 +20,7 @@ def check_pipeline():
     from app.routes.user_microcycles import get_user_current_microcycles_list
     from app.routes.user_workout_days import get_user_current_workout_days_list
     from app.routes.user_workout_exercises import get_user_current_exercises_list
+    from app.routes.user_exercises import get_user_current_exercise_list
 
     result = {}
     result["user_availability"] = get_user_weekday_list()[0].get_json()["weekdays"]
@@ -28,6 +29,7 @@ def check_pipeline():
     result["user_microcycles"] = get_user_current_microcycles_list()[0].get_json()["microcycles"]
     result["user_workout_days"] = get_user_current_workout_days_list()[0].get_json()["phase_components"]
     result["user_workout_exercises"] = get_user_current_exercises_list()[0].get_json()["exercises"]
+    result["user_exercises"] = get_user_current_exercise_list()[0].get_json()["user_exercises"]
     return result
 
 
@@ -41,7 +43,7 @@ def run_pipeline():
     from app.routes.user_mesocycles import mesocycle_phases
     from app.routes.user_microcycles import microcycle_initializer
     from app.routes.user_workout_days import workout_day_initializer
-    from app.routes.user_workout_exercises import exercise_initializer
+    from app.routes.user_workout_exercises import exercise_initializer, complete_workout
 
     # Input is a json.
     data = request.get_json()
@@ -67,6 +69,8 @@ def run_pipeline():
         result["user_workout_days"] = workout_day_initializer()[0].get_json()["workdays"]["output"]
         print(f"\n========================== EXERCISES RUN {i} ==========================")
         result["user_workout_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
+        print(f"\n========================== WORKOUT COMPLETED RUN {i} ==========================")
+        result["user_exercises"] = complete_workout()[0].get_json()["user_exercises"]
         results.append(result)
         print(f"\n========================== FINISHED RUN {i} ==========================\n\n")
 
