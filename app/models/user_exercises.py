@@ -14,7 +14,7 @@ class User_Exercises(db.Model, TableNameMixin):
     volume = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='sets * reps * load')
     density = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='working duration / duration')
     intensity = db.Column(db.Integer, nullable=False, default=100, comment='The intensity of the exercise in comparison to the their one rep max.')
-    performance = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='intensity * volume')
+    performance = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='density * volume')
 
     # Relationships
     users = db.relationship("Users", back_populates="exercises")
