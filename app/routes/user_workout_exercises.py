@@ -103,15 +103,15 @@ def user_component_dict(workout, phase_component):
         "exercise_selection_note": phase_component.exercise_selection_note,
     }
 
-def exercise_dict(exercise, user_exercise, phase):
+def exercise_dict(exercise, user_exercise):
     """Format the exercise data."""
     return {
         "id": exercise.id,
         "name": exercise.name.lower(),
         "base_strain": exercise.base_strain,
         "technical_difficulty": exercise.technical_difficulty,
-        "component_id": phase.component_id,
-        "subcomponent_id": phase.subcomponent_id,
+        "component_ids": [component_phase.component_id for component_phase in exercise.component_phases],
+        "subcomponent_ids": [component_phase.subcomponent_id for component_phase in exercise.component_phases],
         "body_region_ids": exercise.all_body_region_ids,
         "bodypart_ids": exercise.all_bodypart_ids,
         "muscle_group_ids": exercise.all_muscle_group_ids,
@@ -142,17 +142,15 @@ def retrieve_exercises():
         db.session.query(
             Exercise_Library,
             User_Exercises, 
-            Exercise_Component_Phases,
         )
-        .join(Exercise_Component_Phases, Exercise_Library.id == Exercise_Component_Phases.exercise_id)
         .join(User_Exercises, User_Exercises.exercise_id == Exercise_Library.id)
         .all()
     )
 
     possible_exercises_list = [dummy_exercise]
 
-    for exercise, user_exercise, phase in results:
-        possible_exercises_list.append(exercise_dict(exercise, user_exercise, phase))
+    for exercise, user_exercise in results:
+        possible_exercises_list.append(exercise_dict(exercise, user_exercise))
     return possible_exercises_list
 
 # Retrieve the phase types and their corresponding constraints for a goal.
@@ -162,8 +160,8 @@ def retrieve_available_exercises():
 
     possible_exercises_list = [dummy_exercise]
 
-    for exercise, user_exercise, phase in results:
-        possible_exercises_list.append(exercise_dict(exercise, user_exercise, phase))
+    for exercise, user_exercise in results:
+        possible_exercises_list.append(exercise_dict(exercise, user_exercise))
     return possible_exercises_list
 
 def construct_user_workout_components_list(user_workout_components):

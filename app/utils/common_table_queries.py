@@ -92,9 +92,8 @@ def user_possible_exercises(user_id):
 
 def user_possible_exercises_with_user_exercise_info(user_id):
     user_exercises = (
-        db.session.query(Exercise_Library, User_Exercises, Exercise_Component_Phases)
+        db.session.query(Exercise_Library, User_Exercises)
         .join(User_Exercises, Exercise_Library.id == User_Exercises.exercise_id)
-        .join(Exercise_Component_Phases, Exercise_Library.id == Exercise_Component_Phases.exercise_id)
         .filter(User_Exercises.user_id == user_id)
         .order_by(Exercise_Library.id.asc())
         .distinct()

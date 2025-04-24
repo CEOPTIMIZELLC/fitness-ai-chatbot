@@ -31,8 +31,8 @@ def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):
             if all(f(exercise, phase_component) for f in conditions)]
 
 def get_exercises_for_pc(exercises, phase_component):
-    conditions = [lambda exercise, phase_component: exercise['component_id'] == phase_component["component_id"],
-                  lambda exercise, phase_component: exercise['subcomponent_id'] == phase_component["subcomponent_id"],
+    conditions = [lambda exercise, phase_component: phase_component["component_id"] in exercise['component_ids'],
+                  lambda exercise, phase_component: phase_component["subcomponent_id"] in exercise['subcomponent_ids'],
                   lambda exercise, phase_component: (1 in exercise['bodypart_ids']) or (phase_component["bodypart_id"] in exercise["bodypart_ids"])]
 
     exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions)
