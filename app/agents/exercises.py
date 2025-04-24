@@ -138,8 +138,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         state["relaxation_attempts"].append(attempt)
         return {"solution": None}
 
-
-
     def build_opt_model_node_2(self, state: State, config=None) -> dict:
         print("Building Second Step")
 
@@ -227,7 +225,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             for j in range(exercise_amount)]
             for i in range(max_exercises)]
 
-
         constrain_weighted_exercises_var(model, used_exercise_vars, weighted_exercise_vars, weighted_exercise_indices)
         constrain_intensity_vars(model, intensity_vars, phase_component_ids, phase_components, weighted_exercise_vars)
         constrain_training_weight_vars(model, intensity_vars, exercises[1:], training_weight_vars, used_exercise_vars, weighted_exercise_vars)
@@ -290,7 +287,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         if constraints["exercise_metric_increase"]:
             ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, used_exercise_vars, performance_vars, training_weight_vars)
             state["logs"] += "- Exercise metric increase constraint applied.\n"
-
 
         # Objective: Maximize total strain of microcycle
         if constraints["minimize_strain"]:

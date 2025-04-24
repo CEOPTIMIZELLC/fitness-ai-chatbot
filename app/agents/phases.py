@@ -151,15 +151,14 @@ class PhaseAgent(BaseAgent):
                                       duration_vars = duration_vars, 
                                       active_entry_vars = active_mesocycle_vars)
 
-
-        # Apply active constraints ======================================
-        state["logs"] += "\nBuilding model with constraints:\n"
-
         link_entry_and_item(model = model, 
                             items = phases, 
                             entry_vars = mesocycle_vars, 
                             number_of_entries = max_mesocycles, 
                             used_vars = used_vars)
+
+        # Apply active constraints ======================================
+        state["logs"] += "\nBuilding model with constraints:\n"
 
         # Constraint: The duration of a phase may only be a number of weeks between the minimum and maximum weeks allowed.
         if constraints["phase_within_min_max"]:
@@ -257,7 +256,6 @@ class PhaseAgent(BaseAgent):
                 model.Maximize(goal_time)
 
             state["logs"] += "- Maximizing time spent on the goal phases.\n"
-
 
         return {"opt_model": (model, mesocycle_vars, duration_vars, used_vars, active_mesocycle_vars)}
 

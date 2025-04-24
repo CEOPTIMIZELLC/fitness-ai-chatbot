@@ -177,7 +177,6 @@ class PhaseComponentAgent(BaseAgent):
                                              availability=[workout_length] * len(duration_vars))
             state["logs"] += "- Sum of phase component duration within maximum allowed time for a workout.\n"
 
-
         # Constraint: Force all phase components required in every workout to be included at least once.
         if constraints["use_workout_required_components"]:
             # Retrieve the indexes of all components that are required in all workouts.
@@ -197,14 +196,12 @@ class PhaseComponentAgent(BaseAgent):
                                    used_vars=active_phase_components)
             state["logs"] += "- All phase components required every microcycle will be included in every microcycle applied.\n"
 
-
         # Constraint: Every bodypart division must be done consecutively for a phase component.
         if constraints["consecutive_bodyparts_for_component"]:
             consecutive_bodyparts_for_component(model=model, 
                                                 phase_components=phase_components, 
                                                 active_phase_components=active_phase_components)
             state["logs"] += "- Bodypart division for components are done consecutively activated.\n"
-
 
         # Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
         if constraints["frequency_within_min_max"]:
