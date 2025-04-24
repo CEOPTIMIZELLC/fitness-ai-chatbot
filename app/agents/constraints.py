@@ -15,7 +15,6 @@ def intvar_list_from_elements(model, number_of_elements, name_of_metric, min_val
                         f'{name_of_metric}_{i}') 
         for i in range(number_of_elements)]
 
-
 # Links each entry and item with the "used" variables, determining if item j is the item at entry i.
 def link_entry_and_item(model, items, entry_vars, number_of_entries, used_vars):
     for i in range(number_of_entries):
@@ -35,7 +34,6 @@ def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_acti
     model.Add(entry <= max_if_active).OnlyEnforceIf(activator)
 
     return None
-
 
 # Method for the creation of what is essentially an optional variable. 
 # This was created to reduce repetition of code
@@ -100,7 +98,6 @@ def entries_equal(model, items, key, number_of_entries, used_vars, duration_vars
                 key, used_vars[i][j]
             )
     return None
-
 
 def entry_within_min_max(model, var, item, min_key, max_key, condition=None):
     """Generic function to add min/max constraints with optional condition."""
