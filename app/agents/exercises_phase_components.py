@@ -428,25 +428,47 @@ class ExercisePhaseComponentAgent(BaseAgent):
             formatted += f"Total Strain: {attempt.strain_ratio}\n"
         return formatted
 
+    def _create_header_fields(self, longest_sizes: dict) -> dict:
+        """Create all header fields with consistent formatting"""
+        return {
+            "number": ("", 5),
+            "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
+            "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
+            "duration": ("Duration", 12),
+            "working_duration": ("WDuration", 12),
+            "seconds_per_exercise": ("(Sec/Exercise", 16),
+            "reps": ("Reps", 14),
+            "sets": ("Sets", 10),
+            "rest": ("Rest)", 17),
+        }
+
     def format_agent_output(self, solution, formatted, schedule, phase_components, projected_duration, workout_length):
         final_output = []
 
-        longest_subcomponent_string_size = longest_string_size_for_key(phase_components[1:], "name")
-        longest_bodypart_string_size = longest_string_size_for_key(phase_components[1:], "bodypart_name")
-        longest_pc_string_size = longest_subcomponent_string_size + longest_bodypart_string_size
-
         phase_component_count = [0] * len(phase_components)
 
-        formatted += "\nFinal Training Schedule:\n"
-        formatted += "-" * 40 + "\n"
+        # Calculate longest string sizes
+        longest_sizes = {
+            "phase_component": longest_string_size_for_key(phase_components[1:], "name"),
+            "bodypart": longest_string_size_for_key(phase_components[1:], "bodypart_name")
+        }
 
-        for component_count, (i, phase_component_index, 
-                active_exercises, seconds_per_exercise, 
-                reps_var, sets_var, rest_var, 
-                duration, working_duration) in enumerate(schedule):
+        # Create headers
+        headers = self._create_header_fields(longest_sizes)
+        
+        # Create header line
+        formatted += "\nFinal Training Schedule:\n" + "-" * 120 + "\n"
+        header_line = ""
+        for label, (text, length) in headers.items():
+            header_line += self._create_formatted_field(text, text, length)
+        formatted += header_line + "\n"
 
+        for component_count, (i, phase_component_index, *metrics) in enumerate(schedule):
             phase_component = phase_components[phase_component_index]
-            phase_component_name = phase_component["name"] + " " + phase_component["bodypart_name"] 
+
+            (active_exercises, seconds_per_exercise, 
+             reps_var, sets_var, rest_var, 
+             duration, working_duration) = metrics
 
             if active_exercises:
                 final_output.append({
@@ -466,22 +488,30 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
-                formatted_phase_component = f"{phase_component_name:<{longest_pc_string_size+3}}"
+                # Format line
+                line_fields = {
+                    "number": str(component_count + 1),
+                    "phase_component": f"{phase_component['name']}",
+                    "bodypart": phase_component["bodypart_name"],
+                    "duration": f"({duration} sec",
+                    "working_duration": f"({working_duration} sec",
+                    "seconds_per_exercise": f"({seconds_per_exercise} sec",
+                    "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
+                    "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
+                    "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")"
+                }
 
-                formatted_duration = f"Duration: {self._format_duration(duration)}"
-                formatted_seconds_per_exercises = f"Sec/Exercise {seconds_per_exercise:<{5}}"
-                formatted_reps = f"Reps {self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"])}"
-                formatted_sets = f"Sets {self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"])}"
-                formatted_rest = f"Rest {self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5)}"
-
-                formatted += (f"Exercise {(component_count + 1):<{2}}: {formatted_phase_component}{formatted_duration:<{45}}({formatted_seconds_per_exercises}{formatted_reps:<{20}}{formatted_sets:<{20}}{formatted_rest:<{6}})\n")
+                line = ""
+                for field, (_, length) in headers.items():
+                    line += self._create_formatted_field(field, line_fields[field], length)
+                formatted += line + "\n"
             else:
-                formatted += (f"Exercise {(component_count + 1):<{2}} ----\n")
+                formatted += (f"| {(component_count + 1):<{2}} ----\n")
 
         formatted += f"Phase Component Counts:\n"
         for phase_component_index, phase_component_number in enumerate(phase_component_count):
             phase_component = phase_components[phase_component_index]
-            phase_component_name = f"{phase_component["name"] + " " + phase_component["bodypart_name"]:<{longest_pc_string_size+3}}"
+            phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
             formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}\n"
         formatted += f"Total Strain: {solution['strain_ratio']}\n"
         formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"

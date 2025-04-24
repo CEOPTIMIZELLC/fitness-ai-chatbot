@@ -360,23 +360,40 @@ class PhaseComponentAgent(BaseAgent):
             formatted += f"Total Time Used: {attempt.microcycle_duration  // 60} min {attempt.microcycle_duration  % 60} sec ({attempt.microcycle_duration} seconds)\n"
         return formatted
 
+    def _create_header_fields(self, longest_sizes: dict) -> dict:
+        """Create all header fields with consistent formatting"""
+        return {
+            "number": ("Component", 12),
+            "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
+            "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
+            "duration": ("Duration", 30),
+            "duration_sec": ("Duration in Seconds", 30),
+        }
+
     def format_agent_output(self, solution, formatted, schedule, phase_components, used_days, workout_time, workout_length, weekday_availability, microcycle_weekdays):
         final_output = []
 
-        longest_subcomponent_string_size = longest_string_size_for_key(phase_components, "name")
-        longest_bodypart_string_size = longest_string_size_for_key(phase_components, "bodypart")
-
         phase_component_count = [0] * len(phase_components)
 
-        formatted += "\nFinal Training Schedule:\n"
-        formatted += "-" * 40 + "\n"
+        # Calculate longest string sizes
+        longest_sizes = {
+            "phase_component": longest_string_size_for_key(phase_components[1:], "name"),
+            "bodypart": longest_string_size_for_key(phase_components[1:], "bodypart")
+        }
 
-        for component_count, (phase_component_index, workday_index, active_phase_components, duration_var) in enumerate(schedule):
+        # Create headers
+        headers = self._create_header_fields(longest_sizes)
+        
+        # Create header line
+        formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
+        header_line = ""
+        for label, (text, length) in headers.items():
+            header_line += self._create_formatted_field(text, text, length)
 
+        for component_count, (phase_component_index, workday_index, *metrics) in enumerate(schedule):
             phase_component = phase_components[phase_component_index]
-            phase_component_name = f"{phase_component["name"]:<{longest_subcomponent_string_size+3}} {phase_component["bodypart"]:<{longest_bodypart_string_size+3}}"
 
-            day_duration = duration_var
+            (active_phase_components, duration_var) = metrics
 
             if active_phase_components:
                 final_output.append({
@@ -391,23 +408,33 @@ class PhaseComponentAgent(BaseAgent):
                 current_weekday = microcycle_weekdays[workday_index]
 
                 if not used_days[workday_index]["used"]:
-                    formatted += f"\nDay {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])}\n"
+                    formatted += f"\n| Day {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
                     used_days[workday_index]["used"] = True
+                    formatted += header_line + "\n"
 
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
-                formatted_duration = f"Duration: {self._format_duration(day_duration)}\t"
-                formatted_duration_sec = f"{self._format_range(str(day_duration) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}"
+                # Format line
+                line_fields = {
+                    "number": str(component_count + 1),
+                    "phase_component": f"{phase_component['name']}",
+                    "bodypart": phase_component["bodypart"],
+                    "duration": f"{self._format_duration(duration_var)} sec",
+                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}"
+                }
 
-                formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name} {formatted_duration} {formatted_duration_sec}\n")
+                line = ""
+                for field, (_, length) in headers.items():
+                    line += self._create_formatted_field(field, line_fields[field], length)
+                formatted += line + "\n"
             else:
-                formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t{phase_component_name} ----\n")
+                formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
 
         formatted += f"Phase Component Counts:\n"
         for phase_component_index, phase_component_number in enumerate(phase_component_count):
             phase_component = phase_components[phase_component_index]
-            phase_component_name = f"{phase_component["name"]:<{longest_subcomponent_string_size+3}} {phase_component["bodypart"]:<{longest_bodypart_string_size+3}}"
+            phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart']:<{longest_sizes['bodypart']+2}}"
             formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])}\n"
         formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
         formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"

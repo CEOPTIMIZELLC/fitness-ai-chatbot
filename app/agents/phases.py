@@ -338,13 +338,31 @@ class PhaseAgent(BaseAgent):
             formatted += f"Total Macrocycle Length in Weeks: {attempt.total_weeks_time}\n"
         return formatted
 
+    def _create_header_fields(self, longest_sizes: dict) -> dict:
+        """Create all header fields with consistent formatting"""
+        return {
+            "number": ("Mesocycle", 12),
+            "phase": ("Phase", longest_sizes["phase"] + 4),
+            "duration": ("Duration", 17),
+            "goal_duration": ("Goal Duration", 17),
+        }
+
     def format_agent_output(self, solution, formatted, schedule, phases, macrocycle_allowed_weeks):
         final_output = []
 
-        longest_string_size = longest_string_size_for_key(phases, "name")
+        # Calculate longest string sizes
+        longest_sizes = {"phase": longest_string_size_for_key(phases, "name")}
 
-        formatted += "\nFinal Training Schedule:\n"
-        formatted += "-" * 40 + "\n"
+        # Create headers
+        headers = self._create_header_fields(longest_sizes)
+
+        # Create header line
+        formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
+        header_line = ""
+        for label, (text, length) in headers.items():
+            header_line += self._create_formatted_field(text, text, length)
+        formatted += header_line + "\n"
+
         for i, (phase_type, phase_duration) in enumerate(schedule):
             phase = phases[phase_type]
             final_output.append({
@@ -352,10 +370,19 @@ class PhaseAgent(BaseAgent):
                 "id": phase["id"],
                 "duration": phase_duration
             })
-            
-            formatted_duration = f"Duration: {self._format_range(phase_duration, phase['element_minimum'], phase['element_maximum'])} weeks"
-            formatted_goal_duration = f"Goal Duration: +{phase_duration if phase['is_goal_phase'] else 0} weeks"
-            formatted += (f"Mesocycle {i + 1}: \t{phase['name']:<{longest_string_size+3}} ({formatted_duration}; {formatted_goal_duration})\n")
+
+            # Format line
+            line_fields = {
+                "number": str(i + 1),
+                "phase": f"{phase['name']}",
+                "duration": f"{self._format_range(str(phase_duration), phase["element_minimum"], phase["element_maximum"])} weeks",
+                "goal_duration": f"+{phase_duration if phase['is_goal_phase'] else 0} weeks"
+            }
+
+            line = ""
+            for field, (_, length) in headers.items():
+                line += self._create_formatted_field(field, line_fields[field], length)
+            formatted += line + "\n"
             
         formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
         formatted += f"Total Time Used: {solution['total_weeks_time']} weeks\n"
