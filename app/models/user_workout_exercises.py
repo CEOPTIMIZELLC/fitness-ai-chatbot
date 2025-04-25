@@ -1,3 +1,4 @@
+import math
 from app import db
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.models.base import BaseModel
@@ -18,7 +19,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     sets = db.Column(db.Integer, nullable=False, comment='')
     intensity = db.Column(db.Integer, comment='')
     rest = db.Column(db.Integer, nullable=False, comment='')
-    weight = db.Column(db.Integer, comment='')
+    weight = db.Column(db.Numeric(10, 2), comment='')
 
     # Seconds per exercise of the exercise.
     @hybrid_property
@@ -43,12 +44,12 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     # Volume of the exercise.
     @hybrid_property
     def volume(self):
-        return self.reps * self.sets * (self.weight or 1)
+        return self.reps * self.sets * (float(self.weight) or 1)
 
     # Density of the exercise.
     @hybrid_property
     def density(self):
-        return self.duration / self.working_duration
+        return math.floor(self.working_duration / self.duration * 100) / 100
 
     # Performance of the exercise.
     @hybrid_property
@@ -68,7 +69,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     # Strain of the exercise overall.
     @hybrid_property
     def strain(self):
-        return self.strained_duration / self.strained_working_duration
+        return math.floor(self.strained_working_duration / self.strained_duration * 100) / 100
 
     # Relationships
     workout_days = db.relationship("User_Workout_Days", back_populates="exercises")
