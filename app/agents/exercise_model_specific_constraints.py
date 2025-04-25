@@ -55,7 +55,7 @@ def _is_intensity(model, i, name="", scaled=1, max_duration=0, intensity=None, b
 # This method performs the in between steps and returns the final duration variable.
 # total_set_duration = (seconds_per_exercise * (1 + .1 * basestrain) * rep_count + rest_time) * set_count
 # total_set_duration = (seconds_per_exercise * (10 + basestrain) * rep_count + 10 * rest_time) * set_count
-def create_exercise_intensity_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, intensity=None, base_strain=None, name="", scaled=1):
+def create_exercise_effort_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0, sets=0, rest=0, intensity=None, base_strain=None, name="", scaled=1):
     if name != "":
         name += "_"
 
@@ -64,21 +64,21 @@ def create_exercise_intensity_var(model, i, max_duration=0, seconds_per_exercise
 
     # Create the entry for phase component's duration
     # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
-    duration_var_entry = model.NewIntVar(0, scaled * max_duration, f'{name}duration_{i}')
+    effort_var_entry = model.NewIntVar(0, scaled * max_duration, f'{name}effort_{i}')
 
     # Temporary variable for seconds per exercise and the rep count. (seconds_per_exercise * rep_count)
     seconds_per_exercise_and_reps = model.NewIntVar(0, scaled * max_duration, f'{name}seconds_per_exercise_and_rep_count_{i}')
     model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, scaled_base_strain, reps])
 
     # Temporary variable for the previous product and the rest time. (seconds_per_exercise * rep_count + rest_time)
-    duration_with_rest = model.NewIntVar(0, scaled * max_duration, f'{name}duration_with_rest_{i}')
+    effort_with_rest = model.NewIntVar(0, scaled * max_duration, f'{name}effort_with_rest_{i}')
 
     # In between step for added components.
-    model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * scaled * rest))
+    model.Add(effort_with_rest == seconds_per_exercise_and_reps + (5 * scaled * rest))
 
     # Completed constraint.
-    model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
-    return duration_var_entry
+    model.AddMultiplicationEquality(effort_var_entry, [effort_with_rest, sets])
+    return effort_var_entry
 
 
 # Indicate that an exercise chosen is weighted if the exercise is a weighted exercise.
@@ -152,4 +152,16 @@ def constrain_density_vars(model, density_vars, duration_vars, working_duration_
 def constrain_performance_vars(model, performance_vars, volume_vars, density_vars):
     for volume_var, density_var, performance_var in zip(volume_vars, density_vars, performance_vars):
         model.AddMultiplicationEquality(performance_var, [volume_var, density_var])
+    return None
+
+def constrain_effort_vars(model, pc_vars, exercise_vars):
+    for i, values_for_exercise in enumerate(zip(exercise_vars["base_strain"], pc_vars["seconds_per_exercise"], pc_vars["reps"], pc_vars["sets"], pc_vars["rest"], pc_vars["intensity"])):
+        (
+            base_strain_var,
+            seconds_per_exercise_var, 
+            reps_var, 
+            sets_var, 
+            rest_var,
+            intensity_var
+        ) = values_for_exercise
     return None
