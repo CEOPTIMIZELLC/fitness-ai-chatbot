@@ -292,21 +292,21 @@ class ExercisePhaseComponentAgent(BaseAgent):
             strain_terms = []
 
             # Creates strain_time, which will hold the total strain over the workout.
-            strain_time = model.NewIntVar(0, max_exercises * workout_length, 'strain_time')
-            for i, (duration_var, working_duration_var) in enumerate(zip(vars["duration"], vars["working_duration"])):
+            strain_time = model.NewIntVar(0, 100 * max_exercises * workout_length, 'strain_time')
+            for i, (base_duration_var, working_duration_var) in enumerate(zip(vars["duration"], vars["working_duration"])):
                 # Create the entry for phase component's duration
                 # total_working_duration = (seconds_per_exercise * rep_count) * set_count
-                non_zero_working_duration_var = model.NewIntVar(1, max_duration, f'non_zero_working_duration_{i}')
-                working_duration_is_0 = model.NewBoolVar(f'working_duration_{i}_is_0')
+                non_zero_base_duration_var = model.NewIntVar(1, max_duration, f'non_zero_base_duration_{i}')
+                base_duration_is_0 = model.NewBoolVar(f'base_duration_{i}_is_0')
 
                 # Ensure no division by 0 occurs.
-                model.Add(non_zero_working_duration_var == 1).OnlyEnforceIf(working_duration_is_0)
-                model.Add(non_zero_working_duration_var == working_duration_var).OnlyEnforceIf(working_duration_is_0.Not())
-                model.Add(working_duration_var == 0).OnlyEnforceIf(working_duration_is_0)
-                model.Add(working_duration_var >= 1).OnlyEnforceIf(working_duration_is_0.Not())
+                model.Add(non_zero_base_duration_var == 1).OnlyEnforceIf(base_duration_is_0)
+                model.Add(non_zero_base_duration_var == base_duration_var).OnlyEnforceIf(base_duration_is_0.Not())
+                model.Add(base_duration_var == 0).OnlyEnforceIf(base_duration_is_0)
+                model.Add(base_duration_var >= 1).OnlyEnforceIf(base_duration_is_0.Not())
 
-                strain = model.NewIntVar(0, workout_length, f'strain_{i}')
-                model.AddDivisionEquality(strain, duration_var, non_zero_working_duration_var)
+                strain = model.NewIntVar(0, 100 * workout_length, f'strain_{i}')
+                model.AddDivisionEquality(strain, 100 * working_duration_var, non_zero_base_duration_var)
 
                 strain_terms.append(strain)
 
@@ -350,7 +350,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
-        #solver.parameters.log_search_progress = True
+        # solver.parameters.log_search_progress = True
         status = solver.Solve(model)
 
         state["logs"] += f"\nSolver status: {status}\n"
