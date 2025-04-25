@@ -211,6 +211,10 @@ class PhaseAgent(BaseAgent):
                                    required_items = required_phases, 
                                    used_vars = vars["used"])
             logs += "- Use every required phase at least once applied.\n"
+        return logs
+
+    def apply_model_objective(self, constraints, model, vars, phases, macrocycle_allowed_weeks, max_mesocycles):
+        logs = ""
 
         # Objective: Maximize time spent on goal phases
         if constraints["maximize_goal_phase"]:
@@ -247,7 +251,6 @@ class PhaseAgent(BaseAgent):
             logs += "- Maximizing time spent on the goal phases.\n"
         return logs
 
-
     def build_opt_model_node(self, state: State, config=None) -> dict:
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
@@ -266,6 +269,7 @@ class PhaseAgent(BaseAgent):
 
         vars = self.create_model_vars(model, macrocycle_allowed_weeks, phases, phase_amount, min_mesocycles, max_mesocycles)
         state["logs"] += self.apply_model_constraints(constraints, model, vars, phases, macrocycle_allowed_weeks, max_mesocycles)
+        state["logs"] += self.apply_model_objective(constraints, model, vars, phases, macrocycle_allowed_weeks, max_mesocycles)
 
         return {"opt_model": (model, vars["mesocycles"], vars["duration"], vars["used"], vars["active_mesocycles"])}
 

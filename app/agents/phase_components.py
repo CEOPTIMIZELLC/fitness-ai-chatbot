@@ -205,6 +205,10 @@ class PhaseComponentAgent(BaseAgent):
                                      maximum_key="frequency_per_microcycle_max")
             logs += "- All phase components occuring within microcycle will occur the allowed number of times applied.\n"
 
+        return logs
+
+    def apply_model_objective(self, constraints, model, vars, workout_availability):
+        logs = ""
         duration_spread_var = None
         # Secondary Objective: Minimize the spread of duration.
         if constraints["minimize_duration_delta"]:
@@ -239,7 +243,6 @@ class PhaseComponentAgent(BaseAgent):
         return logs, duration_spread_var, total_duration_to_maximize
 
 
-
     def build_opt_model_node(self, state: State, config=None) -> dict:
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
@@ -254,30 +257,9 @@ class PhaseComponentAgent(BaseAgent):
         workout_availability = [weekday_availability[day]["availability"] for day in microcycle_weekdays]
 
         vars = self.create_model_vars(model, phase_components, workout_availability, workout_length, microcycle_weekdays)
-
-        logs, duration_spread_var, total_duration_to_maximize = self.apply_model_constraints(constraints, model, vars, phase_components, workout_availability, workout_length)
+        state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, workout_availability, workout_length)
+        logs, duration_spread_var, total_duration_to_maximize = self.apply_model_objective(constraints, model, vars, workout_availability)
         state["logs"] += logs
-
-        return {"opt_model": (model, workout_availability, vars["active_phase_components"], vars["duration"], duration_spread_var, total_duration_to_maximize)}
-
-
-
-    def build_opt_model_node(self, state: State, config=None) -> dict:
-        """Build the optimization model with active constraints."""
-        parameters = state["parameters"]
-        constraints = state["constraints"]
-        model = cp_model.CpModel()
-
-        phase_components = parameters["phase_components"]
-        weekday_availability = parameters["weekday_availability"]
-        workout_length = parameters["workout_length"]
-        microcycle_weekdays = parameters["microcycle_weekdays"]
-
-        workout_availability = [weekday_availability[day]["availability"] for day in microcycle_weekdays]
-
-        vars = self.create_model_vars(model, phase_components, workout_availability, workout_length, microcycle_weekdays)
-
-        state["logs"], duration_spread_var, total_duration_to_maximize = self.apply_model_constraints(constraints, model, vars, phase_components, workout_availability, workout_length)
 
         return {"opt_model": (model, workout_availability, vars["active_phase_components"], vars["duration"], duration_spread_var, total_duration_to_maximize)}
 

@@ -217,21 +217,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return exercise_vars
 
 
-    def apply_model_constraints_2(self, constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, exercise_vars, exercise_bounds, workout_length):
-
-        # Get the bounds for the phase components
-        max_seconds_per_exercise = pc_bounds["seconds_per_exercise"]["max"]
-        max_reps = pc_bounds["reps"]["max"]
-        max_sets = pc_bounds["sets"]["max"]
-        max_rest = pc_bounds["rest"]["max"]
-
-        # Get the bounds for the exercises
-        max_base_strain = exercise_bounds["base_strain"]["max"]
-        max_intensity = exercise_bounds["intensity"]["max"]
-
-        max_strain_scaled = ((max_seconds_per_exercise * (10 + max_intensity + max_base_strain) * max_reps) + (10 * max_rest * 5)) * max_sets
-
-
+    def apply_model_constraints_2(self, constraints, model, phase_component_ids, phase_components, pc_vars, exercises, exercise_vars, max_exercises, workout_length):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -280,7 +266,22 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         if constraints["exercise_metric_increase"]:
             ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, exercise_vars["used_exercises"], exercise_vars["performance"], exercise_vars["training_weight"])
             logs += "- Exercise metric increase constraint applied.\n"
+        return logs
+    
+    def apply_model_objective_2(self, constraints, model, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length):
+        # Get the bounds for the phase components
+        max_seconds_per_exercise = pc_bounds["seconds_per_exercise"]["max"]
+        max_reps = pc_bounds["reps"]["max"]
+        max_sets = pc_bounds["sets"]["max"]
+        max_rest = pc_bounds["rest"]["max"]
 
+        # Get the bounds for the exercises
+        max_base_strain = exercise_bounds["base_strain"]["max"]
+        max_intensity = exercise_bounds["intensity"]["max"]
+
+        max_strain_scaled = ((max_seconds_per_exercise * (10 + max_intensity + max_base_strain) * max_reps) + (10 * max_rest * 5)) * max_sets
+
+        logs = ""
         # Objective: Maximize total strain of microcycle
         if constraints["minimize_strain"]:
             # List of contributions to goal time.
@@ -370,7 +371,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         pc_vars = self.create_model_pc_vars(model, phase_components, workout_length, phase_component_ids, max_exercises)
         exercise_vars = self.create_model_exercise_vars(model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, exercise_bounds)
-        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, exercise_vars, exercise_bounds, workout_length)
+        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, exercises, exercise_vars, max_exercises, workout_length)
+        state["logs"] += self.apply_model_objective_2(constraints, model, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length)
 
         return {"opt_model": (model, exercise_vars["exercises"], phase_component_ids, exercise_vars["base_strain"], pc_vars["seconds_per_exercise"], pc_vars["reps"], pc_vars["sets"], pc_vars["rest"], pc_vars["intensity"], exercise_vars["one_rep_max"], exercise_vars["training_weight"], exercise_vars["volume"], exercise_vars["density"], exercise_vars["performance"], pc_vars["duration"], pc_vars["working_duration"])}
 

@@ -198,11 +198,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                       active_entry_vars = vars["active_exercises"])
         return vars
     
-    def apply_model_constraints(self, constraints, model, vars, phase_components, workout_length, pc_bounds, max_exercises, projected_duration):
-        # max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
-        min_duration, max_duration = pc_bounds["duration"]["min"], pc_bounds["duration"]["max"]
-        min_working_duration, max_working_duration = pc_bounds["working_duration"]["min"], pc_bounds["working_duration"]["max"]
-
+    def apply_model_constraints(self, constraints, model, vars, phase_components, workout_length, max_exercises, projected_duration):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -282,7 +278,14 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                                   maximum_key="exercises_per_bodypart_workout_max", 
                                                   used_vars=vars["used_pcs"])
             logs += "- Exercises count within min and max allowed exercises applied (optimized).\n"
+        return logs
+    
+    def app_model_objective(self, constraints, model, vars, workout_length, pc_bounds, max_exercises):
+        # max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
+        min_duration, max_duration = pc_bounds["duration"]["min"], pc_bounds["duration"]["max"]
+        min_working_duration, max_working_duration = pc_bounds["working_duration"]["min"], pc_bounds["working_duration"]["max"]
 
+        logs = ""
         # Objective: Maximize total duration of microcycle
         if constraints["minimize_strain"]:
             # List of contributions to goal time.
@@ -334,8 +337,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         pc_bounds = get_phase_component_bounds(phase_components[1:])
 
         vars = self.create_model_vars(model, phase_components, workout_length, phase_component_amount, pc_bounds, min_exercises, max_exercises)
-        state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, workout_length, pc_bounds, max_exercises, projected_duration)
-
+        state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, workout_length, max_exercises, projected_duration)
+        state["logs"] += self.app_model_objective(constraints, model, vars, workout_length, pc_bounds, max_exercises)
 
         return {"opt_model": (model, vars["phase_components"], vars["used_pcs"], vars["active_exercises"], vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"], vars["duration"], vars["working_duration"])}
 
