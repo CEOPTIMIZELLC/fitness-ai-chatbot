@@ -1,0 +1,9 @@
+from app import create_app
+
+app = create_app()
+
+if __name__ == '__main__':
+    from app.models import *
+    from app.routes import *
+    from app.existing_data import *
+    app.run(debug=True)

@@ -1,0 +1,122 @@
+# Define and create a list of variables to determine if an entry is active.
+# As well, this will constrain the possible items that an inactive entry can have to be an invalid one.
+def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration_vars, active_entry_vars):
+    # Ensure that deactivation is done from the back to the front.
+    for i in range(number_of_entries - 1):
+        # A entry must be active if the entry ahead of it is active.
+        model.Add(active_entry_vars[i] >= active_entry_vars[i + 1])
+    
+    # Add constraints to deactivated items.
+    for i in range(number_of_entries):
+        # If a item is active, it will have a valid item type. Otherwise, it will be given an invalid item type.
+        model.Add(entry_vars[i] >= 0).OnlyEnforceIf(active_entry_vars[i])
+        model.Add(entry_vars[i] == -1).OnlyEnforceIf(active_entry_vars[i].Not())
+
+        # If a item is active, then its duration MUST be greater than 0. Otherwise it is 0.
+        model.Add(duration_vars[i] >= 1).OnlyEnforceIf(active_entry_vars[i])
+        model.Add(duration_vars[i] == 0).OnlyEnforceIf(active_entry_vars[i].Not())
+    
+    return model
+
+
+# Constraint: The duration of a item may only be a number of weeks between the minimum and maximum values allowed.
+# Links each entry and item with the "used" variables, determining if item j is the item at entry i.
+def entries_within_min_max(model, items, entry_vars, number_of_entries, used_vars, duration_vars):
+    for i in range(number_of_entries):
+        for j, item in enumerate(items):
+            # Ensures that if an item is chosen (used_vars[i][j] is True), then:
+            # The corresponding entry_vars[i] must match the index j.
+            model.Add(entry_vars[i] == j).OnlyEnforceIf(used_vars[i][j])
+            model.Add(entry_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
+
+            # The duration_vars[i] must be within the allowed range.
+            model.Add(duration_vars[i] >= items[item]["element_minimum"]).OnlyEnforceIf(used_vars[i][j])
+            model.Add(duration_vars[i] <= items[item]["element_maximum"]).OnlyEnforceIf(used_vars[i][j])
+    return model
+
+# For each entry, add a constraint stating that it can't be the same item as the next entry.
+def no_consecutive_identical_items(model, entry_vars, number_of_entries):
+    for i in range(number_of_entries - 1):
+        model.Add(entry_vars[i] != entry_vars[i + 1])
+    return model
+
+# For each entry, add a constraint stating that it can't be the same item as the next entry.
+# Ensure that only active entries are considered in this.
+def no_consecutive_identical_active_items(model, entry_vars, number_of_entries, active_entry_vars):
+    # For each entry in the macrocycle make sure that the entry at the current index isn't the same as the mesocyle at the next index.
+    for i in range(number_of_entries - 1):
+        (
+            model.Add(entry_vars[i] != entry_vars[i + 1])       # Current entry and next entry may not be the same.
+            .OnlyEnforceIf(
+                active_entry_vars[i],                           # Current entry must be active.
+                active_entry_vars[i + 1])                       # Next entry must be active.
+        )
+
+    return model
+
+# Adds constraint ensuring that, at least once within an 'n' frame window, the desired item must be at an entry.
+def no_n_items_without_desired_item(model, allowed_n, desired_item_index, entry_vars, number_of_entries):
+    # The following is a sliding window of allowed_n items that ensures that at least one will be stabilization endurance.
+    for i in range(number_of_entries - (allowed_n - 1)):  # Ensure we have a window of allowed_n
+        # Boolean variables for the window, indicating whether item j in the allowed_n item window is stabilization endurance.
+        desired_item_in_window = [
+            model.NewBoolVar(f'desired_item_{j}') 
+            for j in range(i, i + allowed_n)]
+        
+        # For each item in the window
+        for j, item_is_desired_item in zip(range(i, i + allowed_n), desired_item_in_window):
+            # Ensures that, if the item in the window is stabilization endurance:
+            # then the entry at the corresponding index will be set to stabilization endurance.
+            model.Add(entry_vars[j] == desired_item_index).OnlyEnforceIf(item_is_desired_item)
+            model.Add(entry_vars[j] != desired_item_index).OnlyEnforceIf(item_is_desired_item.Not())
+        
+        # Ensures that at least one of the items in the window will be stabilization endurance.
+        model.AddBoolOr(desired_item_in_window)
+    return model
+
+# Adds constraint ensuring that, at least once within an 'n' frame window, the desired item must be at an entry.
+# This is only done for active entries.
+def no_n_active_items_without_desired_item(model, allowed_n, desired_item_index, entry_vars, number_of_entries, active_entry_vars):
+    # The following is a sliding window of allowed_n items that ensures that at least one will be stabilization endurance.
+    for i in range(number_of_entries - (allowed_n -1)):  # Ensure we have a window of allowed_n
+        # Boolean variables for the window, indicating whether item j in the allowed_n item window is stabilization endurance.
+        active_window = [
+            active_entry_vars[j]
+            for j in range(i, i + allowed_n)]
+        desired_item_in_window = [
+            model.NewBoolVar(f'desired_item_{j}') 
+            for j in range(i, i + allowed_n)]
+        
+        # For each item in the window
+        for j, item_is_desired_item, item_is_active in zip(range(i, i + allowed_n), desired_item_in_window, active_window):
+            # Ensures that, if the item in the window is stabilization endurance:
+            # then the entry at the corresponding index will be set to stabilization endurance.
+            model.Add(entry_vars[j] == desired_item_index).OnlyEnforceIf(item_is_desired_item, item_is_active)
+            model.Add(entry_vars[j] != desired_item_index).OnlyEnforceIf(item_is_desired_item.Not())
+        
+        # Ensures that at least one of the items in the window will be stabilization endurance.
+        model.AddBoolOr(desired_item_in_window)
+    return model
+
+# Ensures that only required entrys will be used at any entry in the entry_set.
+def only_use_required_items(model, required_items, entry_vars):
+    # Ensures that only required items will be used at any entry in the macrocycle.
+    for entry in entry_vars:
+        model.AddAllowedAssignments([entry], [(item,) for item in required_items])
+    return model
+
+# Ensures that each required entry occurs at least once in the entry_set.
+def use_all_required_items(model, required_items, entry_vars, number_of_entries):
+    for item_index in required_items:
+        # Create an array of Boolean variables indicating whether this item appears in each entry
+        item_in_entries = [
+            model.NewBoolVar(f'item_{item_index}_in_entry_{i}') 
+            for i in range(number_of_entries)]
+        
+        for i in range(number_of_entries):
+            model.Add(entry_vars[i] == item_index).OnlyEnforceIf(item_in_entries[i])
+            model.Add(entry_vars[i] != item_index).OnlyEnforceIf(item_in_entries[i].Not())
+
+        # Ensure that at least one of these Boolean variables is true
+        model.AddBoolOr(item_in_entries)
+    return model
