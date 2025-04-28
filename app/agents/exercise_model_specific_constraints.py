@@ -174,6 +174,7 @@ def constrain_training_weight_vars(model, intensity_vars, exercises, training_we
         
         # Training weight is 0 if no weighted exercise is selected
         model.Add(training_weight_var == 0).OnlyEnforceIf(has_weighted_exercise.Not())
+        model.Add(training_weight_var >= (5 * (100 * 100))).OnlyEnforceIf(has_weighted_exercise)
         for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
             model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var, has_weighted_exercise)
     return None
