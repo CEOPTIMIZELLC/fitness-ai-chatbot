@@ -355,8 +355,6 @@ class ExercisePhaseComponentAgent(BaseAgent):
             schedule = []
             # Each day in the microcycle
             for i in range(len(duration_vars)):
-                model.AddHint(phase_component_vars[i], solver.Value(phase_component_vars[i]))
-
                 # Ensure that the phase component is active.
                 if(solver.Value(active_exercise_vars[i])):
                     duration_vars_current = solver.Value(duration_vars[i])
