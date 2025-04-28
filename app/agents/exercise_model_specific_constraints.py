@@ -153,15 +153,3 @@ def constrain_performance_vars(model, performance_vars, volume_vars, density_var
     for volume_var, density_var, performance_var in zip(volume_vars, density_vars, performance_vars):
         model.AddMultiplicationEquality(performance_var, [volume_var, density_var])
     return None
-
-def constrain_effort_vars(model, pc_vars, exercise_vars):
-    for i, values_for_exercise in enumerate(zip(exercise_vars["base_strain"], pc_vars["seconds_per_exercise"], pc_vars["reps"], pc_vars["sets"], pc_vars["rest"], pc_vars["intensity"])):
-        (
-            base_strain_var,
-            seconds_per_exercise_var, 
-            reps_var, 
-            sets_var, 
-            rest_var,
-            intensity_var
-        ) = values_for_exercise
-    return None

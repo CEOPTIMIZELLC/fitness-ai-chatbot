@@ -18,8 +18,7 @@ from app.agents.exercise_model_specific_constraints import (
     constrain_training_weight_vars, 
     constrain_volume_vars, 
     constrain_density_vars, 
-    constrain_performance_vars,
-    constrain_effort_vars)
+    constrain_performance_vars)
 
 from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, declare_duration_vars, get_phase_component_bounds
 from app.utils.longest_string import longest_string_size_for_key
@@ -236,7 +235,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         constrain_volume_vars(model, exercise_vars["volume"], max_volume, pc_vars["reps"], pc_vars["sets"], exercise_vars["training_weight"], exercise_vars["weighted_exercises"])
         constrain_density_vars(model, exercise_vars["density"], pc_vars["duration"], pc_vars["working_duration"], max_duration)
         constrain_performance_vars(model, exercise_vars["performance"], exercise_vars["volume"], exercise_vars["density"])
-        constrain_effort_vars(model, pc_vars, exercise_vars)
 
         # Links the exercise variables and the exercises that can exist via the used exercises variables.
         link_entry_and_item(model = model, 
