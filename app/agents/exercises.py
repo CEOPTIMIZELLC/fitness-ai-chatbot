@@ -642,8 +642,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
         formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
         formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
-        formatted += f"Total Base Duration: {solution['base_effort']}\n"
-        formatted += f"Total Working Duration: {solution['working_effort']}\n"
+        formatted += f"Total Base Effort: {solution['base_effort']}\n"
+        formatted += f"Total Working Effort: {solution['working_effort']}\n"
         formatted += f"Workout Length Allowed: {self._format_duration(workout_length)}\n"
         return final_output, formatted
 

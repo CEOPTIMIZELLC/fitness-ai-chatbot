@@ -286,7 +286,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         min_working_duration, max_working_duration = pc_bounds["working_duration"]["min"], pc_bounds["working_duration"]["max"]
 
         logs = ""
-        # Objective: Maximize total duration of microcycle
+        # Objective: Minimize total strain of microcycle
         if constraints["minimize_strain"]:
             total_working_duration_time = model.NewIntVar(1, max_exercises * max_working_duration, 'total_working_duration_time')
             total_duration_time = model.NewIntVar(1, max_exercises * max_duration, 'total_duration_time')
