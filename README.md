@@ -174,7 +174,7 @@ Body (raw) [JSON]:
 }
 ```
 
-
+***
 # Example Fields
 ## Example Run
 **Logout User (If logged in)**
@@ -195,14 +195,14 @@ localhost:5000/database_manipulation/init_db
 localhost:5000/database_manipulation/init_db
 
 Body (form-data):
-email: email2@gmail.com
-password: password?2
-password_confirm: password?2
-first_name: Debra
-last_name: Grey
-age: 20
-gender: female
-goal: "I want to increase my upper body strength."
+    email: email2@gmail.com
+    password: password?2
+    password_confirm: password?2
+    first_name: Debra
+    last_name: Grey
+    age: 20
+    gender: female
+    goal: "I want to increase my upper body strength."
 ```
 
 **Login User**
@@ -211,8 +211,8 @@ goal: "I want to increase my upper body strength."
 localhost:5000/auth/login
 
 Body (form-data):
-email: email2@gmail.com
-password: password?2
+    email: email2@gmail.com
+    password: password?2
 ```
 
 **Set Availability for Each Weekday**
@@ -292,14 +292,14 @@ localhost:5000/auth/logout
 localhost:5000/database_manipulation/init_db
 
 Body (form-data):
-email: email2@gmail.com
-password: password?2
-password_confirm: password?2
-first_name: Debra
-last_name: Grey
-age: 20
-gender: female
-goal: "I want to increase my upper body strength."
+    email: email2@gmail.com
+    password: password?2
+    password_confirm: password?2
+    first_name: Debra
+    last_name: Grey
+    age: 20
+    gender: female
+    goal: "I want to increase my upper body strength."
 ```
 
 **Login User**
@@ -308,8 +308,8 @@ goal: "I want to increase my upper body strength."
 localhost:5000/auth/login
 
 Body (form-data):
-email: email2@gmail.com
-password: password?2
+    email: email2@gmail.com
+    password: password?2
 ```
 
 **Run Pipeline**
