@@ -135,6 +135,8 @@ def get_user_workout_days_list():
 def get_user_current_workout_days_list():
     result = []
     user_microcycle = current_microcycle(current_user.id)
+    if not user_microcycle:
+        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
     user_workout_days = user_microcycle.workout_days
     for user_workout_day in user_workout_days:
         result.append(user_workout_day.to_dict())
@@ -159,6 +161,9 @@ def workout_day_initializer():
     constraints={}
 
     user_microcycle = current_microcycle(current_user.id)
+    if not user_microcycle:
+        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
+
     delete_old_user_workout_days(user_microcycle.id)
     microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
 
@@ -177,6 +182,8 @@ def workout_day_initializer():
         .filter(User_Weekday_Availability.user_id == current_user.id)
         .order_by(User_Weekday_Availability.user_id.asc())
         .all())
+    if not availability:
+        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
     
     weekday_availability = []
 

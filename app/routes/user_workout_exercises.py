@@ -273,6 +273,9 @@ def get_user_workout_exercises_list():
 def get_user_current_exercises_list():
     result = []
     user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+
     user_workout_exercises = user_workout_day.exercises
     for user_workout_exercise in user_workout_exercises:
         result.append(user_workout_exercise.to_dict())
@@ -287,6 +290,8 @@ def exercise_initializer():
     constraints={}
 
     user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
     delete_old_user_workout_exercises(user_workout_day.id)
 
@@ -306,6 +311,8 @@ def exercise_initializer():
         User_Weekday_Availability.query
         .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
         .first())
+    if not availability:
+        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
 
     parameters["projected_duration"] = projected_duration
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
@@ -332,6 +339,8 @@ def exercise_initializer():
 def complete_workout():
     result = []
     user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active workout day found."}), 404
     workout_exercises = user_workout_day.exercises
 
     for exercise in workout_exercises:
@@ -362,8 +371,17 @@ def complete_workout():
 @login_required
 def initialize_and_complete():
     result = {}
-    result["user_workout_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
-    result["user_exercises"] = complete_workout()[0].get_json()["user_exercises"]
+    exercise_initializer_result = exercise_initializer()
+    # Return error if nothing is found.
+    if exercise_initializer_result[1] == 404:
+        return exercise_initializer_result
+    complete_workout_result = complete_workout()
+
+    # Return error if nothing is found.
+    if complete_workout_result[1] == 404:
+        return complete_workout_result
+    result["user_workout_exercises"] = exercise_initializer_result[0].get_json()["exercises"]["output"]
+    result["user_exercises"] = complete_workout_result[0].get_json()["user_exercises"]
     return jsonify({"status": "success", "output": result}), 200
 
 # Testing for the parameter programming for mesocycle labeling.

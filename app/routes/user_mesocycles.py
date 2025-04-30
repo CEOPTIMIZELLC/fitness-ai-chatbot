@@ -95,6 +95,8 @@ def get_user_mesocycles_list():
 def get_user_current_mesocycles_list():
     result = []
     user_macrocycle = current_macrocycle(current_user.id)
+    if not user_macrocycle:
+        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
     user_mesocycles = user_macrocycle.mesocycles
     for user_mesocycle in user_mesocycles:
         result.append(user_mesocycle.to_dict())
@@ -119,6 +121,8 @@ def mesocycle_phases():
     constraints={}
 
     user_macro = current_macrocycle(current_user.id)
+    if not user_macro:
+        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
 
     delete_old_user_phases(user_macro.id)
 
