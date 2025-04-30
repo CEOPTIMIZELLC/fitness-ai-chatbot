@@ -103,7 +103,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
     def solve_model_node_temp(self, state: State, config=None) -> dict:
         print("Solving First Step")
         """Solve model and record relaxation attempt results."""
-        model, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
+        model, model_with_divided_strain, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -311,8 +311,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, exercise_vars["used_exercises"], exercise_vars["performance"], exercise_vars["training_weight"])
             logs += "- Exercise metric increase constraint applied.\n"
         return logs
-    
-    def apply_model_objective_2(self, constraints, model, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length):
+
+    def effort_strain_divided(self, model, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises):
         # Get the bounds for the phase components
         min_seconds_per_exercise, max_seconds_per_exercise = pc_bounds["seconds_per_exercise"]["min"], pc_bounds["seconds_per_exercise"]["max"]
         min_reps, max_reps = pc_bounds["reps"]["min"], pc_bounds["reps"]["max"]
@@ -330,60 +330,82 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         max_strain_scaled = int(max_working_effort_scaled / min_effort_scaled * 100)
 
+        # List of contributions to goal time.
+        strain_terms = []
+
+        # Creates strain_time, which will hold the total strain over the workout.
+        strain_time = model.NewIntVar(0, max_exercises * max_strain_scaled, 'strain_time')
+        for i, (base_effort_var, working_effort_var) in enumerate(zip(exercise_vars["base_effort"], exercise_vars["working_effort"])):
+            # Create the entry for phase component's intensity
+            # total_working_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
+            non_zero_base_effort_var = model.NewIntVar(1, max_effort_scaled, f'non_zero_base_effort_{i}')
+            base_effort_is_0 = model.NewBoolVar(f'base_effort_{i}_is_0')
+
+            # Ensure no division by 0 occurs.
+            model.Add(non_zero_base_effort_var == 1).OnlyEnforceIf(base_effort_is_0)
+            model.Add(non_zero_base_effort_var == base_effort_var).OnlyEnforceIf(base_effort_is_0.Not())
+            model.Add(base_effort_var == 0).OnlyEnforceIf(base_effort_is_0)
+            model.Add(base_effort_var >= 1).OnlyEnforceIf(base_effort_is_0.Not())
+
+            strain = model.NewIntVar(0, max_strain_scaled, f'strain_{i}')
+            model.AddDivisionEquality(strain, 100 * working_effort_var, non_zero_base_effort_var)
+
+            strain_terms.append(strain)
+
+        model.Add(strain_time == sum(strain_terms))
+        model.Minimize(strain_time)
+        return None
+
+    def effort_strain_as_sum(self, model, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length):
+        # Get the bounds for the phase components
+        min_seconds_per_exercise, max_seconds_per_exercise = pc_bounds["seconds_per_exercise"]["min"], pc_bounds["seconds_per_exercise"]["max"]
+        min_reps, max_reps = pc_bounds["reps"]["min"], pc_bounds["reps"]["max"]
+        min_sets, max_sets = pc_bounds["sets"]["min"], pc_bounds["sets"]["max"]
+        min_rest, max_rest = pc_bounds["rest"]["min"], pc_bounds["rest"]["max"]
+
+        # Get the bounds for the exercises
+        min_base_strain, max_base_strain = exercise_bounds["base_strain"]["min"], exercise_bounds["base_strain"]["max"]
+        min_itensity, max_intensity = exercise_bounds["intensity"]["min"], exercise_bounds["intensity"]["max"]
+
+        min_effort_scaled = ((min_seconds_per_exercise * (10 + min_itensity + min_base_strain) * min_reps)) * min_sets
+        min_working_effort_scaled = ((min_seconds_per_exercise * (10 + min_itensity + min_base_strain) * min_reps) + (10 * min_rest * 5)) * min_sets
+        max_effort_scaled = ((max_seconds_per_exercise * (10 + max_intensity + max_base_strain) * max_reps) + (10 * max_rest * 5)) * max_sets
+        max_working_effort_scaled = ((max_seconds_per_exercise * (10 + max_intensity + max_base_strain) * max_reps)) * max_sets
+
+        max_strain_scaled = int(max_working_effort_scaled / min_effort_scaled * 100)
+
+        # SOLUTION 2
+        total_working_effort = model.NewIntVar(max_exercises * min_effort_scaled, max_exercises * max_effort_scaled, 'total_working_effort')
+        total_base_effort = model.NewIntVar(max_exercises * min_effort_scaled, max_exercises * max_effort_scaled, 'total_base_effort')
+
+        model.Add(total_working_effort == sum(exercise_vars["working_effort"]))
+        model.Add(total_base_effort == sum(exercise_vars["base_effort"]))
+
+        # Create the entry for phase component's intensity
+        # total_working_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
+        non_zero_total_effort = model.NewIntVar(1, max_exercises * max_strain_scaled, f'non_zero_total_effort')
+        total_effort_is_0 = model.NewBoolVar(f'total_effort_is_0')
+
+        # Ensure no division by 0 occurs.
+        model.Add(non_zero_total_effort == 1).OnlyEnforceIf(total_effort_is_0)
+        model.Add(non_zero_total_effort == total_base_effort).OnlyEnforceIf(total_effort_is_0.Not())
+        model.Add(total_base_effort == 0).OnlyEnforceIf(total_effort_is_0)
+        model.Add(total_base_effort >= 1).OnlyEnforceIf(total_effort_is_0.Not())
+
+
+        # Creates strain_time, which will hold the total strain over the workout.
+        strain_time = model.NewIntVar(0, 100 * max_exercises * workout_length, 'strain_time')
+        model.AddDivisionEquality(strain_time, 100 * total_working_effort, non_zero_total_effort)
+        model.Minimize(strain_time)
+        return None
+
+    def apply_model_objective_2(self, constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length):
         logs = ""
         # Objective: Maximize total strain of microcycle
         if constraints["minimize_strain"]:
-            # SOLUTION 1
-            # List of contributions to goal time.
-            strain_terms = []
-
-            # Creates strain_time, which will hold the total strain over the workout.
-            strain_time = model.NewIntVar(0, max_exercises * max_strain_scaled, 'strain_time')
-            for i, (base_effort_var, working_effort_var) in enumerate(zip(exercise_vars["base_effort"], exercise_vars["working_effort"])):
-                # Create the entry for phase component's intensity
-                # total_working_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
-                non_zero_base_effort_var = model.NewIntVar(1, max_effort_scaled, f'non_zero_base_effort_{i}')
-                base_effort_is_0 = model.NewBoolVar(f'base_effort_{i}_is_0')
-
-                # Ensure no division by 0 occurs.
-                model.Add(non_zero_base_effort_var == 1).OnlyEnforceIf(base_effort_is_0)
-                model.Add(non_zero_base_effort_var == base_effort_var).OnlyEnforceIf(base_effort_is_0.Not())
-                model.Add(base_effort_var == 0).OnlyEnforceIf(base_effort_is_0)
-                model.Add(base_effort_var >= 1).OnlyEnforceIf(base_effort_is_0.Not())
-
-                strain = model.NewIntVar(0, max_strain_scaled, f'strain_{i}')
-                model.AddDivisionEquality(strain, 100 * working_effort_var, non_zero_base_effort_var)
-
-                strain_terms.append(strain)
-
-            model.Add(strain_time == sum(strain_terms))
-            model.Minimize(strain_time)
-
-            # # SOLUTION 2
-            # total_working_effort = model.NewIntVar(max_exercises * min_effort_scaled, max_exercises * max_effort_scaled, 'total_working_effort')
-            # total_base_effort = model.NewIntVar(max_exercises * min_effort_scaled, max_exercises * max_effort_scaled, 'total_base_effort')
-
-            # model.Add(total_working_effort == sum(exercise_vars["working_effort"]))
-            # model.Add(total_base_effort == sum(exercise_vars["base_effort"]))
-
-            # # Create the entry for phase component's intensity
-            # # total_working_duration = (seconds_per_exercise*(1+.1*basestrain)* rep_count) * set_count
-            # non_zero_total_effort = model.NewIntVar(1, max_exercises * max_strain_scaled, f'non_zero_total_effort')
-            # total_effort_is_0 = model.NewBoolVar(f'total_effort_is_0')
-
-            # # Ensure no division by 0 occurs.
-            # model.Add(non_zero_total_effort == 1).OnlyEnforceIf(total_effort_is_0)
-            # model.Add(non_zero_total_effort == total_base_effort).OnlyEnforceIf(total_effort_is_0.Not())
-            # model.Add(total_base_effort == 0).OnlyEnforceIf(total_effort_is_0)
-            # model.Add(total_base_effort >= 1).OnlyEnforceIf(total_effort_is_0.Not())
-
-
-            # # Creates strain_time, which will hold the total strain over the workout.
-            # strain_time = model.NewIntVar(0, 100 * max_exercises * workout_length, 'strain_time')
-            # model.AddDivisionEquality(strain_time, 100 * total_working_effort, non_zero_total_effort)
-            # model.Minimize(strain_time)
-
-            # logs += "- Minimizing the strain time used in workout.\n"
+            self.effort_strain_divided(model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises)
+            self.effort_strain_as_sum(model, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length)
+            logs += "- Minimizing the strain time used in workout.\n"
         return logs
 
     def build_opt_model_node_2(self, state: State, config=None) -> dict:
@@ -393,6 +415,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         parameters = state["parameters"]
         constraints = state["constraints"]
         model = cp_model.CpModel()
+        model_with_divided_strain = cp_model.CpModel()
 
         exercise_volume_improvement_percentage = parameters["exercise_volume_improvement_percentage"]
 
@@ -414,21 +437,29 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         pc_vars = self.create_model_pc_vars(model, phase_components, workout_length, phase_component_ids, max_exercises)
         exercise_vars = self.create_model_exercise_vars(model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, exercise_bounds)
         state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, exercises, exercise_vars, max_exercises, workout_length)
-        state["logs"] += self.apply_model_objective_2(constraints, model, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length)
+        model_with_divided_strain = model.clone()
+        state["logs"] += self.apply_model_objective_2(constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length)
 
-        return {"opt_model": (model, phase_component_ids, exercise_vars, pc_vars)}
+        return {"opt_model": (model, model_with_divided_strain, phase_component_ids, exercise_vars, pc_vars)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
         print("Solving Second Step")
         """Solve model and record relaxation attempt results."""
-        model, phase_component_vars, ex_vars, pc_vars = state["opt_model"]
+        model, model_with_divided_strain, phase_component_vars, ex_vars, pc_vars = state["opt_model"]
         exercise_vars, base_strain_vars, one_rep_max_vars, training_weight_vars, volume_vars, density_vars, performance_vars = ex_vars["exercises"], ex_vars["base_strain"], ex_vars["one_rep_max"], ex_vars["training_weight"], ex_vars["volume"], ex_vars["density"], ex_vars["performance"]
         seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, duration_vars, working_duration_vars = pc_vars["seconds_per_exercise"], pc_vars["reps"], pc_vars["sets"], pc_vars["rest"], pc_vars["intensity"], pc_vars["duration"], pc_vars["working_duration"]
         base_effort_vars, working_effort_vars = ex_vars["base_effort"], ex_vars["working_effort"]
+
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
+        solver.parameters.max_time_in_seconds = 60
         # solver.parameters.log_search_progress = True
         status = solver.Solve(model)
+
+        if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
+            print("Took longer than 1 minute. Solving with strain divided.")
+            solver.parameters.max_time_in_seconds = 10 * 60
+            status = solver.Solve(model_with_divided_strain)
 
         state["logs"] += f"\nSolver status: {status}\n"
         state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
