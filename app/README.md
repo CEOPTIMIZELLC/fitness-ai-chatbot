@@ -1,107 +1,88 @@
 # Fitness AI Chatbot Backend App
 Application folder for the backend of the Fitness AI Chatbot. 
 
-## Models
-### Users
-| id | email | password_hash | first_name | last_name | age | gender | goal |
-| --- | --- | --- | --- |
-| 12 | bestfrienddoggy@email.com | hashed_password | Amanda | Writer | 35 | "Female" | "I want to improve my upperbody strength." |
-
-- Emails are set by the `set_email` method to ensure that emails are in the proper format before adding/changing.
-- Passwords are set by `set_password`, which requires the same password to be provided for confirmation, as well as ensuring passwords follow the proper format.
-- Passwords are not stored directly, but rather have a hash generated for them. This hash can be compared against a string to make sure they match.
-- The user table also has the user mixin implemented, allowing for user login and management. 
-
 ## List of Endpoints
 All of the endpoints within the project are listed below. They are given and explained in more detail in the folders holding said routes.
 
-### [Authentication](auth/)
+All endpoints should begin with `localhost:5000`
+
+
+### [Database Manipulation](routes/database_manipulation.py)
+| Method | Route | Body | Description |
+| --- | --- | --- | --- |
+| **[GET, POST]** | `/database_manipulation/drop_db` | | Drops current database. |
+| **[GET, POST]** | `/database_manipulation/create_db` | **(form-data)**: `email, password, password_confirm, first_name, last_name, age, gender, goal` | Create infrastructure and populate data for database. If all information is provided, it will also register a user. |
+| **[GET, POST]** | `/database_manipulation/init_db` | **(form-data)**: `email, password, password_confirm, first_name, last_name, age, gender, goal` | Restarts database by calling the drop and create database functions. |
+| **[GET, POST]** | `/database_manipulation/read_all_tables` | | Retrieves all information from all tables. |
+| **[GET, POST]** | `/database_manipulation/read_table` | **(form-data)**: `table_name` | Retrieves all information from a given table. |
+
+### [Dev Tests](routes/dev_tests.py)
+| Method | Route | Body | Description |
+| --- | --- | --- | --- |
+| **[GET]** | `/dev_tests/pipeline` | | Retrieves the current state of the pipeline for the current user. |
+| **[POST]** | `/dev_tests/pipeline` | **(raw)**: `workout_length, availability, goal, runs (optional, default=1)` | Runs the pipeline for the current user, including the availability for each workday and the maximum workout length. |
+
+### [Authentication](routes/auth.py)
 Routes related to the creation and deletion of accounts and users, as well as logging in and logging out.
-- Register new user: `[GET, POST] /register`
-- Login user: `[POST] /login`
-- Logout current user: `[POST] /logout`
-- Delete current user: `[DELETE] /delete_account`
+| Method | Route | Body | Description |
+| --- | --- | --- | --- |
+| **[GET, POST]** | `/register` | **(form-data)**: `email, password, password_confirm, first_name, last_name, age, gender, goal` | Register new user |
+| **[POST]** | `/login` | **(form-data)**: `email, password` | Login user |
+| **[POST]** | `/logout` | | Logout current user |
+| **[DELETE]** | `/delete_account` | **(form-data)**: `password` | Delete current user |
 
-### [User Info](users/)
-- List current user's information: `[GET] /users`
-- List current user's information: `[GET] /current-user`
-- Change current user's email: `[GET, PATCH] /users/change_email`
-- Change current user's password: `[GET, PATCH] /users/change_password`
+### [User Info](routes/users.py)
+| Method | Route | Body | Description |
+| --- | --- | --- | --- |
+| **[GET]** | `/current_user` | | List current user's information |
+| **[PATCH]** | `/current_user` | **(raw)**: `first_name (optional), last_name (optional)` | Change current user's miscellaneous information |
+| **[PATCH]** | `/current_user/change_workout_length` | **(raw)**: `workout_length` | Change current user's maximum workout length |
+| **[PATCH]** | `/current_user/change_email` | **(raw)**: `new_email, password` | Change current user's email |
+| **[PATCH]** | `/current_user/change_password` | **(raw)**: `password, new_password, new_password_confirm` | Change current user's password |
 
-### [User Macrocycles](user_macrocycles/)
-- List current user's past and present macrocycles: `[GET] /user_macrocycles`
-- Retrieve current user's currently active macrocycle: `[GET] /user_macrocycles/current`
-- Perform goal classification for the current user: `[POST, PATCH] /user_macrocycles`
-- Perform unit test for goal classification for multiple example goals: `[GET, POST] /user_macrocycles/test`
+### [User Weekday Availability](routes/user_weekday_availability.py)
+| Method | Route | Body | Description |
+| --- | --- | --- | --- |
+| **[GET]** | `/user_weekday_availability` | | List current user's weekdays |
+| **[POST, PATCH]** | `/user_weekday_availability` | **(raw)**: `availability` | Change current user's weekday availability by parsing the information from a user message. |
 
-### [User Mesocycles](user_mesocycles/)
-- List current user's past and present mesocycles: `[GET] /user_mesocycles`
-- List current user's mesocycles for the currently active macrocycle: `[GET] /user_mesocycles/current_list`
-- Retrieve current user's currently active mesocycle: `[GET] /user_mesocycles/current`
-- Perform phase classification for the current user's currently active macrocycle: `[POST, PATCH] /user_mesocycles`
-- Perform unit test for phase classification for for every viable goal type: `[GET, POST] /user_mesocycles/test`
+### [User Macrocycles](routes/user_macrocycles.py)
+| Method | Route | Body | Description |
+| --- | --- | --- | --- |
+| **[GET]** | `/user_macrocycles` | | List current user's past and present macrocycles |
+| **[GET]** | `/user_macrocycles/current` | | Retrieve current user's currently active macrocycle |
+| **[POST]** | `/user_macrocycles` | **(raw)**: `goal` | Perform goal classification on a new goal to create a new macrocycle. |
+| **[PATCH]** | `/user_macrocycles` | **(raw)**: `goal` | Perform goal classification for a new goal to alter the current macrocycle. |
+| **[GET, POST]** | `/user_macrocycles/test` | | Perform unit test for goal classification for multiple example goals |
 
-### [User Microcycles](user_microcycles/)
-- List current user's past and present microcycles: `[GET] /user_microcycles`
-- List current user's microcycles for the currently active mesocycle: `[GET] /user_microcycles/current_list`
-- Retrieve current user's currently active microcycle: `[GET] /user_microcycles/current`
-- Creates a microcycle for every week in the current mesocycle: `[POST, PATCH] /user_microcycles`
+### [User Mesocycles](routes/user_mesocycles.py)
+| Method | Route | Description |
+| --- | --- | --- |
+| **[GET]** | `/user_mesocycles` | List current user's past and present mesocycles |
+| **[GET]** | `/user_mesocycles/current_list` | List current user's mesocycles for the currently active macrocycle |
+| **[GET]** | `/user_mesocycles/current` | Retrieve current user's currently active mesocycle |
+| **[POST, PATCH]** | `/user_mesocycles` | Perform phase classification for the current user's currently active macrocycle |
+| **[GET, POST]** | `/user_mesocycles/test` | Perform unit test for phase classification for for every viable goal type |
 
-### [User Workout Days](user_workout_days/)
-- List current user's past and present work days along with each day's components: `[GET] /user_workout_days`
-- List current user's work days (and corresponding components) for the currently active microcycle: `[GET] /user_workout_days/current_list`
-- Retrieve current user's currently active work day (and corresponding components): `[GET] /user_workout_days/current`
-- Perform phase component classification for the current user's currently active microcycle: `[POST, PATCH] /user_workout_days`
-- Perform unit test for phase component classification for for every viable phase type for a mesocycle: `[GET, POST] /user_workout_days/test`
+### [User Microcycles](routes/user_microcycles.py)
+| Method | Route | Description |
+| --- | --- | --- |
+| **[GET]** | `/user_microcycles` | List current user's past and present microcycles |
+| **[GET]** | `/user_microcycles/current_list` | List current user's microcycles for the currently active mesocycle |
+| **[GET]** | `/user_microcycles/current` | Retrieve current user's currently active microcycle |
+| **[POST, PATCH]** | `/user_microcycles` | Creates a microcycle for every week in the current mesocycle |
 
-### [User Info](users/)
-- List current user's information: `[GET] /users`
-- List current user's information: `[GET] /current-user`
-- Change current user's email: `[GET, PATCH] /users/change_email`
-- Change current user's password: `[GET, PATCH] /users/change_password`
+### [User Workout Days](routes/user_workout_days.py)
+| Method | Route |  Description |
+| --- | --- | --- |
+| **[GET]** | `/user_workout_days` | List current user's past and present work days along with each day's components |
+| **[GET]** | `/user_workout_days/current_list` | List current user's work days (and corresponding components) for the currently active microcycle |
+| **[GET]** | `/user_workout_days/current` | Retrieve current user's currently active work day (and corresponding components) |
+| **[POST, PATCH]** | `/user_workout_days` | Perform phase component classification for the current user's currently active microcycle |
+| **[GET, POST]** | `/user_workout_days/test` | Perform unit test for phase component classification for for every viable phase type for a mesocycle |
 
-### [Dev Tests](dev_tests/)
-- Restart database: `[GET, POST] /dev_tests/init_db`
-
-
-
-# User Workout Information (Macrocycles, Mesocycles, Microcycles, Workout Days)
-## List all that belong to user
-For the selected information, retrieves all active and non active information.
-```
-user_macrocycles, user_mesocycles, user_microcycles, user_workout_days
-```
-
-## List all currently occurring
-This retrieves the list of entries for the current higher level item. (i.e. all mesocycles for the current macrocycles, all microcycles for the current mesocycle)
-```
-[GET] /user_[macrocycles, mesocycles, microcycles, workout_days]/current_list
-```
-
-# Retrieve currently occurring entry
-This retrieves whatever entry is currently ongoing. If multiple are, somehow, then this retrieves the lastest of the currently ongoing entries.
-```
-[GET] /user_[macrocycles, mesocycles, microcycles, workout_days]/current
-```
-
-## Perform Entry Decision Code
-With this endpoint, it will generate the desired entries if able to (i.e. generating the mesocycles based on your current macrocycle.)
-```
-[POST, PATCH] /user_[macrocycles, mesocycles, microcycles, workout_days]/
-```
-
-## Perform Unit Test
-With this endpoint, it will run through the generation for every higher level input (i.e. generating the mesocycles for every macrocycle). This doesn't save the information.
-```
-[GET, POST] /user_[macrocycles, mesocycles, microcycles, workout_days]/
-```
-
-
-# Current User Info
-## List current user's information
-- Retrieves the information on the currently logged in user.
-- Returns user information as json.
-```
-[GET] /current-user
-```
-
+### [User Workout Exercises](routes/user_workout_exercises.py)
+| Method | Route | Description |
+| --- | --- | --- |
+| **[GET]** | `/user_workout_exercises` | List current user's past and present workout exercises |
+| **[GET]** | `/user_workout_exercises/current_list` | List current user's workout exercises for the currently active work day |

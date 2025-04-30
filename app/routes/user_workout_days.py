@@ -241,9 +241,6 @@ def phase_component_classification_test():
 
         parameters["phase_components"] = possible_phase_components_list
 
-        '''for i in possible_phase_components_list:
-            print(i)'''
-
         result = phase_component_main(parameters, constraints)
         print(str(phase.id))
         print(result["formatted"])
