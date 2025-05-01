@@ -1,3 +1,4 @@
+from time import perf_counter
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -281,7 +282,12 @@ class PhaseAgent(BaseAgent):
 
         solver = cp_model.CpSolver()
         # solver.parameters.log_search_progress = True
+
+        start_time = perf_counter()
         status = solver.Solve(model)
+        end_time = perf_counter()
+        solver_duration = end_time - start_time
+        print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
 
         state["logs"] += f"\nSolver status: {status}\n"
         state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
