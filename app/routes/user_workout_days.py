@@ -1,5 +1,6 @@
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
+import math
 
 from app import db
 from app.models import Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, Weekday_Library, User_Weekday_Availability, User_Workout_Components, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days
@@ -164,18 +165,6 @@ def workout_day_initializer():
     if not user_microcycle:
         return jsonify({"status": "error", "message": "No active microcycle found."}), 404
 
-    delete_old_user_workout_days(user_microcycle.id)
-    microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
-
-    parameters["microcycle_weekdays"] = microcycle_weekdays
-
-    # Retrieve all possible phase component body parts.
-    possible_phase_component_bodyparts = retrieve_phase_component_bodyparts(user_microcycle.mesocycles.phase_id)
-
-    # Retrieve all possible phase components that can be selected for the phase id.
-    possible_phase_components = retrieve_possible_phase_components(user_microcycle.mesocycles.phase_id)
-    possible_phase_components_list = construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)
-
     availability = (
         User_Weekday_Availability.query
         .join(Weekday_Library)
@@ -184,19 +173,47 @@ def workout_day_initializer():
         .all())
     if not availability:
         return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
-    
+
+    delete_old_user_workout_days(user_microcycle.id)
+    microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
+
+    parameters["workout_length"] = int(current_user.workout_length.total_seconds())
+
+    # Retrieve all possible phase component body parts.
+    possible_phase_component_bodyparts = retrieve_phase_component_bodyparts(user_microcycle.mesocycles.phase_id)
+
+    # Retrieve all possible phase components that can be selected for the phase id.
+    possible_phase_components = retrieve_possible_phase_components(user_microcycle.mesocycles.phase_id)
+    possible_phase_components_list = construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)
+
     weekday_availability = []
 
+    number_of_available_weekdays = 0
+    total_availability = 0
     for day in availability:
         weekday_availability.append({
             "id": day.weekday_id, 
             "name": day.weekdays.name.title(), 
             "availability": int(day.availability.total_seconds())
         })
+        total_availability += min(day.availability.total_seconds(), parameters["workout_length"])
+        if day.availability.total_seconds() > 0:
+            number_of_available_weekdays += 1
 
+    maximum_min_duration = max(item["duration_min"] for item in possible_phase_components_list)
+    total_time_needed = 0
+    for i in possible_phase_components_list:
+        total_time_needed += i["duration_min"] * (i["frequency_per_microcycle_min"] or number_of_available_weekdays)
+
+    # Check if there is enough time to complete the phase components.
+    number_of_phase_components_that_need_to_fit = round(total_time_needed / maximum_min_duration)
+    number_of_phase_components_that_can_fit = math.floor(total_availability / maximum_min_duration)
+    if number_of_phase_components_that_need_to_fit > number_of_phase_components_that_can_fit:
+        return jsonify({"status": "error", "message": f"Not enough time to complete the phase components. Need {total_time_needed} seconds but only have {total_availability}. Need {number_of_phase_components_that_need_to_fit} but can fit {number_of_phase_components_that_can_fit}"}), 404
+
+    parameters["microcycle_weekdays"] = microcycle_weekdays
     parameters["weekday_availability"] = weekday_availability
     parameters["phase_components"] = possible_phase_components_list
-    parameters["workout_length"] = int(current_user.workout_length.total_seconds())
 
     result = []
 
