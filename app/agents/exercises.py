@@ -1,4 +1,3 @@
-from time import perf_counter
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from dotenv import load_dotenv
@@ -111,19 +110,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         solver.parameters.num_search_workers = 24
         solver.parameters.max_time_in_seconds = 120
         # solver.parameters.log_search_progress = True
-        start_time = perf_counter()
-        status = solver.Solve(model)
-        end_time = perf_counter()
-        solver_duration = end_time - start_time
-        print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
+        status = self._solve_and_time_solver(solver, model)
 
         if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
-            print("Took longer than 2 minutes. Solving with strain divided.")
-            start_time = perf_counter()
-            status = solver.Solve(model_with_divided_strain)
-            end_time = perf_counter()
-            solver_duration = end_time - start_time
-            print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
+            status = self._new_max_time_solve_and_time_solver(solver, model_with_divided_strain, new_max_time=None, message_end="Solving with strain divided.")
 
         state["logs"] += f"\nSolver status: {status}\n"
         state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
@@ -467,22 +457,15 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
-        solver.parameters.max_time_in_seconds = 60
+        solver.parameters.max_time_in_seconds = 30
         # solver.parameters.log_search_progress = True
-        start_time = perf_counter()
-        status = solver.Solve(model)
-        end_time = perf_counter()
-        solver_duration = end_time - start_time
-        print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
+        status = self._solve_and_time_solver(solver, model)
 
         if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
-            print("Took longer than 1 minute. Solving with strain divided.")
-            solver.parameters.max_time_in_seconds = 10 * 60
-            start_time = perf_counter()
-            status = solver.Solve(model_with_divided_strain)
-            end_time = perf_counter()
-            solver_duration = end_time - start_time
-            print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
+            status = self._new_max_time_solve_and_time_solver(solver, model_with_divided_strain, new_max_time=60)
+
+        if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
+            status = self._new_max_time_solve_and_time_solver(solver, model_with_divided_strain, new_max_time=(10 * 60), message_end="Solving with strain divided.")
 
         state["logs"] += f"\nSolver status: {status}\n"
         state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"

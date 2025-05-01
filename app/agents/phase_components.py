@@ -1,4 +1,3 @@
-from time import perf_counter
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -272,11 +271,7 @@ class PhaseComponentAgent(BaseAgent):
         solver.parameters.num_search_workers = 12
 
         # solver.parameters.log_search_progress = True
-        start_time = perf_counter()
-        status = solver.Solve(model)
-        end_time = perf_counter()
-        solver_duration = end_time - start_time
-        print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
+        self._solve_and_time_solver(solver, model)
 
         # If the duration spread should be minimized, then ensure the final duration is the same, with the new goal of minimizing the spread.
         if duration_spread_var != None:
