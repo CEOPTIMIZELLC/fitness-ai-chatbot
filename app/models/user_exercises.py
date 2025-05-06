@@ -16,6 +16,8 @@ class User_Exercises(db.Model, TableNameMixin):
     density = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='working duration / duration')
     intensity = db.Column(db.Integer, nullable=False, default=100, comment='The intensity of the exercise in comparison to the their one rep max.')
     performance = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='density * volume')
+    duration = db.Column(db.Integer, nullable=False, default=0, comment='The duration of the exercise.')
+    working_duration = db.Column(db.Integer, nullable=False, default=0, comment='The working duration of the exercise.')
 
     # Relationships
     users = db.relationship("Users", back_populates="exercises")
@@ -104,6 +106,8 @@ class User_Exercises(db.Model, TableNameMixin):
             "density": self.density,
             "intensity": self.intensity,
             "performance": self.performance,
+            "duration": self.duration,
+            "working_duration": self.working_duration,
             "has_supportive_equipment": self.has_supportive_equipment,
             "has_assistive_equipment": self.has_assistive_equipment,
             "has_weighted_equipment": self.has_weighted_equipment,

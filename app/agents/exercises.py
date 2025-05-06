@@ -99,7 +99,9 @@ def get_exercise_bounds(exercises):
     return {
         'base_strain': get_item_bounds("base_strain", "base_strain", exercises),
         'intensity': {"min": 1, "max": 100},
-        'one_rep_max': get_item_bounds("one_rep_max", "one_rep_max", exercises)
+        'one_rep_max': get_item_bounds("one_rep_max", "one_rep_max", exercises),
+        "duration": get_item_bounds("duration", "duration", exercises),
+        "working_duration": get_item_bounds("working_duration", "working_duration", exercises)
     }
 
 class ExerciseAgent(ExercisePhaseComponentAgent):
