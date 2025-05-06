@@ -26,6 +26,7 @@ available_constraints = """
 - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
 - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
 - rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
+- duration_within_min_max: Forces the amount of duration to be between the minimum and maximum values allowed for the phase component.
 - exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
 - exercise_metric_increase: Forces the prioritized metric of an exercise chosen to increase.
 - minimize_strain: Objective to minimize the amount of strain overall.
@@ -118,7 +119,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "reps_within_min_max": True,                    # The number of reps of the exercise may only be a number between the minimum and maximum reps allowed for the phase component.
             "sets_within_min_max": True,                    # The number of sets of the exercise may only be a number between the minimum and maximum sets allowed for the phase component.
             "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number between the minimum and maximum rest allowed for the phase component.
-            "intensity_within_min_max": True,               # The amount of intensity for the exercise may only be a number between the minimum and maximum rest allowed for the phase component.
+            "duration_within_min_max": True,                # The number of duration of the exercise may only be a number between the minimum and maximum duration allowed for the phase component.
+            "intensity_within_min_max": True,               # The amount of intensity for the exercise may only be a number between the minimum and maximum intensity allowed for the phase component.
             "exercises_per_bodypart_within_min_max": True,  # The number of exercises for the phase components of the exercise may only be a number between the minimum and maximum exercises per bodypart allowed for the phase component.
             "exercise_metric_increase": True,               # The prioritized metric of the exercise must be an increase from the current metric.
             "minimize_strain": True,                        # Objective function constraint
@@ -257,6 +259,17 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                    used_vars = vars["used_pcs"], 
                                    duration_vars = vars["rest"])
             logs += "- Rest count within min and max allowed rest applied.\n"
+
+        # Constraint: The duration of a phase component may only be a number between the minimum and maximum duration allowed.
+        if constraints["duration_within_min_max"]:
+            entries_within_min_max(model = model, 
+                                   items = phase_components, 
+                                   minimum_key="duration_min", 
+                                   maximum_key="duration_max",
+                                   number_of_entries = max_exercises, 
+                                   used_vars = vars["used_pcs"], 
+                                   duration_vars = vars["duration"])
+            logs += "- Duration amount within min and max allowed rest applied.\n"
 
         # Add symmetry breaking and tight bounds before applying main constraints
         symmetry_breaking_constraints(model, vars["phase_components"], vars["active_exercises"])
@@ -571,3 +584,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         graph = self.create_optimization_graph(State)
         result = graph.invoke(self.initial_state)
         return result
+
+def Main(parameters=None, constraints=None):
+    agent = ExercisePhaseComponentAgent(parameters, constraints)
+    result = agent.run()
+    return {"formatted": result["formatted"], "output": result["output"], "solution": result["solution"]}

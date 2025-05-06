@@ -20,7 +20,9 @@ from app.models import (
 
 bp = Blueprint('user_workout_exercises', __name__)
 
+from app.agents.exercises import get_exercises_for_pc
 from app.agents.exercises import Main as exercises_main
+from app.agents.exercises_phase_components import Main as exercise_pc_main
 from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
 
 
@@ -131,6 +133,8 @@ def exercise_dict(exercise, user_exercise):
         "density": int(user_exercise.density * 100),                            # Scaled up to avoid floating point errors from model.
         "intensity": int(user_exercise.intensity),
         "performance": int(user_exercise.performance * (100 * 100 * 100)),      # Scaled up to avoid floating point errors from model.
+        "duration": user_exercise.duration,
+        "working_duration": user_exercise.working_duration,
     }
 
 
@@ -230,6 +234,18 @@ def construct_user_workout_components_list_for_test(possible_phase_components, p
                 ))
     return user_workout_components_list, availability, projected_duration
 
+def correct_minimum_duration_for_phase_component(phase_components, possible_exercises):
+    for phase_component in phase_components[1:]:
+        pc_exercises_indices = get_exercises_for_pc(possible_exercises[1:], phase_component)
+        pc_exercises_duration = [possible_exercises[i]["duration"] 
+                                 for i in pc_exercises_indices
+                                 if not possible_exercises[i]["is_weighted"]]
+        
+        if pc_exercises_duration == []:
+            pc_exercises_duration = [0]
+        phase_component["duration_min"] = max(min(pc_exercises_duration), phase_component["duration_min"])
+    return None
+
 
 def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
     new_exercises = []
@@ -324,6 +340,8 @@ def exercise_initializer():
     parameters["workout_length"] = int(current_user.workout_length.total_seconds())
     parameters["possible_exercises"] = retrieve_available_exercises()
 
+    # Change the minimum allowed duration if the exercises possible don't allow for it.
+    correct_minimum_duration_for_phase_component(parameters["phase_components"], parameters["possible_exercises"])
     result = []
     result = exercises_main(parameters, constraints)
     output = result["output"]
@@ -359,6 +377,8 @@ def complete_workout():
         user_exercise.volume = exercise.volume
         user_exercise.density = exercise.density
         user_exercise.intensity = exercise.intensity
+        user_exercise.duration = exercise.duration
+        user_exercise.working_duration = exercise.working_duration
 
         # Only replace if the new performance is larger.
         user_exercise.performance = max(user_exercise.performance, exercise.performance)
@@ -386,6 +406,56 @@ def initialize_and_complete():
     result["user_workout_exercises"] = exercise_initializer_result[0].get_json()["exercises"]["output"]
     result["user_exercises"] = complete_workout_result[0].get_json()["user_exercises"]
     return jsonify({"status": "success", "output": result}), 200
+
+
+# This is simply for the purposes of testing the phase component assignment stage.
+@bp.route('/test_exercise_phase_components', methods=['POST', 'PATCH'])
+@login_required
+def exercise_phase_components_test():
+
+    parameters={}
+    constraints={}
+
+    user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+
+    delete_old_user_workout_exercises(user_workout_day.id)
+
+    # Retrieve user components
+    user_workout_components = user_workout_day.workout_components
+
+    if not user_workout_components:
+        return jsonify({"status": "success", "exercises": "This phase component is inactive. No exercises for today."}), 200
+
+    projected_duration = 0
+
+    # Get the total desired duration.
+    for user_workout_component in user_workout_components:
+        projected_duration += user_workout_component.duration
+
+    availability = (
+        User_Weekday_Availability.query
+        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
+        .first())
+    if not availability:
+        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
+
+    parameters["projected_duration"] = projected_duration
+    parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
+    parameters["one_rep_max_improvement_percentage"] = 25
+    parameters["availability"] = int(availability.availability.total_seconds())
+    parameters["workout_length"] = int(current_user.workout_length.total_seconds())
+    parameters["possible_exercises"] = retrieve_available_exercises()
+
+    # Change the minimum allowed duration if the exercises possible don't allow for it.
+    correct_minimum_duration_for_phase_component(parameters["phase_components"], parameters["possible_exercises"])
+    result = []
+    result = exercise_pc_main(parameters, constraints)
+    print(result["formatted"])
+
+    return jsonify({"status": "success", "exercises": result}), 200
+
 
 # Testing for the parameter programming for mesocycle labeling.
 @bp.route('/test', methods=['GET', 'POST'])
