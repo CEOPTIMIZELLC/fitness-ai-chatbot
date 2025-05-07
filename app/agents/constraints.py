@@ -228,11 +228,21 @@ def only_use_required_items(model, required_items, entry_vars, active_entry_vars
     return None
 
 # Ensures that each required entry occurs at least once in the entry_set.
-def use_all_required_items(model, required_items, used_vars):
+def use_all_required_items(model, required_items, used_vars, soft_constraint=False):
+    soft_conditions=[]
     for item_index in required_items:
         conditions = [row[item_index] for row in used_vars]
-        model.AddBoolOr(conditions)
-    return None
+        constraint = model.AddBoolOr(conditions)
+        if soft_constraint:
+            conditions_not_met = [condition.Not() for condition in conditions]
+            condition_met = model.NewBoolVar(f"{item_index}_occurs_once")
+
+            # If the phase component is selected at any point, condition_met should be True
+            constraint.OnlyEnforceIf(condition_met)
+            model.AddBoolAnd(conditions_not_met).OnlyEnforceIf(condition_met.Not())
+
+            soft_conditions.append(condition_met)
+    return soft_conditions
 
 # Ensures that an item only occurs once in the entry_set.
 def no_repeated_items(model, required_items, used_vars):

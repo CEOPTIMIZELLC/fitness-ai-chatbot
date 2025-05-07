@@ -208,13 +208,21 @@ class ExercisePhaseComponentAgent(BaseAgent):
         model.Add(sum(vars["duration"]) <= workout_length)
         model.Add(sum(vars["duration"]) >= (projected_duration - (2 * 60)))
 
+        vars["phase_component_use_penalty"] = None
+        penalty = 2
+
         # Constraint: Use all required phases at least once
         if constraints["use_all_phase_components"]:
             required_phase_components = list(range(1, len(phase_components)))
 
-            use_all_required_items(model = model, 
-                                   required_items = required_phase_components, 
-                                   used_vars = vars["used_pcs"])
+            phase_component_use_conditionals = use_all_required_items(model = model, 
+                                                                      required_items = required_phase_components, 
+                                                                      used_vars = vars["used_pcs"], 
+                                                                      soft_constraint=True)
+            vars["phase_component_use_penalty"] = [
+                penalty * (1-i)
+                for i in phase_component_use_conditionals
+            ]
             logs += "- Use every required phase at least once applied.\n"
 
         # Constraint: The seconds per exercise of a phase component may only be between the minimum and maximum seconds per exercise allowed.
@@ -314,7 +322,13 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         strain = model.NewIntVar(0, 100 * max_exercises * workout_length, f'strain_total')
         model.AddDivisionEquality(strain, 100 * total_working_duration_time, non_zero_total_duration_time)
-        model.Minimize(strain)
+        total_strain_to_minimize = strain
+
+        # Use Penalty.
+        if vars["phase_component_use_penalty"] != None:
+            total_strain_to_minimize += sum(vars["phase_component_use_penalty"])
+
+        model.Minimize(total_strain_to_minimize)
         return None
     
     def duration_strain_divided(self, model, vars, workout_length, pc_bounds, min_exercises, max_exercises):
@@ -345,11 +359,17 @@ class ExercisePhaseComponentAgent(BaseAgent):
             strain_terms.append(strain)
 
         model.Add(strain_time == sum(strain_terms))
-        model.Minimize(strain_time)
+        total_strain_to_minimize = strain_time
+
+        # Use Penalty.
+        if vars["phase_component_use_penalty"] != None:
+            total_strain_to_minimize += sum(vars["phase_component_use_penalty"])
+
+        model.Minimize(total_strain_to_minimize)
         return None
 
     
-    def app_model_objective(self, constraints, model, model_with_divided_strain, vars, workout_length, pc_bounds, min_exercises, max_exercises):
+    def app_model_objective(self, constraints, model, model_with_divided_strain, vars, workout_length, pc_bounds, min_exercises, max_exercises, ):
         logs = ""
         # Objective: Minimize total strain of microcycle
         if constraints["minimize_strain"]:
