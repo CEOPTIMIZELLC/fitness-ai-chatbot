@@ -171,6 +171,11 @@ class ExercisePhaseComponentAgent(BaseAgent):
             for j in range(phase_component_amount)]
             for i in range(max_exercises)]
 
+        # Integer variable indicating the number of occurences of each phase component.
+        vars["pc_count"] = [
+            model.NewIntVar(0, phase_component_amount, f'pc_{i}_count') 
+            for i in list(range(len(phase_components)))]
+
         # Optional integer variable for the phase component values chosen at exercise i.
         vars["seconds_per_exercise"] = declare_model_vars(model, "seconds_per_exercise", vars["active_exercises"], max_exercises, min_seconds_per_exercise, max_seconds_per_exercise)
         vars["reps"] = declare_model_vars(model, "reps", vars["active_exercises"], max_exercises, min_reps, max_reps)
@@ -191,6 +196,11 @@ class ExercisePhaseComponentAgent(BaseAgent):
                             entry_vars = vars["phase_components"], 
                             number_of_entries = max_exercises, 
                             used_vars = vars["used_pcs"])
+        
+        # Sets the counts for the variables.
+        for item_index in list(range(len(phase_components))):
+            conditions = [row[item_index] for row in vars["used_pcs"]]
+            vars["pc_count"][item_index] = sum(conditions)
 
         # Constrain the active exercises to be within the duration of the workout.
         constrain_active_entries_vars(model = model, 
@@ -405,13 +415,13 @@ class ExercisePhaseComponentAgent(BaseAgent):
         model_with_divided_strain = model.clone()
         state["logs"] += self.app_model_objective(constraints, model, model_with_divided_strain, vars, workout_length, pc_bounds, min_exercises, max_exercises)
 
-        return {"opt_model": (model, model_with_divided_strain, vars["phase_components"], vars["used_pcs"], vars["active_exercises"], vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"], vars["duration"], vars["working_duration"])}
+        return {"opt_model": (model, model_with_divided_strain, vars["phase_components"], vars["pc_count"], vars["active_exercises"], vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"], vars["duration"], vars["working_duration"])}
 
     def solve_model_node(self, state: State, config=None) -> dict:
         print("Solving First Step")
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
-        model, model_with_divided_strain, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
+        model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -449,10 +459,15 @@ class ExercisePhaseComponentAgent(BaseAgent):
                     working_duration += working_duration_vars_current
                     strain_ratio += duration_vars_current/working_duration_vars_current
             schedule = sorted(schedule, key=lambda x: x[1])
+            pc_count = [
+                solver.Value(pc_count_var)
+                for pc_count_var in pc_count_vars
+            ]
             solution = {
                 "schedule": schedule,
                 "duration": duration,
                 "working_duration": working_duration,
+                "pc_count": pc_count,
                 "strain_ratio": strain_ratio,
                 "status": status
             }
@@ -589,10 +604,10 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 formatted += (f"| {(component_count + 1):<{2}} ----\n")
 
         formatted += f"Phase Component Counts:\n"
-        for phase_component_index, phase_component_number in enumerate(phase_component_count):
-            phase_component = phase_components[phase_component_index]
+        for phase_component_index, phase_component in enumerate(phase_components):
             phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
-            formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}\n"
+            phase_component_range = self._format_range(solution['pc_count'][phase_component_index], phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])
+            formatted += f"\t{phase_component_name}: {phase_component_range}\n"
         formatted += f"Total Strain: {solution['strain_ratio']}\n"
         formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
         formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"

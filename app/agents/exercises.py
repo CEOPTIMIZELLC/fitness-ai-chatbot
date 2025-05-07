@@ -136,7 +136,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         print("Solving First Step")
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
-        model, model_with_divided_strain, phase_component_vars, used_pc_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
+        model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -522,6 +522,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 working_duration_vars_current = solver.Value(working_duration_vars[i])
                 base_effort_vars_current = solver.Value(base_effort_vars[i])
                 working_effort_vars_current = solver.Value(working_effort_vars[i])
+
+                
 
                 schedule.append((
                     i, 
