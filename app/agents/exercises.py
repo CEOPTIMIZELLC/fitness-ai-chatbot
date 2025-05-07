@@ -56,6 +56,33 @@ def get_exercises_for_pc(exercises, phase_component, verbose=False):
         print("")
     return exercises_for_pc
 
+# A method for retrieving the possible exercises for all phase components.
+# This method removes exercises specific for a phase commponent from those that are allowed for a phase component without any true exercises.
+def get_exercises_for_all_pcs(exercises, phase_components, verbose=False):
+    number_of_possible_exercises = len(exercises)
+
+    exercises_for_pcs = [
+        get_exercises_for_pc(exercises, phase_component, verbose)
+        for phase_component in phase_components
+    ]
+
+    # All phase components that have every possible exercise applied to them.
+    pc_indices_without_true_exercises = [
+        i
+        for i in range(len(exercises_for_pcs))
+        if len(exercises_for_pcs[i]) == number_of_possible_exercises
+    ]
+
+    # Remove the exercises from the phase components without true exercises for minimum searching.
+    for i in pc_indices_without_true_exercises:
+        # Compare to every other list of exercises that have true exercises.
+        for j in range(len(exercises_for_pcs)):
+            if j in pc_indices_without_true_exercises:
+                continue
+            exercises_for_pcs[i] = list(set(exercises_for_pcs[i]) - set(exercises_for_pcs[j]))
+
+    return exercises_for_pcs
+
 def ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, used_exercise_vars, performance_vars, training_weight_vars):
     for phase_component_index, performance_var, used_exercise_var, training_weight_var in zip(phase_component_ids, performance_vars, used_exercise_vars, training_weight_vars):
         phase_component = phase_components[phase_component_index]
@@ -301,11 +328,20 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Constraint: Use only allowed exercises
         if constraints["use_allowed_exercises"]:
+            # for i, phase_component_index in enumerate(phase_component_ids):
+            #     exercises_for_pc = get_exercises_for_pc(exercises[1:], phase_components[phase_component_index], verbose=True)
+            #     only_use_required_items(model = model, 
+            #                             required_items = exercises_for_pc, 
+            #                             entry_vars = [exercise_vars["exercises"][i]])
+
+            exercises_for_pcs = get_exercises_for_all_pcs(exercises[1:], phase_components[1:], verbose=True)
+            exercises_for_pcs = [0] + exercises_for_pcs[:]
             for i, phase_component_index in enumerate(phase_component_ids):
-                exercises_for_pc = get_exercises_for_pc(exercises[1:], phase_components[phase_component_index], verbose=True)
+                exercises_for_pc = exercises_for_pcs[phase_component_index]
                 only_use_required_items(model = model, 
                                         required_items = exercises_for_pc, 
                                         entry_vars = [exercise_vars["exercises"][i]])
+
             logs += "- Only use allowed exercises applied.\n"
 
         # Constraint: Ensure each exercise only appears once in the schedule
