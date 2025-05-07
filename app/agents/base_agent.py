@@ -83,18 +83,21 @@ class BaseAgent:
         print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
         return status
 
+
+    # Retrieve formatted string for time.
+    def _time_string(self, time_in_seconds):
+        time_minutes = int(time_in_seconds // 60)
+        time_seconds = round((time_in_seconds % 60), 3)
+        time_minutes_string = f"{time_minutes} minutes" if time_minutes > 0 else ""
+        time_seconds_string = f"{time_seconds} seconds" if time_seconds > 0 else ""
+        if time_minutes_string != "" and time_seconds_string != "":
+            time_minutes_string += " "
+        return f"{time_minutes_string}{time_seconds_string}"
+
     def _new_max_time_solve_and_time_solver(self, solver, model, new_max_time=None, message_end=None):
-        max_search_time_minutes = int(solver.parameters.max_time_in_seconds // 60)
-        max_search_time_seconds = round((solver.parameters.max_time_in_seconds % 60), 3)
-        max_search_time_minutes_string = f"{max_search_time_minutes} minutes " if max_search_time_minutes > 0 else ""
-        max_search_time_seconds_string = f"{max_search_time_seconds} seconds" if max_search_time_seconds > 0 else ""
-        new_searcher_message = f"Solver took longer than {max_search_time_minutes_string}{max_search_time_seconds_string}."
+        new_searcher_message = f"Solver took longer than {self._time_string(solver.parameters.max_time_in_seconds)}."
         if new_max_time:
-            new_max_time_minutes = int(new_max_time // 60)
-            new_max_time_seconds = round((new_max_time % 60), 3)
-            new_max_time_minutes_string = f"{new_max_time_minutes} minutes " if new_max_time_minutes > 0 else ""
-            new_max_time_seconds_string = f"{new_max_time_seconds} seconds" if new_max_time_seconds > 0 else ""
-            new_searcher_message += f"Extending max time allowed to {new_max_time_minutes_string}{new_max_time_seconds_string}."
+            new_searcher_message += f" Extending max time allowed to {self._time_string(new_max_time)}."
             solver.parameters.max_time_in_seconds = new_max_time
         if message_end:
             new_searcher_message += (" " + message_end)
