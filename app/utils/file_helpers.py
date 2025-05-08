@@ -13,12 +13,14 @@ def get_relative_path(file):
 
     return relative_path
 
-def create_file_if_not_exists(caller_file, file_name="file_name", file_type=".txt"):
-    file_path = os.path.join(get_relative_path(caller_file), file_name+file_type)
-
+def create_file_if_not_exists(file_path=None, file_name="file_name", file_extension=".txt", caller_file=__file__):
+    if not file_path:
+        file_path = get_relative_path(caller_file)
+    
+    file_path = os.path.join(file_path, file_name+file_extension)
     try:
         file = open(file_path, "x")
         file.close()
     except FileExistsError:
         print("File already exists.")
-    return None
+    return file_path
