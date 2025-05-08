@@ -28,7 +28,7 @@ def create_duration_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0
 def _is_intensity_base_strain(model, exercise_bounds, i, name="", scaled=1, intensity=None, base_strain=None):
     # Get the bounds for the exercises
     min_base_strain, max_base_strain = exercise_bounds["base_strain"]["min"], exercise_bounds["base_strain"]["max"]
-    min_intensity, max_intensity = exercise_bounds["intensity"]["min"], exercise_bounds["intensity"]["max"]
+    min_intensity, max_intensity = 0, exercise_bounds["intensity"]["max"]
 
     # In between step for base strain and intensity.
     scaled_intensity_strain_value = 0
