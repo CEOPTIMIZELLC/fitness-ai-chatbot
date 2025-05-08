@@ -13,12 +13,8 @@ def get_relative_path(file):
 
     return relative_path
 
-def create_file_if_not_exists(caller_file, file_name):
-    file_path = f"app/agents/{file_name}"
-    print(file_path)
-
-    file_path = os.path.join(get_relative_path(caller_file), file_name)
-    print(file_path)
+def create_file_if_not_exists(caller_file, file_name="file_name", file_type=".txt"):
+    file_path = os.path.join(get_relative_path(caller_file), file_name+file_type)
 
     try:
         file = open(file_path, "x")
