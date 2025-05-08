@@ -108,6 +108,34 @@ def ensure_increase_for_subcomponent(model, exercises, phase_components, phase_c
             model.Add(performance_var == exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var, performance_not_at_max.Not())
     return None
 
+def encourage_increase_for_subcomponent(model, exercises, phase_component_ids, used_exercise_vars, performance_vars, max_performance):
+    performance_increase_vars = []
+    for phase_component_index, performance_var, used_exercise_var in zip(phase_component_ids, performance_vars, used_exercise_vars):
+        # Booleans to check if the performance increased for whichever exercise was selected.
+        performance_increase_for_pc_met = [model.NewBoolVar(f'exercise_{exercise_index}_performance_increase_for_{phase_component_index}')
+                                           for exercise_index in range(1, len(exercises))]
+
+        # Boolean to check if a performance increase occurred for the phase component.
+        performance_penalty = model.NewIntVar(0, max_performance // (100 * 100 * 100), f'performance_penalty_for_{phase_component_index}')
+        performance_difference = model.NewIntVar(0, max_performance, f'performance_difference_for_{phase_component_index}')
+
+        for (performance_increase_met_for_exercise, exercise, exercise_for_exercise_var) in zip(performance_increase_for_pc_met[1:], exercises[1:], used_exercise_var[1:]):
+
+            # Ensure the check is off if the exercise isn't picked.
+            model.Add(performance_increase_met_for_exercise == 0).OnlyEnforceIf(exercise_for_exercise_var.Not())
+
+            # If the maximum is going to be reached, do not exceed it.
+            model.Add(performance_var > exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var, performance_increase_met_for_exercise)
+            model.Add(performance_var <= exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var, performance_increase_met_for_exercise.Not())
+
+            # Calculate penalty if increase isn't met.
+            model.Add(performance_difference == 0).OnlyEnforceIf(exercise_for_exercise_var, performance_increase_met_for_exercise)
+            model.Add(performance_difference == ((100 * 100 * 100) + exercise["performance"] - performance_var)).OnlyEnforceIf(exercise_for_exercise_var, performance_increase_met_for_exercise.Not())
+        
+        model.AddDivisionEquality(performance_penalty, performance_difference, (100 * 100 * 100))
+        performance_increase_vars.append(performance_penalty)
+    return performance_increase_vars
+
 
 def declare_duration_vars(model, max_entries, phase_component_ids, phase_component_constraints, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars=None, name=""):
     return [
@@ -331,7 +359,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return exercise_vars
 
 
-    def apply_model_constraints_2(self, constraints, model, phase_component_ids, phase_components, pc_vars, exercises, exercise_vars, max_exercises, workout_length):
+    def apply_model_constraints_2(self, constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, ex_bounds, max_exercises, workout_length):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -380,8 +408,15 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             logs += "- No duplicate exercises constraint applied.\n"
 
         # Constraint: The desired metric of an exercise must be an increase from the current metric.
+        exercise_vars["performance_increase_penalty"] = None
+        penalty = 1
         if constraints["exercise_metric_increase"]:
-            ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, exercise_vars["used_exercises"], exercise_vars["performance"], exercise_vars["training_weight"])
+            # ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, exercise_vars["used_exercises"], exercise_vars["performance"], exercise_vars["training_weight"])
+            performance_increase_conditions = encourage_increase_for_subcomponent(model, exercises, phase_component_ids, exercise_vars["used_exercises"], exercise_vars["performance"], ex_bounds["performance"]["max"])
+            exercise_vars["performance_increase_penalty"] = [
+                penalty * i
+                for i in performance_increase_conditions
+            ]
             logs += "- Exercise metric increase constraint applied.\n"
         return logs
 
@@ -413,7 +448,13 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             strain_terms.append(strain)
 
         model.Add(strain_time == sum(strain_terms))
-        model.Minimize(strain_time)
+        total_strain_to_minimize = strain_time
+
+        # Use Penalty.
+        if exercise_vars["performance_increase_penalty"] != None:
+            total_strain_to_minimize += sum(exercise_vars["performance_increase_penalty"])
+
+        model.Minimize(total_strain_to_minimize)
         exercise_vars["strain_time"] = strain_time
         return None
 
@@ -444,7 +485,13 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         # Creates strain_time, which will hold the total strain over the workout.
         strain_time = model.NewIntVar(0, 100 * max_exercises * workout_length, 'strain_time')
         model.AddDivisionEquality(strain_time, 100 * total_working_effort, non_zero_total_effort)
-        model.Minimize(strain_time)
+        total_strain_to_minimize = strain_time
+
+        # Use Penalty.
+        if exercise_vars["performance_increase_penalty"] != None:
+            total_strain_to_minimize += sum(exercise_vars["performance_increase_penalty"])
+
+        model.Minimize(total_strain_to_minimize)
         exercise_vars["strain_time"] = strain_time
         return None
 
@@ -485,7 +532,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         pc_vars = self.create_model_pc_vars(model, phase_components, workout_length, phase_component_ids, max_exercises)
         exercise_vars = self.create_model_exercise_vars(model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, exercise_bounds)
 
-        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, exercises, exercise_vars, max_exercises, workout_length)
+        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, exercise_bounds, max_exercises, workout_length)
         model_with_divided_strain = model.clone()
         state["logs"] += self.apply_model_objective_2(constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length)
 
