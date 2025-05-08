@@ -400,6 +400,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         model.Add(strain_time == sum(strain_terms))
         model.Minimize(strain_time)
+        exercise_vars["strain_time"] = strain_time
         return None
 
     def effort_strain_as_sum(self, model, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length):
@@ -443,6 +444,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         strain_time = model.NewIntVar(0, 100 * max_exercises * workout_length, 'strain_time')
         model.AddDivisionEquality(strain_time, 100 * total_working_effort, non_zero_total_effort)
         model.Minimize(strain_time)
+        exercise_vars["strain_time"] = strain_time
         return None
 
     def apply_model_objective_2(self, constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length):
@@ -496,17 +498,42 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, duration_vars, working_duration_vars = pc_vars["seconds_per_exercise"], pc_vars["reps"], pc_vars["sets"], pc_vars["rest"], pc_vars["intensity"], pc_vars["duration"], pc_vars["working_duration"]
         base_effort_vars, working_effort_vars = ex_vars["base_effort"], ex_vars["working_effort"]
 
+        parameters = state["parameters"]
+        exercises = parameters["possible_exercises"]
+        phase_components = parameters["phase_components"]
+        pc_bounds = get_phase_component_bounds(phase_components[1:])
+        exercise_bounds = get_exercise_bounds(exercises[1:])
+
+        min_seconds_per_exercise, max_seconds_per_exercise = pc_bounds["seconds_per_exercise"]["min"], pc_bounds["seconds_per_exercise"]["max"]
+        min_reps, max_reps = pc_bounds["reps"]["min"], pc_bounds["reps"]["max"]
+        min_sets, max_sets = pc_bounds["sets"]["min"], pc_bounds["sets"]["max"]
+
+        # Get the bounds for the exercises
+        min_base_strain, max_base_strain = exercise_bounds["base_strain"]["min"], exercise_bounds["base_strain"]["max"]
+        min_itensity, max_intensity = exercise_bounds["intensity"]["min"], exercise_bounds["intensity"]["max"]
+
+        min_effort_scaled = ((min_seconds_per_exercise * (10 + min_itensity + min_base_strain) * min_reps)) * min_sets
+        max_working_effort_scaled = ((max_seconds_per_exercise * (10 + max_intensity + max_base_strain) * max_reps)) * max_sets
+        max_strain_scaled = int(max_working_effort_scaled / min_effort_scaled * 100)
+
+
+        # Upper bound on number of exercises (greedy estimation)
+        max_exercises = len(exercise_vars)
+        workout_length = min(parameters["availability"], parameters["workout_length"])
+
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
         solver.parameters.max_time_in_seconds = 30
         # solver.parameters.log_search_progress = True
         status = self._solve_and_time_solver(solver, model)
+        max_strain_calc = 100 * max_exercises * workout_length
 
         if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
-            status = self._new_max_time_solve_and_time_solver(solver, model_with_divided_strain, new_max_time=60)
+            status = self._new_max_time_solve_and_time_solver(solver, model, new_max_time=60)
 
         if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
             status = self._new_max_time_solve_and_time_solver(solver, model_with_divided_strain, new_max_time=(10 * 60), message_end="Solving with strain divided.")
+            max_strain_calc = max_exercises * max_strain_scaled
 
         state["logs"] += f"\nSolver status: {status}\n"
         state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
@@ -558,6 +585,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 "base_effort": base_effort,
                 "working_effort": working_effort,
                 "strain_ratio": working_duration/duration,
+                "strain_calc": solver.Value(ex_vars["strain_time"]),
+                "max_strain_calc": max_strain_calc,
                 "status": status
             }
 
@@ -719,6 +748,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}\n"
         formatted += f"Total Strain: {solution['strain_ratio']}\n"
         formatted += f"Total Strain Solution 2: {solution['working_effort'] / solution['base_effort']}\n"
+        formatted += f"Total Strain Scaled: {solution['strain_calc']} >= {solution['max_strain_calc']}\n"
         formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
         formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
         formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
