@@ -151,8 +151,8 @@ def get_bounds(phase_components, exercises):
         "max": pc_bounds["density"]["max"] * pc_bounds["volume"]["max"]
         }
 
-    min_one_exercise_effort = pc_bounds["seconds_per_exercise"]["min"] * (10 + pc_bounds["intensity"]["min"] + pc_bounds["base_strain"]["min"]) * pc_bounds["reps"]["min"]
-    max_one_exercise_effort = pc_bounds["seconds_per_exercise"]["max"] * (10 + pc_bounds["intensity"]["max"] + pc_bounds["base_strain"]["max"]) * pc_bounds["reps"]["max"]
+    min_one_exercise_effort = pc_bounds["seconds_per_exercise"]["min"] * (10 + exercise_bounds["intensity"]["min"] + pc_bounds["base_strain"]["min"]) * pc_bounds["reps"]["min"]
+    max_one_exercise_effort = pc_bounds["seconds_per_exercise"]["max"] * (10 + exercise_bounds["intensity"]["max"] + pc_bounds["base_strain"]["max"]) * pc_bounds["reps"]["max"]
 
     # Calculate the bounds for effort.
     exercise_bounds["effort"] = {
