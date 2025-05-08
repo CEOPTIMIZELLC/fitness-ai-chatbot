@@ -1,4 +1,6 @@
 import random
+import heapq
+
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
@@ -20,7 +22,7 @@ from app.models import (
 
 bp = Blueprint('user_workout_exercises', __name__)
 
-from app.agents.exercises import get_exercises_for_pc
+from app.agents.exercises import get_exercises_for_pc, get_exercises_for_all_pcs
 from app.agents.exercises import Main as exercises_main
 from app.agents.exercises_phase_components import Main as exercise_pc_main
 from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
@@ -47,6 +49,7 @@ dummy_phase_component = {
     "bodypart_name": "Inactive",
     "duration": 0,
     "duration_min": 0,
+    "duration_min_max": 0,
     "duration_max": 0,
     "working_duration_min": 0,
     "working_duration_max": 0,
@@ -95,6 +98,7 @@ def user_component_dict(workout, phase_component):
         "rest_min": phase_component.rest_min // 5,                          # Adjusted so that rest is a multiple of 5.
         "rest_max": phase_component.rest_max // 5,                          # Adjusted so that rest is a multiple of 5.
         "duration_min": phase_component.duration_min,
+        "duration_min_max": phase_component.duration_min,
         "duration_max": phase_component.duration_max,
         "working_duration_min": phase_component.working_duration_min,
         "working_duration_max": phase_component.working_duration_max,
@@ -102,7 +106,7 @@ def user_component_dict(workout, phase_component):
         "volume_max": phase_component.volume_max,
         "density_min": int(phase_component.density_min * 100),              # Scaled up to avoid floating point errors from model.
         "density_max": int(phase_component.density_max * 100),              # Scaled up to avoid floating point errors from model.
-        "exercises_per_bodypart_workout_min": phase_component.exercises_per_bodypart_workout_min,
+        "exercises_per_bodypart_workout_min": phase_component.exercises_per_bodypart_workout_min if phase_component.exercises_per_bodypart_workout_min != None else 1,
         "exercises_per_bodypart_workout_max": phase_component.exercises_per_bodypart_workout_max,
         "exercise_selection_note": phase_component.exercise_selection_note,
     }
@@ -234,16 +238,30 @@ def construct_user_workout_components_list_for_test(possible_phase_components, p
                 ))
     return user_workout_components_list, availability, projected_duration
 
+# Find the correct minimum and maximum range for the minimum duration.
 def correct_minimum_duration_for_phase_component(phase_components, possible_exercises):
-    for phase_component in phase_components[1:]:
-        pc_exercises_indices = get_exercises_for_pc(possible_exercises[1:], phase_component)
-        pc_exercises_duration = [possible_exercises[i]["duration"] 
-                                 for i in pc_exercises_indices
-                                 if not possible_exercises[i]["is_weighted"]]
-        
+    exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], phase_components[1:])
+
+    for phase_component, exercises_for_pc in zip(phase_components[1:], exercises_for_pcs):
+        # print(phase_component["phase_component_id"], phase_component["name"], phase_component["duration_min"], phase_component["duration_min_max"])
+        pc_exercises_duration = [possible_exercises[i]["duration"]# if not possible_exercises[i]["is_weighted"] else 0
+                                 for i in exercises_for_pc
+                                 #if not possible_exercises[i]["is_weighted"]
+                                 ]
+        # print(pc_exercises_duration)
         if pc_exercises_duration == []:
-            pc_exercises_duration = [0]
-        phase_component["duration_min"] = max(min(pc_exercises_duration), phase_component["duration_min"])
+            min_exercise_duration_min = 0
+            min_exercise_duration_max = 0
+        else:
+            min_exercise_duration_min = heapq.nsmallest((phase_component["exercises_per_bodypart_workout_min"] or 1), pc_exercises_duration)[-1]# + 1
+            min_exercise_duration_max = heapq.nsmallest((phase_component["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)[-1]# + 1
+            min_exercise_duration = heapq.nsmallest((phase_component["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)
+            # print(min_exercise_duration)
+
+        phase_component["duration_min"] = max(min_exercise_duration_min, phase_component["duration_min"])
+        phase_component["duration_min_max"] = max(min_exercise_duration_max, phase_component["duration_min_max"])
+        # print(phase_component["phase_component_id"], phase_component["name"], phase_component["duration_min"], phase_component["duration_min_max"])
+        # print()
     return None
 
 
