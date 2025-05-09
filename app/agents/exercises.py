@@ -518,6 +518,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         exercises = parameters["possible_exercises"]
         phase_components = parameters["phase_components"]
+        workout_length = parameters["availability"]
         schedule_old = state["solution"]["schedule"]
 
         phase_component_ids = [phase_component_index for (_, phase_component_index, _, _, _, _, _, _, _) in (schedule_old)]
@@ -526,9 +527,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         max_exercises = len(phase_component_ids)
 
         pc_bounds, exercise_bounds = get_bounds(phase_components[1:], exercises[1:])
-
-        # Maximum amount of time that the workout may last
-        workout_length = min(parameters["availability"], parameters["workout_length"])
 
         pc_vars = self.create_model_pc_vars(model, phase_components, workout_length, phase_component_ids, max_exercises)
         exercise_vars = self.create_model_exercise_vars(model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, exercise_bounds)
@@ -555,7 +553,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Upper bound on number of exercises (greedy estimation)
         max_exercises = len(exercise_vars)
-        workout_length = min(parameters["availability"], parameters["workout_length"])
+        workout_length = parameters["availability"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -653,12 +651,11 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return {"solution": None}
 
     def get_model_formatting_parameters(self, parameters):
-        workout_length = min(parameters["availability"], parameters["workout_length"])
         return [
             parameters["phase_components"],
             parameters["possible_exercises"],
             parameters["projected_duration"],
-            workout_length
+            parameters["availability"]
         ]
 
     def _create_header_fields(self, longest_sizes: dict) -> dict:

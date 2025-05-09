@@ -18,7 +18,6 @@ _ = load_dotenv()
 
 available_constraints = """
 - day_duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
-- day_duration_within_workout_length: Prevents workout from exceeding the length allowed for a workout.
 - use_workout_required_components: Forces all phase components required for a workout to be assigned in every workout.
 - use_microcycle_required_components: Forces all phase components required for a microcycle to be assigned at lease once in the microcycle.
 - frequency_within_min_max: Forces each phase component that does occur to occur between the minimum and maximum values allowed.
@@ -27,13 +26,13 @@ available_constraints = """
 - maximize_exercise_time: Objective to maximize the amount of time spent overall.
 """
 
-def user_workout_time(weekday_availability, workout_length, microcycle_weekdays):
+def user_workout_time(weekday_availability, microcycle_weekdays):
     used_days = []
 
     # Total time the user has to workout.
     workout_time = 0
     for day in microcycle_weekdays:
-        workout_availability = min(workout_length, weekday_availability[day]["availability"])
+        workout_availability = weekday_availability[day]["availability"]
         used_days.append({"used": False, "availability": workout_availability})
         workout_time += workout_availability
     return used_days, workout_time
@@ -77,14 +76,12 @@ class PhaseComponentAgent(BaseAgent):
                 {"id": 6, "name": "Sunday", "availability": 0 * 60 * 60},
             ],
             "microcycle_weekdays": [0, 1, 2, 3, 4, 5, 6],
-            "workout_length": 50 * 60,
             "phase_components": []
         }
 
         # Define all constraints with their active status
         constraints = {
             "day_duration_within_availability": True,       # The time of a workout won't exceed the time allowed for that given day.
-            "day_duration_within_workout_length": True,     # The time of a workout won't exceed the length allowed for a workout.
             "use_workout_required_components": True,        # Include phase components that are required in every workout at least once.
             "use_microcycle_required_components": True,     # Include phase components that are required in every microcycle at least once.
             "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
@@ -115,7 +112,7 @@ class PhaseComponentAgent(BaseAgent):
             }
         }
     
-    def create_model_vars(self, model, phase_components, workout_availability, workout_length, microcycle_weekdays):
+    def create_model_vars(self, model, phase_components, workout_availability, microcycle_weekdays):
         # Define variables =====================================
         vars = {}
 
@@ -144,14 +141,14 @@ class PhaseComponentAgent(BaseAgent):
                 model=model, 
                 activator = vars["active_phase_components"][index_for_day][index_for_phase_component],
                 min_if_active = phase_components[index_for_phase_component]["duration_min"],
-                max_if_active = min(phase_components[index_for_phase_component]["duration_max"], workout_length),
+                max_if_active = phase_components[index_for_phase_component]["duration_max"],
                 name_of_entry_var = f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}')
             for index_for_phase_component in range(len(phase_components))]
             for index_for_day in range(len(microcycle_weekdays))]
         return vars
 
 
-    def apply_model_constraints(self, constraints, model, vars, phase_components, workout_availability, workout_length):
+    def apply_model_constraints(self, constraints, model, vars, phase_components, workout_availability):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -161,15 +158,6 @@ class PhaseComponentAgent(BaseAgent):
                                              duration_vars=vars["duration"], 
                                              availability=workout_availability)
             logs += "- Sum of phase component duration within maximum allowed time for a day.\n"
-
-        # Ensure that the duration doesn't exceed the maximum allowed time for a workout.
-        #model.Add(duration_var_entry <= workout_length)
-        # Constraint: The duration of a day may only be a number of hours less than the allowed time for a workout.
-        if constraints["day_duration_within_workout_length"]:
-            day_duration_within_availability(model=model, 
-                                             duration_vars=vars["duration"], 
-                                             availability=[workout_length] * len(vars["duration"]))
-            logs += "- Sum of phase component duration within maximum allowed time for a workout.\n"
 
         # Constraint: Force all phase components required in every workout to be included at least once.
         if constraints["use_workout_required_components"]:
@@ -252,13 +240,12 @@ class PhaseComponentAgent(BaseAgent):
 
         phase_components = parameters["phase_components"]
         weekday_availability = parameters["weekday_availability"]
-        workout_length = parameters["workout_length"]
         microcycle_weekdays = parameters["microcycle_weekdays"]
 
         workout_availability = [weekday_availability[day]["availability"] for day in microcycle_weekdays]
 
-        vars = self.create_model_vars(model, phase_components, workout_availability, workout_length, microcycle_weekdays)
-        state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, workout_availability, workout_length)
+        vars = self.create_model_vars(model, phase_components, workout_availability, microcycle_weekdays)
+        state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, workout_availability)
         logs, duration_spread_var, total_duration_to_maximize = self.apply_model_objective(constraints, model, vars, workout_availability)
         state["logs"] += logs
 
@@ -336,45 +323,31 @@ class PhaseComponentAgent(BaseAgent):
 
     def get_relaxation_formatting_parameters(self, parameters):
         weekday_availability = parameters["weekday_availability"]
-        workout_length = parameters["workout_length"]
         microcycle_weekdays = parameters["microcycle_weekdays"]
         
-        _, workout_time = user_workout_time(
-            weekday_availability, 
-            workout_length, 
-            microcycle_weekdays
-        )
+        _, workout_time = user_workout_time(weekday_availability, microcycle_weekdays)
         
         return [
-            workout_time,
-            workout_length,
+            workout_time
         ]
 
     def get_model_formatting_parameters(self, parameters):
         weekday_availability = parameters["weekday_availability"]
-        workout_length = parameters["workout_length"]
         microcycle_weekdays = parameters["microcycle_weekdays"]
         
-        used_days, workout_time = user_workout_time(
-            weekday_availability, 
-            workout_length, 
-            microcycle_weekdays
-        )
+        used_days, workout_time = user_workout_time(weekday_availability, microcycle_weekdays)
         
         return [
             parameters["phase_components"],
             used_days,
             workout_time,
-            workout_length,
             weekday_availability,
             microcycle_weekdays
         ]
 
-    def format_class_specific_relaxation_history(self, formatted, attempt, workout_time, workout_length):
+    def format_class_specific_relaxation_history(self, formatted, attempt, workout_time):
         if workout_time is not None:
             formatted += f"Total Hours Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
-        if workout_length is not None:
-            formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
         if attempt.microcycle_duration is not None:
             formatted += f"Total Time Used: {attempt.microcycle_duration  // 60} min {attempt.microcycle_duration  % 60} sec ({attempt.microcycle_duration} seconds)\n"
         return formatted
@@ -389,7 +362,7 @@ class PhaseComponentAgent(BaseAgent):
             "duration_sec": ("Duration in Seconds", 30),
         }
 
-    def format_agent_output(self, solution, formatted, schedule, phase_components, used_days, workout_time, workout_length, weekday_availability, microcycle_weekdays):
+    def format_agent_output(self, solution, formatted, schedule, phase_components, used_days, workout_time, weekday_availability, microcycle_weekdays):
         final_output = []
 
         phase_component_count = [0] * len(phase_components)
@@ -460,7 +433,6 @@ class PhaseComponentAgent(BaseAgent):
             formatted += f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
         formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
         formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
-        formatted += f"Workout Length Allowed: {self._format_duration(workout_length)}\n"
 
         return final_output, formatted
 

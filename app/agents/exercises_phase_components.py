@@ -99,7 +99,6 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         parameters = {
             "availability": 0,
-            "workout_length": 0,
             "projected_duration": 0,
             "projected_duration": 0,
             "exercise_volume_improvement_percentage": 0,
@@ -110,7 +109,6 @@ class ExercisePhaseComponentAgent(BaseAgent):
         # Define all constraints with their active status
         constraints = {
             "duration_within_availability": True,           # The time of a workout won't exceed the time allowed for that given day.
-            "duration_within_workout_length": True,         # The time of a workout won't exceed the length allowed for a workout.
             "use_allowed_exercises": True,                  # Only use exercises that are allowed for the phase component and bodypart combination.
             "no_duplicate_exercises": True,                 # Ensure each exercise only appears once
             "use_all_phase_components": True,               # At least one exercise should be given each phase component.
@@ -403,7 +401,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         projected_duration = parameters["projected_duration"]
 
         # Maximum amount of time that the workout may last
-        workout_length = min(parameters["availability"], parameters["workout_length"])
+        workout_length = parameters["availability"]
 
         # Upper bound on number of exercises (greedy estimation)
         min_exercises = sum((phase_component["exercises_per_bodypart_workout_min"] or 1) for phase_component in phase_components[1:])
@@ -500,17 +498,15 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return {"solution": None}
 
     def get_relaxation_formatting_parameters(self, parameters):
-        workout_length = min(parameters["availability"], parameters["workout_length"])
         return [
-            workout_length,
+            parameters["availability"],
         ]
 
     def get_model_formatting_parameters(self, parameters):
-        workout_length = min(parameters["availability"], parameters["workout_length"])
         return [
             parameters["phase_components"],
             parameters["projected_duration"],
-            workout_length
+            parameters["availability"]
         ]
 
     def format_class_specific_relaxation_history(self, formatted, attempt, workout_length):

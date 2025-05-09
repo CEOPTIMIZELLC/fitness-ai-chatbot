@@ -381,7 +381,6 @@ def exercise_initializer():
     phase_components = parameters["phase_components"][1:]
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = int(availability.availability.total_seconds())
-    parameters["workout_length"] = int(current_user.workout_length.total_seconds())
     parameters["possible_exercises"] = retrieve_available_exercises()
 
     # Change the minimum allowed duration if the exercises possible don't allow for it.
@@ -505,7 +504,6 @@ def exercise_phase_components_test():
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = int(availability.availability.total_seconds())
-    parameters["workout_length"] = int(current_user.workout_length.total_seconds())
     parameters["possible_exercises"] = retrieve_available_exercises()
 
     # Change the minimum allowed duration if the exercises possible don't allow for it.
@@ -536,12 +534,11 @@ def exercise_classification_test():
     )
 
     parameters["availability"] = 50 * 60
-    parameters["workout_length"] = 30 * 60
     parameters["one_rep_max_improvement_percentage"] = 25
 
     for phase in phases:
         while True:
-            availability = min(parameters["availability"], parameters["workout_length"])
+            availability = parameters["availability"]
             projected_duration = 0
 
             # Retrieve all possible phase component body parts.
@@ -569,7 +566,6 @@ def exercise_classification_test():
         print(result["formatted"])
         test_results.append({
             "projected_duration": parameters["projected_duration"],
-            "workout_length": parameters["workout_length"],
             "availability": parameters["availability"],
             "phase_id": phase.id,
             "result": result

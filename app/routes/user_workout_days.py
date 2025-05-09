@@ -167,11 +167,9 @@ def check_if_there_is_enough_time(total_time_needed, total_availability, maximum
         return f"Not enough time to complete the phase components. Need {total_time_needed} seconds but only have {total_availability}. Need {number_of_phase_components_that_need_to_fit} but can fit {number_of_phase_components_that_can_fit}"
     return None
 
-def perform_workout_day_selection(phase_id, microcycle_weekdays, workout_length, total_availability, weekday_availability, number_of_available_weekdays, verbose=False):
+def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose=False):
     parameters={}
     constraints={}
-
-    parameters["workout_length"] = workout_length
 
     # Retrieve all possible phase component body parts.
     possible_phase_component_bodyparts = retrieve_phase_component_bodyparts(phase_id)
@@ -217,7 +215,6 @@ def workout_day_initializer():
     delete_old_user_workout_days(user_microcycle.id)
     microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
 
-    workout_length = int(current_user.workout_length.total_seconds())
     weekday_availability = []
 
     number_of_available_weekdays = 0
@@ -228,11 +225,11 @@ def workout_day_initializer():
             "name": day.weekdays.name.title(), 
             "availability": int(day.availability.total_seconds())
         })
-        total_availability += min(day.availability.total_seconds(), workout_length)
+        total_availability += day.availability.total_seconds()
         if day.availability.total_seconds() > 0:
             number_of_available_weekdays += 1
 
-    result = perform_workout_day_selection(user_microcycle.mesocycles.phase_id, microcycle_weekdays, workout_length, total_availability, weekday_availability, number_of_available_weekdays, True)
+    result = perform_workout_day_selection(user_microcycle.mesocycles.phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, True)
     if result["output"] == "error":
         return jsonify({"status": "error", "message": result["message"]}), 404
 
@@ -262,7 +259,6 @@ def workout_day_initializer_by_id(phase_id):
     delete_old_user_workout_days(user_microcycle.id)
     microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
 
-    workout_length = int(current_user.workout_length.total_seconds())
     weekday_availability = []
 
     number_of_available_weekdays = 0
@@ -273,11 +269,11 @@ def workout_day_initializer_by_id(phase_id):
             "name": day.weekdays.name.title(), 
             "availability": int(day.availability.total_seconds())
         })
-        total_availability += min(day.availability.total_seconds(), workout_length)
+        total_availability += day.availability.total_seconds()
         if day.availability.total_seconds() > 0:
             number_of_available_weekdays += 1
 
-    result = perform_workout_day_selection(phase_id, microcycle_weekdays, workout_length, total_availability, weekday_availability, number_of_available_weekdays, True)
+    result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, True)
     if result["output"] == "error":
         return jsonify({"status": "error", "message": result["message"]}), 404
 
@@ -300,7 +296,6 @@ def test_workout_day_by_id(phase_id):
         {"id": 6, "name": "Sunday", "availability": 0 * 60 * 60},
     ]
     microcycle_weekdays =  [0, 1, 2, 3, 4, 5, 6]
-    workout_length = 50 * 60
     weekday_availability = []
 
     number_of_available_weekdays = 0
@@ -312,17 +307,11 @@ def test_workout_day_by_id(phase_id):
             "name": weekday_availability_temp[day]["name"].title(), 
             "availability": availability
         })
-        total_availability += min(availability, workout_length)
+        total_availability += availability
         if availability > 0:
             number_of_available_weekdays += 1
 
-    result = perform_workout_day_selection(phase_id, 
-                                            microcycle_weekdays, 
-                                            workout_length, 
-                                            total_availability, 
-                                            weekday_availability, 
-                                            number_of_available_weekdays,
-                                            True)
+    result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, True)
 
     return jsonify({"status": "success", "mesocycles": result}), 200
 
@@ -341,8 +330,6 @@ def phase_component_classification_test():
         {"id": 6, "name": "Sunday", "availability": 0 * 60 * 60},
     ]
     microcycle_weekdays =  [0, 1, 2, 3, 4, 5, 6]
-    workout_length = 50 * 60
-    phase_components = []
 
     # Retrieve all possible phases.
     phases = (
@@ -363,17 +350,12 @@ def phase_component_classification_test():
             "name": weekday_availability_temp[day]["name"].title(), 
             "availability": availability
         })
-        total_availability += min(availability, workout_length)
+        total_availability += availability
         if availability > 0:
             number_of_available_weekdays += 1
 
     for phase in phases:
-        result = perform_workout_day_selection(phase.id, 
-                                               microcycle_weekdays, 
-                                               workout_length, 
-                                               total_availability, 
-                                               weekday_availability, 
-                                               number_of_available_weekdays)
+        result = perform_workout_day_selection(phase.id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays)
         print(str(phase.id))
         print(result["formatted"])
         test_results.append({

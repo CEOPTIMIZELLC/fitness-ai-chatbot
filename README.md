@@ -75,17 +75,6 @@ Body (raw) [JSON]:
 }
 ```
 
-**Set Workout Length**
-```
-[POST]
-localhost:5000/current_user/change_workout_length
-
-Body (raw) [JSON]:
-{
-    "workout_length": "[string; REQUIRED; Message to send to the AI to extract your maximum workout length.]"
-}
-```
-
 **Set Current Goal/Create New Macrocycle**
 ```
 [POST]
@@ -169,7 +158,6 @@ localhost:5000/dev_tests/pipeline
 Body (raw) [JSON]:
 {
     "availability": "[string; REQUIRED; Message to send to the AI to extract your availability for each weekday.]",
-    "workout_length": "[string; REQUIRED; Message to send to the AI to extract your maximum workout length.]",
     "goal": "[string; REQUIRED; Message to send to the AI to extract your current goal and determine its type.]"
 }
 ```
@@ -223,17 +211,6 @@ localhost:5000/user_weekday_availability/
 Body (raw) [JSON]:
 {
     "availability": "I will be available for 35 minutes on Tuesday, 30 minutes on Thurday, 45 minutes on Wednesday and Friday, and 12 hours on Sunday. I will also be able to come on Monday for 14 hours."
-}
-```
-
-**Set Workout Length**
-```
-[POST]
-localhost:5000/current_user/change_workout_length
-
-Body (raw) [JSON]:
-{
-    "workout_length": "I will be available for 30 minutes on Tuesday."
 }
 ```
 
@@ -319,7 +296,6 @@ localhost:5000/dev_tests/pipeline
 
 Body (raw) [JSON]:
 {
-    "workout_length": "I will be available for 30 minutes on Tuesday.",
     "goal": "I would like to prepare for my soccer tournament.",
     "availability": "I will be available for 35 minutes on Tuesday, 30 minutes on Thurday, 45 minutes on Wednesday and Friday, and 12 hours on Sunday. I will also be able to come on Monday for 14 hours."
 }

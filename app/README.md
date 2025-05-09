@@ -20,7 +20,7 @@ All endpoints should begin with `localhost:5000`
 | Method | Route | Body | Description |
 | --- | --- | --- | --- |
 | **[GET]** | `/dev_tests/pipeline` | | Retrieves the current state of the pipeline for the current user. |
-| **[POST]** | `/dev_tests/pipeline` | **(raw)**: `workout_length, availability, goal, runs (optional, default=1)` | Runs the pipeline for the current user, including the availability for each workday and the maximum workout length. |
+| **[POST]** | `/dev_tests/pipeline` | **(raw)**: `availability, goal, runs (optional, default=1)` | Runs the pipeline for the current user, including the availability for each workday and the maximum workout length. |
 
 ### [Authentication](routes/auth.py)
 Routes related to the creation and deletion of accounts and users, as well as logging in and logging out.
@@ -36,7 +36,6 @@ Routes related to the creation and deletion of accounts and users, as well as lo
 | --- | --- | --- | --- |
 | **[GET]** | `/current_user` | | List current user's information |
 | **[PATCH]** | `/current_user` | **(raw)**: `first_name (optional), last_name (optional)` | Change current user's miscellaneous information |
-| **[PATCH]** | `/current_user/change_workout_length` | **(raw)**: `workout_length` | Change current user's maximum workout length |
 | **[PATCH]** | `/current_user/change_email` | **(raw)**: `new_email, password` | Change current user's email |
 | **[PATCH]** | `/current_user/change_password` | **(raw)**: `password, new_password, new_password_confirm` | Change current user's password |
 
