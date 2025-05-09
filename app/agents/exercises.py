@@ -257,7 +257,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         state["relaxation_attempts"].append(attempt)
         return {"solution": None}
 
-    def create_model_pc_vars(self, model, phase_components, workout_length, phase_component_ids, max_exercises):
+    def create_model_pc_vars(self, model, phase_components, workout_availability, phase_component_ids, max_exercises):
         # Define variables =====================================
         pc_vars = {}
 
@@ -360,13 +360,13 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return exercise_vars
 
 
-    def apply_model_constraints_2(self, constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, ex_bounds, max_exercises, workout_length):
+    def apply_model_constraints_2(self, constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, ex_bounds, max_exercises, workout_availability):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
         # Ensure total time is within two minutes of the originally calculated duration.
-        model.Add(sum(pc_vars["duration"]) <= workout_length)
-        model.Add(sum(pc_vars["duration"]) >= (workout_length - (2 * 60)))
+        model.Add(sum(pc_vars["duration"]) <= workout_availability)
+        model.Add(sum(pc_vars["duration"]) >= (workout_availability - (2 * 60)))
 
         # Constraint: The base strain of an exercise may only be equal to the base strain allowed for the exercise.
         if constraints["base_strain_equals"]:
@@ -459,7 +459,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         exercise_vars["strain_time"] = strain_time
         return None
 
-    def effort_strain_as_sum(self, model, exercise_vars, exercise_bounds, max_exercises, workout_length):
+    def effort_strain_as_sum(self, model, exercise_vars, exercise_bounds, max_exercises, workout_availability):
         # Get the bounds for the phase components
         min_effort_scaled = exercise_bounds["effort"]["min"]
         max_effort_scaled = exercise_bounds["effort"]["max"]
@@ -484,7 +484,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         model.Add(total_base_effort >= 1).OnlyEnforceIf(total_effort_is_0.Not())
 
         # Creates strain_time, which will hold the total strain over the workout.
-        strain_time = model.NewIntVar(0, 100 * max_exercises * workout_length, 'strain_time')
+        strain_time = model.NewIntVar(0, 100 * max_exercises * workout_availability, 'strain_time')
         model.AddDivisionEquality(strain_time, 100 * total_working_effort, non_zero_total_effort)
         total_strain_to_minimize = strain_time
 
@@ -496,12 +496,12 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         exercise_vars["strain_time"] = strain_time
         return None
 
-    def apply_model_objective_2(self, constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length):
+    def apply_model_objective_2(self, constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_availability):
         logs = ""
         # Objective: Maximize total strain of microcycle
         if constraints["minimize_strain"]:
             self.effort_strain_divided(model_with_divided_strain, exercise_vars, exercise_bounds, max_exercises)
-            self.effort_strain_as_sum(model, exercise_vars, exercise_bounds, max_exercises, workout_length)
+            self.effort_strain_as_sum(model, exercise_vars, exercise_bounds, max_exercises, workout_availability)
             logs += "- Minimizing the strain time used in workout.\n"
         return logs
 
@@ -518,7 +518,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         exercises = parameters["possible_exercises"]
         phase_components = parameters["phase_components"]
-        workout_length = parameters["availability"]
+        workout_availability = parameters["availability"]
         schedule_old = state["solution"]["schedule"]
 
         phase_component_ids = [phase_component_index for (_, phase_component_index, _, _, _, _, _, _, _) in (schedule_old)]
@@ -528,12 +528,12 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         pc_bounds, exercise_bounds = get_bounds(phase_components[1:], exercises[1:])
 
-        pc_vars = self.create_model_pc_vars(model, phase_components, workout_length, phase_component_ids, max_exercises)
+        pc_vars = self.create_model_pc_vars(model, phase_components, workout_availability, phase_component_ids, max_exercises)
         exercise_vars = self.create_model_exercise_vars(model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, exercise_bounds)
 
-        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, exercise_bounds, max_exercises, workout_length)
+        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, exercise_bounds, max_exercises, workout_availability)
         model_with_divided_strain = model.clone()
-        state["logs"] += self.apply_model_objective_2(constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_length)
+        state["logs"] += self.apply_model_objective_2(constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_availability)
 
         return {"opt_model": (model, model_with_divided_strain, phase_component_ids, exercise_vars, pc_vars)}
 
@@ -553,14 +553,14 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Upper bound on number of exercises (greedy estimation)
         max_exercises = len(exercise_vars)
-        workout_length = parameters["availability"]
+        workout_availability = parameters["availability"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
         solver.parameters.max_time_in_seconds = ortools_solver_time_in_seconds
         # solver.parameters.log_search_progress = True
         status = self._solve_and_time_solver(solver, model)
-        max_strain_calc = 100 * max_exercises * workout_length
+        max_strain_calc = 100 * max_exercises * workout_availability
 
         if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
             status = self._new_max_time_solve_and_time_solver(solver, model, new_max_time=60)
@@ -680,7 +680,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "performance": ("Performance", 30)
         }
 
-    def format_agent_output(self, solution, formatted, schedule, phase_components, exercises, projected_duration, workout_length):
+    def format_agent_output(self, solution, formatted, schedule, phase_components, exercises, projected_duration, workout_availability):
         final_output = []
 
         phase_component_count = [0] * len(phase_components)
@@ -787,7 +787,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
         formatted += f"Total Base Effort: {solution['base_effort']}\n"
         formatted += f"Total Working Effort: {solution['working_effort']}\n"
-        formatted += f"Workout Length Allowed: {self._format_duration(workout_length)}\n"
+        formatted += f"Workout Length Allowed: {self._format_duration(workout_availability)}\n"
         return final_output, formatted
 
     def create_optimization_graph(self, state_class):
