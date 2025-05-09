@@ -31,7 +31,7 @@ from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_
 
 
 
-# ----------------------------------------- Phase_Components -----------------------------------------
+# ----------------------------------------- Workout Exercises -----------------------------------------
 
 dummy_exercise = {
     "id": 0,
