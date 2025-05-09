@@ -91,6 +91,28 @@ def change_macrocycle():
         "goal_id": state["goal_id"]
     }), 200
 
+# Change the current user's macrocycle by the id (doesn't restrict what can be assigned).
+@bp.route('/<goal_id>', methods=['POST', 'PATCH'])
+@login_required
+def change_macrocycle_by_id(goal_id):
+    from app.utils.db_helpers import get_item_by_id
+
+    # Ensure that id is possible.
+    goal = get_item_by_id(Goal_Library, goal_id)
+    if not goal:
+        return jsonify({"status": "error", "message": f"Goal {goal_id} not found."}), 404
+
+    # Change the current user's macrocycle and the goal type if a new one can be assigned.
+    if (request.method == 'POST'):
+        new_macrocycle(goal_id, f"Goal of {goal_id}")
+    else:
+        alter_macrocycle(goal_id, f"Goal of {goal_id}")
+
+    return jsonify({
+        "new_goal": f"Goal of {goal_id}",
+        "goal_classification": goal["name"],
+        "goal_id": goal_id
+    }), 200
 
 def goal_classification_test_run(goal_app, goal_types, user_goal):
     result_temp = goal_app.invoke(
