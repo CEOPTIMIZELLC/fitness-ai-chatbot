@@ -1,3 +1,4 @@
+from config import ortools_solver_time_in_seconds
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from app.agents.constraints import (
@@ -425,7 +426,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
-        solver.parameters.max_time_in_seconds = 120
+        solver.parameters.max_time_in_seconds = ortools_solver_time_in_seconds
         # solver.parameters.log_search_progress = True
         status = self._solve_and_time_solver(solver, model)
 

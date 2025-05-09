@@ -1,3 +1,4 @@
+from config import ortools_solver_time_in_seconds
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -281,6 +282,7 @@ class PhaseAgent(BaseAgent):
 
         solver = cp_model.CpSolver()
         # solver.parameters.log_search_progress = True
+        solver.parameters.max_time_in_seconds = ortools_solver_time_in_seconds
 
         status = self._solve_and_time_solver(solver, model)
 
