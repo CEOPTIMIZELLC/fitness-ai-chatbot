@@ -244,12 +244,10 @@ def correct_minimum_duration_for_phase_component(phase_components, possible_exer
     exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], phase_components[1:])
 
     for phase_component, exercises_for_pc in zip(phase_components[1:], exercises_for_pcs):
-        # print(phase_component["phase_component_id"], phase_component["name"], phase_component["duration_min"], phase_component["duration_min_max"])
         pc_exercises_duration = [possible_exercises[i]["duration"]# if not possible_exercises[i]["is_weighted"] else 0
                                  for i in exercises_for_pc
                                  #if not possible_exercises[i]["is_weighted"]
                                  ]
-        # print(pc_exercises_duration)
         if pc_exercises_duration == []:
             min_exercise_duration_min = 0
             min_exercise_duration_max = 0
@@ -257,12 +255,10 @@ def correct_minimum_duration_for_phase_component(phase_components, possible_exer
             min_exercise_duration_min = heapq.nsmallest((phase_component["exercises_per_bodypart_workout_min"] or 1), pc_exercises_duration)[-1]# + 1
             min_exercise_duration_max = heapq.nsmallest((phase_component["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)[-1]# + 1
             min_exercise_duration = heapq.nsmallest((phase_component["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)
-            # print(min_exercise_duration)
 
         phase_component["duration_min"] = max(min_exercise_duration_min, phase_component["duration_min"])
         phase_component["duration_min_max"] = max(min_exercise_duration_max, phase_component["duration_min_max"])
-        # print(phase_component["phase_component_id"], phase_component["name"], phase_component["duration_min"], phase_component["duration_min_max"])
-        # print()
+
     return None
 
 
@@ -471,15 +467,12 @@ def initialize_and_complete():
 @bp.route('/test_exercise_phase_components', methods=['POST', 'PATCH'])
 @login_required
 def exercise_phase_components_test():
-
     parameters={}
     constraints={}
 
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
-
-    delete_old_user_workout_exercises(user_workout_day.id)
 
     # Retrieve user components
     user_workout_components = user_workout_day.workout_components
