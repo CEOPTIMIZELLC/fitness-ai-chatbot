@@ -112,53 +112,78 @@ def read_user_current_mesocycle():
         return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
     return jsonify({"status": "success", "mesocycles": user_mesocycle.to_dict()}), 200
 
-# Perform parameter programming for mesocycle labeling.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def mesocycle_phases():
 
-    parameters={}
+def perform_phase_selection(goal_id, macrocycle_allowed_weeks, verbose=False):
+    parameters={
+        "macrocycle_allowed_weeks": macrocycle_allowed_weeks,
+        "goal_type": goal_id}
     constraints={}
 
-    user_macro = current_macrocycle(current_user.id)
-    if not user_macro:
-        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
-
-    delete_old_user_phases(user_macro.id)
-
-    parameters["macrocycle_allowed_weeks"] = 26
-    parameters["goal_type"] = user_macro.goal_id
-
-    # Retrieve all possible phases that can be selected.
-    possible_phases = retrieve_phase_constraints_for_goal(int(user_macro.goal_id))
-    
-    # Convert the phases to a list form.
+    # Retrieve all possible phases that can be selected and convert them into a list form.
+    possible_phases = retrieve_phase_constraints_for_goal(int(goal_id))
     parameters["possible_phases"] = construct_phases_list(possible_phases)
 
     result = phase_main(parameters, constraints)
 
-    print(result["formatted"])
+    if verbose:
+        print(result["formatted"])
+    return result
 
-    user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
+def mesocycle_phase_adding(goal_id=None):
+    user_macro = current_macrocycle(current_user.id)
+    if not user_macro:
+        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
     
+    if not goal_id:
+        goal_id = user_macro.goal_id
+
+    delete_old_user_phases(user_macro.id)
+    result = perform_phase_selection(goal_id, 26, True)
+    user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
     db.session.add_all(user_phases)
     db.session.commit()
-
     return jsonify({"status": "success", "mesocycles": result}), 200
 
+# Perform parameter programming for mesocycle labeling.
+@bp.route('/', methods=['POST', 'PATCH'])
+@login_required
+def mesocycle_phases():
+    return mesocycle_phase_adding()
+
+# Perform parameter programming for mesocycle labeling.
+@bp.route('/<goal_id>', methods=['POST', 'PATCH'])
+@login_required
+def add_mesocycle_phases_by_id(goal_id):
+    return mesocycle_phase_adding(goal_id)
+
+# Method to perform phase selection on a goal of a specified id.
+def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
+    from app.utils.db_helpers import get_item_by_id
+    goal = get_item_by_id(Goal_Library, goal_id)
+    if not goal:
+        return None
+
+    return perform_phase_selection(goal_id, macrocycle_allowed_weeks, True)
+
+# Test the phase selection by a goal id.
+@bp.route('/test/<goal_id>', methods=['GET', 'POST'])
+@login_required
+def test_mesocycle_phases_by_id(goal_id):
+    result = mesocycle_phases_by_id(goal_id, 26)
+    if not result:
+        return jsonify({"status": "error", "message": f"Goal {goal_id} not found."}), 404
+    return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Testing for the parameter programming for mesocycle labeling.
 @bp.route('/test', methods=['GET', 'POST'])
 def phase_classification_test():
     test_results = []
-
     parameters={}
     constraints={}
 
     parameters["macrocycle_allowed_weeks"] = 43
 
     # Test with default test values.
-
     result = phase_main(parameters, constraints)
     print("TESTING")
     print(result["formatted"])
@@ -179,22 +204,18 @@ def phase_classification_test():
         .all()
     )
 
+    macrocycle_allowed_weeks = 43
 
     # Test for all goals that exist.
     for goal in goals:
-        possible_phases = retrieve_phase_constraints_for_goal(int(goal.id))
-
-        # Convert the phases to a list form.
-        parameters["possible_phases"] = construct_phases_list(possible_phases)
-
-        result = phase_main(parameters, constraints)
+        print("----------------------")
         print(str(goal.id))
-        print(result["formatted"])
+        result = perform_phase_selection(goal.id, macrocycle_allowed_weeks, True)
         test_results.append({
-            "macrocycle_allowed_weeks": parameters["macrocycle_allowed_weeks"], 
+            "macrocycle_allowed_weeks": macrocycle_allowed_weeks, 
             "goal_id": goal.id,
             "result": result
         })
-        print("----------------------")
+        print(f"----------------------\n")
 
     return jsonify({"status": "success", "test_results": test_results}), 200
