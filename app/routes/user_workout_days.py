@@ -15,6 +15,23 @@ from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_
 
 # ----------------------------------------- Workout Days -----------------------------------------
 
+def phase_component_dict(possible_phase_component, bodypart_id, bodypart_name):
+    """Format the phase component data."""
+    return {
+        "id": possible_phase_component.id,
+        "name": possible_phase_component.name,
+        "required_every_workout": possible_phase_component.required_every_workout,
+        "required_within_microcycle": possible_phase_component.required_within_microcycle,
+        "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
+        "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
+        "duration_min": (
+            (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.duration_min),
+        "duration_max": (
+            (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.duration_max),
+        "bodypart_id": bodypart_id, 
+        "bodypart": bodypart_name
+    }
+
 def delete_old_user_workout_days(microcycle_id):
     db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
     print("Successfully deleted")
@@ -50,36 +67,11 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
     for possible_phase_component in possible_phase_components:
         # If the phase component is resistance, append it multiple times.
         if possible_phase_component.component_id == 6:
-            for possible_phase_component_bodypart in possible_phase_component_bodyparts:
-                possible_phase_components_list.append({
-                    "id": possible_phase_component.id,
-                    "name": possible_phase_component.name,
-                    "required_every_workout": possible_phase_component.required_every_workout,
-                    "required_within_microcycle": possible_phase_component.required_within_microcycle,
-                    "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
-                    "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
-                    "duration_min": (
-                        (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.duration_min),
-                    "duration_max": (
-                        (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.duration_max),
-                    "bodypart_id": possible_phase_component_bodypart.bodypart_id, 
-                    "bodypart": possible_phase_component_bodypart.bodyparts.name
-                    })
+            for pc_bodypart in possible_phase_component_bodyparts:
+                possible_phase_components_list.append(phase_component_dict(possible_phase_component, pc_bodypart.bodypart_id, pc_bodypart.bodyparts.name))
         # Append only once for full body if any other phase component.
         else:
-            possible_phase_components_list.append({
-                "id": possible_phase_component.id,
-                "name": possible_phase_component.name,
-                "required_every_workout": possible_phase_component.required_every_workout,
-                "required_within_microcycle": possible_phase_component.required_within_microcycle,
-                "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
-                "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
-                "duration_min": (
-                    (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.duration_min),
-                "duration_max": (
-                    (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.duration_max),
-                "bodypart_id": 1, "bodypart": "total_body"
-            })
+            possible_phase_components_list.append(phase_component_dict(possible_phase_component, 1, "total_body"))
     
     return possible_phase_components_list
 
