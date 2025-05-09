@@ -104,55 +104,6 @@ def duration_to_weekdays(dur, start_date, microcycle_id):
     
     return microcycle_weekdays, user_workdays
 
-
-def agent_output_to_sqlalchemy_model(phase_components_output, user_workdays):
-    for phase_component in phase_components_output:
-        # Create a new component entry.
-        new_component = User_Workout_Components(
-            phase_component_id = phase_component["phase_component_id"],
-            bodypart_id = phase_component["bodypart_id"],
-            duration = phase_component["duration_var"]
-        )
-
-        # Append the component to its corresponding workday.
-        user_workdays[phase_component["workday_index"]].workout_components.append(new_component)
-    return user_workdays
-
-
-
-# Retrieve current user's phase components
-@bp.route('/', methods=['GET'])
-@login_required
-def get_user_workout_days_list():
-    user_workout_days = User_Workout_Days.query.join(User_Microcycles).join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=current_user.id).all()
-    result = []
-    for user_workout_day in user_workout_days:
-        result.append(user_workout_day.to_dict())
-    return jsonify({"status": "success", "phase_components": result}), 200
-
-# Retrieve user's current microcycle's phase components
-@bp.route('/current_list', methods=['GET'])
-@login_required
-def get_user_current_workout_days_list():
-    result = []
-    user_microcycle = current_microcycle(current_user.id)
-    if not user_microcycle:
-        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
-    user_workout_days = user_microcycle.workout_days
-    for user_workout_day in user_workout_days:
-        result.append(user_workout_day.to_dict())
-    return jsonify({"status": "success", "phase_components": result}), 200
-
-# Retrieve user's current phase component
-@bp.route('/current', methods=['GET'])
-@login_required
-def read_user_current_workout_day():
-    user_workout_day = current_workout_day(current_user.id)
-    if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active phase component found."}), 404
-    return jsonify({"status": "success", "phase_components": user_workout_day.to_dict()}), 200
-
-
 def retrieve_total_time_needed(possible_phase_components_list, number_of_available_weekdays):
     total_time_needed = 0
     for i in possible_phase_components_list:
@@ -194,6 +145,51 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     if verbose:
         print(result["formatted"])
     return result
+
+def agent_output_to_sqlalchemy_model(phase_components_output, user_workdays):
+    for phase_component in phase_components_output:
+        # Create a new component entry.
+        new_component = User_Workout_Components(
+            phase_component_id = phase_component["phase_component_id"],
+            bodypart_id = phase_component["bodypart_id"],
+            duration = phase_component["duration_var"]
+        )
+
+        # Append the component to its corresponding workday.
+        user_workdays[phase_component["workday_index"]].workout_components.append(new_component)
+    return user_workdays
+
+# Retrieve current user's phase components
+@bp.route('/', methods=['GET'])
+@login_required
+def get_user_workout_days_list():
+    user_workout_days = User_Workout_Days.query.join(User_Microcycles).join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=current_user.id).all()
+    result = []
+    for user_workout_day in user_workout_days:
+        result.append(user_workout_day.to_dict())
+    return jsonify({"status": "success", "phase_components": result}), 200
+
+# Retrieve user's current microcycle's phase components
+@bp.route('/current_list', methods=['GET'])
+@login_required
+def get_user_current_workout_days_list():
+    result = []
+    user_microcycle = current_microcycle(current_user.id)
+    if not user_microcycle:
+        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
+    user_workout_days = user_microcycle.workout_days
+    for user_workout_day in user_workout_days:
+        result.append(user_workout_day.to_dict())
+    return jsonify({"status": "success", "phase_components": result}), 200
+
+# Retrieve user's current phase component
+@bp.route('/current', methods=['GET'])
+@login_required
+def read_user_current_workout_day():
+    user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active phase component found."}), 404
+    return jsonify({"status": "success", "phase_components": user_workout_day.to_dict()}), 200
 
 # Assigns phase components to days along with projected length.
 @bp.route('/', methods=['POST', 'PATCH'])

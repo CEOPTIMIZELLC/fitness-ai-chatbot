@@ -60,6 +60,46 @@ def construct_phases_list(possible_phases):
         })
     return possible_phases_list
 
+def perform_phase_selection(goal_id, macrocycle_allowed_weeks, verbose=False):
+    parameters={
+        "macrocycle_allowed_weeks": macrocycle_allowed_weeks,
+        "goal_type": goal_id}
+    constraints={}
+
+    # Retrieve all possible phases that can be selected and convert them into a list form.
+    possible_phases = retrieve_phase_constraints_for_goal(int(goal_id))
+    parameters["possible_phases"] = construct_phases_list(possible_phases)
+
+    result = phase_main(parameters, constraints)
+
+    if verbose:
+        print(result["formatted"])
+    return result
+
+def mesocycle_phase_adding(goal_id=None):
+    user_macro = current_macrocycle(current_user.id)
+    if not user_macro:
+        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
+    
+    if not goal_id:
+        goal_id = user_macro.goal_id
+
+    delete_old_user_phases(user_macro.id)
+    result = perform_phase_selection(goal_id, 26, True)
+    user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
+    db.session.add_all(user_phases)
+    db.session.commit()
+    return jsonify({"status": "success", "mesocycles": result}), 200
+
+# Method to perform phase selection on a goal of a specified id.
+def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
+    from app.utils.db_helpers import get_item_by_id
+    goal = get_item_by_id(Goal_Library, goal_id)
+    if not goal:
+        return None
+
+    return perform_phase_selection(goal_id, macrocycle_allowed_weeks, True)
+
 def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_start_date):
     # Convert output to form that may be stored.
     user_phases = []
@@ -102,7 +142,6 @@ def get_user_current_mesocycles_list():
         result.append(user_mesocycle.to_dict())
     return jsonify({"status": "success", "mesocycles": result}), 200
 
-
 # Retrieve user's current mesocycle
 @bp.route('/current', methods=['GET'])
 @login_required
@@ -111,38 +150,6 @@ def read_user_current_mesocycle():
     if not user_mesocycle:
         return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
     return jsonify({"status": "success", "mesocycles": user_mesocycle.to_dict()}), 200
-
-
-def perform_phase_selection(goal_id, macrocycle_allowed_weeks, verbose=False):
-    parameters={
-        "macrocycle_allowed_weeks": macrocycle_allowed_weeks,
-        "goal_type": goal_id}
-    constraints={}
-
-    # Retrieve all possible phases that can be selected and convert them into a list form.
-    possible_phases = retrieve_phase_constraints_for_goal(int(goal_id))
-    parameters["possible_phases"] = construct_phases_list(possible_phases)
-
-    result = phase_main(parameters, constraints)
-
-    if verbose:
-        print(result["formatted"])
-    return result
-
-def mesocycle_phase_adding(goal_id=None):
-    user_macro = current_macrocycle(current_user.id)
-    if not user_macro:
-        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
-    
-    if not goal_id:
-        goal_id = user_macro.goal_id
-
-    delete_old_user_phases(user_macro.id)
-    result = perform_phase_selection(goal_id, 26, True)
-    user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
-    db.session.add_all(user_phases)
-    db.session.commit()
-    return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Perform parameter programming for mesocycle labeling.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -155,15 +162,6 @@ def mesocycle_phases():
 @login_required
 def add_mesocycle_phases_by_id(goal_id):
     return mesocycle_phase_adding(goal_id)
-
-# Method to perform phase selection on a goal of a specified id.
-def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
-    from app.utils.db_helpers import get_item_by_id
-    goal = get_item_by_id(Goal_Library, goal_id)
-    if not goal:
-        return None
-
-    return perform_phase_selection(goal_id, macrocycle_allowed_weeks, True)
 
 # Test the phase selection by a goal id.
 @bp.route('/test/<goal_id>', methods=['GET', 'POST'])

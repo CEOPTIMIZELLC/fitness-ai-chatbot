@@ -33,6 +33,20 @@ def alter_macrocycle(goal_id, new_goal):
     user_macro.goal_id = goal_id
     db.session.commit()
 
+def goal_classification_test_run(goal_app, goal_types, user_goal):
+    result_temp = goal_app.invoke(
+        {
+            "new_goal": user_goal, 
+            "goal_types": goal_types, 
+            "attempts": 0
+        })
+    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
+    print("")
+    return {
+        "new_goal": user_goal,
+        "goal_classification": result_temp["goal_class"],
+        "goal_id": result_temp["goal_id"]}
+
 # Retrieve current user's macrocycles
 @bp.route('/', methods=['GET'])
 @login_required
@@ -113,21 +127,6 @@ def change_macrocycle_by_id(goal_id):
         "goal_classification": goal["name"],
         "goal_id": goal_id
     }), 200
-
-def goal_classification_test_run(goal_app, goal_types, user_goal):
-    result_temp = goal_app.invoke(
-        {
-            "new_goal": user_goal, 
-            "goal_types": goal_types, 
-            "attempts": 0
-        })
-    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
-    print("")
-    return {
-        "new_goal": user_goal,
-        "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]}
-
 
 # Testing for goal classification.
 @bp.route('/test', methods=['GET', 'POST'])

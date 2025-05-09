@@ -262,59 +262,6 @@ def correct_minimum_duration_for_phase_component(phase_components, possible_exer
     return None
 
 
-def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
-    new_exercises = []
-    for i, exercise in enumerate(exercises_output, start=1):
-        # Create a new exercise entry.
-        new_exercise = User_Workout_Exercises(
-            workout_day_id = workout_day_id,
-            phase_component_id = exercise["phase_component_id"],
-            exercise_id = exercise["exercise_id"],
-            #bodypart_id = exercise["bodypart_id"],
-            order = i,
-            reps = exercise["reps_var"],
-            sets = exercise["sets_var"],
-            intensity = exercise["intensity_var"],
-            rest = exercise["rest_var"],
-            weight = exercise["training_weight"],
-        )
-
-        new_exercises.append(new_exercise)
-    return new_exercises
-
-
-# Retrieve current user's workout exercises
-@bp.route('/', methods=['GET'])
-@login_required
-def get_user_workout_exercises_list():
-    user_workout_exercises = (
-        User_Workout_Exercises.query
-        .join(User_Workout_Days)
-        .join(User_Microcycles)
-        .join(User_Mesocycles)
-        .join(User_Macrocycles)
-        .filter_by(user_id=current_user.id)
-        .all())
-
-    result = []
-    for user_workout_exercise in user_workout_exercises:
-        result.append(user_workout_exercise.to_dict())
-    return jsonify({"status": "success", "exercises": result}), 200
-
-# Retrieve user's current microcycle's workout exercises
-@bp.route('/current_list', methods=['GET'])
-@login_required
-def get_user_current_exercises_list():
-    result = []
-    user_workout_day = current_workout_day(current_user.id)
-    if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active workout day found."}), 404
-
-    user_workout_exercises = user_workout_day.exercises
-    for user_workout_exercise in user_workout_exercises:
-        result.append(user_workout_exercise.to_dict())
-    return jsonify({"status": "success", "exercises": result}), 200
-
 def retrieve_total_time_needed(possible_phase_components_list):
     total_time_needed = 0
     for i in possible_phase_components_list:
@@ -368,6 +315,59 @@ def retrieve_pc_parameters(parameters, user_workout_day):
     # Change the minimum allowed duration if the exercises possible don't allow for it.
     correct_minimum_duration_for_phase_component(parameters["phase_components"], parameters["possible_exercises"])
     return parameters
+
+def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
+    new_exercises = []
+    for i, exercise in enumerate(exercises_output, start=1):
+        # Create a new exercise entry.
+        new_exercise = User_Workout_Exercises(
+            workout_day_id = workout_day_id,
+            phase_component_id = exercise["phase_component_id"],
+            exercise_id = exercise["exercise_id"],
+            #bodypart_id = exercise["bodypart_id"],
+            order = i,
+            reps = exercise["reps_var"],
+            sets = exercise["sets_var"],
+            intensity = exercise["intensity_var"],
+            rest = exercise["rest_var"],
+            weight = exercise["training_weight"],
+        )
+
+        new_exercises.append(new_exercise)
+    return new_exercises
+
+
+# Retrieve current user's workout exercises
+@bp.route('/', methods=['GET'])
+@login_required
+def get_user_workout_exercises_list():
+    user_workout_exercises = (
+        User_Workout_Exercises.query
+        .join(User_Workout_Days)
+        .join(User_Microcycles)
+        .join(User_Mesocycles)
+        .join(User_Macrocycles)
+        .filter_by(user_id=current_user.id)
+        .all())
+
+    result = []
+    for user_workout_exercise in user_workout_exercises:
+        result.append(user_workout_exercise.to_dict())
+    return jsonify({"status": "success", "exercises": result}), 200
+
+# Retrieve user's current microcycle's workout exercises
+@bp.route('/current_list', methods=['GET'])
+@login_required
+def get_user_current_exercises_list():
+    result = []
+    user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+
+    user_workout_exercises = user_workout_day.exercises
+    for user_workout_exercise in user_workout_exercises:
+        result.append(user_workout_exercise.to_dict())
+    return jsonify({"status": "success", "exercises": result}), 200
 
 # Assigns exercises to workouts.
 @bp.route('/', methods=['POST', 'PATCH'])
