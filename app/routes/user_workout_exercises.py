@@ -1,5 +1,6 @@
 import random
 import heapq
+import math
 
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
@@ -318,6 +319,30 @@ def get_user_current_exercises_list():
         result.append(user_workout_exercise.to_dict())
     return jsonify({"status": "success", "exercises": result}), 200
 
+def retrieve_total_time_needed(possible_phase_components_list):
+    total_time_needed = 0
+    for i in possible_phase_components_list:
+        total_time_needed += i["duration_min"] * (i["exercises_per_bodypart_workout_min"] or 1)
+    return total_time_needed
+
+def check_if_there_is_enough_time(total_time_needed, total_availability, maximum_min_duration):
+    # Check if there is enough time to complete the phase components.
+    number_of_phase_components_that_need_to_fit = round(total_time_needed / maximum_min_duration)
+    number_of_phase_components_that_can_fit = math.floor(total_availability / maximum_min_duration)
+    if number_of_phase_components_that_need_to_fit > number_of_phase_components_that_can_fit:
+        return f"Not enough time to complete the phase components. Need {total_time_needed} seconds but only have {total_availability}. Need {number_of_phase_components_that_need_to_fit} but can fit {number_of_phase_components_that_can_fit}"
+    return None
+
+def check_if_there_are_enough_exercises(phase_components, possible_exercises):
+    exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], phase_components[1:])
+
+    return [{"phase_component_id": phase_component["phase_component_id"], "name": phase_component["name"], 
+             "bodypart_id": phase_component["bodypart_id"], "bodypart_name": phase_component["bodypart_name"], 
+             "number_of_exercises_needed": phase_component["exercises_per_bodypart_workout_min"], 
+             "number_of_exercises_available": len(exercises_for_pc)}
+             for phase_component, exercises_for_pc in zip(phase_components[1:], exercises_for_pcs)
+             if phase_component["exercises_per_bodypart_workout_min"] > len(exercises_for_pc)]
+
 # Assigns exercises to workouts.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
@@ -353,6 +378,7 @@ def exercise_initializer():
 
     parameters["projected_duration"] = projected_duration
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
+    phase_components = parameters["phase_components"][1:]
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = int(availability.availability.total_seconds())
     parameters["workout_length"] = int(current_user.workout_length.total_seconds())
@@ -360,6 +386,22 @@ def exercise_initializer():
 
     # Change the minimum allowed duration if the exercises possible don't allow for it.
     correct_minimum_duration_for_phase_component(parameters["phase_components"], parameters["possible_exercises"])
+    maximum_min_duration = max(item["duration_min"] for item in phase_components)
+    total_time_needed = retrieve_total_time_needed(phase_components)
+
+    # Check if there is enough time to complete the phase components.
+    not_enough_time_message = check_if_there_is_enough_time(total_time_needed, parameters["availability"], maximum_min_duration)
+    if not_enough_time_message:
+        return {"status": "error", "message": not_enough_time_message}
+
+    # Check if there is enough time to complete the phase components.
+    phase_components_without_enough_exercises = check_if_there_are_enough_exercises(parameters["phase_components"], parameters["possible_exercises"])
+    if phase_components_without_enough_exercises:
+        pc_without_enough_ex_message = [
+            f"{pc_without_enough_ex["name"]} requires a minimum of {pc_without_enough_ex["number_of_exercises_needed"]} to be successful but only has {pc_without_enough_ex["number_of_exercises_available"]}"
+            for pc_without_enough_ex in phase_components_without_enough_exercises]
+        return {"status": "error", "message": pc_without_enough_ex_message}
+
     result = []
     result = exercises_main(parameters, constraints)
     output = result["output"]
