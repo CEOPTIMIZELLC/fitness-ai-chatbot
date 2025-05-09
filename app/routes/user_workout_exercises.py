@@ -27,6 +27,8 @@ from app.agents.exercises import get_exercises_for_pc, get_exercises_for_all_pcs
 from app.agents.exercises import Main as exercises_main
 from app.agents.exercises_phase_components import Main as exercise_pc_main
 from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
+from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_there_is_enough_time
+
 
 
 # ----------------------------------------- Phase_Components -----------------------------------------
@@ -261,21 +263,6 @@ def correct_minimum_duration_for_phase_component(phase_components, possible_exer
 
     return None
 
-
-def retrieve_total_time_needed(possible_phase_components_list):
-    total_time_needed = 0
-    for i in possible_phase_components_list:
-        total_time_needed += i["duration_min"] * (i["exercises_per_bodypart_workout_min"] or 1)
-    return total_time_needed
-
-def check_if_there_is_enough_time(total_time_needed, total_availability, maximum_min_duration):
-    # Check if there is enough time to complete the phase components.
-    number_of_phase_components_that_need_to_fit = round(total_time_needed / maximum_min_duration)
-    number_of_phase_components_that_can_fit = math.floor(total_availability / maximum_min_duration)
-    if number_of_phase_components_that_need_to_fit > number_of_phase_components_that_can_fit:
-        return f"Not enough time to complete the phase components. Need {total_time_needed} seconds but only have {total_availability}. Need {number_of_phase_components_that_need_to_fit} but can fit {number_of_phase_components_that_can_fit}"
-    return None
-
 def check_if_there_are_enough_exercises(phase_components, possible_exercises):
     exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], phase_components[1:])
 
@@ -386,7 +373,7 @@ def exercise_initializer():
     parameters = retrieve_pc_parameters(parameters, user_workout_day)
 
     maximum_min_duration = max(item["duration_min"] for item in parameters["phase_components"][1:])
-    total_time_needed = retrieve_total_time_needed(parameters["phase_components"][1:])
+    total_time_needed = retrieve_total_time_needed(parameters["phase_components"][1:], "exercises_per_bodypart_workout_min")
 
     # Check if there is enough time to complete the phase components.
     not_enough_time_message = check_if_there_is_enough_time(total_time_needed, parameters["availability"], maximum_min_duration)

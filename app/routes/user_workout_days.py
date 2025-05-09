@@ -10,6 +10,8 @@ bp = Blueprint('user_workout_days', __name__)
 
 from app.agents.phase_components import Main as phase_component_main
 from app.utils.common_table_queries import current_microcycle, current_workout_day
+from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_there_is_enough_time
+
 
 # ----------------------------------------- Workout Days -----------------------------------------
 
@@ -104,20 +106,6 @@ def duration_to_weekdays(dur, start_date, microcycle_id):
     
     return microcycle_weekdays, user_workdays
 
-def retrieve_total_time_needed(possible_phase_components_list, number_of_available_weekdays):
-    total_time_needed = 0
-    for i in possible_phase_components_list:
-        total_time_needed += i["duration_min"] * (i["frequency_per_microcycle_min"] or number_of_available_weekdays)
-    return total_time_needed
-
-def check_if_there_is_enough_time(total_time_needed, total_availability, maximum_min_duration):
-    # Check if there is enough time to complete the phase components.
-    number_of_phase_components_that_need_to_fit = round(total_time_needed / maximum_min_duration)
-    number_of_phase_components_that_can_fit = math.floor(total_availability / maximum_min_duration)
-    if number_of_phase_components_that_need_to_fit > number_of_phase_components_that_can_fit:
-        return f"Not enough time to complete the phase components. Need {total_time_needed} seconds but only have {total_availability}. Need {number_of_phase_components_that_need_to_fit} but can fit {number_of_phase_components_that_can_fit}"
-    return None
-
 def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose=False):
     parameters={}
     constraints={}
@@ -130,7 +118,7 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     possible_phase_components_list = construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)
 
     maximum_min_duration = max(item["duration_min"] for item in possible_phase_components_list)
-    total_time_needed = retrieve_total_time_needed(possible_phase_components_list, number_of_available_weekdays)
+    total_time_needed = retrieve_total_time_needed(possible_phase_components_list, "frequency_per_microcycle_min", number_of_available_weekdays)
 
     # Check if there is enough time to complete the phase components.
     not_enough_time_message = check_if_there_is_enough_time(total_time_needed, total_availability, maximum_min_duration)
