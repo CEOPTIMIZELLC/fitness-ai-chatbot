@@ -347,9 +347,9 @@ class PhaseComponentAgent(BaseAgent):
 
     def format_class_specific_relaxation_history(self, formatted, attempt, workout_time):
         if workout_time is not None:
-            formatted += f"Total Hours Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
+            formatted += f"Total Hours Allowed: {self._format_duration(workout_time)}\n"
         if attempt.microcycle_duration is not None:
-            formatted += f"Total Time Used: {attempt.microcycle_duration  // 60} min {attempt.microcycle_duration  % 60} sec ({attempt.microcycle_duration} seconds)\n"
+            formatted += f"Total Time Used: {self._format_duration(attempt.microcycle_duration)}\n"
         return formatted
 
     def _create_header_fields(self, longest_sizes: dict) -> dict:

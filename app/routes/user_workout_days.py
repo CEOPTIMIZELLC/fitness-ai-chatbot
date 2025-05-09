@@ -15,19 +15,17 @@ from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_
 
 # ----------------------------------------- Workout Days -----------------------------------------
 
-def phase_component_dict(possible_phase_component, bodypart_id, bodypart_name):
+def phase_component_dict(pc, bodypart_id, bodypart_name):
     """Format the phase component data."""
     return {
-        "id": possible_phase_component.id,
-        "name": possible_phase_component.name,
-        "required_every_workout": possible_phase_component.required_every_workout,
-        "required_within_microcycle": possible_phase_component.required_within_microcycle,
-        "frequency_per_microcycle_min": possible_phase_component.frequency_per_microcycle_min,
-        "frequency_per_microcycle_max": possible_phase_component.frequency_per_microcycle_max,
-        "duration_min": (
-            (possible_phase_component.exercises_per_bodypart_workout_min or 1) * possible_phase_component.duration_min),
-        "duration_max": (
-            (possible_phase_component.exercises_per_bodypart_workout_max or 1) * possible_phase_component.duration_max),
+        "id": pc.id,
+        "name": pc.name,
+        "required_every_workout": pc.required_every_workout,
+        "required_within_microcycle": pc.required_within_microcycle,
+        "frequency_per_microcycle_min": pc.frequency_per_microcycle_min,
+        "frequency_per_microcycle_max": pc.frequency_per_microcycle_max,
+        "duration_min": ((pc.exercises_per_bodypart_workout_min or 1) * pc.duration_min),
+        "duration_max": ((pc.exercises_per_bodypart_workout_max or 1) * pc.duration_max),
         "bodypart_id": bodypart_id, 
         "bodypart": bodypart_name
     }
