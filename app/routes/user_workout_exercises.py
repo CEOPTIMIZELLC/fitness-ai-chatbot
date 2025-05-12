@@ -341,31 +341,6 @@ def exercise_initializer():
 
     return jsonify({"status": "success", "exercises": result}), 200
 
-# Assigns exercises to workouts.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def exercise_initializer():
-    user_workout_day = current_workout_day(current_user.id)
-    if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active workout day found."}), 404
-
-    parameters = retrieve_pc_parameters(user_workout_day)
-    # If a tuple error message is returned, return 
-    if isinstance(parameters, tuple):
-        return parameters
-    constraints={}
-
-    result = exercises_main(parameters, constraints)
-    output = result["output"]
-    print(result["formatted"])
-
-    user_workout_exercises = agent_output_to_sqlalchemy_model(output, user_workout_day.id)
-
-    db.session.add_all(user_workout_exercises)
-    db.session.commit()
-
-    return jsonify({"status": "success", "exercises": result}), 200
-
 # Update user exercises if workout is completed.
 @bp.route('/workout_completed', methods=['POST', 'PATCH'])
 @login_required
