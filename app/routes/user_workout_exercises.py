@@ -302,7 +302,7 @@ def exercise_initializer():
     constraints={}
 
     maximum_min_duration = max(item["duration_min"] for item in parameters["phase_components"][1:])
-    total_time_needed = retrieve_total_time_needed(parameters["phase_components"][1:], "duration_min", "frequency_per_microcycle_min", number_of_available_weekdays)
+    total_time_needed = retrieve_total_time_needed(parameters["phase_components"][1:], "duration_min", "frequency_per_microcycle_min")
 
     # Check if there is enough time to complete the phase components.
     not_enough_time_message = check_if_there_is_enough_time(total_time_needed, parameters["availability"], maximum_min_duration)
