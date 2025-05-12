@@ -360,13 +360,13 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return exercise_vars
 
 
-    def apply_model_constraints_2(self, constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, ex_bounds, max_exercises, workout_availability):
+    def apply_model_constraints_2(self, constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, ex_bounds, max_exercises, workout_availability, projected_duration):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
         # Ensure total time is within two minutes of the originally calculated duration.
         model.Add(sum(pc_vars["duration"]) <= workout_availability)
-        model.Add(sum(pc_vars["duration"]) >= (workout_availability - (2 * 60)))
+        model.Add(sum(pc_vars["duration"]) >= (projected_duration - (2 * 60)))
 
         # Constraint: The base strain of an exercise may only be equal to the base strain allowed for the exercise.
         if constraints["base_strain_equals"]:
@@ -519,6 +519,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         exercises = parameters["possible_exercises"]
         phase_components = parameters["phase_components"]
         workout_availability = parameters["availability"]
+        projected_duration = parameters["projected_duration"]
         schedule_old = state["solution"]["schedule"]
 
         phase_component_ids = [phase_component_index for (_, phase_component_index, _, _, _, _, _, _, _) in (schedule_old)]
@@ -531,7 +532,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         pc_vars = self.create_model_pc_vars(model, phase_components, workout_availability, phase_component_ids, max_exercises)
         exercise_vars = self.create_model_exercise_vars(model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, exercise_bounds)
 
-        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, exercise_bounds, max_exercises, workout_availability)
+        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, exercise_bounds, max_exercises, workout_availability, projected_duration)
         model_with_divided_strain = model.clone()
         state["logs"] += self.apply_model_objective_2(constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_availability)
 
