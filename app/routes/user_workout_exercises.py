@@ -259,8 +259,6 @@ def retrieve_pc_parameters(user_workout_day):
         return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
     availability = int(availability.availability.total_seconds())
 
-    delete_old_user_workout_exercises(user_workout_day.id)
-
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = availability
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
@@ -336,6 +334,8 @@ def exercise_initializer():
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
+    delete_old_user_workout_exercises(user_workout_day.id)
+
     parameters = retrieve_pc_parameters(user_workout_day)
     # If a tuple error message is returned, return 
     if isinstance(parameters, tuple):
@@ -350,7 +350,6 @@ def exercise_initializer():
 
     db.session.add_all(user_workout_exercises)
     db.session.commit()
-
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Update user exercises if workout is completed.
