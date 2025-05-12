@@ -231,7 +231,7 @@ def retrieve_pc_parameters(user_workout_components, availability):
     parameters["projected_duration"] = projected_duration
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
     parameters["one_rep_max_improvement_percentage"] = 25
-    parameters["availability"] = int(availability.availability.total_seconds())
+    parameters["availability"] = availability
     parameters["possible_exercises"] = retrieve_available_exercises()
 
     # Change the minimum allowed duration if the exercises possible don't allow for it.
@@ -314,7 +314,7 @@ def exercise_initializer():
 
     delete_old_user_workout_exercises(user_workout_day.id)
 
-    parameters = retrieve_pc_parameters(user_workout_components, availability)
+    parameters = retrieve_pc_parameters(user_workout_components, int(availability.availability.total_seconds()))
     # If a tuple error message is returned, return 
     if isinstance(parameters, tuple):
         return parameters
@@ -422,7 +422,7 @@ def exercise_phase_components_test():
     if not availability:
         return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
 
-    parameters = retrieve_pc_parameters(user_workout_components, availability)
+    parameters = retrieve_pc_parameters(user_workout_components, int(availability.availability.total_seconds()))
     constraints={}
 
     result = []
