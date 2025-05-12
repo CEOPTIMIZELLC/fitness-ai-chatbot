@@ -1,9 +1,9 @@
 import math
 
-def retrieve_total_time_needed(possible_phase_components_list, exercise_minimum_key, number_of_available_weekdays=1):
+def retrieve_total_time_needed(pc_list, duration_key, count_key, default_count_if_none=1):
     total_time_needed = 0
-    for i in possible_phase_components_list:
-        total_time_needed += i["duration_min"] * (i[exercise_minimum_key] or number_of_available_weekdays)
+    for i in pc_list:
+        total_time_needed += i[duration_key] * (i[count_key] or default_count_if_none)
     return total_time_needed
 
 def check_if_there_is_enough_time(total_time_needed, total_availability, maximum_min_duration):

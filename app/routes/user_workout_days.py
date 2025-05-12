@@ -108,7 +108,7 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     possible_phase_components_list = construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)
 
     maximum_min_duration = max(item["duration_min"] for item in possible_phase_components_list)
-    total_time_needed = retrieve_total_time_needed(possible_phase_components_list, "frequency_per_microcycle_min", number_of_available_weekdays)
+    total_time_needed = retrieve_total_time_needed(possible_phase_components_list, "duration_min", "frequency_per_microcycle_min", number_of_available_weekdays)
 
     # Check if there is enough time to complete the phase components.
     not_enough_time_message = check_if_there_is_enough_time(total_time_needed, total_availability, maximum_min_duration)
