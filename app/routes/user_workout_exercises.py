@@ -167,14 +167,15 @@ def construct_user_workout_components_list(user_workout_components):
     
     return user_workout_components_list
 
+
 # Find the correct minimum and maximum range for the minimum duration.
-def correct_minimum_duration_for_phase_component(pcs, possible_exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], pcs[1:])
+def correct_minimum_duration_for_phase_component(pcs, exercises):
+    exercises_for_pcs = get_exercises_for_all_pcs(exercises[1:], pcs[1:])
 
     for pc, exercises_for_pc in zip(pcs[1:], exercises_for_pcs):
-        pc_exercises_duration = [possible_exercises[i]["duration"]# if not possible_exercises[i]["is_weighted"] else 0
+        pc_exercises_duration = [exercises[i]["duration"]# if not exercises[i]["is_weighted"] else 0
                                  for i in exercises_for_pc
-                                 #if not possible_exercises[i]["is_weighted"]
+                                 #if not exercises[i]["is_weighted"]
                                  ]
         if pc_exercises_duration == []:
             min_exercise_duration_min = 0
@@ -189,8 +190,8 @@ def correct_minimum_duration_for_phase_component(pcs, possible_exercises):
 
     return None
 
-def check_if_there_are_enough_exercises(pcs, possible_exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], pcs[1:])
+def check_if_there_are_enough_exercises(pcs, exercises):
+    exercises_for_pcs = get_exercises_for_all_pcs(exercises[1:], pcs[1:])
 
     return [{"phase_component_id": pc["phase_component_id"], "name": pc["name"], 
              "bodypart_id": pc["bodypart_id"], "bodypart_name": pc["bodypart_name"], 
