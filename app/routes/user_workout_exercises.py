@@ -317,7 +317,6 @@ def exercise_initializer():
             for pc_without_enough_ex in phase_components_without_enough_exercises]
         return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
 
-    result = []
     result = exercises_main(parameters, constraints)
     output = result["output"]
     print(result["formatted"])
@@ -406,7 +405,6 @@ def exercise_phase_components_test():
     parameters = retrieve_pc_parameters(user_workout_components, int(availability.availability.total_seconds()))
     constraints={}
 
-    result = []
     result = exercise_pc_main(parameters, constraints)
     print(result["formatted"])
 
