@@ -168,10 +168,10 @@ def construct_user_workout_components_list(user_workout_components):
     return user_workout_components_list
 
 # Find the correct minimum and maximum range for the minimum duration.
-def correct_minimum_duration_for_phase_component(phase_components, possible_exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], phase_components[1:])
+def correct_minimum_duration_for_phase_component(pcs, possible_exercises):
+    exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], pcs[1:])
 
-    for phase_component, exercises_for_pc in zip(phase_components[1:], exercises_for_pcs):
+    for pc, exercises_for_pc in zip(pcs[1:], exercises_for_pcs):
         pc_exercises_duration = [possible_exercises[i]["duration"]# if not possible_exercises[i]["is_weighted"] else 0
                                  for i in exercises_for_pc
                                  #if not possible_exercises[i]["is_weighted"]
@@ -180,24 +180,24 @@ def correct_minimum_duration_for_phase_component(phase_components, possible_exer
             min_exercise_duration_min = 0
             min_exercise_duration_max = 0
         else:
-            min_exercise_duration_min = heapq.nsmallest((phase_component["exercises_per_bodypart_workout_min"] or 1), pc_exercises_duration)[-1]# + 1
-            min_exercise_duration_max = heapq.nsmallest((phase_component["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)[-1]# + 1
-            min_exercise_duration = heapq.nsmallest((phase_component["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)
+            min_exercise_duration_min = heapq.nsmallest((pc["exercises_per_bodypart_workout_min"] or 1), pc_exercises_duration)[-1]# + 1
+            min_exercise_duration_max = heapq.nsmallest((pc["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)[-1]# + 1
+            min_exercise_duration = heapq.nsmallest((pc["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)
 
-        phase_component["duration_min"] = max(min_exercise_duration_min, phase_component["duration_min"])
-        phase_component["duration_min_max"] = max(min_exercise_duration_max, phase_component["duration_min_max"])
+        pc["duration_min"] = max(min_exercise_duration_min, pc["duration_min"])
+        pc["duration_min_max"] = max(min_exercise_duration_max, pc["duration_min_max"])
 
     return None
 
-def check_if_there_are_enough_exercises(phase_components, possible_exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], phase_components[1:])
+def check_if_there_are_enough_exercises(pcs, possible_exercises):
+    exercises_for_pcs = get_exercises_for_all_pcs(possible_exercises[1:], pcs[1:])
 
-    return [{"phase_component_id": phase_component["phase_component_id"], "name": phase_component["name"], 
-             "bodypart_id": phase_component["bodypart_id"], "bodypart_name": phase_component["bodypart_name"], 
-             "number_of_exercises_needed": phase_component["exercises_per_bodypart_workout_min"], 
+    return [{"phase_component_id": pc["phase_component_id"], "name": pc["name"], 
+             "bodypart_id": pc["bodypart_id"], "bodypart_name": pc["bodypart_name"], 
+             "number_of_exercises_needed": pc["exercises_per_bodypart_workout_min"], 
              "number_of_exercises_available": len(exercises_for_pc)}
-             for phase_component, exercises_for_pc in zip(phase_components[1:], exercises_for_pcs)
-             if phase_component["exercises_per_bodypart_workout_min"] > len(exercises_for_pc)]
+             for pc, exercises_for_pc in zip(pcs[1:], exercises_for_pcs)
+             if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc)]
 
 
 def retrieve_pc_parameters(user_workout_components, availability):
