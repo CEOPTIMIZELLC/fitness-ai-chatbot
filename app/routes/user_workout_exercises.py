@@ -143,28 +143,9 @@ def exercise_dict(exercise, user_exercise):
         "working_duration": user_exercise.working_duration,
     }
 
-
 def delete_old_user_workout_exercises(workout_day_id):
     db.session.query(User_Workout_Exercises).filter_by(workout_day_id=workout_day_id).delete()
     print("Successfully deleted")
-
-# Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_exercises():
-    # Retrieve all possible exercises with their component phases
-    results = (
-        db.session.query(
-            Exercise_Library,
-            User_Exercises, 
-        )
-        .join(User_Exercises, User_Exercises.exercise_id == Exercise_Library.id)
-        .all()
-    )
-
-    possible_exercises_list = [dummy_exercise]
-
-    for exercise, user_exercise in results:
-        possible_exercises_list.append(exercise_dict(exercise, user_exercise))
-    return possible_exercises_list
 
 # Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_available_exercises():
