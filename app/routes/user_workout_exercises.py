@@ -218,27 +218,15 @@ def check_if_there_are_enough_exercises(phase_components, possible_exercises):
              for phase_component, exercises_for_pc in zip(phase_components[1:], exercises_for_pcs)
              if phase_component["exercises_per_bodypart_workout_min"] > len(exercises_for_pc)]
 
-def retrieve_pc_parameters(user_workout_day):
-    parameters = {}
 
-    # Retrieve user components
-    user_workout_components = user_workout_day.workout_components
-
-    if not user_workout_components:
-        return jsonify({"status": "success", "exercises": "This phase component is inactive. No exercises for today."}), 200
+def retrieve_pc_parameters(user_workout_components, availability):
+    parameters = {"valid": True, "status": None}
 
     projected_duration = 0
 
     # Get the total desired duration.
     for user_workout_component in user_workout_components:
         projected_duration += user_workout_component.duration
-
-    availability = (
-        User_Weekday_Availability.query
-        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
-        .first())
-    if not availability:
-        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
 
     parameters["projected_duration"] = projected_duration
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
@@ -311,9 +299,25 @@ def exercise_initializer():
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
+    # Retrieve user components
+    user_workout_components = user_workout_day.workout_components
+    if not user_workout_components:
+        return jsonify({"status": "error", "exercises": "This phase component is inactive. No exercises for today."}), 200
+
+    # Retrieve availability for day.
+    availability = (
+        User_Weekday_Availability.query
+        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
+        .first())
+    if not availability:
+        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
+
     delete_old_user_workout_exercises(user_workout_day.id)
 
-    parameters = retrieve_pc_parameters(user_workout_day)
+    parameters = retrieve_pc_parameters(user_workout_components, availability)
+    # If a tuple error message is returned, return 
+    if isinstance(parameters, tuple):
+        return parameters
     constraints={}
 
     maximum_min_duration = max(item["duration_min"] for item in parameters["phase_components"][1:])
@@ -405,7 +409,20 @@ def exercise_phase_components_test():
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
-    parameters = retrieve_pc_parameters(user_workout_day)
+    # Retrieve user components
+    user_workout_components = user_workout_day.workout_components
+    if not user_workout_components:
+        return jsonify({"status": "error", "exercises": "This phase component is inactive. No exercises for today."}), 200
+
+    # Retrieve availability for day.
+    availability = (
+        User_Weekday_Availability.query
+        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
+        .first())
+    if not availability:
+        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
+
+    parameters = retrieve_pc_parameters(user_workout_components, availability)
     constraints={}
 
     result = []
