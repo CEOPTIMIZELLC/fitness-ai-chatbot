@@ -201,6 +201,16 @@ def check_if_there_are_enough_exercises(pcs, exercises_for_pcs):
             for pc_without_enough_ex in pcs_without_enough_ex]
     return None
 
+# Update the maximum exercises for a phase component if the number of exercises in the database is less than this.
+def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs):
+    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
+        number_of_exercises_available = len(exercises_for_pc)
+        # Correct upper bound for exercises.
+        if pc["exercises_per_bodypart_workout_max"]:
+            pc["exercises_per_bodypart_workout_max"] = min(number_of_exercises_available, pc["exercises_per_bodypart_workout_max"])
+        else:
+            pc["exercises_per_bodypart_workout_max"] = number_of_exercises_available
+    return None
 
 def retrieve_pc_parameters(user_workout_day):
     parameters = {"valid": True, "status": None}
@@ -248,6 +258,8 @@ def retrieve_pc_parameters(user_workout_day):
     pc_without_enough_ex_message = check_if_there_are_enough_exercises(parameters["phase_components"][1:], exercises_for_pcs)
     if pc_without_enough_ex_message:
         return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
+
+    correct_maximum_allowed_exercises_for_phase_component(parameters["phase_components"][1:], exercises_for_pcs)
 
     return parameters
 
