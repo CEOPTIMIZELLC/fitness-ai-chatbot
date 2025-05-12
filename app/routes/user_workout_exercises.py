@@ -218,7 +218,9 @@ def check_if_there_are_enough_exercises(phase_components, possible_exercises):
              for phase_component, exercises_for_pc in zip(phase_components[1:], exercises_for_pcs)
              if phase_component["exercises_per_bodypart_workout_min"] > len(exercises_for_pc)]
 
-def retrieve_pc_parameters(parameters, user_workout_day):
+def retrieve_pc_parameters(user_workout_day):
+    parameters = {}
+
     # Retrieve user components
     user_workout_components = user_workout_day.workout_components
 
@@ -305,17 +307,14 @@ def get_user_current_exercises_list():
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def exercise_initializer():
-
-    parameters={}
-    constraints={}
-
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
     delete_old_user_workout_exercises(user_workout_day.id)
 
-    parameters = retrieve_pc_parameters(parameters, user_workout_day)
+    parameters = retrieve_pc_parameters(user_workout_day)
+    constraints={}
 
     maximum_min_duration = max(item["duration_min"] for item in parameters["phase_components"][1:])
     total_time_needed = retrieve_total_time_needed(parameters["phase_components"][1:], "exercises_per_bodypart_workout_min")
@@ -402,14 +401,12 @@ def initialize_and_complete():
 @bp.route('/test_exercise_phase_components', methods=['POST', 'PATCH'])
 @login_required
 def exercise_phase_components_test():
-    parameters={}
-    constraints={}
-
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
-    parameters = retrieve_pc_parameters(parameters, user_workout_day)
+    parameters = retrieve_pc_parameters(user_workout_day)
+    constraints={}
 
     result = []
     result = exercise_pc_main(parameters, constraints)
