@@ -164,7 +164,6 @@ def construct_user_workout_components_list(user_workout_components):
     # Convert the query into a list of dictionaries, adding the information for the phase restrictions.
     for user_workout_component in user_workout_components:
         user_workout_components_list.append(user_component_dict(user_workout_component, user_workout_component.phase_components))
-    
     return user_workout_components_list
 
 
@@ -212,6 +211,27 @@ def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs
             pc["exercises_per_bodypart_workout_max"] = number_of_exercises_available
     return None
 
+def verify_pc_information(parameters, pcs, exercises):
+    exercises_for_pcs = get_exercises_for_all_pcs(parameters["possible_exercises"][1:], pcs)
+
+    # Change the minimum allowed duration if the exercises possible don't allow for it.
+    correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
+
+    # Check if there is enough time to complete the phase components.
+    maximum_min_duration = max(item["duration_min"] for item in pcs)
+    total_time_needed = retrieve_total_time_needed(pcs, "duration_min", "exercises_per_bodypart_workout_min")
+    not_enough_time_message = check_if_there_is_enough_time(total_time_needed, parameters["availability"], maximum_min_duration)
+    if not_enough_time_message:
+        return jsonify({"status": "error", "message": not_enough_time_message}), 400
+
+    # Check if there are enough exercises to complete the phase components.
+    pc_without_enough_ex_message = check_if_there_are_enough_exercises(pcs, exercises_for_pcs)
+    if pc_without_enough_ex_message:
+        return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
+
+    correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
+    return None
+
 def retrieve_pc_parameters(user_workout_day):
     parameters = {"valid": True, "status": None}
 
@@ -237,30 +257,20 @@ def retrieve_pc_parameters(user_workout_day):
         projected_duration += user_workout_component.duration
 
     parameters["projected_duration"] = projected_duration
-    parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = availability
+    parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
     parameters["possible_exercises"] = retrieve_available_exercises()
 
-    exercises_for_pcs = get_exercises_for_all_pcs(parameters["possible_exercises"][1:], parameters["phase_components"][1:])
-
-    # Change the minimum allowed duration if the exercises possible don't allow for it.
-    correct_minimum_duration_for_phase_component(parameters["phase_components"][1:], parameters["possible_exercises"], exercises_for_pcs)
-
-    # Check if there is enough time to complete the phase components.
-    maximum_min_duration = max(item["duration_min"] for item in parameters["phase_components"][1:])
-    total_time_needed = retrieve_total_time_needed(parameters["phase_components"][1:], "duration_min", "frequency_per_microcycle_min")
-    not_enough_time_message = check_if_there_is_enough_time(total_time_needed, parameters["availability"], maximum_min_duration)
-    if not_enough_time_message:
-        return jsonify({"status": "error", "message": not_enough_time_message}), 400
+    pc_verification_message = verify_pc_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
+    if pc_verification_message:
+        return pc_verification_message
     
-    # Check if there are enough exercises to complete the phase components.
-    pc_without_enough_ex_message = check_if_there_are_enough_exercises(parameters["phase_components"][1:], exercises_for_pcs)
-    if pc_without_enough_ex_message:
-        return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
-
-    correct_maximum_allowed_exercises_for_phase_component(parameters["phase_components"][1:], exercises_for_pcs)
-
+    # If the maximum possible duration is larger than the projected duration, lower the projected duration to be this maximum.
+    max_time_possible = retrieve_total_time_needed(parameters["phase_components"][1:], "duration_max", "exercises_per_bodypart_workout_max")
+    if max_time_possible < parameters["projected_duration"]:
+        parameters["projected_duration"] = max_time_possible
+    
     return parameters
 
 def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
