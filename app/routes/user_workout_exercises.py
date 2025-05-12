@@ -326,14 +326,13 @@ def get_user_workout_exercises_list():
 @bp.route('/current_list', methods=['GET'])
 @login_required
 def get_user_current_exercises_list():
-    result = []
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
     user_workout_exercises = user_workout_day.exercises
-    for user_workout_exercise in user_workout_exercises:
-        result.append(user_workout_exercise.to_dict())
+    result = [user_workout_exercise.to_dict() 
+              for user_workout_exercise in user_workout_exercises]
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Assigns exercises to workouts.
