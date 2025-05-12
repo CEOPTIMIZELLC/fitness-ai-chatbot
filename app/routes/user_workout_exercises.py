@@ -232,6 +232,16 @@ def verify_pc_information(parameters, pcs, exercises):
     correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
     return None
 
+def retrieve_projected_duration(user_workout_components, pcs):
+    # Get the total desired duration.
+    projected_duration = 0
+    for user_workout_component in user_workout_components:
+        projected_duration += user_workout_component.duration
+
+    # If the maximum possible duration is larger than the projected duration, lower the projected duration to be this maximum.
+    max_time_possible = retrieve_total_time_needed(pcs, "duration_max", "exercises_per_bodypart_workout_max")
+    return min(max_time_possible, projected_duration)
+
 def retrieve_pc_parameters(user_workout_day):
     parameters = {"valid": True, "status": None}
 
@@ -251,12 +261,6 @@ def retrieve_pc_parameters(user_workout_day):
 
     delete_old_user_workout_exercises(user_workout_day.id)
 
-    # Get the total desired duration.
-    projected_duration = 0
-    for user_workout_component in user_workout_components:
-        projected_duration += user_workout_component.duration
-
-    parameters["projected_duration"] = projected_duration
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = availability
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
@@ -265,11 +269,9 @@ def retrieve_pc_parameters(user_workout_day):
     pc_verification_message = verify_pc_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
     if pc_verification_message:
         return pc_verification_message
-    
-    # If the maximum possible duration is larger than the projected duration, lower the projected duration to be this maximum.
-    max_time_possible = retrieve_total_time_needed(parameters["phase_components"][1:], "duration_max", "exercises_per_bodypart_workout_max")
-    if max_time_possible < parameters["projected_duration"]:
-        parameters["projected_duration"] = max_time_possible
+
+    parameters["projected_duration"] = retrieve_projected_duration(user_workout_components, parameters["phase_components"][1:])
+
     
     return parameters
 
