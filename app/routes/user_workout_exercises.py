@@ -211,8 +211,8 @@ def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs
             pc["exercises_per_bodypart_workout_max"] = number_of_exercises_available
     return None
 
-def verify_pc_information(parameters, pcs, exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(parameters["possible_exercises"][1:], pcs)
+def verify_phase_component_information(parameters, pcs, exercises):
+    exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
 
     # Change the minimum allowed duration if the exercises possible don't allow for it.
     correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
@@ -266,7 +266,7 @@ def retrieve_pc_parameters(user_workout_day):
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
     parameters["possible_exercises"] = retrieve_available_exercises()
 
-    pc_verification_message = verify_pc_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
+    pc_verification_message = verify_phase_component_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
     if pc_verification_message:
         return pc_verification_message
 
