@@ -211,6 +211,11 @@ def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs
             pc["exercises_per_bodypart_workout_max"] = number_of_exercises_available
     return None
 
+# Verifies and updates the phase component information.
+# Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
+# Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
+# Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
+# Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
 def verify_phase_component_information(parameters, pcs, exercises):
     exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
 
@@ -232,6 +237,8 @@ def verify_phase_component_information(parameters, pcs, exercises):
     correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
     return None
 
+# Retrieves the total projected duration for the workout. 
+# Updates the projected duration to be the maximum allowed time given the exercises available if this would be lower.
 def retrieve_projected_duration(user_workout_components, pcs):
     # Get the total desired duration.
     projected_duration = 0
@@ -242,13 +249,19 @@ def retrieve_projected_duration(user_workout_components, pcs):
     max_time_possible = retrieve_total_time_needed(pcs, "duration_max", "exercises_per_bodypart_workout_max")
     return min(max_time_possible, projected_duration)
 
+# Retrieves the parameters used by the solver.
+# Information included:
+#   The length allowed for the workout.
+#   The projected duration of the workout.
+#   The phase component information relevant for the workout.
+#   The exercises that can be assigned in the workout.
 def retrieve_pc_parameters(user_workout_day):
     parameters = {"valid": True, "status": None}
 
     # Retrieve user components
     user_workout_components = user_workout_day.workout_components
     if not user_workout_components:
-        return jsonify({"status": "error", "exercises": "This phase component is inactive. No exercises for today."}), 200
+        return jsonify({"status": "error", "exercises": "This phase component is inactive. No exercises for today."}), 400
 
     # Retrieve availability for day.
     availability = (
@@ -269,8 +282,6 @@ def retrieve_pc_parameters(user_workout_day):
         return pc_verification_message
 
     parameters["projected_duration"] = retrieve_projected_duration(user_workout_components, parameters["phase_components"][1:])
-
-    
     return parameters
 
 def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
@@ -292,7 +303,6 @@ def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
 
         new_exercises.append(new_exercise)
     return new_exercises
-
 
 # Retrieve current user's workout exercises
 @bp.route('/', methods=['GET'])
@@ -335,18 +345,17 @@ def exercise_initializer():
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
     delete_old_user_workout_exercises(user_workout_day.id)
-
     parameters = retrieve_pc_parameters(user_workout_day)
+
     # If a tuple error message is returned, return 
     if isinstance(parameters, tuple):
         return parameters
     constraints={}
 
     result = exercises_main(parameters, constraints)
-    output = result["output"]
     print(result["formatted"])
 
-    user_workout_exercises = agent_output_to_sqlalchemy_model(output, user_workout_day.id)
+    user_workout_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
 
     db.session.add_all(user_workout_exercises)
     db.session.commit()
