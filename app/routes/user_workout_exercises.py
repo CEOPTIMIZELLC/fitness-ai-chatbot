@@ -193,12 +193,17 @@ def correct_minimum_duration_for_phase_component(pcs, exercises):
 def check_if_there_are_enough_exercises(pcs, exercises):
     exercises_for_pcs = get_exercises_for_all_pcs(exercises[1:], pcs[1:])
 
-    return [{"phase_component_id": pc["phase_component_id"], "name": pc["name"], 
-             "bodypart_id": pc["bodypart_id"], "bodypart_name": pc["bodypart_name"], 
-             "number_of_exercises_needed": pc["exercises_per_bodypart_workout_min"], 
-             "number_of_exercises_available": len(exercises_for_pc)}
-             for pc, exercises_for_pc in zip(pcs[1:], exercises_for_pcs)
-             if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc)]
+    pcs_without_enough_ex = [{"phase_component_id": pc["phase_component_id"], "name": pc["name"], 
+                              "bodypart_id": pc["bodypart_id"], "bodypart_name": pc["bodypart_name"], 
+                              "number_of_exercises_needed": pc["exercises_per_bodypart_workout_min"], 
+                              "number_of_exercises_available": len(exercises_for_pc)}
+                              for pc, exercises_for_pc in zip(pcs[1:], exercises_for_pcs)
+                              if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc)]
+    if pcs_without_enough_ex:
+        return [
+            f"{pc_without_enough_ex["name"]} requires a minimum of {pc_without_enough_ex["number_of_exercises_needed"]} to be successful but only has {pc_without_enough_ex["number_of_exercises_available"]}"
+            for pc_without_enough_ex in pcs_without_enough_ex]
+    return None
 
 
 def retrieve_pc_parameters(user_workout_components, availability):
@@ -311,11 +316,8 @@ def exercise_initializer():
         return jsonify({"status": "error", "message": not_enough_time_message}), 400
 
     # Check if there are enough exercises to complete the phase components.
-    phase_components_without_enough_exercises = check_if_there_are_enough_exercises(parameters["phase_components"], parameters["possible_exercises"])
-    if phase_components_without_enough_exercises:
-        pc_without_enough_ex_message = [
-            f"{pc_without_enough_ex["name"]} requires a minimum of {pc_without_enough_ex["number_of_exercises_needed"]} to be successful but only has {pc_without_enough_ex["number_of_exercises_available"]}"
-            for pc_without_enough_ex in phase_components_without_enough_exercises]
+    pc_without_enough_ex_message = check_if_there_are_enough_exercises(parameters["phase_components"], parameters["possible_exercises"])
+    if pc_without_enough_ex_message:
         return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
 
     result = exercises_main(parameters, constraints)
