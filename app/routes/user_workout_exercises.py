@@ -169,10 +169,8 @@ def construct_user_workout_components_list(user_workout_components):
 
 
 # Find the correct minimum and maximum range for the minimum duration.
-def correct_minimum_duration_for_phase_component(pcs, exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(exercises[1:], pcs[1:])
-
-    for pc, exercises_for_pc in zip(pcs[1:], exercises_for_pcs):
+def correct_minimum_duration_for_phase_component(pcs, exercises, exercises_for_pcs):
+    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
         pc_exercises_duration = [exercises[i]["duration"]# if not exercises[i]["is_weighted"] else 0
                                  for i in exercises_for_pc
                                  #if not exercises[i]["is_weighted"]
@@ -190,14 +188,12 @@ def correct_minimum_duration_for_phase_component(pcs, exercises):
 
     return None
 
-def check_if_there_are_enough_exercises(pcs, exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(exercises[1:], pcs[1:])
-
+def check_if_there_are_enough_exercises(pcs, exercises_for_pcs):
     pcs_without_enough_ex = [{"phase_component_id": pc["phase_component_id"], "name": pc["name"], 
                               "bodypart_id": pc["bodypart_id"], "bodypart_name": pc["bodypart_name"], 
                               "number_of_exercises_needed": pc["exercises_per_bodypart_workout_min"], 
                               "number_of_exercises_available": len(exercises_for_pc)}
-                              for pc, exercises_for_pc in zip(pcs[1:], exercises_for_pcs)
+                              for pc, exercises_for_pc in zip(pcs, exercises_for_pcs)
                               if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc)]
     if pcs_without_enough_ex:
         return [
@@ -206,12 +202,27 @@ def check_if_there_are_enough_exercises(pcs, exercises):
     return None
 
 
-def retrieve_pc_parameters(user_workout_components, availability):
+def retrieve_pc_parameters(user_workout_day):
     parameters = {"valid": True, "status": None}
 
-    projected_duration = 0
+    # Retrieve user components
+    user_workout_components = user_workout_day.workout_components
+    if not user_workout_components:
+        return jsonify({"status": "error", "exercises": "This phase component is inactive. No exercises for today."}), 200
+
+    # Retrieve availability for day.
+    availability = (
+        User_Weekday_Availability.query
+        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
+        .first())
+    if not availability:
+        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
+    availability = int(availability.availability.total_seconds())
+
+    delete_old_user_workout_exercises(user_workout_day.id)
 
     # Get the total desired duration.
+    projected_duration = 0
     for user_workout_component in user_workout_components:
         projected_duration += user_workout_component.duration
 
@@ -221,8 +232,23 @@ def retrieve_pc_parameters(user_workout_components, availability):
     parameters["availability"] = availability
     parameters["possible_exercises"] = retrieve_available_exercises()
 
+    exercises_for_pcs = get_exercises_for_all_pcs(parameters["possible_exercises"][1:], parameters["phase_components"][1:])
+
     # Change the minimum allowed duration if the exercises possible don't allow for it.
-    correct_minimum_duration_for_phase_component(parameters["phase_components"], parameters["possible_exercises"])
+    correct_minimum_duration_for_phase_component(parameters["phase_components"][1:], parameters["possible_exercises"], exercises_for_pcs)
+
+    # Check if there is enough time to complete the phase components.
+    maximum_min_duration = max(item["duration_min"] for item in parameters["phase_components"][1:])
+    total_time_needed = retrieve_total_time_needed(parameters["phase_components"][1:], "duration_min", "frequency_per_microcycle_min")
+    not_enough_time_message = check_if_there_is_enough_time(total_time_needed, parameters["availability"], maximum_min_duration)
+    if not_enough_time_message:
+        return jsonify({"status": "error", "message": not_enough_time_message}), 400
+    
+    # Check if there are enough exercises to complete the phase components.
+    pc_without_enough_ex_message = check_if_there_are_enough_exercises(parameters["phase_components"][1:], exercises_for_pcs)
+    if pc_without_enough_ex_message:
+        return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
+
     return parameters
 
 def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
@@ -286,39 +312,36 @@ def exercise_initializer():
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
-    # Retrieve user components
-    user_workout_components = user_workout_day.workout_components
-    if not user_workout_components:
-        return jsonify({"status": "error", "exercises": "This phase component is inactive. No exercises for today."}), 200
-
-    # Retrieve availability for day.
-    availability = (
-        User_Weekday_Availability.query
-        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
-        .first())
-    if not availability:
-        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
-
-    delete_old_user_workout_exercises(user_workout_day.id)
-
-    parameters = retrieve_pc_parameters(user_workout_components, int(availability.availability.total_seconds()))
+    parameters = retrieve_pc_parameters(user_workout_day)
     # If a tuple error message is returned, return 
     if isinstance(parameters, tuple):
         return parameters
     constraints={}
 
-    maximum_min_duration = max(item["duration_min"] for item in parameters["phase_components"][1:])
-    total_time_needed = retrieve_total_time_needed(parameters["phase_components"][1:], "duration_min", "frequency_per_microcycle_min")
+    result = exercises_main(parameters, constraints)
+    output = result["output"]
+    print(result["formatted"])
 
-    # Check if there is enough time to complete the phase components.
-    not_enough_time_message = check_if_there_is_enough_time(total_time_needed, parameters["availability"], maximum_min_duration)
-    if not_enough_time_message:
-        return jsonify({"status": "error", "message": not_enough_time_message}), 400
+    user_workout_exercises = agent_output_to_sqlalchemy_model(output, user_workout_day.id)
 
-    # Check if there are enough exercises to complete the phase components.
-    pc_without_enough_ex_message = check_if_there_are_enough_exercises(parameters["phase_components"], parameters["possible_exercises"])
-    if pc_without_enough_ex_message:
-        return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
+    db.session.add_all(user_workout_exercises)
+    db.session.commit()
+
+    return jsonify({"status": "success", "exercises": result}), 200
+
+# Assigns exercises to workouts.
+@bp.route('/', methods=['POST', 'PATCH'])
+@login_required
+def exercise_initializer():
+    user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+
+    parameters = retrieve_pc_parameters(user_workout_day)
+    # If a tuple error message is returned, return 
+    if isinstance(parameters, tuple):
+        return parameters
+    constraints={}
 
     result = exercises_main(parameters, constraints)
     output = result["output"]
@@ -392,20 +415,10 @@ def exercise_phase_components_test():
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
-    # Retrieve user components
-    user_workout_components = user_workout_day.workout_components
-    if not user_workout_components:
-        return jsonify({"status": "error", "exercises": "This phase component is inactive. No exercises for today."}), 200
-
-    # Retrieve availability for day.
-    availability = (
-        User_Weekday_Availability.query
-        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
-        .first())
-    if not availability:
-        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
-
-    parameters = retrieve_pc_parameters(user_workout_components, int(availability.availability.total_seconds()))
+    parameters = retrieve_pc_parameters(user_workout_day)
+    # If a tuple error message is returned, return 
+    if isinstance(parameters, tuple):
+        return parameters
     constraints={}
 
     result = exercise_pc_main(parameters, constraints)
