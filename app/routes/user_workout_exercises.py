@@ -128,11 +128,16 @@ def exercise_dict(exercise, user_exercise):
         "muscle_group_ids": exercise.all_muscle_group_ids,
         "muscle_ids": exercise.all_muscle_ids,
         "supportive_equipment_ids": exercise.all_supportive_equipment,
+        "supportive_equipment_measurements": user_exercise.has_supportive_equipment[1],
         "assistive_equipment_ids": exercise.all_assistive_equipment,
+        "assistive_equipment_measurements": user_exercise.has_assistive_equipment[1],
         "weighted_equipment_ids": exercise.all_weighted_equipment,
+        "weighted_equipment_measurements": user_exercise.has_weighted_equipment[1],
         "is_weighted": exercise.is_weighted,
         "marking_equipment_ids": exercise.all_marking_equipment,
+        "marking_equipment_measurements": user_exercise.has_marking_equipment[1],
         "other_equipment_ids": exercise.all_other_equipment,
+        "other_equipment_measurements": user_exercise.has_other_equipment[1],
         "one_rep_max": int(user_exercise.one_rep_max * 100),                    # Scaled up to avoid floating point errors from model.
         "one_rep_load": int(user_exercise.one_rep_load * 100),                  # Scaled up to avoid floating point errors from model.
         "volume": int(user_exercise.volume * (100 * 100)),                      # Scaled up to avoid floating point errors from model.

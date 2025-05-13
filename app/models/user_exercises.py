@@ -2,6 +2,8 @@ from app import db
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.models.base import BaseModel
 from app.models.mixins import TableNameMixin
+from collections import defaultdict, Counter
+
 
 class User_Exercises(db.Model, TableNameMixin):
     """Exercise available to a user during a training period."""
@@ -24,48 +26,54 @@ class User_Exercises(db.Model, TableNameMixin):
     exercises = db.relationship("Exercise_Library", back_populates="users")
 
     def has_equipment(self, required_equipment):
-        # If no equipment is required, return True
         if not required_equipment:
-            return True
-        
-        # Create a dictionary of user equipment with their quantities
-        user_equipment = {}
+            return True, {}
+
+        # Group user equipment by equipment_id and count measurements
+        user_equipment = defaultdict(list)
         for eq in self.users.equipment:
-            if eq.equipment_id not in user_equipment:
-                user_equipment[eq.equipment_id] = 0
-            user_equipment[eq.equipment_id] += 1
-        
-        # Group equipment by relationship
-        equipment_by_relationship = {}
+            user_equipment[eq.equipment_id].append(eq.measurement)
+
+        # Group required equipment by relationship
+        equipment_by_relationship = defaultdict(list)
         for eq in required_equipment:
-            relationship = eq.equipment_relationship or 'None'  # Default to 'None' if no relationship
-            if relationship not in equipment_by_relationship:
-                equipment_by_relationship[relationship] = []
+            relationship = eq.equipment_relationship or 'None'
             equipment_by_relationship[relationship].append({
                 'equipment_id': eq.equipment_id,
-                'quantity': eq.quantity or 1  # Default to 1 if quantity not specified
+                'quantity': eq.quantity or 1
             })
-        
-        # Check each relationship group
-        for relationship, equipment_list in equipment_by_relationship.items():
-            if relationship in ['or', 'Or', 'OR']:
-                # Must have AT LEAST ONE equipment in this group with sufficient quantity
-                has_one = False
-                for eq in equipment_list:
-                    user_quantity = user_equipment.get(eq['equipment_id'], 0)
-                    if user_quantity >= eq['quantity']:
-                        has_one = True
-                        break
-                if not has_one:
-                    return False
-            else:
-                # Must have ALL equipment in this group with sufficient quantities
-                for eq in equipment_list:
-                    user_quantity = user_equipment.get(eq['equipment_id'], 0)
-                    if user_quantity < eq['quantity']:
-                        return False
 
-        return True
+        valid_measurements = defaultdict(list)
+
+        # Evaluate each relationship group
+        for relationship, equipment_list in equipment_by_relationship.items():
+            if relationship.lower() == 'or':
+                # Must satisfy AT LEAST ONE requirement group
+                satisfied = False
+                for eq in equipment_list:
+                    available = user_equipment.get(eq['equipment_id'], [])
+                    counter = Counter(available)
+                    possible = [m for m, count in counter.items() if count >= eq['quantity']]
+                    if possible:
+                        satisfied = True
+                        valid_measurements[eq['equipment_id']].extend(sorted(possible))
+                if not satisfied:
+                    return False, {}
+            else:
+                # Must satisfy ALL requirements
+                for eq in equipment_list:
+                    available = user_equipment.get(eq['equipment_id'], [])
+                    counter = Counter(available)
+                    possible = [m for m, count in counter.items() if count >= eq['quantity']]
+                    if not possible:
+                        return False, {}
+                    valid_measurements[eq['equipment_id']].extend(sorted(possible))
+
+        # Remove duplicates in measurement lists
+        for eq_id in valid_measurements:
+            valid_measurements[eq_id] = sorted(set(valid_measurements[eq_id]))
+
+        return True, dict(valid_measurements)
 
     @hybrid_property
     def has_supportive_equipment(self):
@@ -89,11 +97,11 @@ class User_Exercises(db.Model, TableNameMixin):
 
     @hybrid_property
     def has_all_equipment(self):
-        return (self.has_supportive_equipment 
-                and self.has_assistive_equipment 
-                and self.has_weighted_equipment 
-                and self.has_marking_equipment 
-                and self.has_other_equipment)
+        return (self.has_supportive_equipment[0] and 
+                self.has_assistive_equipment[0] and 
+                self.has_weighted_equipment[0] and 
+                self.has_marking_equipment[0] and 
+                self.has_other_equipment[0])
 
     def to_dict(self):
         return {
