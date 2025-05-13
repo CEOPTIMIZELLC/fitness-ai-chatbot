@@ -617,7 +617,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             state["relaxation_attempts"].append(attempt)
             return {"solution": solution}
 
-        print(state["cool"])
         # Record unsuccessful attempt
         attempt = RelaxationAttempt(
             state["current_attempt"]["constraints"],
