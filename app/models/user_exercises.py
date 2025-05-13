@@ -12,9 +12,9 @@ class User_Exercises(db.Model, TableNameMixin):
     # Fields
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete='CASCADE'), primary_key=True)
     exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_library.id", ondelete='CASCADE'), primary_key=True)
-    one_rep_max = db.Column(db.Numeric(10, 2), nullable=False, default=10, comment='The maximum weight that the user can lift for one repetition of the exercise.')
-    one_rep_load = db.Column(db.Numeric(10, 2), nullable=False, default=10, comment='The weight that the user can lift for one repetition of the exercise.')
-    volume = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='sets * reps * load')
+    one_rep_max = db.Column(db.Integer, nullable=False, default=10, comment='The maximum weight that the user can lift for one repetition of the exercise.')
+    one_rep_load = db.Column(db.Integer, nullable=False, default=10, comment='The weight that the user can lift for one repetition of the exercise.')
+    volume = db.Column(db.Integer, nullable=False, default=0, comment='sets * reps * load')
     density = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='working duration / duration')
     intensity = db.Column(db.Integer, nullable=False, default=100, comment='The intensity of the exercise in comparison to the their one rep max.')
     performance = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='density * volume')
