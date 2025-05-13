@@ -84,31 +84,6 @@ def get_exercises_for_all_pcs(exercises, phase_components, verbose=False):
 
     return exercises_for_pcs
 
-def ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, used_exercise_vars, performance_vars, training_weight_vars):
-    for phase_component_index, performance_var, used_exercise_var, training_weight_var in zip(phase_component_ids, performance_vars, used_exercise_vars, training_weight_vars):
-        phase_component = phase_components[phase_component_index]
-        volume_max = phase_component["volume_max"]
-        density_max = phase_component["density_max"]
-
-        for exercise_index, (exercise, exercise_for_exercise_var) in enumerate(zip(exercises[1:], used_exercise_var[1:])):
-            if exercise["is_weighted"]:
-                volume_max_training = round(volume_max  * phase_component["intensity_max"] * exercise["one_rep_max"])
-                performance_max = volume_max_training * density_max
-            else:
-                # Scale up to match the scale of the training weight volume
-                volume_max_training = volume_max  * 100
-                performance_max = volume_max_training * density_max
-
-            # Check to ensure that the performance doesn't exceed the maximum.
-            performance_not_at_max = model.NewBoolVar(f'exercise_{exercise_index}_performance_max_for_pc_{phase_component_index}')
-            model.Add(performance_var < performance_max).OnlyEnforceIf(performance_not_at_max)          # Performance must be less than or equal to the maximum performance possible.
-            model.Add(performance_var >= performance_max).OnlyEnforceIf(performance_not_at_max.Not())   # Performance is greater than the maximum performance possible.
-
-            # If the maximum is going to be reached, do not exceed it.
-            model.Add(performance_var > exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var, performance_not_at_max)
-            model.Add(performance_var == exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var, performance_not_at_max.Not())
-    return None
-
 def encourage_increase_for_subcomponent(model, exercises, phase_component_ids, used_exercise_vars, performance_vars, max_performance):
     performance_increase_vars = []
     for phase_component_index, performance_var, used_exercise_var in zip(phase_component_ids, performance_vars, used_exercise_vars):
@@ -417,7 +392,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         exercise_vars["performance_increase_penalty"] = None
         penalty = 1
         if constraints["exercise_metric_increase"]:
-            # ensure_increase_for_subcomponent(model, exercises, phase_components, phase_component_ids, exercise_vars["used_exercises"], exercise_vars["performance"], exercise_vars["training_weight"])
             performance_increase_conditions = encourage_increase_for_subcomponent(model, exercises, phase_component_ids, exercise_vars["used_exercises"], exercise_vars["performance"], ex_bounds["performance"]["max"])
             exercise_vars["performance_increase_penalty"] = [
                 penalty * i
