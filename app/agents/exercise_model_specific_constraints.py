@@ -174,7 +174,7 @@ def constrain_training_weight_vars(model, intensity_vars, exercises, training_we
         
         # Training weight is 0 if no weighted exercise is selected
         model.Add(training_weight_var == 0).OnlyEnforceIf(has_weighted_exercise.Not())
-        model.Add(training_weight_var >= (5 * (100 * 100))).OnlyEnforceIf(has_weighted_exercise)
+        model.Add(training_weight_var >= (5 * 100)).OnlyEnforceIf(has_weighted_exercise)
         for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
             model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var, has_weighted_exercise)
     return None
@@ -183,7 +183,7 @@ def constrain_volume_vars(model, volume_vars, max_volume, reps_vars, sets_vars, 
     # Link the exercise variables and the volume variables by ensuring the volume is equal to the reps * sets * training weight for the exercise chose at exercise i.
     for i, (reps_var, sets_var, training_weight_var, volume_var, has_weighted_exercise) in enumerate(zip(reps_vars, sets_vars, training_weight_vars, volume_vars, weighted_exercise_vars)):
         volume_var_if_unloaded = model.NewIntVar(0, max_volume, f'temp_volume_{i}_unloaded')
-        model.AddMultiplicationEquality(volume_var_if_unloaded, [reps_var, sets_var, 100 * 100])
+        model.AddMultiplicationEquality(volume_var_if_unloaded, [reps_var, sets_var])
 
         volume_var_if_loaded = model.NewIntVar(0, max_volume, f'temp_volume_{i}_loaded')
         model.AddMultiplicationEquality(volume_var_if_loaded, [reps_var, sets_var, training_weight_var])

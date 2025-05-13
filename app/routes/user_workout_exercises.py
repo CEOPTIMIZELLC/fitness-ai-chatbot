@@ -96,7 +96,7 @@ def user_component_dict(workout, pc):
         "tempo": pc.tempo,
         "seconds_per_exercise": pc.seconds_per_exercise,
         "intensity_min": pc.intensity_min,
-        "intensity_max": pc.intensity_max,
+        "intensity_max": pc.intensity_max or 100,
         "rest_min": pc.rest_min // 5,                          # Adjusted so that rest is a multiple of 5.
         "rest_max": pc.rest_max // 5,                          # Adjusted so that rest is a multiple of 5.
         "duration_min": pc.duration_min,
@@ -138,12 +138,12 @@ def exercise_dict(exercise, user_exercise):
         "marking_equipment_measurements": user_exercise.has_marking_equipment[1],
         "other_equipment_ids": exercise.all_other_equipment,
         "other_equipment_measurements": user_exercise.has_other_equipment[1],
-        "one_rep_max": int(user_exercise.one_rep_max * 100),                    # Scaled up to avoid floating point errors from model.
-        "one_rep_load": int(user_exercise.one_rep_load * 100),                  # Scaled up to avoid floating point errors from model.
-        "volume": int(user_exercise.volume * (100 * 100)),                      # Scaled up to avoid floating point errors from model.
+        "one_rep_max": int(user_exercise.one_rep_max),                          # Scaled up to avoid floating point errors from model.
+        "one_rep_load": int(user_exercise.one_rep_load),                        # Scaled up to avoid floating point errors from model.
+        "volume": int(user_exercise.volume),                                    # Scaled up to avoid floating point errors from model.
         "density": int(user_exercise.density * 100),                            # Scaled up to avoid floating point errors from model.
         "intensity": int(user_exercise.intensity),
-        "performance": int(user_exercise.performance * (100 * 100 * 100)),      # Scaled up to avoid floating point errors from model.
+        "performance": int(user_exercise.performance * 100),                    # Scaled up to avoid floating point errors from model.
         "duration": user_exercise.duration,
         "working_duration": user_exercise.working_duration,
     }
