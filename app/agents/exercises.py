@@ -603,7 +603,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                     solver.Value(rest_vars[i]) * 5,                                     # Rest of the exercise chosen.
                     solver.Value(intensity_vars[i]),                                    # Intensity of the exercise chosen.
                     solver.Value(one_rep_max_vars[i]),                                  # 1RM of the exercise chosen. Scaled down due to scaling up of intensity.
-                    round(solver.Value(training_weight_vars[i]) / 100, 2),              # Training weight of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                    solver.Value(training_weight_vars[i]) // 100,                       # Training weight of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
                     solver.Value(volume_vars[i]),                                       # Volume of the exercise chosen.
                     round(solver.Value(density_vars[i]) / 100, 2),                      # Density of the exercise chosen. Scaled down due to scaling up division.
                     round(solver.Value(performance_vars[i]) / 100, 2),                  # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
@@ -680,9 +680,9 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "sets": ("Sets", 10),
             "rest": ("Rest)", 17),
             "one_rep_max": ("1RM", 17),
-            "training_weight": ("Weight", 10),
+            "training_weight": ("Weight", 9),
             "intensity": ("Intensity", 14),
-            "volume": ("Volume", 27),
+            "volume": ("Volume", 24),
             "density": ("Density", 24),
             "performance": ("Performance", 30)
         }
@@ -750,10 +750,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             # Count the number of occurrences of each phase component
             phase_component_count[phase_component_index] += 1
 
-            one_rep_max_max = 0
+            one_rep_max_new = 0
             volume_max = phase_component["volume_max"]
             if intensity_var:
-                one_rep_max_max = round((training_weight_var * (30 + reps_var)) / 30, 2)
+                one_rep_max_new = int(round((training_weight_var * (30 + reps_var)) / 30, 2))
                 volume_max = round(volume_max * exercise["one_rep_max"] * (phase_component["intensity_max"] / 100))
             density_max = phase_component["density_max"] / 100
             performance_max = round(volume_max * density_max * 100) / 100
@@ -771,12 +771,12 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
                 "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
                 "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")",
-                "one_rep_max": f"{one_rep_max_var} -> {one_rep_max_max}" if intensity_var else "",
+                "one_rep_max": f"{one_rep_max_var} -> {one_rep_max_new}" if intensity_var else "",
                 "training_weight": str(training_weight_var) if intensity_var else "",
                 "intensity": self._format_range(intensity_var, phase_component["intensity_min"] or 1, phase_component["intensity_max"]) if intensity_var else "",
-                "volume": f"{exercise["volume"] / (1)} -> {volume_var} (>={volume_max})",
-                "density": f"{exercise["density"] / 1} -> {density_var} (>={density_max})",
-                "performance": f"{exercise["performance"] / (1)} -> {performance_var} (>={performance_max})",
+                "volume": f"{exercise["volume"]} -> {volume_var} (>={volume_max})",
+                "density": f"{exercise["density"] / 100} -> {density_var} (>={density_max})",
+                "performance": f"{exercise["performance"] / 100} -> {performance_var} (>={performance_max})",
             }
 
             line = ""
