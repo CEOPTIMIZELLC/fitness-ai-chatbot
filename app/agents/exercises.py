@@ -49,6 +49,12 @@ def get_exercises_for_pc(exercises, phase_component, verbose=False):
 
     if exercises_for_pc == []:
         if verbose: 
+            print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' still has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises for this component phase.")
+            print_check = True
+        exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:1])
+
+    if exercises_for_pc == []:
+        if verbose: 
             print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' still has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises.")
             print_check = True
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component)
@@ -390,7 +396,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Constraint: The desired metric of an exercise must be an increase from the current metric.
         exercise_vars["performance_increase_penalty"] = None
-        penalty = 1
+        penalty = 100
         if constraints["exercise_metric_increase"]:
             performance_increase_conditions = encourage_increase_for_subcomponent(model, exercises, phase_component_ids, exercise_vars["used_exercises"], exercise_vars["performance"], ex_bounds["performance"]["max"])
             exercise_vars["performance_increase_penalty"] = [
@@ -521,7 +527,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         print("Solving Second Step")
         """Solve model and record relaxation attempt results."""
         model, model_with_divided_strain, phase_component_vars, ex_vars, pc_vars = state["opt_model"]
-        exercise_vars, base_strain_vars, one_rep_max_vars, training_weight_vars, volume_vars, density_vars, performance_vars = ex_vars["exercises"], ex_vars["base_strain"], ex_vars["one_rep_max"], ex_vars["training_weight"], ex_vars["volume"], ex_vars["density"], ex_vars["performance"]
+        exercise_vars, base_strain_vars, one_rep_max_vars, training_weight_vars, is_weighted_vars, volume_vars, density_vars, performance_vars = ex_vars["exercises"], ex_vars["base_strain"], ex_vars["one_rep_max"], ex_vars["training_weight"], ex_vars["weighted_exercises"], ex_vars["volume"], ex_vars["density"], ex_vars["performance"]
         seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, intensity_vars, duration_vars, working_duration_vars = pc_vars["seconds_per_exercise"], pc_vars["reps"], pc_vars["sets"], pc_vars["rest"], pc_vars["intensity"], pc_vars["duration"], pc_vars["working_duration"]
         base_effort_vars, working_effort_vars = ex_vars["base_effort"], ex_vars["working_effort"]
 
@@ -564,6 +570,13 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 base_effort_vars_current = solver.Value(base_effort_vars[i])
                 working_effort_vars_current = solver.Value(working_effort_vars[i])
 
+                is_weighted = solver.Value(is_weighted_vars[i])
+                volume = solver.Value(volume_vars[i])
+                performance = solver.Value(performance_vars[i]) / 100
+
+                if is_weighted:
+                    volume //= 100
+                    performance /= 100
                 
 
                 schedule.append((
@@ -578,9 +591,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                     solver.Value(intensity_vars[i]),                                    # Intensity of the exercise chosen.
                     solver.Value(one_rep_max_vars[i]),                                  # 1RM of the exercise chosen. Scaled down due to scaling up of intensity.
                     solver.Value(training_weight_vars[i]) // 100,                       # Training weight of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
-                    solver.Value(volume_vars[i]),                                       # Volume of the exercise chosen.
+                    solver.Value(is_weighted_vars[i]),                                  # Whether the exercise chosen was weighted.
+                    volume,                                                             # Volume of the exercise chosen.
                     round(solver.Value(density_vars[i]) / 100, 2),                      # Density of the exercise chosen. Scaled down due to scaling up division.
-                    round(solver.Value(performance_vars[i]) / 100, 2),                  # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                    round(performance, 2),                                              # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
                     duration_vars_current,                                              # Duration of the exercise chosen.
                     working_duration_vars_current,                                      # Working duration of the exercise chosen.
                 ))
@@ -688,14 +702,11 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
             (base_strain, seconds_per_exercise, 
              reps_var, sets_var, rest_var, intensity_var, 
-             one_rep_max_var, training_weight_var, volume_var, density_var, 
+             one_rep_max_var, training_weight_var, is_weighted_var, 
+             volume_var, density_var, 
              performance_var, duration, working_duration) = metrics
 
             phase_component_name = phase_component["name"] + " " + phase_component["bodypart_name"] 
-
-            if intensity_var:
-                volume_var //= 100
-                performance_var /= 100
 
             #duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
             final_output.append({
@@ -725,7 +736,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
             one_rep_max_new = 0
             volume_max = phase_component["volume_max"]
-            if intensity_var:
+            if is_weighted_var:
                 one_rep_max_new = int(round((training_weight_var * (30 + reps_var)) / 30, 2))
                 volume_max = round(volume_max * exercise["one_rep_max"] * (phase_component["intensity_max"] / 100))
             density_max = phase_component["density_max"] / 100
