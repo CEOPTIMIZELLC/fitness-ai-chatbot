@@ -52,6 +52,7 @@ dummy_phase_component = {
     "bodypart_name": "Inactive",
     "duration": 0,
     "duration_min": 0,
+    "duration_min_desired": 0,
     "duration_min_max": 0,
     "duration_max": 0,
     "working_duration_min": 0,
@@ -100,6 +101,7 @@ def user_component_dict(workout, pc):
         "rest_min": pc.rest_min // 5,                          # Adjusted so that rest is a multiple of 5.
         "rest_max": pc.rest_max // 5,                          # Adjusted so that rest is a multiple of 5.
         "duration_min": pc.duration_min,
+        "duration_min_desired": pc.duration_min,
         "duration_min_max": pc.duration_min,
         "duration_max": pc.duration_max,
         "working_duration_min": pc.working_duration_min,
@@ -187,7 +189,7 @@ def correct_minimum_duration_for_phase_component(pcs, exercises, exercises_for_p
             min_exercise_duration_max = heapq.nsmallest((pc["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)[-1]# + 1
             min_exercise_duration = heapq.nsmallest((pc["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)
 
-        pc["duration_min"] = max(min_exercise_duration_min, pc["duration_min"])
+        pc["duration_min_desired"] = max(min_exercise_duration_min, pc["duration_min"])
         pc["duration_min_max"] = max(min_exercise_duration_max, pc["duration_min_max"])
 
     return None
