@@ -179,7 +179,15 @@ def constrain_training_weight_vars(model, intensity_vars, exercises, training_we
             model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var, has_weighted_exercise)
     return None
 
-def constrain_volume_vars(model, volume_vars, max_volume, reps_vars, sets_vars, training_weight_vars, weighted_exercise_vars):
+# For constraining volumes for the phase component assignment.
+def constrain_volume_vars_no_weights_involved(model, volume_vars, reps_vars, sets_vars):
+    # Link the exercise variables and the volume variables by ensuring the volume is equal to the reps * sets * training weight for the exercise chose at exercise i.
+    for reps_var, sets_var, volume_var in zip(reps_vars, sets_vars, volume_vars):
+        model.AddMultiplicationEquality(volume_var, [reps_var, sets_var])
+    return None
+
+# For constraining volumes for the exercise assignment.
+def constrain_volume_vars_weights_involved(model, volume_vars, reps_vars, sets_vars, max_volume, training_weight_vars, weighted_exercise_vars):
     # Link the exercise variables and the volume variables by ensuring the volume is equal to the reps * sets * training weight for the exercise chose at exercise i.
     for i, (reps_var, sets_var, training_weight_var, volume_var, has_weighted_exercise) in enumerate(zip(reps_vars, sets_vars, training_weight_vars, volume_vars, weighted_exercise_vars)):
         volume_var_if_unloaded = model.NewIntVar(0, max_volume, f'temp_volume_{i}_unloaded')
@@ -190,6 +198,14 @@ def constrain_volume_vars(model, volume_vars, max_volume, reps_vars, sets_vars, 
 
         model.Add(volume_var == volume_var_if_loaded).OnlyEnforceIf(has_weighted_exercise)
         model.Add(volume_var == volume_var_if_unloaded).OnlyEnforceIf(has_weighted_exercise.Not())
+    return None
+
+# Makes the volume variable equal to the value it would be given the other metrics.
+def constrain_volume_vars(model, volume_vars, reps_vars, sets_vars, max_volume, training_weight_vars=None, weighted_exercise_vars=None):
+    if (training_weight_vars != None) and (weighted_exercise_vars != None):
+        constrain_volume_vars_weights_involved(model, volume_vars, reps_vars, sets_vars, max_volume, training_weight_vars, weighted_exercise_vars)
+    else:
+        constrain_volume_vars_no_weights_involved(model, volume_vars, reps_vars, sets_vars)
     return None
 
 def constrain_density_vars(model, density_vars, duration_vars, working_duration_vars, max_duration):

@@ -186,7 +186,12 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         print("Solving First Step")
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
-        model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
+        # model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
+        model, model_with_divided_strain, vars = state["opt_model"]
+        phase_component_vars, pc_count_vars, active_exercise_vars = vars["phase_components"], vars["pc_count"], vars["active_exercises"]
+        seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars = vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"]
+        volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
+        duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -333,7 +338,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         constrain_weighted_exercises_var(model, exercise_vars["used_exercises"], exercise_vars["weighted_exercises"], weighted_exercise_indices)
         constrain_intensity_vars(model, pc_vars["intensity"], phase_component_ids, phase_components, exercise_vars["weighted_exercises"])
         constrain_training_weight_vars(model, pc_vars["intensity"], exercises[1:], exercise_vars["training_weight"], exercise_vars["used_exercises"], exercise_vars["weighted_exercises"])
-        constrain_volume_vars(model, exercise_vars["volume"], volume_bounds["max"], pc_vars["reps"], pc_vars["sets"], exercise_vars["training_weight"], exercise_vars["weighted_exercises"])
+        constrain_volume_vars(model, exercise_vars["volume"], pc_vars["reps"], pc_vars["sets"], volume_bounds["max"], exercise_vars["training_weight"], exercise_vars["weighted_exercises"])
         constrain_density_vars(model, exercise_vars["density"], pc_vars["duration"], pc_vars["working_duration"], duration_bounds["max"])
         constrain_performance_vars(model, exercise_vars["performance"], exercise_vars["volume"], exercise_vars["density"])
 
