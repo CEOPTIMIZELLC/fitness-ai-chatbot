@@ -337,7 +337,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         constrain_weighted_exercises_var(model, exercise_vars["used_exercises"], exercise_vars["weighted_exercises"], weighted_exercise_indices)
         constrain_intensity_vars(model, pc_vars["intensity"], phase_component_ids, phase_components, exercise_vars["weighted_exercises"])
-        constrain_training_weight_vars(model, pc_vars["intensity"], exercises[1:], exercise_vars["training_weight"], exercise_vars["used_exercises"], exercise_vars["weighted_exercises"])
+        constrain_training_weight_vars(model, pc_vars["intensity"], exercises[1:], exercise_vars["training_weight_scaled"], exercise_vars["used_exercises"], exercise_vars["weighted_exercises"])
         constrain_volume_vars(model, exercise_vars["volume"], pc_vars["reps"], pc_vars["sets"], volume_bounds["max"], exercise_vars["training_weight"], exercise_vars["weighted_exercises"])
         constrain_density_vars(model, exercise_vars["density"], pc_vars["duration"], pc_vars["working_duration"], duration_bounds["max"])
         constrain_performance_vars(model, exercise_vars["performance"], exercise_vars["volume"], exercise_vars["density"])
@@ -575,15 +575,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 base_effort_vars_current = solver.Value(base_effort_vars[i])
                 working_effort_vars_current = solver.Value(working_effort_vars[i])
 
-                is_weighted = solver.Value(is_weighted_vars[i])
-                volume = solver.Value(volume_vars[i])
-                performance = solver.Value(performance_vars[i]) / 100
-
-                if is_weighted:
-                    volume //= 100
-                    performance /= 100
-                
-
                 schedule.append((
                     i, 
                     solver.Value(exercise_vars[i]),                                     # Index of the exercise chosen.
@@ -595,11 +586,11 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                     solver.Value(rest_vars[i]) * 5,                                     # Rest of the exercise chosen.
                     solver.Value(intensity_vars[i]),                                    # Intensity of the exercise chosen.
                     solver.Value(one_rep_max_vars[i]),                                  # 1RM of the exercise chosen. Scaled down due to scaling up of intensity.
-                    solver.Value(training_weight_vars[i]) // 100,                       # Training weight of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                    solver.Value(training_weight_vars[i]),                              # Training weight of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
                     solver.Value(is_weighted_vars[i]),                                  # Whether the exercise chosen was weighted.
-                    volume,                                                             # Volume of the exercise chosen.
+                    solver.Value(volume_vars[i]),                                       # Volume of the exercise chosen.
                     round(solver.Value(density_vars[i]) / 100, 2),                      # Density of the exercise chosen. Scaled down due to scaling up division.
-                    round(performance, 2),                                              # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                    round((solver.Value(performance_vars[i]) / 100), 2),                # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
                     duration_vars_current,                                              # Duration of the exercise chosen.
                     working_duration_vars_current,                                      # Working duration of the exercise chosen.
                 ))
