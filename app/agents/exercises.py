@@ -17,6 +17,7 @@ from app.agents.exercise_model_specific_constraints import (
     create_exercise_effort_var, 
     constrain_weighted_exercises_var, 
     constrain_intensity_vars, 
+    constrain_scaled_training_weight_vars, 
     constrain_training_weight_vars, 
     constrain_volume_vars, 
     constrain_density_vars, 
@@ -337,7 +338,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         constrain_weighted_exercises_var(model, exercise_vars["used_exercises"], exercise_vars["weighted_exercises"], weighted_exercise_indices)
         constrain_intensity_vars(model, pc_vars["intensity"], phase_component_ids, phase_components, exercise_vars["weighted_exercises"])
-        constrain_training_weight_vars(model, pc_vars["intensity"], exercises[1:], exercise_vars["training_weight_scaled"], exercise_vars["used_exercises"], exercise_vars["weighted_exercises"])
+        constrain_scaled_training_weight_vars(model, pc_vars["intensity"], exercises[1:], exercise_vars["training_weight_scaled"], exercise_vars["used_exercises"])
+        constrain_training_weight_vars(model, exercises[1:], exercise_vars["training_weight"], exercise_vars["used_exercises"], exercise_vars["weighted_exercises"])
         constrain_volume_vars(model, exercise_vars["volume"], pc_vars["reps"], pc_vars["sets"], volume_bounds["max"], exercise_vars["training_weight"], exercise_vars["weighted_exercises"])
         constrain_density_vars(model, exercise_vars["density"], pc_vars["duration"], pc_vars["working_duration"], duration_bounds["max"])
         constrain_performance_vars(model, exercise_vars["performance"], exercise_vars["volume"], exercise_vars["density"])

@@ -168,15 +168,22 @@ def constrain_intensity_vars(model, intensity_vars, phase_component_ids, phase_c
         model.Add(intensity_var == 0).OnlyEnforceIf(has_weighted_exercise.Not())
     return None
 
-def constrain_training_weight_vars(model, intensity_vars, exercises, training_weight_vars, used_exercise_vars, weighted_exercise_vars):
+def constrain_scaled_training_weight_vars(model, intensity_vars, exercises, scaled_training_weight_vars, used_exercise_vars):
     # Link the exercise variables and the training weight variables by ensuring the training weight is equal to the one rep max * intensity for the exercise chose at exercise i.
-    for intensity_var, training_weight_var, used_exercise_var, has_weighted_exercise in zip(intensity_vars, training_weight_vars, used_exercise_vars, weighted_exercise_vars):
-        
+    for intensity_var, training_weight_var, used_exercise_var in zip(intensity_vars, scaled_training_weight_vars, used_exercise_vars):
+        for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
+            model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var)
+    return None
+
+def constrain_training_weight_vars(model, exercises, training_weight_vars, used_exercise_vars, weighted_exercise_vars):
+    # Link the exercise variables and the training weight variables by ensuring the training weight is equal to the one rep max * intensity for the exercise chose at exercise i.
+    for training_weight_var, used_exercise_var, has_weighted_exercise in zip(training_weight_vars, used_exercise_vars, weighted_exercise_vars):
         # Training weight is 0 if no weighted exercise is selected
         model.Add(training_weight_var == 0).OnlyEnforceIf(has_weighted_exercise.Not())
-        model.Add(training_weight_var >= (5 * 100)).OnlyEnforceIf(has_weighted_exercise)
+        model.Add(training_weight_var >= 5).OnlyEnforceIf(has_weighted_exercise)
         for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
-            model.Add(training_weight_var == (exercise["one_rep_max"] * intensity_var)).OnlyEnforceIf(exercise_for_exercise_var, has_weighted_exercise)
+            # Exercises have a list of allowed exercises (including 0) that they may pick from.
+            model.AddAllowedAssignments([training_weight_var], [(item,) for item in exercise["weighted_equipment_measurements"]]).OnlyEnforceIf(exercise_for_exercise_var)
     return None
 
 # For constraining volumes for the phase component assignment.
