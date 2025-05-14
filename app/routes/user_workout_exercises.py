@@ -116,6 +116,11 @@ def user_component_dict(workout, pc):
     }
 
 def exercise_dict(exercise, user_exercise):
+    # Construct list of allowed weighted measurements.
+    weighted_equipment_measurements = [0]
+    for key in user_exercise.has_weighted_equipment[1]:
+        weighted_equipment_measurements.extend(user_exercise.has_weighted_equipment[1][key])
+
     """Format the exercise data."""
     return {
         "id": exercise.id,
@@ -134,7 +139,7 @@ def exercise_dict(exercise, user_exercise):
         "assistive_equipment_ids": exercise.all_assistive_equipment,
         "assistive_equipment_measurements": user_exercise.has_assistive_equipment[1],
         "weighted_equipment_ids": exercise.all_weighted_equipment,
-        "weighted_equipment_measurements": user_exercise.has_weighted_equipment[1],
+        "weighted_equipment_measurements": weighted_equipment_measurements,
         "is_weighted": exercise.is_weighted,
         "marking_equipment_ids": exercise.all_marking_equipment,
         "marking_equipment_measurements": user_exercise.has_marking_equipment[1],
