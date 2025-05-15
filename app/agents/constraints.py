@@ -15,7 +15,6 @@ def intvar_list_from_elements(model, number_of_elements, name_of_metric, min_val
                         f'{name_of_metric}_{i}') 
         for i in range(number_of_elements)]
 
-
 # Links each entry and item with the "used" variables, determining if item j is the item at entry i.
 def link_entry_and_item(model, items, entry_vars, number_of_entries, used_vars):
     for i in range(number_of_entries):
@@ -35,7 +34,6 @@ def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_acti
     model.Add(entry <= max_if_active).OnlyEnforceIf(activator)
 
     return None
-
 
 # Method for the creation of what is essentially an optional variable. 
 # This was created to reduce repetition of code
@@ -100,7 +98,6 @@ def entries_equal(model, items, key, number_of_entries, used_vars, duration_vars
                 key, used_vars[i][j]
             )
     return None
-
 
 def entry_within_min_max(model, var, item, min_key, max_key, condition=None):
     """Generic function to add min/max constraints with optional condition."""
@@ -231,11 +228,21 @@ def only_use_required_items(model, required_items, entry_vars, active_entry_vars
     return None
 
 # Ensures that each required entry occurs at least once in the entry_set.
-def use_all_required_items(model, required_items, used_vars):
+def use_all_required_items(model, required_items, used_vars, soft_constraint=False):
+    soft_conditions=[]
     for item_index in required_items:
         conditions = [row[item_index] for row in used_vars]
-        model.AddBoolOr(conditions)
-    return None
+        constraint = model.AddBoolOr(conditions)
+        if soft_constraint:
+            conditions_not_met = [condition.Not() for condition in conditions]
+            condition_met = model.NewBoolVar(f"{item_index}_occurs_once")
+
+            # If the phase component is selected at any point, condition_met should be True
+            constraint.OnlyEnforceIf(condition_met)
+            model.AddBoolAnd(conditions_not_met).OnlyEnforceIf(condition_met.Not())
+
+            soft_conditions.append(condition_met)
+    return soft_conditions
 
 # Ensures that an item only occurs once in the entry_set.
 def no_repeated_items(model, required_items, used_vars):

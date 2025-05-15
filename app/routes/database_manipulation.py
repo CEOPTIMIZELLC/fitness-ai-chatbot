@@ -65,7 +65,8 @@ def create_db():
         and 'goal' in request.form):
         register()
     
-        from app.existing_data.user_equipment import user_equipment
+        from app.existing_data.user_equipment import get_default_user_equipment
+        user_equipment = get_default_user_equipment()
         db.session.add_all(user_equipment)
         db.session.commit()
 

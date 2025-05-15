@@ -1,3 +1,4 @@
+from time import perf_counter
 from typing_extensions import TypedDict, TypeVar
 from langgraph.graph import StateGraph, START, END
 from app.agents.agent_helpers import retrieve_relaxation_history, analyze_infeasibility
@@ -73,6 +74,35 @@ class BaseAgent:
             "constraints": state["constraints"],
             "current_attempt": state["current_attempt"]
         }
+
+    def _solve_and_time_solver(self, solver, model):
+        start_time = perf_counter()
+        status = solver.Solve(model)
+        end_time = perf_counter()
+        solver_duration = end_time - start_time
+        print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
+        return status
+
+
+    # Retrieve formatted string for time.
+    def _time_string(self, time_in_seconds):
+        time_minutes = int(time_in_seconds // 60)
+        time_seconds = round((time_in_seconds % 60), 3)
+        time_minutes_string = f"{time_minutes} minutes" if time_minutes > 0 else ""
+        time_seconds_string = f"{time_seconds} seconds" if time_seconds > 0 else ""
+        if time_minutes_string != "" and time_seconds_string != "":
+            time_minutes_string += " "
+        return f"{time_minutes_string}{time_seconds_string}"
+
+    def _new_max_time_solve_and_time_solver(self, solver, model, new_max_time=None, message_end=None):
+        new_searcher_message = f"Solver took longer than {self._time_string(solver.parameters.max_time_in_seconds)}."
+        if new_max_time:
+            new_searcher_message += f" Extending max time allowed to {self._time_string(new_max_time)}."
+            solver.parameters.max_time_in_seconds = new_max_time
+        if message_end:
+            new_searcher_message += (" " + message_end)
+        print(new_searcher_message)
+        return self._solve_and_time_solver(solver, model)
 
     def format_relaxation_attempts(self, relaxation_attempts, formatted, *args):
         """Format the relaxation attempts history."""

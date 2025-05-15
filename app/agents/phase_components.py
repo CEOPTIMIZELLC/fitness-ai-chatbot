@@ -1,3 +1,4 @@
+from config import ortools_solver_time_in_seconds
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -17,7 +18,6 @@ _ = load_dotenv()
 
 available_constraints = """
 - day_duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
-- day_duration_within_workout_length: Prevents workout from exceeding the length allowed for a workout.
 - use_workout_required_components: Forces all phase components required for a workout to be assigned in every workout.
 - use_microcycle_required_components: Forces all phase components required for a microcycle to be assigned at lease once in the microcycle.
 - frequency_within_min_max: Forces each phase component that does occur to occur between the minimum and maximum values allowed.
@@ -26,13 +26,13 @@ available_constraints = """
 - maximize_exercise_time: Objective to maximize the amount of time spent overall.
 """
 
-def user_workout_time(weekday_availability, workout_length, microcycle_weekdays):
+def user_workout_time(weekday_availability, microcycle_weekdays):
     used_days = []
 
     # Total time the user has to workout.
     workout_time = 0
     for day in microcycle_weekdays:
-        workout_availability = min(workout_length, weekday_availability[day]["availability"])
+        workout_availability = weekday_availability[day]["availability"]
         used_days.append({"used": False, "availability": workout_availability})
         workout_time += workout_availability
     return used_days, workout_time
@@ -76,14 +76,12 @@ class PhaseComponentAgent(BaseAgent):
                 {"id": 6, "name": "Sunday", "availability": 0 * 60 * 60},
             ],
             "microcycle_weekdays": [0, 1, 2, 3, 4, 5, 6],
-            "workout_length": 50 * 60,
             "phase_components": []
         }
 
         # Define all constraints with their active status
         constraints = {
             "day_duration_within_availability": True,       # The time of a workout won't exceed the time allowed for that given day.
-            "day_duration_within_workout_length": True,     # The time of a workout won't exceed the length allowed for a workout.
             "use_workout_required_components": True,        # Include phase components that are required in every workout at least once.
             "use_microcycle_required_components": True,     # Include phase components that are required in every microcycle at least once.
             "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
@@ -113,70 +111,53 @@ class PhaseComponentAgent(BaseAgent):
                 "expected_impact": None
             }
         }
-
-    def build_opt_model_node(self, state: State, config=None) -> dict:
-        """Build the optimization model with active constraints."""
-        parameters = state["parameters"]
-        constraints = state["constraints"]
-        model = cp_model.CpModel()
-
-        phase_components = parameters["phase_components"]
-        weekday_availability = parameters["weekday_availability"]
-        workout_length = parameters["workout_length"]
-        microcycle_weekdays = parameters["microcycle_weekdays"]
-
-        workout_availability = [weekday_availability[day]["availability"] for day in microcycle_weekdays]
+    
+    def create_model_vars(self, model, phase_components, workout_availability, microcycle_weekdays):
+        # Define variables =====================================
+        vars = {}
 
         # Boolean variables indicating whether exercise i is active.
-        active_workday_vars = [
+        vars["active_workday"] = [
             model.NewBoolVar(f'day_{index_for_day}_is_active') 
             for index_for_day in range(len(microcycle_weekdays))]
 
         # Ensure that the workday is considered inactive if it is 0 hours long.
-        for workout_availability_for_day, is_active_workday in zip(workout_availability, active_workday_vars):
+        for workout_availability_for_day, is_active_workday in zip(workout_availability, vars["active_workday"]):
             if workout_availability_for_day > 0:
                 model.Add(is_active_workday == True)
             else:
                 model.Add(is_active_workday == False)
 
         # Boolean variables indicating whether phase component j is active on day i.
-        active_phase_components = [[
+        vars["active_phase_components"] = [[
             model.NewBoolVar(f'phase_component_{index_for_phase_component}_is_active_on_day_{index_for_day}')
             for index_for_phase_component in range(len(phase_components))]
             for index_for_day in range(len(microcycle_weekdays))]
 
         # Create the entry for phase component's duration
         # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
-        duration_vars = [[
+        vars["duration"] = [[
             create_optional_intvar(
                 model=model, 
-                activator = active_phase_components[index_for_day][index_for_phase_component],
+                activator = vars["active_phase_components"][index_for_day][index_for_phase_component],
                 min_if_active = phase_components[index_for_phase_component]["duration_min"],
-                max_if_active = min(phase_components[index_for_phase_component]["duration_max"], workout_length),
+                max_if_active = phase_components[index_for_phase_component]["duration_max"],
                 name_of_entry_var = f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}')
             for index_for_phase_component in range(len(phase_components))]
             for index_for_day in range(len(microcycle_weekdays))]
+        return vars
 
 
+    def apply_model_constraints(self, constraints, model, vars, phase_components, workout_availability):
         # Apply active constraints ======================================
-        state["logs"] += "\nBuilding model with constraints:\n"
+        logs = "\nBuilding model with constraints:\n"
 
         # Constraint: The duration of a day may only be a number of hours between the allowed time for that day.
         if constraints["day_duration_within_availability"]:
             day_duration_within_availability(model=model, 
-                                             duration_vars=duration_vars, 
+                                             duration_vars=vars["duration"], 
                                              availability=workout_availability)
-            state["logs"] += "- Sum of phase component duration within maximum allowed time for a day.\n"
-
-        # Ensure that the duration doesn't exceed the maximum allowed time for a workout.
-        #model.Add(duration_var_entry <= workout_length)
-        # Constraint: The duration of a day may only be a number of hours less than the allowed time for a workout.
-        if constraints["day_duration_within_workout_length"]:
-            day_duration_within_availability(model=model, 
-                                             duration_vars=duration_vars, 
-                                             availability=[workout_length] * len(duration_vars))
-            state["logs"] += "- Sum of phase component duration within maximum allowed time for a workout.\n"
-
+            logs += "- Sum of phase component duration within maximum allowed time for a day.\n"
 
         # Constraint: Force all phase components required in every workout to be included at least once.
         if constraints["use_workout_required_components"]:
@@ -184,9 +165,9 @@ class PhaseComponentAgent(BaseAgent):
             required_phase_components = [i for i, phase_component in enumerate(phase_components) if phase_component["required_every_workout"]]
             use_workout_required_components(model=model, 
                                             required_items=required_phase_components, 
-                                            used_vars=active_phase_components, 
-                                            active_entry_vars=active_workday_vars)
-            state["logs"] += "- All phase components required every workout will be included in every workout applied.\n"
+                                            used_vars=vars["active_phase_components"], 
+                                            active_entry_vars=vars["active_workday"])
+            logs += "- All phase components required every workout will be included in every workout applied.\n"
 
         # Constraint: Force all phase components required in every microcycle to be included at least once.
         if constraints["use_microcycle_required_components"]:
@@ -194,36 +175,38 @@ class PhaseComponentAgent(BaseAgent):
             required_phase_components = [i for i, phase_component in enumerate(phase_components) if phase_component["required_within_microcycle"] == "always"]
             use_all_required_items(model=model, 
                                    required_items=required_phase_components, 
-                                   used_vars=active_phase_components)
-            state["logs"] += "- All phase components required every microcycle will be included in every microcycle applied.\n"
-
+                                   used_vars=vars["active_phase_components"])
+            logs += "- All phase components required every microcycle will be included in every microcycle applied.\n"
 
         # Constraint: Every bodypart division must be done consecutively for a phase component.
         if constraints["consecutive_bodyparts_for_component"]:
             consecutive_bodyparts_for_component(model=model, 
                                                 phase_components=phase_components, 
-                                                active_phase_components=active_phase_components)
-            state["logs"] += "- Bodypart division for components are done consecutively activated.\n"
-
+                                                active_phase_components=vars["active_phase_components"])
+            logs += "- Bodypart division for components are done consecutively activated.\n"
 
         # Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
         if constraints["frequency_within_min_max"]:
             frequency_within_min_max(model=model, 
                                      phase_components=phase_components, 
-                                     active_phase_components=active_phase_components,
+                                     active_phase_components=vars["active_phase_components"],
                                      minimum_key="frequency_per_microcycle_min",
                                      maximum_key="frequency_per_microcycle_max")
-            state["logs"] += "- All phase components occuring within microcycle will occur the allowed number of times applied.\n"
+            logs += "- All phase components occuring within microcycle will occur the allowed number of times applied.\n"
 
+        return logs
+
+    def apply_model_objective(self, constraints, model, vars, workout_availability):
+        logs = ""
         duration_spread_var = None
         # Secondary Objective: Minimize the spread of duration.
         if constraints["minimize_duration_delta"]:
             duration_spread_var = create_spread_intvar(model=model, 
-                                                       entry_vars=duration_vars, 
+                                                       entry_vars=vars["duration"], 
                                                        entry_var_name="duration_var", 
-                                                       active_entry_vars=active_phase_components, 
+                                                       active_entry_vars=vars["active_phase_components"], 
                                                        max_value_allowed=max(workout_availability))
-            state["logs"] += "- Minimizing spread across duration applied.\n"
+            logs += "- Minimizing spread across duration applied.\n"
 
         # Objective: Maximize total duration of microcycle
         if constraints["maximize_exercise_time"]:
@@ -231,7 +214,7 @@ class PhaseComponentAgent(BaseAgent):
             total_set_duration_for_day = []
 
             # Each day
-            for duration_vars_for_day in duration_vars:
+            for duration_vars_for_day in vars["duration"]:
                 # Each phase component
                 for duration_vars_for_phase_component in duration_vars_for_day:
                     total_set_duration_for_day.append(duration_vars_for_phase_component)
@@ -245,9 +228,28 @@ class PhaseComponentAgent(BaseAgent):
 
             # Maximize the total
             model.Maximize(total_duration_to_maximize)
-            state["logs"] += "- Maximizing time used in microcycle.\n"
+            logs += "- Maximizing time used in microcycle.\n"
+        return logs, duration_spread_var, total_duration_to_maximize
 
-        return {"opt_model": (model, workout_availability, active_phase_components, duration_vars, duration_spread_var, total_duration_to_maximize)}
+
+    def build_opt_model_node(self, state: State, config=None) -> dict:
+        """Build the optimization model with active constraints."""
+        parameters = state["parameters"]
+        constraints = state["constraints"]
+        model = cp_model.CpModel()
+
+        phase_components = parameters["phase_components"]
+        weekday_availability = parameters["weekday_availability"]
+        microcycle_weekdays = parameters["microcycle_weekdays"]
+
+        workout_availability = [weekday_availability[day]["availability"] for day in microcycle_weekdays]
+
+        vars = self.create_model_vars(model, phase_components, workout_availability, microcycle_weekdays)
+        state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, workout_availability)
+        logs, duration_spread_var, total_duration_to_maximize = self.apply_model_objective(constraints, model, vars, workout_availability)
+        state["logs"] += logs
+
+        return {"opt_model": (model, workout_availability, vars["active_phase_components"], vars["duration"], duration_spread_var, total_duration_to_maximize)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""
@@ -255,9 +257,10 @@ class PhaseComponentAgent(BaseAgent):
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 12
+        solver.parameters.max_time_in_seconds = ortools_solver_time_in_seconds
 
         # solver.parameters.log_search_progress = True
-        status = solver.Solve(model)
+        self._solve_and_time_solver(solver, model)
 
         # If the duration spread should be minimized, then ensure the final duration is the same, with the new goal of minimizing the spread.
         if duration_spread_var != None:
@@ -320,66 +323,69 @@ class PhaseComponentAgent(BaseAgent):
 
     def get_relaxation_formatting_parameters(self, parameters):
         weekday_availability = parameters["weekday_availability"]
-        workout_length = parameters["workout_length"]
         microcycle_weekdays = parameters["microcycle_weekdays"]
         
-        _, workout_time = user_workout_time(
-            weekday_availability, 
-            workout_length, 
-            microcycle_weekdays
-        )
+        _, workout_time = user_workout_time(weekday_availability, microcycle_weekdays)
         
         return [
-            workout_time,
-            workout_length,
+            workout_time
         ]
 
     def get_model_formatting_parameters(self, parameters):
         weekday_availability = parameters["weekday_availability"]
-        workout_length = parameters["workout_length"]
         microcycle_weekdays = parameters["microcycle_weekdays"]
         
-        used_days, workout_time = user_workout_time(
-            weekday_availability, 
-            workout_length, 
-            microcycle_weekdays
-        )
+        used_days, workout_time = user_workout_time(weekday_availability, microcycle_weekdays)
         
         return [
             parameters["phase_components"],
             used_days,
             workout_time,
-            workout_length,
             weekday_availability,
             microcycle_weekdays
         ]
 
-    def format_class_specific_relaxation_history(self, formatted, attempt, workout_time, workout_length):
+    def format_class_specific_relaxation_history(self, formatted, attempt, workout_time):
         if workout_time is not None:
-            formatted += f"Total Hours Allowed: {workout_time  // 60} min {workout_time  % 60} sec ({workout_time} seconds)\n"
-        if workout_length is not None:
-            formatted += f"Workout Length Allowed: {workout_length  // 60} min {workout_length  % 60} sec ({workout_length} seconds)\n"
+            formatted += f"Total Hours Allowed: {self._format_duration(workout_time)}\n"
         if attempt.microcycle_duration is not None:
-            formatted += f"Total Time Used: {attempt.microcycle_duration  // 60} min {attempt.microcycle_duration  % 60} sec ({attempt.microcycle_duration} seconds)\n"
+            formatted += f"Total Time Used: {self._format_duration(attempt.microcycle_duration)}\n"
         return formatted
 
-    def format_agent_output(self, solution, formatted, schedule, phase_components, used_days, workout_time, workout_length, weekday_availability, microcycle_weekdays):
-        final_output = []
+    def _create_header_fields(self, longest_sizes: dict) -> dict:
+        """Create all header fields with consistent formatting"""
+        return {
+            "number": ("Component", 12),
+            "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
+            "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
+            "duration": ("Duration", 30),
+            "duration_sec": ("Duration in Seconds", 30),
+        }
 
-        longest_subcomponent_string_size = longest_string_size_for_key(phase_components, "name")
-        longest_bodypart_string_size = longest_string_size_for_key(phase_components, "bodypart")
+    def format_agent_output(self, solution, formatted, schedule, phase_components, used_days, workout_time, weekday_availability, microcycle_weekdays):
+        final_output = []
 
         phase_component_count = [0] * len(phase_components)
 
-        formatted += "\nFinal Training Schedule:\n"
-        formatted += "-" * 40 + "\n"
+        # Calculate longest string sizes
+        longest_sizes = {
+            "phase_component": longest_string_size_for_key(phase_components[1:], "name"),
+            "bodypart": longest_string_size_for_key(phase_components[1:], "bodypart")
+        }
 
-        for component_count, (phase_component_index, workday_index, active_phase_components, duration_var) in enumerate(schedule):
+        # Create headers
+        headers = self._create_header_fields(longest_sizes)
+        
+        # Create header line
+        formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
+        header_line = ""
+        for label, (text, length) in headers.items():
+            header_line += self._create_formatted_field(text, text, length)
 
+        for component_count, (phase_component_index, workday_index, *metrics) in enumerate(schedule):
             phase_component = phase_components[phase_component_index]
-            phase_component_name = f"{phase_component["name"]:<{longest_subcomponent_string_size+3}} {phase_component["bodypart"]:<{longest_bodypart_string_size+3}}"
 
-            day_duration = duration_var
+            (active_phase_components, duration_var) = metrics
 
             if active_phase_components:
                 final_output.append({
@@ -394,27 +400,39 @@ class PhaseComponentAgent(BaseAgent):
                 current_weekday = microcycle_weekdays[workday_index]
 
                 if not used_days[workday_index]["used"]:
-                    formatted += f"\nDay {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])}\n"
+                    formatted += f"\n| Day {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
                     used_days[workday_index]["used"] = True
+                    formatted += header_line + "\n"
 
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
-                formatted_duration = f"Duration: {self._format_duration(day_duration)}\t"
-                formatted_duration_sec = f"{self._format_range(str(day_duration) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}"
+                # Format line
+                line_fields = {
+                    "number": str(component_count + 1),
+                    "phase_component": f"{phase_component['name']}",
+                    "bodypart": phase_component["bodypart"],
+                    "duration": f"{self._format_duration(duration_var)} sec",
+                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}"
+                }
 
-                formatted += (f"\tComp {(component_count + 1):<{3}}: {phase_component_name} {formatted_duration} {formatted_duration_sec}\n")
+                line = ""
+                for field, (_, length) in headers.items():
+                    line += self._create_formatted_field(field, line_fields[field], length)
+                formatted += line + "\n"
             else:
-                formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t{phase_component_name} ----\n")
+                formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
 
         formatted += f"Phase Component Counts:\n"
         for phase_component_index, phase_component_number in enumerate(phase_component_count):
             phase_component = phase_components[phase_component_index]
-            phase_component_name = f"{phase_component["name"]:<{longest_subcomponent_string_size+3}} {phase_component["bodypart"]:<{longest_bodypart_string_size+3}}"
-            formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])}\n"
+            phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart']:<{longest_sizes['bodypart']+2}}"
+            phase_component_frequency = self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])
+            phase_component_required = f"Required Every Workout: {phase_component["required_every_workout"]}\t\tRequired Every Microcycle: {phase_component['required_within_microcycle']}"
+            
+            formatted += f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
         formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
         formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
-        formatted += f"Workout Length Allowed: {self._format_duration(workout_length)}\n"
 
         return final_output, formatted
 

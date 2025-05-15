@@ -31,6 +31,8 @@ def get_user_microcycles_list():
 def get_user_current_microcycles_list():
     result = []
     user_mesocycle = current_mesocycle(current_user.id)
+    if not user_mesocycle:
+        return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
     user_microcycles = user_mesocycle.microcycles
     for user_microcycle in user_microcycles:
         result.append(user_microcycle.to_dict())
@@ -52,6 +54,8 @@ def read_user_current_microcycle():
 def microcycle_initializer():
 
     user_mesocycle = current_mesocycle(current_user.id)
+    if not user_mesocycle:
+        return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
 
     delete_old_user_microcycles(user_mesocycle.id)
 
