@@ -1,3 +1,4 @@
+from config import verbose
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
@@ -13,7 +14,8 @@ from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 def delete_old_user_microcycles(mesocycle_id):
     db.session.query(User_Microcycles).filter_by(mesocycle_id=mesocycle_id).delete()
-    print("Successfully deleted")
+    if verbose:
+        print("Successfully deleted")
 
 # Retrieve current user's microcycles
 @bp.route('/', methods=['GET'])

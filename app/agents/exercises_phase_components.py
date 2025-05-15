@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds
+from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from app.agents.constraints import (
@@ -347,7 +347,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         vars["performance_increase_penalty"] = None
         penalty = 100
         if constraints["exercise_metric_increase"]:
-            print("PC IMPROVE")
+            self._log_steps("PC IMPROVE")
             # performance_increase_conditions = encourage_increase_for_subcomponent(model, exercises, phase_component_ids, exercise_vars["used_exercises"], exercise_vars["performance"], ex_bounds["performance"]["max"])
             # exercise_vars["performance_increase_penalty"] = [
             #     penalty * i
@@ -434,7 +434,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return logs
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
-        print("Building First Step")
+        self._log_steps("Building First Step")
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
         constraints = state["constraints"]
@@ -463,7 +463,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return {"opt_model": (model, model_with_divided_strain, vars)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
-        print("Solving First Step")
+        self._log_steps("Solving First Step")
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
         model, model_with_divided_strain, vars = state["opt_model"]
@@ -664,15 +664,16 @@ class ExercisePhaseComponentAgent(BaseAgent):
             else:
                 formatted += (f"| {(component_count + 1):<{2}} ----\n")
 
-        formatted += f"Phase Component Counts:\n"
-        for phase_component_index, phase_component in enumerate(phase_components):
-            phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
-            phase_component_range = self._format_range(solution['pc_count'][phase_component_index], phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])
-            formatted += f"\t{phase_component_name}: {phase_component_range}\n"
-        formatted += f"Total Strain: {solution['strain_ratio']}\n"
-        formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
-        formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
-        formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
+        if log_details:
+            formatted += f"Phase Component Counts:\n"
+            for phase_component_index, phase_component in enumerate(phase_components):
+                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
+                phase_component_range = self._format_range(solution['pc_count'][phase_component_index], phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])
+                formatted += f"\t{phase_component_name}: {phase_component_range}\n"
+            formatted += f"Total Strain: {solution['strain_ratio']}\n"
+            formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
+            formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
+            formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
 
         return final_output, formatted
 

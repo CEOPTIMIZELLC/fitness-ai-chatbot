@@ -1,3 +1,4 @@
+from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
 from config import ortools_solver_time_in_seconds
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -423,16 +424,17 @@ class PhaseComponentAgent(BaseAgent):
             else:
                 formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
 
-        formatted += f"Phase Component Counts:\n"
-        for phase_component_index, phase_component_number in enumerate(phase_component_count):
-            phase_component = phase_components[phase_component_index]
-            phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart']:<{longest_sizes['bodypart']+2}}"
-            phase_component_frequency = self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])
-            phase_component_required = f"Required Every Workout: {phase_component["required_every_workout"]}\t\tRequired Every Microcycle: {phase_component['required_within_microcycle']}"
-            
-            formatted += f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
-        formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
-        formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
+        if log_details:
+            formatted += f"Phase Component Counts:\n"
+            for phase_component_index, phase_component_number in enumerate(phase_component_count):
+                phase_component = phase_components[phase_component_index]
+                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart']:<{longest_sizes['bodypart']+2}}"
+                phase_component_frequency = self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])
+                phase_component_required = f"Required Every Workout: {phase_component["required_every_workout"]}\t\tRequired Every Microcycle: {phase_component['required_within_microcycle']}"
+                
+                formatted += f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
+            formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
+            formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
 
         return final_output, formatted
 

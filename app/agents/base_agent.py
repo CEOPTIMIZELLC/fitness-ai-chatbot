@@ -1,3 +1,4 @@
+from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
 from time import perf_counter
 from typing_extensions import TypedDict, TypeVar
 from langgraph.graph import StateGraph, START, END
@@ -49,6 +50,11 @@ class BaseAgent:
             "relaxation_attempts": [],
             "current_attempt": {"constraints": set(), "reasoning": None, "expected_impact": None}
         }
+    
+    def _log_steps(self, message):
+        if log_steps:
+            print(message)
+        return None
 
     def _format_duration(self, seconds: int) -> str:
         """Format duration in minutes and seconds"""
@@ -80,7 +86,8 @@ class BaseAgent:
         status = solver.Solve(model)
         end_time = perf_counter()
         solver_duration = end_time - start_time
-        print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
+        if verbose:
+            print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
         return status
 
 
@@ -101,7 +108,8 @@ class BaseAgent:
             solver.parameters.max_time_in_seconds = new_max_time
         if message_end:
             new_searcher_message += (" " + message_end)
-        print(new_searcher_message)
+        if verbose:
+            print(new_searcher_message)
         return self._solve_and_time_solver(solver, model)
 
     def format_relaxation_attempts(self, relaxation_attempts, formatted, *args):
@@ -141,7 +149,8 @@ class BaseAgent:
         formatted += "=" * 50 + "\n\n"
 
         # Show relaxation attempts history
-        formatted = self.format_relaxation_attempts(state["relaxation_attempts"], formatted, *relaxation_attempts_args)
+        if log_steps:
+            formatted = self.format_relaxation_attempts(state["relaxation_attempts"], formatted, *relaxation_attempts_args)
 
         if solution is None:
             final_output = []
@@ -151,7 +160,8 @@ class BaseAgent:
             final_output, formatted = self.format_agent_output(solution, formatted, schedule, *agent_output_args)
 
             # Show final constraint status
-            formatted += self.format_constraint_status(state["constraints"])
+            if log_details:
+                formatted += self.format_constraint_status(state["constraints"])
 
         return {"formatted": formatted, "output": final_output}
 

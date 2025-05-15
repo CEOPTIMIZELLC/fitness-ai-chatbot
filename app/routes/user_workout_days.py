@@ -1,3 +1,4 @@
+from config import verbose
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 import math
@@ -32,7 +33,8 @@ def phase_component_dict(pc, bodypart_id, bodypart_name):
 
 def delete_old_user_workout_days(microcycle_id):
     db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
-    print("Successfully deleted")
+    if verbose:
+        print("Successfully deleted")
 
 # Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_possible_phase_components(phase_id):
@@ -203,7 +205,7 @@ def workout_day_initializer():
         if day.availability.total_seconds() > 0:
             number_of_available_weekdays += 1
 
-    result = perform_workout_day_selection(user_microcycle.mesocycles.phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, True)
+    result = perform_workout_day_selection(user_microcycle.mesocycles.phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
     if result["output"] == "error":
         return jsonify({"status": "error", "message": result["message"]}), 404
 
@@ -247,7 +249,7 @@ def workout_day_initializer_by_id(phase_id):
         if day.availability.total_seconds() > 0:
             number_of_available_weekdays += 1
 
-    result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, True)
+    result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
     if result["output"] == "error":
         return jsonify({"status": "error", "message": result["message"]}), 404
 
@@ -285,7 +287,7 @@ def test_workout_day_by_id(phase_id):
         if availability > 0:
             number_of_available_weekdays += 1
 
-    result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, True)
+    result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
 
     return jsonify({"status": "success", "mesocycles": result}), 200
 
@@ -330,13 +332,15 @@ def phase_component_classification_test():
 
     for phase in phases:
         result = perform_workout_day_selection(phase.id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays)
-        print(str(phase.id))
-        print(result["formatted"])
+        if verbose:
+            print(str(phase.id))
+            print(result["formatted"])
         test_results.append({
             # "phase_components": parameters["phase_components"], 
             "phase_id": phase.id,
             "result": result
         })
-        print("----------------------")
+        if verbose:
+            print("----------------------")
 
     return jsonify({"status": "success", "test_results": test_results}), 200

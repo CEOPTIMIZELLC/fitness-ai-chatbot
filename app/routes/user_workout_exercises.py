@@ -1,3 +1,4 @@
+from config import verbose
 import random
 import heapq
 import math
@@ -197,7 +198,8 @@ def exercise_dict(exercise, user_exercise):
 
 def delete_old_user_workout_exercises(workout_day_id):
     db.session.query(User_Workout_Exercises).filter_by(workout_day_id=workout_day_id).delete()
-    print("Successfully deleted")
+    if verbose:
+        print("Successfully deleted")
 
 # Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_available_exercises():
@@ -440,7 +442,8 @@ def exercise_initializer():
     constraints={}
 
     result = exercises_main(parameters, constraints)
-    print(result["formatted"])
+    if verbose:
+        print(result["formatted"])
 
     user_workout_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
 
@@ -516,6 +519,7 @@ def exercise_phase_components_test():
     constraints={}
 
     result = exercise_pc_main(parameters, constraints)
-    print(result["formatted"])
+    if verbose:
+        print(result["formatted"])
 
     return jsonify({"status": "success", "exercises": result}), 200

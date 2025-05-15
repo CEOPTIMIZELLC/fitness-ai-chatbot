@@ -3,6 +3,9 @@ import load_env_var
 from datetime import timedelta
 
 ortools_solver_time_in_seconds = 5
+verbose = True
+log_steps = True
+log_details = True
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'

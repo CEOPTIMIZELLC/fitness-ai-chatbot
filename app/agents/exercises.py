@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds
+from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from dotenv import load_dotenv
@@ -74,7 +74,7 @@ def declare_duration_vars(model, max_entries, phase_component_ids, phase_compone
 
 class ExerciseAgent(ExercisePhaseComponentAgent):
     def solve_model_node_temp(self, state: State, config=None) -> dict:
-        print("Solving First Step")
+        self._log_steps("Solving First Step")
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
         # model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
@@ -386,7 +386,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return logs
 
     def build_opt_model_node_2(self, state: State, config=None) -> dict:
-        print("Building Second Step")
+        self._log_steps("Building Second Step")
 
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
@@ -419,7 +419,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return {"opt_model": (model, model_with_divided_strain, phase_component_ids, exercise_vars, pc_vars)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
-        print("Solving Second Step")
+        self._log_steps("Solving Second Step")
         """Solve model and record relaxation attempt results."""
         model, model_with_divided_strain, phase_component_vars, ex_vars, pc_vars = state["opt_model"]
         exercise_vars, base_strain_vars, one_rep_max_vars, training_weight_vars, is_weighted_vars, volume_vars, density_vars, performance_vars = ex_vars["exercises"], ex_vars["base_strain"], ex_vars["one_rep_max"], ex_vars["training_weight"], ex_vars["weighted_exercises"], ex_vars["volume"], ex_vars["density"], ex_vars["performance"]
@@ -654,20 +654,21 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 line += self._create_formatted_field(field, line_fields[field], length)
             formatted += line + "\n"
 
-        formatted += f"Phase Component Counts:\n"
-        for phase_component_index, phase_component_number in enumerate(phase_component_count):
-            phase_component = phase_components[phase_component_index]
-            phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
-            formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}\n"
-        formatted += f"Total Strain: {solution['strain_ratio']}\n"
-        formatted += f"Total Strain Solution 2: {solution['working_effort'] / solution['base_effort']}\n"
-        formatted += f"Total Strain Scaled: {solution['strain_calc']} >= {solution['max_strain_calc']}\n"
-        formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
-        formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
-        formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
-        formatted += f"Total Base Effort: {solution['base_effort']}\n"
-        formatted += f"Total Working Effort: {solution['working_effort']}\n"
-        formatted += f"Workout Length Allowed: {self._format_duration(workout_availability)}\n"
+        if log_details:
+            formatted += f"Phase Component Counts:\n"
+            for phase_component_index, phase_component_number in enumerate(phase_component_count):
+                phase_component = phase_components[phase_component_index]
+                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
+                formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}\n"
+            formatted += f"Total Strain: {solution['strain_ratio']}\n"
+            formatted += f"Total Strain Solution 2: {solution['working_effort'] / solution['base_effort']}\n"
+            formatted += f"Total Strain Scaled: {solution['strain_calc']} >= {solution['max_strain_calc']}\n"
+            formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
+            formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
+            formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
+            formatted += f"Total Base Effort: {solution['base_effort']}\n"
+            formatted += f"Total Working Effort: {solution['working_effort']}\n"
+            formatted += f"Workout Length Allowed: {self._format_duration(workout_availability)}\n"
         return final_output, formatted
 
     def create_optimization_graph(self, state_class):
