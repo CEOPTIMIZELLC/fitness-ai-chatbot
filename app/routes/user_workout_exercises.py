@@ -319,6 +319,10 @@ def verify_phase_component_information(parameters, pcs, exercises):
         return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
 
     correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
+
+    # Attach allowed exercises to phase component.
+    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
+        pc["allowed_exercises"] = exercises_for_pc
     return None
 
 # Retrieves the total projected duration for the workout. 

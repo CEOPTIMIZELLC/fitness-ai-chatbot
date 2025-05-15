@@ -273,12 +273,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Constraint: Use only allowed exercises
         if constraints["use_allowed_exercises"]:
-            exercises_for_pcs = get_exercises_for_all_pcs(exercises[1:], phase_components[1:], verbose=True)
-            exercises_for_pcs = [0] + exercises_for_pcs[:]
             for i, phase_component_index in enumerate(phase_component_ids):
-                exercises_for_pc = exercises_for_pcs[phase_component_index]
+                pc = phase_components[phase_component_index]
                 only_use_required_items(model = model, 
-                                        required_items = exercises_for_pc, 
+                                        required_items = pc["allowed_exercises"], 
                                         entry_vars = [exercise_vars["exercises"][i]])
 
             logs += "- Only use allowed exercises applied.\n"
