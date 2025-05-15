@@ -25,71 +25,10 @@ from app.agents.exercise_model_specific_constraints import (
 
 from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, get_phase_component_bounds
 from app.utils.longest_string import longest_string_size_for_key
-from app.utils.min_and_max_in_dict import get_item_bounds
+from app.utils.get_pc_exercise_bounds import get_bounds
+from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
 _ = load_dotenv()
-
-def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):
-    return [i for i, exercise in enumerate(exercises, start=1) 
-            if all(f(exercise, phase_component) for f in conditions)]
-
-def get_exercises_for_pc(exercises, phase_component, verbose=False):
-    conditions = [lambda exercise, phase_component: phase_component["pc_ids"] in exercise["pc_ids"],
-                  # lambda exercise, phase_component: phase_component["component_id"] in exercise["component_ids"],
-                  # lambda exercise, phase_component: phase_component["subcomponent_id"] in exercise["subcomponent_ids"],
-                  lambda exercise, phase_component: (1 in exercise["bodypart_ids"]) or (phase_component["bodypart_id"] in exercise["bodypart_ids"])]
-
-    exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions)
-    print_check = False
-
-    if (exercises_for_pc == []) and (phase_component["bodypart_id"] == 1):
-        if verbose: 
-            print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises for this component phase if it's total body.")
-            print_check = True
-        exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:1])
-
-    if exercises_for_pc == []:
-        if verbose: 
-            print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' still has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises for this component phase.")
-            print_check = True
-        exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:1])
-
-    if exercises_for_pc == []:
-        if verbose: 
-            print(f"'{phase_component['phase_name']} {phase_component['component_name']} {phase_component['subcomponent_name']}' still has no exercises for bodypart '{phase_component['bodypart_name']}', include all exercises.")
-            print_check = True
-        exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component)
-    
-    if print_check and verbose:
-        print("")
-    return exercises_for_pc
-
-# A method for retrieving the possible exercises for all phase components.
-# This method removes exercises specific for a phase commponent from those that are allowed for a phase component without any true exercises.
-def get_exercises_for_all_pcs(exercises, phase_components, verbose=False):
-    number_of_possible_exercises = len(exercises)
-
-    exercises_for_pcs = [
-        get_exercises_for_pc(exercises, phase_component, verbose)
-        for phase_component in phase_components
-    ]
-
-    # All phase components that have every possible exercise applied to them.
-    pc_indices_without_true_exercises = [
-        i
-        for i in range(len(exercises_for_pcs))
-        if len(exercises_for_pcs[i]) == number_of_possible_exercises
-    ]
-
-    # Remove the exercises from the phase components without true exercises for minimum searching.
-    for i in pc_indices_without_true_exercises:
-        # Compare to every other list of exercises that have true exercises.
-        for j in range(len(exercises_for_pcs)):
-            if j in pc_indices_without_true_exercises:
-                continue
-            exercises_for_pcs[i] = list(set(exercises_for_pcs[i]) - set(exercises_for_pcs[j]))
-
-    return exercises_for_pcs
 
 def encourage_increase_for_subcomponent(model, exercises, phase_component_ids, used_exercise_vars, performance_vars, max_performance):
     performance_increase_vars = []
@@ -132,55 +71,6 @@ def declare_duration_vars(model, max_entries, phase_component_ids, phase_compone
             name=name,
             working=False if rest_vars is not None else True)
         for i in range(max_entries)]
-
-def get_exercise_bounds(exercises):
-    return {
-        'base_strain': get_item_bounds("base_strain", "base_strain", exercises),
-        'intensity': {"min": 1, "max": 100},
-        'one_rep_max': get_item_bounds("one_rep_max", "one_rep_max", exercises),
-        "duration": get_item_bounds("duration", "duration", exercises),
-        "working_duration": get_item_bounds("working_duration", "working_duration", exercises)
-    }
-
-def get_bounds(phase_components, exercises):
-    pc_bounds = get_phase_component_bounds(phase_components)
-    exercise_bounds = get_exercise_bounds(exercises)
-
-    # Calculate the bounds for training weight.
-    exercise_bounds["training_weight"] = {
-        "min": exercise_bounds["one_rep_max"]["min"] * exercise_bounds["intensity"]["min"],
-        "max": exercise_bounds["one_rep_max"]["max"] * exercise_bounds["intensity"]["max"]
-        }
-
-    # Update the bounds for volume.
-    pc_bounds["volume"]["min"] *= min(exercise_bounds["training_weight"]["min"], 1)
-    pc_bounds["volume"]["max"] *= exercise_bounds["training_weight"]["max"]
-
-    # Calculate the bounds for performance.
-    exercise_bounds["performance"] = {
-        "min": pc_bounds["density"]["min"] * pc_bounds["volume"]["min"],
-        "max": pc_bounds["density"]["max"] * pc_bounds["volume"]["max"]
-        }
-
-    min_one_exercise_effort = pc_bounds["seconds_per_exercise"]["min"] * (10 + exercise_bounds["intensity"]["min"] + exercise_bounds["base_strain"]["min"]) * pc_bounds["reps"]["min"]
-    max_one_exercise_effort = pc_bounds["seconds_per_exercise"]["max"] * (10 + exercise_bounds["intensity"]["max"] + exercise_bounds["base_strain"]["max"]) * pc_bounds["reps"]["max"]
-
-    # Calculate the bounds for effort.
-    exercise_bounds["effort"] = {
-        "min": (min_one_exercise_effort + (10 * pc_bounds["rest"]["min"] * 5)) * pc_bounds["sets"]["min"],
-        "max": (max_one_exercise_effort + (10 * pc_bounds["rest"]["max"] * 5)) * pc_bounds["sets"]["max"]
-        }
-
-    # Calculate the bounds for working effort.
-    exercise_bounds["working_effort"] = {
-        "min": min_one_exercise_effort * pc_bounds["sets"]["min"],
-        "max": max_one_exercise_effort * pc_bounds["sets"]["max"]
-        }
-
-    exercise_bounds["max_strain"] = int(exercise_bounds["working_effort"]["max"] / exercise_bounds["effort"]["min"] * 100)
-
-    return pc_bounds, exercise_bounds
-
 
 class ExerciseAgent(ExercisePhaseComponentAgent):
     def solve_model_node_temp(self, state: State, config=None) -> dict:

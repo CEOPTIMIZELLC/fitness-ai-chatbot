@@ -26,7 +26,7 @@ from app.agents.exercise_model_specific_constraints import create_duration_var
 
 from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 from app.utils.longest_string import longest_string_size_for_key
-from app.utils.min_and_max_in_dict import get_item_bounds
+from app.utils.get_pc_exercise_bounds import get_phase_component_bounds
 
 available_constraints = """
 - use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
@@ -77,19 +77,6 @@ def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise
             rest=rest_vars[i] if rest_vars is not None else 0,
             name=name)
         for i in range(max_entries)]
-
-def get_phase_component_bounds(phase_components):
-    return {
-        'seconds_per_exercise': get_item_bounds("seconds_per_exercise", "seconds_per_exercise", phase_components),
-        'reps': get_item_bounds("reps_min", "reps_max", phase_components),
-        'sets': get_item_bounds("sets_min", "sets_max", phase_components),
-        'rest': get_item_bounds("rest_min", "rest_max", phase_components),
-        'volume': get_item_bounds("volume_min", "volume_max", phase_components),
-        'density': get_item_bounds("density_min", "density_max", phase_components),
-        'duration': get_item_bounds("duration_min", "duration_max", phase_components),
-        'working_duration': get_item_bounds("working_duration_min", "working_duration_max", phase_components)
-    }
-
 
 def encourage_increase_for_subcomponent(model, exercises, phase_component_ids, used_exercise_vars, performance_vars, max_performance):
     performance_increase_vars = []

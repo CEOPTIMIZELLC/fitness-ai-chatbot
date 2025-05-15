@@ -23,52 +23,92 @@ from app.models import (
 
 bp = Blueprint('user_workout_exercises', __name__)
 
-from app.agents.exercises import get_exercises_for_pc, get_exercises_for_all_pcs
 from app.agents.exercises import Main as exercises_main
 from app.agents.exercises_phase_components import Main as exercise_pc_main
 from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
 from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_there_is_enough_time
-
+from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
+
 
 dummy_exercise = {
     "id": 0,
     "name": "Inactive",
     "base_strain": 0,
     "technical_difficulty": 0,
-    "component_id": 0,
-    "subcomponent_id": 0,
+    "component_ids": 0,
+    "subcomponent_ids": 0,
+    "pc_ids": 0,
     "body_region_ids": None,
     "bodypart_ids": None,
     "muscle_group_ids": None,
-    "muscle_ids": None
+    "muscle_ids": None,
+    "supportive_equipment_ids": None,
+    "supportive_equipment_measurements": None,
+    "assistive_equipment_ids": None,
+    "assistive_equipment_measurements": None,
+    "weighted_equipment_ids": None,
+    "weighted_equipment_measurements": [0],
+    "is_weighted": False,
+    "marking_equipment_ids": None,
+    "marking_equipment_measurements": None,
+    "other_equipment_ids": None,
+    "other_equipment_measurements": None,
+    "one_rep_max": 0,                               # Scaled up to avoid floating point errors from model.
+    "one_rep_load": 0,                             # Scaled up to avoid floating point errors from model.
+    "volume": 0,                                         # Scaled up to avoid floating point errors from model.
+    "density": 0,                            # Scaled up to avoid floating point errors from model.
+    "intensity": 0,
+    "performance": 0,                    # Scaled up to avoid floating point errors from model.
+    "duration": 0,
+    "working_duration": 0,
 }
 
 dummy_phase_component = {
     "id": 0,
-    "name": "Inactive",
+    "workout_component_id": 0,
+    "workout_day_id": 0,
+    "bodypart_id": 0,
     "bodypart_name": "Inactive",
     "duration": 0,
+    "phase_component_id": 0,
+    "phase_id": 0,
+    "phase_name": "Inactive",
+    "component_id": 0,
+    "component_name": "Inactive",
+    "subcomponent_id": 0,
+    "subcomponent_name": "Inactive",
+    "pc_ids": 0,
+    "density_priority": 0,
+    "volume_priority": 0,
+    "load_priority": 0,
+    "name": "Inactive",
+    "reps_min": 0, 
+    "reps_max": 0,
+    "sets_min": 0,
+    "sets_max": 0,
+    "tempo": 0,
+    "seconds_per_exercise": 0,
+    "intensity_min": 0,
+    "intensity_max": 0,
+    "rest_min": 0,                          # Adjusted so that rest is a multiple of 5.
+    "rest_max": 0,                          # Adjusted so that rest is a multiple of 5.
     "duration_min": 0,
     "duration_min_desired": 0,
     "duration_min_max": 0,
     "duration_max": 0,
     "working_duration_min": 0,
     "working_duration_max": 0,
-    'reps_min': 0, 
-    'reps_max': 0, 
-    'sets_min': 0, 
-    'sets_max': 0, 
-    'seconds_per_exercise': 0, 
-    'intensity_min': 0, 
-    'intensity_max': 0, 
-    'rest_min': 0, 
-    'rest_max': 0,
-    'exercises_per_bodypart_workout_min': 0,
-    'exercises_per_bodypart_workout_max': 0,
-    'exercise_selection_note': None
+    "volume_min": 0,
+    "volume_max": 0,
+    "density_min": 0,              # Scaled up to avoid floating point errors from model.
+    "density_max": 0,              # Scaled up to avoid floating point errors from model.
+    "exercises_per_bodypart_workout_min": 0,
+    "exercises_per_bodypart_workout_max": 0,
+    "exercise_selection_note": 0,
+    'allowed_exercises': [0],
 }
 
 def user_component_dict(workout, pc):
