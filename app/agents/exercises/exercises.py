@@ -10,7 +10,8 @@ from app.agents.constraints import (
     link_entry_and_item, 
     no_repeated_items, 
     only_use_required_items, 
-    entries_equal)
+    entries_equal, 
+    retrieve_indication_of_increase)
 
 from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_duration_var, 
@@ -30,33 +31,10 @@ from .get_pc_exercise_bounds import get_bounds
 _ = load_dotenv()
 
 def encourage_increase_for_subcomponent(model, exercises, phase_component_ids, used_exercise_vars, performance_vars, max_performance):
-    performance_increase_vars = []
-    for phase_component_index, performance_var, used_exercise_var in zip(phase_component_ids, performance_vars, used_exercise_vars):
-        # Booleans to check if the performance increased for whichever exercise was selected.
-        performance_increase_for_pc_met = [model.NewBoolVar(f'exercise_{exercise_index}_performance_increase_for_{phase_component_index}')
-                                           for exercise_index in range(1, len(exercises))]
-
-        # Boolean to check if a performance increase occurred for the phase component.
-        performance_penalty = model.NewIntVar(0, max_performance // 100, f'performance_penalty_for_{phase_component_index}')
-        performance_difference = model.NewIntVar(0, max_performance, f'performance_difference_for_{phase_component_index}')
-
-        for (performance_increase_met_for_exercise, exercise, exercise_for_exercise_var) in zip(performance_increase_for_pc_met[1:], exercises[1:], used_exercise_var[1:]):
-
-            # Ensure the check is off if the exercise isn't picked.
-            model.Add(performance_increase_met_for_exercise == 0).OnlyEnforceIf(exercise_for_exercise_var.Not())
-
-            # If the maximum is going to be reached, do not exceed it.
-            model.Add(performance_var > exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var, performance_increase_met_for_exercise)
-            model.Add(performance_var <= exercise["performance"]).OnlyEnforceIf(exercise_for_exercise_var, performance_increase_met_for_exercise.Not())
-
-            # Calculate penalty if increase isn't met.
-            model.Add(performance_difference == 0).OnlyEnforceIf(exercise_for_exercise_var, performance_increase_met_for_exercise)
-            model.Add(performance_difference == (100 + exercise["performance"] - performance_var)).OnlyEnforceIf(exercise_for_exercise_var, performance_increase_met_for_exercise.Not())
-        
-        model.AddDivisionEquality(performance_penalty, performance_difference, 100)
-        performance_increase_vars.append(performance_penalty)
-    return performance_increase_vars
-
+    return [
+        retrieve_indication_of_increase(model, exercises, max_performance, pc_index, performance_var, used_exercise_var)
+        for pc_index, performance_var, used_exercise_var in zip(phase_component_ids, performance_vars, used_exercise_vars)
+    ]
 
 def declare_duration_vars(model, max_entries, phase_component_ids, phase_component_constraints, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars=None, name=""):
     return [

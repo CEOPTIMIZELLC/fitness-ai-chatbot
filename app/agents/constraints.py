@@ -298,3 +298,28 @@ def add_tight_bounds(model, entry_vars, used_vars, items, name="", minimum_key=N
         phase_component_counts[i] = counter
         
     return phase_component_counts
+
+def retrieve_indication_of_increase(model, items, max_performance, var_index, performance_var, used_item):
+    # Booleans to check if the performance increased for whichever item was selected.
+    performance_increase_for_pc_met = [model.NewBoolVar(f'item_{i}_performance_increase_for_{var_index}')
+                                       for i in range(1, len(items))]
+
+    # Boolean to check if a performance increase occurred for the phase component.
+    performance_penalty = model.NewIntVar(0, max_performance // 100, f'performance_penalty_for_{var_index}')
+    performance_difference = model.NewIntVar(0, max_performance, f'performance_difference_for_{var_index}')
+
+    for (performance_increase_met_for_item, item, item_selected) in zip(performance_increase_for_pc_met[1:], items[1:], used_item[1:]):
+
+        # Ensure the check is off if the item isn't picked.
+        model.Add(performance_increase_met_for_item == 0).OnlyEnforceIf(item_selected.Not())
+
+        # If the maximum is going to be reached, do not exceed it.
+        model.Add(performance_var > item["performance"]).OnlyEnforceIf(item_selected, performance_increase_met_for_item)
+        model.Add(performance_var <= item["performance"]).OnlyEnforceIf(item_selected, performance_increase_met_for_item.Not())
+
+        # Calculate penalty if increase isn't met.
+        model.Add(performance_difference == 0).OnlyEnforceIf(item_selected, performance_increase_met_for_item)
+        model.Add(performance_difference == (100 + item["performance"] - performance_var)).OnlyEnforceIf(item_selected, performance_increase_met_for_item.Not())
+
+    model.AddDivisionEquality(performance_penalty, performance_difference, 100)
+    return performance_penalty

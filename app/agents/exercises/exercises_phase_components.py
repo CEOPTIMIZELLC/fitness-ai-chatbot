@@ -10,7 +10,8 @@ from app.agents.constraints import (
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
     symmetry_breaking_constraints, 
-    add_tight_bounds)
+    add_tight_bounds, 
+    retrieve_indication_of_increase)
 
 from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_duration_var, 
@@ -79,32 +80,10 @@ def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise
         for i in range(max_entries)]
 
 def encourage_increase_for_subcomponent(model, pcs, used_pc_vars, performance_vars, max_performance):
-    performance_increase_vars = []
-    for phase_component_index, (performance_var, used_pc_var) in enumerate(zip(performance_vars, used_pc_vars)):
-        # Booleans to check if the performance increased for whichever exercise was selected.
-        performance_increase_for_pc_met = [model.NewBoolVar(f'pc_{pc_index}_performance_increase_for_{phase_component_index}')
-                                           for pc_index in range(1, len(pcs))]
-
-        # Boolean to check if a performance increase occurred for the phase component.
-        performance_penalty = model.NewIntVar(0, max_performance // 100, f'performance_penalty_for_{phase_component_index}')
-        performance_difference = model.NewIntVar(0, max_performance, f'performance_difference_for_{phase_component_index}')
-
-        for (performance_increase_met_for_pc, pc, pc_for_pc_var) in zip(performance_increase_for_pc_met[1:], pcs[1:], used_pc_var[1:]):
-
-            # Ensure the check is off if the exercise isn't picked.
-            model.Add(performance_increase_met_for_pc == 0).OnlyEnforceIf(pc_for_pc_var.Not())
-
-            # If the maximum is going to be reached, do not exceed it.
-            model.Add(performance_var > pc["performance"]).OnlyEnforceIf(pc_for_pc_var, performance_increase_met_for_pc)
-            model.Add(performance_var <= pc["performance"]).OnlyEnforceIf(pc_for_pc_var, performance_increase_met_for_pc.Not())
-
-            # Calculate penalty if increase isn't met.
-            model.Add(performance_difference == 0).OnlyEnforceIf(pc_for_pc_var, performance_increase_met_for_pc)
-            model.Add(performance_difference == (100 + pc["performance"] - performance_var)).OnlyEnforceIf(pc_for_pc_var, performance_increase_met_for_pc.Not())
-        
-        model.AddDivisionEquality(performance_penalty, performance_difference, 100)
-        performance_increase_vars.append(performance_penalty)
-    return performance_increase_vars
+    return [
+        retrieve_indication_of_increase(model, pcs, max_performance, pc_index, performance_var, used_pc_var)
+        for pc_index, (performance_var, used_pc_var) in enumerate(zip(performance_vars, used_pc_vars))
+    ]
 
 class State(BaseAgentState):
     parameter_input: dict
