@@ -325,6 +325,7 @@ def verify_phase_component_information(parameters, pcs, exercises):
     # Attach allowed exercises to phase component.
     for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
         pc["allowed_exercises"] = exercises_for_pc
+        pc["performance"]=min(exercises[exercise_for_pc-1]["performance"] for exercise_for_pc in exercises_for_pc)
     return None
 
 # Retrieves the total projected duration for the workout. 
