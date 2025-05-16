@@ -87,10 +87,8 @@ def user_component_dict(workout, pc):
         "exercise_selection_note": pc.exercise_selection_note,
     }
 
-
 def construct_user_workout_components_list(user_workout_components):
     user_workout_components_list = [dummy_phase_component]
-
     # Convert the query into a list of dictionaries, adding the information for the phase restrictions.
     for user_workout_component in user_workout_components:
         user_workout_components_list.append(user_component_dict(user_workout_component, user_workout_component.phase_components))

@@ -11,42 +11,12 @@ bp = Blueprint('user_workout_days', __name__)
 
 from app.agents.phase_components import Main as phase_component_main
 from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_there_is_enough_time
+from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
-from app.routes.user_workout_exercise_verification import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
-from app.routes.construct_available_exercises_list import construct_available_exercises_list
+from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
+from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
 # ----------------------------------------- Workout Days -----------------------------------------
-
-def phase_component_dict(pc, bodypart_id, bodypart_name):
-    """Format the phase component data."""
-    return {
-        "id": pc.id,
-        "phase_component_id": pc.id,
-        "name": pc.name,
-        "phase_id": pc.phase_id,
-        "phase_name": pc.phases.name,
-        "component_id": pc.component_id,
-        "component_name": pc.components.name,
-        "subcomponent_id": pc.subcomponent_id,
-        "subcomponent_name": pc.subcomponents.name,
-        "pc_ids": [pc.component_id, pc.subcomponent_id],
-        "required_every_workout": pc.required_every_workout,
-        "required_within_microcycle": pc.required_within_microcycle,
-        "frequency_per_microcycle_min": pc.frequency_per_microcycle_min,
-        "frequency_per_microcycle_max": pc.frequency_per_microcycle_max,
-        "exercises_per_bodypart_workout_min": pc.exercises_per_bodypart_workout_min if pc.exercises_per_bodypart_workout_min != None else 1,
-        "exercises_per_bodypart_workout_max": pc.exercises_per_bodypart_workout_max if pc.exercises_per_bodypart_workout_max != None else 1,
-        # "duration_min": ((pc.exercises_per_bodypart_workout_min or 1) * pc.duration_min),
-        # "duration_max": ((pc.exercises_per_bodypart_workout_max or 1) * pc.duration_max),
-        "duration_min": pc.duration_min,
-        "duration_max": pc.duration_max,
-        "duration_min_desired": pc.duration_min,
-        "duration_min_max": pc.duration_min,
-        "bodypart_id": bodypart_id, 
-        "bodypart": bodypart_name, 
-        "bodypart_name": bodypart_name
-    }
 
 def delete_old_user_workout_days(microcycle_id):
     db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
@@ -75,22 +45,6 @@ def retrieve_phase_component_bodyparts(phase_id):
         .all()
     )
     return possible_phase_component_bodyparts    
-
-# Using the information for the phase components, generate the phase components with the minimum and maximum possible values.
-def construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts):
-    possible_phase_components_list = []
-
-    # Convert the query into a list of dictionaries.
-    for possible_phase_component in possible_phase_components:
-        # If the phase component is resistance, append it multiple times.
-        if possible_phase_component.component_id == 6:
-            for pc_bodypart in possible_phase_component_bodyparts:
-                possible_phase_components_list.append(phase_component_dict(possible_phase_component, pc_bodypart.bodypart_id, pc_bodypart.bodyparts.name))
-        # Append only once for full body if any other phase component.
-        else:
-            possible_phase_components_list.append(phase_component_dict(possible_phase_component, 1, "total_body"))
-    
-    return possible_phase_components_list
 
 # Given a start date and a duration, convert into a list of weekdays and create a corresponding workout day entry.
 def duration_to_weekdays(dur, start_date, microcycle_id):

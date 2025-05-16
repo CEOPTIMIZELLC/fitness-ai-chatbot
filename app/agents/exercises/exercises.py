@@ -12,7 +12,7 @@ from app.agents.constraints import (
     only_use_required_items, 
     entries_equal)
 
-from app.agents.exercise_model_specific_constraints import (
+from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_duration_var, 
     create_exercise_effort_var, 
     constrain_weighted_exercises_var, 
@@ -23,10 +23,9 @@ from app.agents.exercise_model_specific_constraints import (
     constrain_density_vars, 
     constrain_performance_vars)
 
-from app.agents.exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent, get_phase_component_bounds
+from .exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent
 from app.utils.longest_string import longest_string_size_for_key
-from app.utils.get_pc_exercise_bounds import get_bounds
-from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
+from .get_pc_exercise_bounds import get_bounds
 
 _ = load_dotenv()
 

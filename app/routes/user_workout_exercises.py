@@ -23,15 +23,14 @@ from app.models import (
 
 bp = Blueprint('user_workout_exercises', __name__)
 
-from app.agents.exercises import Main as exercises_main
-from app.agents.exercises_phase_components import Main as exercise_pc_main
+from app.agents.exercises import exercises_main
+from app.agents.exercises import exercise_pc_main
 from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_there_is_enough_time
+from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
-from app.routes.user_workout_exercise_verification import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
-from app.routes.construct_user_workout_components_list import construct_user_workout_components_list
-from app.routes.construct_available_exercises_list import construct_available_exercises_list
+from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
+from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 

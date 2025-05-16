@@ -12,7 +12,7 @@ from app.agents.constraints import (
     symmetry_breaking_constraints, 
     add_tight_bounds)
 
-from app.agents.exercise_model_specific_constraints import (
+from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_duration_var, 
     create_exercise_effort_var, 
     constrain_weighted_exercises_var, 
@@ -22,11 +22,11 @@ from app.agents.exercise_model_specific_constraints import (
     constrain_density_vars, 
     constrain_performance_vars)
 
-from app.agents.exercise_model_specific_constraints import create_duration_var
+from app.agents.exercises.exercise_model_specific_constraints import create_duration_var
 
 from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 from app.utils.longest_string import longest_string_size_for_key
-from app.utils.get_pc_exercise_bounds import get_phase_component_bounds
+from .get_pc_exercise_bounds import get_phase_component_bounds
 
 available_constraints = """
 - use_all_phase_components: Forces all phase components to be assigned at least once in a workout.

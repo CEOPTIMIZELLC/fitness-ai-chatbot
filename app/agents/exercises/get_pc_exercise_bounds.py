@@ -1,4 +1,8 @@
-from app.utils.min_and_max_in_dict import get_item_bounds
+def get_item_bounds(min_key, max_key, items):
+    return {
+            "min": min(item[min_key] for item in items),
+            "max": max(item[max_key] for item in items)
+        }
 
 def get_phase_component_bounds(phase_components):
     return {
