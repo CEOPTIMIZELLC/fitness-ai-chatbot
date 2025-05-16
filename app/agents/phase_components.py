@@ -9,6 +9,7 @@ from app.agents.constraints import (
     day_duration_within_availability, 
     use_workout_required_components, 
     use_all_required_items, 
+    only_use_required_items, 
     frequency_within_min_max, 
     consecutive_bodyparts_for_component)
 
@@ -20,6 +21,7 @@ _ = load_dotenv()
 available_constraints = """
 - day_duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
 - use_workout_required_components: Forces all phase components required for a workout to be assigned in every workout.
+- only_use_required_components: Forces only required phase components to be assigned.
 - use_microcycle_required_components: Forces all phase components required for a microcycle to be assigned at lease once in the microcycle.
 - frequency_within_min_max: Forces each phase component that does occur to occur between the minimum and maximum values allowed.
 - consecutive_bodyparts_for_component: Forces phase components of the same component and subcomponent type to occur simultaneously on a workout where any is assigned.
@@ -84,6 +86,7 @@ class PhaseComponentAgent(BaseAgent):
         constraints = {
             "day_duration_within_availability": True,       # The time of a workout won't exceed the time allowed for that given day.
             "use_workout_required_components": True,        # Include phase components that are required in every workout at least once.
+            "only_use_required_components": True,           # Only required phase components are included.
             "use_microcycle_required_components": True,     # Include phase components that are required in every microcycle at least once.
             "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
             "consecutive_bodyparts_for_component": False,    # Every bodypart division must be done consecutively for a phase component.
@@ -169,6 +172,15 @@ class PhaseComponentAgent(BaseAgent):
                                             used_vars=vars["active_phase_components"], 
                                             active_entry_vars=vars["active_workday"])
             logs += "- All phase components required every workout will be included in every workout applied.\n"
+
+        # Constraint: Only use required phase components
+        if constraints["only_use_required_components"]:
+            # Retrieves the index of all required phases.
+            not_required_phase_components = [i for i, phase_component in enumerate(phase_components) if phase_component["required_within_microcycle"] != "always"]
+            for item_index in not_required_phase_components:
+                conditions = [row[item_index].Not() for row in vars["active_phase_components"]]
+                model.AddBoolAnd(conditions)
+            logs += "- Only use required phases components applied.\n"
 
         # Constraint: Force all phase components required in every microcycle to be included at least once.
         if constraints["use_microcycle_required_components"]:
