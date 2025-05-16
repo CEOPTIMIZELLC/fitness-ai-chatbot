@@ -138,17 +138,41 @@ class PhaseComponentAgent(BaseAgent):
             for index_for_phase_component in range(len(phase_components))]
             for index_for_day in range(len(microcycle_weekdays))]
 
+        # Create the entry for phase component's count
+        # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
+        vars["exercises_per_bodypart"] = [[
+            create_optional_intvar(
+                model=model, 
+                activator = vars["active_phase_components"][index_for_day][index_for_phase_component],
+                min_if_active = phase_components[index_for_phase_component]["exercises_per_bodypart_workout_min"],
+                max_if_active = phase_components[index_for_phase_component]["exercises_per_bodypart_workout_max"],
+                name_of_entry_var = f'phase_component_{index_for_phase_component}_number_of_exercises_on_day_{index_for_day}')
+            for index_for_phase_component in range(len(phase_components))]
+            for index_for_day in range(len(microcycle_weekdays))]
+
         # Create the entry for phase component's duration
         # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
-        vars["duration"] = [[
+        vars["partial_duration"] = [[
             create_optional_intvar(
                 model=model, 
                 activator = vars["active_phase_components"][index_for_day][index_for_phase_component],
                 min_if_active = phase_components[index_for_phase_component]["duration_min"],
                 max_if_active = phase_components[index_for_phase_component]["duration_max"],
-                name_of_entry_var = f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}')
+                name_of_entry_var = f'phase_component_{index_for_phase_component}_partial_duration_on_day_{index_for_day}')
             for index_for_phase_component in range(len(phase_components))]
             for index_for_day in range(len(microcycle_weekdays))]
+
+        # Create the entry for phase component's duration
+        # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
+        vars["duration"] = [[
+            model.NewIntVar(0, len(phase_components) * phase_components[index_for_phase_component]["duration_max"], f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}') 
+            for index_for_phase_component in range(len(phase_components))]
+            for index_for_day in range(len(microcycle_weekdays))]
+
+        # Add relationship between exercises per bodypart and the partial duration.
+        for exs_for_day, partial_durations_for_day, durations_for_day in zip(vars["exercises_per_bodypart"], vars["partial_duration"], vars["duration"]):
+            for ex_for_pc, partial_duration_for_pc, duration_for_pc in zip(exs_for_day, partial_durations_for_day, durations_for_day):
+                model.AddMultiplicationEquality(duration_for_pc, [ex_for_pc, partial_duration_for_pc])
         return vars
 
 
@@ -262,11 +286,12 @@ class PhaseComponentAgent(BaseAgent):
         logs, duration_spread_var, total_duration_to_maximize = self.apply_model_objective(constraints, model, vars, workout_availability)
         state["logs"] += logs
 
-        return {"opt_model": (model, workout_availability, vars["active_phase_components"], vars["duration"], duration_spread_var, total_duration_to_maximize)}
+        return {"opt_model": (model, workout_availability, vars, duration_spread_var, total_duration_to_maximize)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""
-        model, workout_availability, active_phase_components, duration_vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]
+        model, workout_availability, vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]
+        active_phase_components, exercises_per_bodypart_vars, partial_duration_vars, duration_vars = vars["active_phase_components"], vars["exercises_per_bodypart"], vars["partial_duration"], vars["duration"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 12
@@ -289,12 +314,12 @@ class PhaseComponentAgent(BaseAgent):
             schedule = []
 
             # Each day in the microcycle
-            for index_for_day, values_for_day in enumerate(zip(workout_availability, active_phase_components, duration_vars)):
-                workout_availability_for_day, active_phase_components_for_day, duration_vars_for_day = values_for_day
+            for index_for_day, values_for_day in enumerate(zip(workout_availability, active_phase_components, exercises_per_bodypart_vars, partial_duration_vars, duration_vars)):
+                workout_availability_for_day, active_phase_components_for_day, exercises_per_bodypart_vars_for_day, partial_duration_vars_for_day, duration_vars_for_day = values_for_day
 
                 # Each phase used in the day.
-                for index_for_phase_component, values_for_phase_component in enumerate(zip(active_phase_components_for_day, duration_vars_for_day)):
-                    active_phase_components_for_phase_component, duration_vars_for_phase_component = values_for_phase_component
+                for index_for_phase_component, values_for_phase_component in enumerate(zip(active_phase_components_for_day, exercises_per_bodypart_vars_for_day, partial_duration_vars_for_day, duration_vars_for_day)):
+                    active_phase_components_for_phase_component, exercises_per_bodypart_vars_for_phase_component, partial_duration_vars_for_phase_component, duration_vars_for_phase_component = values_for_phase_component
 
                     # Ensure that the phase component is active.
                     if(solver.Value(active_phase_components_for_phase_component)):
@@ -303,6 +328,8 @@ class PhaseComponentAgent(BaseAgent):
                         schedule.append((
                             index_for_phase_component, index_for_day, 
                             solver.Value(active_phase_components_for_phase_component), 
+                            solver.Value(exercises_per_bodypart_vars_for_phase_component), 
+                            solver.Value(partial_duration_vars_for_phase_component), 
                             duration_vars_current
                         ))
                         microcycle_duration += duration_vars_current
@@ -371,7 +398,10 @@ class PhaseComponentAgent(BaseAgent):
             "number": ("Component", 12),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
-            "duration": ("Duration", 30),
+            "exercises_per_bodypart": ("Exercises Per Bodypart", 30),
+            "partial_duration": ("Partial Duration", 35),
+            "partial_duration_sec": ("Partial Duration in Seconds", 30),
+            "duration": ("Duration", 35),
             "duration_sec": ("Duration in Seconds", 30),
         }
 
@@ -398,7 +428,7 @@ class PhaseComponentAgent(BaseAgent):
         for component_count, (phase_component_index, workday_index, *metrics) in enumerate(schedule):
             phase_component = phase_components[phase_component_index]
 
-            (active_phase_components, duration_var) = metrics
+            (active_phase_components, exercises_per_bodypart_var, partial_duration_var, duration_var) = metrics
 
             if active_phase_components:
                 final_output.append({
@@ -425,8 +455,11 @@ class PhaseComponentAgent(BaseAgent):
                     "number": str(component_count + 1),
                     "phase_component": f"{phase_component['name']}",
                     "bodypart": phase_component["bodypart"],
+                    "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}",
+                    "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
+                    "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}",
                     "duration": f"{self._format_duration(duration_var)} sec",
-                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}"
+                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * len(phase_components))}"
                 }
 
                 line = ""

@@ -10,25 +10,42 @@ from datetime import timedelta
 bp = Blueprint('user_workout_days', __name__)
 
 from app.agents.phase_components import Main as phase_component_main
-from app.utils.common_table_queries import current_microcycle, current_workout_day
+from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
 from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_there_is_enough_time
+from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
-
+from app.routes.user_workout_exercise_verification import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
+from app.routes.construct_available_exercises_list import construct_available_exercises_list
 # ----------------------------------------- Workout Days -----------------------------------------
 
 def phase_component_dict(pc, bodypart_id, bodypart_name):
     """Format the phase component data."""
     return {
         "id": pc.id,
+        "phase_component_id": pc.id,
         "name": pc.name,
+        "phase_id": pc.phase_id,
+        "phase_name": pc.phases.name,
+        "component_id": pc.component_id,
+        "component_name": pc.components.name,
+        "subcomponent_id": pc.subcomponent_id,
+        "subcomponent_name": pc.subcomponents.name,
+        "pc_ids": [pc.component_id, pc.subcomponent_id],
         "required_every_workout": pc.required_every_workout,
         "required_within_microcycle": pc.required_within_microcycle,
         "frequency_per_microcycle_min": pc.frequency_per_microcycle_min,
         "frequency_per_microcycle_max": pc.frequency_per_microcycle_max,
-        "duration_min": ((pc.exercises_per_bodypart_workout_min or 1) * pc.duration_min),
-        "duration_max": ((pc.exercises_per_bodypart_workout_max or 1) * pc.duration_max),
+        "exercises_per_bodypart_workout_min": pc.exercises_per_bodypart_workout_min if pc.exercises_per_bodypart_workout_min != None else 1,
+        "exercises_per_bodypart_workout_max": pc.exercises_per_bodypart_workout_max if pc.exercises_per_bodypart_workout_max != None else 1,
+        # "duration_min": ((pc.exercises_per_bodypart_workout_min or 1) * pc.duration_min),
+        # "duration_max": ((pc.exercises_per_bodypart_workout_max or 1) * pc.duration_max),
+        "duration_min": pc.duration_min,
+        "duration_max": pc.duration_max,
+        "duration_min_desired": pc.duration_min,
+        "duration_min_max": pc.duration_min,
         "bodypart_id": bodypart_id, 
-        "bodypart": bodypart_name
+        "bodypart": bodypart_name, 
+        "bodypart_name": bodypart_name
     }
 
 def delete_old_user_workout_days(microcycle_id):
@@ -98,6 +115,25 @@ def duration_to_weekdays(dur, start_date, microcycle_id):
     
     return microcycle_weekdays, user_workdays
 
+# Verifies and updates the phase component information.
+# Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
+# Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
+# Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
+# Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
+def verify_phase_component_information(parameters, pcs, exercises):
+    exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
+
+    # Change the minimum allowed duration if the exercises possible don't allow for it.
+    correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
+
+    # Check if there are enough exercises to complete the phase components.
+    pc_without_enough_ex_message = check_if_there_are_enough_exercises(pcs, exercises_for_pcs)
+    if pc_without_enough_ex_message:
+        return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
+
+    correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
+    return None
+
 def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose=False):
     parameters={}
     constraints={}
@@ -120,6 +156,13 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     parameters["microcycle_weekdays"] = microcycle_weekdays
     parameters["weekday_availability"] = weekday_availability
     parameters["phase_components"] = possible_phase_components_list
+    exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(current_user.id)
+    parameters["possible_exercises"] = construct_available_exercises_list(exercises_with_component_phases)
+
+    pc_verification_message = verify_phase_component_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:])
+    if pc_verification_message:
+        return pc_verification_message
+
 
     result = phase_component_main(parameters, constraints)
     if verbose:
