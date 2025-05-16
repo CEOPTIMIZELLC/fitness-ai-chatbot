@@ -85,3 +85,7 @@ Routes related to the creation and deletion of accounts and users, as well as lo
 | --- | --- | --- |
 | **[GET]** | `/user_workout_exercises` | List current user's past and present workout exercises |
 | **[GET]** | `/user_workout_exercises/current_list` | List current user's workout exercises for the currently active work day |
+| **[POST, PATCH]** | `/user_workout_exercises` | Perform exercise assignment for the current user's currently active workout |
+| **[POST, PATCH]** | `/user_workout_exercises/workout_completed` | Indicates the current workout is completed and updates maximum performance |
+| **[POST, PATCH]** | `/user_workout_exercises/initialize_and_complete` | Performs exercise classification and updating in one route. |
+| **[POST, PATCH]** | `/user_workout_exercises/test_exercise_phase_components` | Performs first step of exercise classification (phase component assignment) for testing. |

@@ -2,21 +2,22 @@
 AI based personal trainer with ability to chat with clients to build and maintain personalized programs and daily workouts.
 
 # Setup
-Ensure that you have an environment file with the following environment variables filled out.
+Ensure that you have an environment file with the following environment variables filled out at the route level.
 
 ```bash
-POSTRGRES_HOST=
+POSTRGRES_HOST="localhost"
 POSTRGRES_DATABASE="fitness_db"
-POSTRGRES_USER=
-POSTRGRES_PASSWORD=
+POSTRGRES_USER="postgres"
+POSTRGRES_PASSWORD="postgres"
 
 LANGUAGE_MODEL="gpt-4o-mini"
 OPENAI_API_KEY=
 ```
 
+# Database Initial Setup
 If significant changes have been made to the models, it may be necessary to run the following from the parent directory to restart the database. As of right now, if you remove models that map to tables that would have foreign keys that rely on it, the code may not be able to drop them from the database with the current restarting route in the application. To get around this, a script has been created that will simply delete the old database and make a new empty one that can be used. 
 ```bash
-poetry run python del_db.py
+poetry run python reinitialize_db_script.py
 ```
 
 # How to Run
@@ -29,7 +30,7 @@ poetry run python run.py
 **Logout User (If logged in)**
 ```
 [POST]
-localhost:5000/auth/logout
+localhost:5000/logout
 ```
 
 **Initialize Database (If you want to reset the database)**
@@ -43,7 +44,7 @@ localhost:5000/database_manipulation/init_db
 [POST]
 localhost:5000/database_manipulation/init_db
 
-Body (form-data):
+BODY (form-data):
 email: [string; REQUIRED; Must be a valid email address format that doesn't already exist in the database]
 password: [string; REQUIRED; Must be between 8 and 20 characters long, must contain at least one number, and must contain at least one of the following characters: ! @ # $ % ^ & * _ ?]
 password_confirm: [string; REQUIRED; Must be the same as password]
@@ -57,9 +58,9 @@ goal: [string; REQUIRED;]
 **Login User**
 ```
 [POST]
-localhost:5000/auth/login
+localhost:5000/login
 
-Body (form-data):
+BODY (form-data):
 email: [string; REQUIRED; Must be a valid email address that exists in the database]
 password: [string; REQUIRED; Must be the same as the password that was used to register the user with the given email address.]
 ```
@@ -69,7 +70,7 @@ password: [string; REQUIRED; Must be the same as the password that was used to r
 [POST]
 localhost:5000/user_weekday_availability/
 
-Body (raw) [JSON]:
+BODY (raw) [JSON]:
 {
     "availability": "[string; REQUIRED; Message to send to the AI to extract your availability for each weekday.]"
 }
@@ -80,7 +81,7 @@ Body (raw) [JSON]:
 [POST]
 localhost:5000/user_macrocycles/
 
-Body (raw) [JSON]:
+BODY (raw) [JSON]:
 {
     "goal": "[string; REQUIRED; Message to send to the AI to extract your current goal and determine its type.]"
 }
@@ -121,7 +122,7 @@ localhost:5000/user_workout_exercises/complete_workout
 **Logout User (If logged in)**
 ```
 [POST]
-localhost:5000/auth/logout
+localhost:5000/logout
 ```
 
 **Initialize Database with User (If you want to reset the database)**
@@ -129,7 +130,7 @@ localhost:5000/auth/logout
 [POST]
 localhost:5000/database_manipulation/init_db
 
-Body (form-data):
+BODY (form-data):
 email: [string; REQUIRED; Must be a valid email address format that doesn't already exist in the database]
 password: [string; REQUIRED; Must be between 8 and 20 characters long, must contain at least one number, and must contain at least one of the following characters: ! @ # $ % ^ & * _ ?]
 password_confirm: [string; REQUIRED; Must be the same as password]
@@ -143,9 +144,9 @@ goal: [string; REQUIRED;]
 **Login User**
 ```
 [POST]
-localhost:5000/auth/login
+localhost:5000/login
 
-Body (form-data):
+BODY (form-data):
 email: [string; REQUIRED; Must be a valid email address that exists in the database]
 password: [string; REQUIRED; Must be the same as the password that was used to register the user with the given email address.]
 ```
@@ -155,7 +156,7 @@ password: [string; REQUIRED; Must be the same as the password that was used to r
 [POST]
 localhost:5000/dev_tests/pipeline
 
-Body (raw) [JSON]:
+BODY (raw) [JSON]:
 {
     "availability": "[string; REQUIRED; Message to send to the AI to extract your availability for each weekday.]",
     "goal": "[string; REQUIRED; Message to send to the AI to extract your current goal and determine its type.]"
@@ -168,7 +169,7 @@ Body (raw) [JSON]:
 **Logout User (If logged in)**
 ```
 [POST]
-localhost:5000/auth/logout
+localhost:5000/logout
 ```
 
 **Initialize Database (If you want to reset the database)**
@@ -182,7 +183,7 @@ localhost:5000/database_manipulation/init_db
 [POST]
 localhost:5000/database_manipulation/init_db
 
-Body (form-data):
+BODY (form-data):
     email: email2@gmail.com
     password: password?2
     password_confirm: password?2
@@ -196,9 +197,9 @@ Body (form-data):
 **Login User**
 ```
 [POST]
-localhost:5000/auth/login
+localhost:5000/login
 
-Body (form-data):
+BODY (form-data):
     email: email2@gmail.com
     password: password?2
 ```
@@ -208,7 +209,7 @@ Body (form-data):
 [POST]
 localhost:5000/user_weekday_availability/
 
-Body (raw) [JSON]:
+BODY (raw) [JSON]:
 {
     "availability": "I will be available for 35 minutes on Tuesday, 30 minutes on Thurday, 45 minutes on Wednesday and Friday, and 12 hours on Sunday. I will also be able to come on Monday for 14 hours."
 }
@@ -219,7 +220,7 @@ Body (raw) [JSON]:
 [POST]
 localhost:5000/user_macrocycles/
 
-Body (raw) [JSON]:
+BODY (raw) [JSON]:
 {
     "goal": "I would like to prepare for my soccer tournament."
 }
@@ -260,7 +261,7 @@ localhost:5000/user_workout_exercises/complete_workout
 **Logout User (If logged in)**
 ```
 [POST]
-localhost:5000/auth/logout
+localhost:5000/logout
 ```
 
 **Initialize Database with User (If you want to reset the database)**
@@ -268,7 +269,7 @@ localhost:5000/auth/logout
 [POST]
 localhost:5000/database_manipulation/init_db
 
-Body (form-data):
+BODY (form-data):
     email: email2@gmail.com
     password: password?2
     password_confirm: password?2
@@ -282,9 +283,9 @@ Body (form-data):
 **Login User**
 ```
 [POST]
-localhost:5000/auth/login
+localhost:5000/login
 
-Body (form-data):
+BODY (form-data):
     email: email2@gmail.com
     password: password?2
 ```
@@ -294,7 +295,7 @@ Body (form-data):
 [POST]
 localhost:5000/dev_tests/pipeline
 
-Body (raw) [JSON]:
+BODY (raw) [JSON]:
 {
     "goal": "I would like to prepare for my soccer tournament.",
     "availability": "I will be available for 35 minutes on Tuesday, 30 minutes on Thurday, 45 minutes on Wednesday and Friday, and 12 hours on Sunday. I will also be able to come on Monday for 14 hours."
