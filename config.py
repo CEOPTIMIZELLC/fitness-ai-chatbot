@@ -2,6 +2,7 @@ import os
 import load_env_var
 from datetime import timedelta
 
+user_equipment_population_default = 2
 ortools_solver_time_in_seconds = 5
 verbose = True
 log_steps = True
