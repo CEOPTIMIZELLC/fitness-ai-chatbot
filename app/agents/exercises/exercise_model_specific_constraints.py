@@ -24,6 +24,43 @@ def create_duration_var(model, i, max_duration=0, seconds_per_exercise=0, reps=0
     model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
     return duration_var_entry
 
+# Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
+# This method performs the in between steps and returns the final duration variable.
+# This method is for durations where the phase component is already known, so min and max elements can be more specific.
+# total_set_duration = (seconds_per_exercise * rep_count + rest_time) * set_count
+def constrain_duration_var(model, i, phase_component_constraints, seconds_per_exercise=0, reps=0, sets=0, rest=0, name="", working=False):
+    if name != "":
+        name += "_"
+    
+    min_duration = phase_component_constraints["duration_min"] if not working else phase_component_constraints["working_duration_min"]
+    max_duration = phase_component_constraints["duration_max"] if not working else phase_component_constraints["working_duration_max"]
+    min_max_seconds_per_exercise = phase_component_constraints["seconds_per_exercise"]
+    min_reps, max_reps = phase_component_constraints["reps_min"], phase_component_constraints["reps_max"]
+    min_sets, max_sets = phase_component_constraints["sets_min"], phase_component_constraints["sets_max"]
+    min_rest, max_rest = phase_component_constraints["rest_min"], phase_component_constraints["rest_max"]
+
+    # Create the entry for phase component's duration
+    # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
+    duration_var_entry = model.NewIntVar(min_duration, max_duration, f'{name}duration_{i}')
+
+    # Temporary variable for seconds per exercise and the rep count. (seconds_per_exercise * rep_count)
+    min_seconds_per_exercise_and_reps = min_max_seconds_per_exercise * min_reps
+    max_seconds_per_exercise_and_reps = min_max_seconds_per_exercise * max_reps
+    seconds_per_exercise_and_reps = model.NewIntVar(min_seconds_per_exercise_and_reps, max_seconds_per_exercise_and_reps, f'{name}seconds_per_exercise_and_rep_count_{i}')
+    model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, reps])
+
+    # Temporary variable for the previous product and the rest time. (seconds_per_exercise * rep_count + rest_time)
+    min_duration_with_rest = min_seconds_per_exercise_and_reps + (5 * min_rest) if not working else min_seconds_per_exercise_and_reps
+    max_duration_with_rest = max_seconds_per_exercise_and_reps + (5 * max_rest) if not working else max_seconds_per_exercise_and_reps
+    duration_with_rest = model.NewIntVar(min_duration_with_rest, max_duration_with_rest, f'{name}duration_with_rest_{i}')
+
+    # In between step for added components.
+    model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * rest))
+
+    # Completed constraint.
+    model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
+    return duration_var_entry
+
 # In between step for intensity and base strain.
 def _is_intensity_base_strain(model, exercise_bounds, i, name="", scaled=1, intensity=None, base_strain=None):
     # Get the bounds for the exercises
@@ -107,43 +144,6 @@ def create_exercise_effort_var(model, i, phase_component_constraints, exercise_b
     # Completed constraint.
     model.AddMultiplicationEquality(effort_var_entry, [effort_with_rest, sets])
     return effort_var_entry
-
-# Due to inability to make an expression as a constraint in a single line, a few steps must be taken prior.
-# This method performs the in between steps and returns the final duration variable.
-# This method is for durations where the phase component is already known, so min and max elements can be more specific.
-# total_set_duration = (seconds_per_exercise * rep_count + rest_time) * set_count
-def constrain_duration_var(model, i, phase_component_constraints, seconds_per_exercise=0, reps=0, sets=0, rest=0, name="", working=False):
-    if name != "":
-        name += "_"
-    
-    min_duration = phase_component_constraints["duration_min"] if not working else phase_component_constraints["working_duration_min"]
-    max_duration = phase_component_constraints["duration_max"] if not working else phase_component_constraints["working_duration_max"]
-    min_max_seconds_per_exercise = phase_component_constraints["seconds_per_exercise"]
-    min_reps, max_reps = phase_component_constraints["reps_min"], phase_component_constraints["reps_max"]
-    min_sets, max_sets = phase_component_constraints["sets_min"], phase_component_constraints["sets_max"]
-    min_rest, max_rest = phase_component_constraints["rest_min"], phase_component_constraints["rest_max"]
-
-    # Create the entry for phase component's duration
-    # duration = (seconds_per_exercise * rep_count + rest_time) * set_count
-    duration_var_entry = model.NewIntVar(min_duration, max_duration, f'{name}duration_{i}')
-
-    # Temporary variable for seconds per exercise and the rep count. (seconds_per_exercise * rep_count)
-    min_seconds_per_exercise_and_reps = min_max_seconds_per_exercise * min_reps
-    max_seconds_per_exercise_and_reps = min_max_seconds_per_exercise * max_reps
-    seconds_per_exercise_and_reps = model.NewIntVar(min_seconds_per_exercise_and_reps, max_seconds_per_exercise_and_reps, f'{name}seconds_per_exercise_and_rep_count_{i}')
-    model.AddMultiplicationEquality(seconds_per_exercise_and_reps, [seconds_per_exercise, reps])
-
-    # Temporary variable for the previous product and the rest time. (seconds_per_exercise * rep_count + rest_time)
-    min_duration_with_rest = min_seconds_per_exercise_and_reps + (5 * min_rest) if not working else min_seconds_per_exercise_and_reps
-    max_duration_with_rest = max_seconds_per_exercise_and_reps + (5 * max_rest) if not working else max_seconds_per_exercise_and_reps
-    duration_with_rest = model.NewIntVar(min_duration_with_rest, max_duration_with_rest, f'{name}duration_with_rest_{i}')
-
-    # In between step for added components.
-    model.Add(duration_with_rest == seconds_per_exercise_and_reps + (5 * rest))
-
-    # Completed constraint.
-    model.AddMultiplicationEquality(duration_var_entry, [duration_with_rest, sets])
-    return duration_var_entry
 
 # Indicate that an exercise chosen is weighted if the exercise is a weighted exercise.
 def constrain_weighted_exercises_var(model, used_exercise_vars, weighted_exercise_vars, weighted_exercise_indices):
