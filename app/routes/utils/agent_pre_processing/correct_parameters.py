@@ -28,7 +28,9 @@ def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, ex
         exercises_for_pcs[i] = available_exercises
         if not exercises_for_pcs[i]:
             message = f"{pc["name"]} for {pc["bodypart_name"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises."
-            check_for_required(i, unsatisfiable, pcs_to_remove, pc["required_within_microcycle"] == "always", message)
+            is_required = pc["required_within_microcycle"] == "always"
+            is_resistance = pc["component_name"].lower() == "resistance"
+            check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
 
     # Remove the indices that were considered impossible but weren't required.
     remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs)

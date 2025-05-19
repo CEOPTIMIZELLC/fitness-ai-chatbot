@@ -7,7 +7,9 @@ def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
     for i, (pc, exercises_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
         if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc):
             message = f"{pc["name"]} for {pc["bodypart_name"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}."
-            check_for_required(i, unsatisfiable, pcs_to_remove, pc["required_within_microcycle"] == "always", message)
+            is_required = pc["required_within_microcycle"] == "always"
+            is_resistance = pc["component_name"].lower() == "resistance"
+            check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
 
     # Remove the indices that were considered impossible but weren't required.
     remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs)
@@ -39,7 +41,9 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
         available = req["options"] - used_exercises
         if len(available) < req["required"]:
             message = f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available."
-            check_for_required(i, unsatisfiable, pcs_to_remove, req["required_within_microcycle"] == "always", message)
+            is_required = req["required_within_microcycle"] == "always"
+            is_resistance = req["component_name"].lower() == "resistance"
+            check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
         else:
             # Reserve exercises
             used_exercises.update(list(available)[:req["required"]])
