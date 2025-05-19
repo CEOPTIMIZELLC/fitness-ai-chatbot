@@ -11,7 +11,7 @@ bp = Blueprint('user_workout_days', __name__)
 
 from app.agents.phase_components import Main as phase_component_main
 from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time
+from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time, check_if_there_is_enough_time_complete
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
 from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
@@ -101,10 +101,9 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     possible_phase_components = retrieve_possible_phase_components(phase_id)
     possible_phase_components_list = construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)
 
+    # Check if there is enough time to complete the phase components.
     maximum_min_duration = max(item["duration_min"] for item in possible_phase_components_list)
     total_time_needed = retrieve_total_time_needed(possible_phase_components_list, "duration_min", "frequency_per_microcycle_min", number_of_available_weekdays)
-
-    # Check if there is enough time to complete the phase components.
     not_enough_time_message = check_if_there_is_enough_time(total_time_needed, total_availability, maximum_min_duration)
     if not_enough_time_message:
         return jsonify({"status": "error", "message": not_enough_time_message}), 400

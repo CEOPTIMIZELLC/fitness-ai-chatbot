@@ -26,7 +26,7 @@ bp = Blueprint('user_workout_exercises', __name__)
 from app.agents.exercises import exercises_main
 from app.agents.exercises import exercise_pc_main
 from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time
+from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time, check_if_there_is_enough_time_complete
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
 from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component, correct_available_exercises_with_possible_weights
