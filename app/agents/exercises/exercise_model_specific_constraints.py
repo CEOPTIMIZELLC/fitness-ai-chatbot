@@ -180,7 +180,7 @@ def constrain_training_weight_vars(model, exercises, training_weight_vars, used_
     for training_weight_var, used_exercise_var, has_weighted_exercise in zip(training_weight_vars, used_exercise_vars, weighted_exercise_vars):
         # Training weight is 0 if no weighted exercise is selected
         model.Add(training_weight_var == 0).OnlyEnforceIf(has_weighted_exercise.Not())
-        model.Add(training_weight_var >= 5).OnlyEnforceIf(has_weighted_exercise)
+        model.Add(training_weight_var > 0).OnlyEnforceIf(has_weighted_exercise)
         for exercise, exercise_for_exercise_var in zip(exercises, used_exercise_var[1:]):
             # Exercises have a list of allowed exercises (including 0) that they may pick from.
             model.AddAllowedAssignments([training_weight_var], [(item,) for item in exercise["weighted_equipment_measurements"]]).OnlyEnforceIf(exercise_for_exercise_var)
