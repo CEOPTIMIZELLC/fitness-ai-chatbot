@@ -105,7 +105,7 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     # Check if there is enough time to complete the phase components.
     not_enough_time_message = check_if_there_is_enough_time(total_time_needed, total_availability, maximum_min_duration)
     if not_enough_time_message:
-        return {"status": "output", "message": not_enough_time_message}
+        return jsonify({"status": "error", "message": not_enough_time_message}), 400
 
     parameters["microcycle_weekdays"] = microcycle_weekdays
     parameters["weekday_availability"] = weekday_availability
@@ -203,6 +203,10 @@ def workout_day_initializer():
             number_of_available_weekdays += 1
 
     result = perform_workout_day_selection(user_microcycle.mesocycles.phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
+    # If a tuple error message is returned, return 
+    if isinstance(result, tuple):
+        return result
+
     if result["output"] == "error":
         return jsonify({"status": "error", "message": result["message"]}), 404
 
@@ -247,6 +251,10 @@ def workout_day_initializer_by_id(phase_id):
             number_of_available_weekdays += 1
 
     result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
+    # If a tuple error message is returned, return 
+    if isinstance(result, tuple):
+        return result
+
     if result["output"] == "error":
         return jsonify({"status": "error", "message": result["message"]}), 404
 
@@ -285,6 +293,9 @@ def test_workout_day_by_id(phase_id):
             number_of_available_weekdays += 1
 
     result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
+    # If a tuple error message is returned, return 
+    if isinstance(result, tuple):
+        return result
 
     return jsonify({"status": "success", "mesocycles": result}), 200
 
@@ -329,6 +340,10 @@ def phase_component_classification_test():
 
     for phase in phases:
         result = perform_workout_day_selection(phase.id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays)
+        # If a tuple error message is returned, return 
+        if isinstance(result, tuple):
+            return result
+
         if verbose:
             print(str(phase.id))
             print(result["formatted"])
