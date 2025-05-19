@@ -85,6 +85,8 @@ def verify_phase_component_information(parameters, pcs, exercises):
     if pc_without_enough_ex_message:
         return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
 
+    # Replace the ends of both lists. 
+    parameters["phase_components"] = pcs
     correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
     return None
 
