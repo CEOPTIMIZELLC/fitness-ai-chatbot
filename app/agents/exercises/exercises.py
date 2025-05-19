@@ -30,15 +30,31 @@ from .get_pc_exercise_bounds import get_bounds
 
 _ = load_dotenv()
 
-def declare_duration_vars(model, max_entries, phase_component_ids, phase_component_constraints, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars=None, name=""):
+def declare_duration_vars(model, max_entries, phase_component_ids, phase_components, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars=None, name=""):
     return [
         constrain_duration_var(
             model=model, i=i, 
-            phase_component_constraints=phase_component_constraints[phase_component_ids[i]], 
+            phase_component_constraints=phase_components[phase_component_ids[i]], 
             seconds_per_exercise=seconds_per_exercise_vars[i], 
             reps=reps_vars[i], 
             sets=sets_vars[i], 
             rest=rest_vars[i] if rest_vars is not None else 0,
+            name=name,
+            working=False if rest_vars is not None else True)
+        for i in range(max_entries)]
+
+def declare_effort_vars(model, max_entries, ex_bounds, phase_component_ids, phase_components, seconds_per_exercise_vars, reps_vars, sets_vars, intensity_vars, base_strain_vars, rest_vars=None, name=""):
+    return [
+        create_exercise_effort_var(
+            model=model, i=i, 
+            phase_component_constraints=phase_components[phase_component_ids[i]], 
+            exercise_bounds=ex_bounds, 
+            seconds_per_exercise=seconds_per_exercise_vars[i], 
+            reps=reps_vars[i], 
+            sets=sets_vars[i], 
+            rest=rest_vars[i] if rest_vars is not None else 0,
+            intensity=intensity_vars[i],
+            base_strain=base_strain_vars[i],
             name=name,
             working=False if rest_vars is not None else True)
         for i in range(max_entries)]
@@ -160,36 +176,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         for training_weight_var, training_weight_scaled_var in zip(exercise_vars["training_weight"], exercise_vars["training_weight_scaled"]):
             model.AddDivisionEquality(training_weight_var, training_weight_scaled_var, 100)
 
-        exercise_vars["base_effort"] = [
-            create_exercise_effort_var(
-                model=model, 
-                i=i, 
-                phase_component_constraints=phase_components[phase_component_ids[i]], 
-                exercise_bounds=ex_bounds, 
-                seconds_per_exercise=pc_vars["seconds_per_exercise"][i], 
-                reps=pc_vars["reps"][i], 
-                sets=pc_vars["sets"][i], 
-                rest=pc_vars["rest"][i],
-                intensity=pc_vars["intensity"][i],
-                base_strain=exercise_vars["base_strain"][i],
-                name="base_strained")
-            for i in range(max_exercises)]
-
-        exercise_vars["working_effort"] = [
-            create_exercise_effort_var(
-                model=model, 
-                i=i, 
-                phase_component_constraints=phase_components[phase_component_ids[i]], 
-                exercise_bounds=ex_bounds, 
-                seconds_per_exercise=pc_vars["seconds_per_exercise"][i], 
-                reps=pc_vars["reps"][i], 
-                sets=pc_vars["sets"][i], 
-                rest=0,
-                intensity=pc_vars["intensity"][i],
-                base_strain=exercise_vars["base_strain"][i],
-                name="working_strained",
-                working=True)
-            for i in range(max_exercises)]
+        exercise_vars["base_effort"] = declare_effort_vars(model, max_exercises, ex_bounds, phase_component_ids, phase_components, pc_vars["seconds_per_exercise"], pc_vars["reps"], pc_vars["sets"], pc_vars["intensity"], exercise_vars["base_strain"], pc_vars["rest"], name="base_strained")
+        exercise_vars["working_effort"] = declare_effort_vars(model, max_exercises, ex_bounds, phase_component_ids, phase_components, pc_vars["seconds_per_exercise"], pc_vars["reps"], pc_vars["sets"], pc_vars["intensity"], exercise_vars["base_strain"], name="working_strained")
 
         # Boolean variable representing whether exercise i is weighted.
         exercise_vars["weighted_exercises"] = [
