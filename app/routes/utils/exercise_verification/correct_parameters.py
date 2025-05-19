@@ -1,6 +1,14 @@
 import heapq
+def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs):
+    # Remove the indices that were considered impossible but weren't required.
+    for i in pcs_to_remove:
+        pcs.pop(i)
+        exercises_for_pcs.pop(i)
+    return None
 
 def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises):
+    unsatisfiable = []
+    pcs_to_remove = []
     for i, (pc, exs_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
         # Retrieve range of intensities possible.
         pc_intensity = list(range(pc["intensity_min"] or 1, pc["intensity_max"] + 1))
@@ -23,7 +31,19 @@ def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, ex
             else:
                 available_exercises.append(ex_i)
         exercises_for_pcs[i] = available_exercises
-    return None
+        if not exercises_for_pcs[i]:
+            # If the component is required, append to message.
+            if pc["required_within_microcycle"] == "always":
+                unsatisfiable.append(f"{pc["name"]} for {pc["bodypart_name"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises.")
+            # If the component isn't required, simply remove it from the available phase components.
+            else:
+                print(f"{pc["name"]} for {pc["bodypart_name"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises. Not required, so removing from available.")
+                pcs_to_remove.append(i)
+
+    # Remove the indices that were considered impossible but weren't required.
+    remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs)
+
+    return unsatisfiable
 
 # Find the correct minimum and maximum range for the minimum duration.
 def correct_minimum_duration_for_phase_component(pcs, exercises, exercises_for_pcs):

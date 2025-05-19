@@ -48,8 +48,9 @@ def delete_old_user_workout_exercises(workout_day_id):
 def verify_phase_component_information(parameters, pcs, exercises):
     exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
 
-    correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
-
+    no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
+    if no_weighted_exercises:
+        return jsonify({"status": "error", "message": no_weighted_exercises}), 400
 
     # Change the minimum allowed duration if the exercises possible don't allow for it.
     correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)

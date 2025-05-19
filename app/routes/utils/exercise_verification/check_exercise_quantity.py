@@ -13,9 +13,7 @@ def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
         if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc):
             # If the component is required, append to message.
             if pc["required_within_microcycle"] == "always":
-                unsatisfiable.append(
-                    f"{pc["name"]} for {pc["bodypart_name"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}"
-                )
+                unsatisfiable.append(f"{pc["name"]} for {pc["bodypart_name"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}")
             # If the component isn't required, simply remove it from the available phase components.
             else:
                 print(f"{pc["name"]} for {pc["bodypart_name"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}. Not required, so removing from available.")
@@ -52,9 +50,7 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
         if len(available) < req["required"]:
             # If the component is required, append to message.
             if req["required_within_microcycle"] == "always":
-                unsatisfiable.append(
-                    f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available."
-                )
+                unsatisfiable.append(f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available.")
             # If the component isn't required, simply remove it from the available phase components.
             else:
                 print(f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available. Not required, so removing from available.")
