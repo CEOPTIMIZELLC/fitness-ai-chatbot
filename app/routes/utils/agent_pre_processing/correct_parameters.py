@@ -1,10 +1,5 @@
 import heapq
-def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs):
-    # Remove the indices that were considered impossible but weren't required.
-    for i in pcs_to_remove:
-        pcs.pop(i)
-        exercises_for_pcs.pop(i)
-    return None
+from .utils import check_for_required, remove_impossible_not_required_phase_components
 
 def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises):
     unsatisfiable = []
@@ -32,13 +27,8 @@ def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, ex
                 available_exercises.append(ex_i)
         exercises_for_pcs[i] = available_exercises
         if not exercises_for_pcs[i]:
-            # If the component is required, append to message.
-            if pc["required_within_microcycle"] == "always":
-                unsatisfiable.append(f"{pc["name"]} for {pc["bodypart_name"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises.")
-            # If the component isn't required, simply remove it from the available phase components.
-            else:
-                print(f"{pc["name"]} for {pc["bodypart_name"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises. Not required, so removing from available.")
-                pcs_to_remove.append(i)
+            message = f"{pc["name"]} for {pc["bodypart_name"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises."
+            check_for_required(i, unsatisfiable, pcs_to_remove, pc["required_within_microcycle"] == "always", message)
 
     # Remove the indices that were considered impossible but weren't required.
     remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs)

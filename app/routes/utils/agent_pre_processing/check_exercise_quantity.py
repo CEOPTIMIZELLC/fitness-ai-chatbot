@@ -1,9 +1,4 @@
-def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs):
-    # Remove the indices that were considered impossible but weren't required.
-    for i in pcs_to_remove:
-        pcs.pop(i)
-        exercises_for_pcs.pop(i)
-    return None
+from .utils import check_for_required, remove_impossible_not_required_phase_components
 
 # Step 1: Initial check for individual phase components
 def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
@@ -11,13 +6,8 @@ def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
     pcs_to_remove = []
     for i, (pc, exercises_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
         if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc):
-            # If the component is required, append to message.
-            if pc["required_within_microcycle"] == "always":
-                unsatisfiable.append(f"{pc["name"]} for {pc["bodypart_name"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}")
-            # If the component isn't required, simply remove it from the available phase components.
-            else:
-                print(f"{pc["name"]} for {pc["bodypart_name"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}. Not required, so removing from available.")
-                pcs_to_remove.append(i)
+            message = f"{pc["name"]} for {pc["bodypart_name"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}."
+            check_for_required(i, unsatisfiable, pcs_to_remove, pc["required_within_microcycle"] == "always", message)
 
     # Remove the indices that were considered impossible but weren't required.
     remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs)
@@ -48,13 +38,8 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     for i, req in enumerate(phase_requirements):
         available = req["options"] - used_exercises
         if len(available) < req["required"]:
-            # If the component is required, append to message.
-            if req["required_within_microcycle"] == "always":
-                unsatisfiable.append(f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available.")
-            # If the component isn't required, simply remove it from the available phase components.
-            else:
-                print(f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available. Not required, so removing from available.")
-                pcs_to_remove.append(i)
+            message = f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available."
+            check_for_required(i, unsatisfiable, pcs_to_remove, req["required_within_microcycle"] == "always", message)
         else:
             # Reserve exercises
             used_exercises.update(list(available)[:req["required"]])
