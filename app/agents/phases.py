@@ -119,11 +119,9 @@ class PhaseAgent(BaseAgent):
             for i in range(max_mesocycles)]
 
         # Boolean variables indicating whether phase j is used at mesocycle i.
-        vars["used"] = [
-            [
-                model.NewBoolVar(f'mesocycle_{i}_is_phase_{j}') 
-                for j in range(phase_amount)
-            ] 
+        vars["used"] = [[
+            model.NewBoolVar(f'mesocycle_{i}_is_phase_{j}') 
+            for j in range(phase_amount)]
             for i in range(max_mesocycles)]
 
         # Boolean variables indicating whether mesocycle i is active.
