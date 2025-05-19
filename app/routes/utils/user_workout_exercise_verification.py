@@ -1,6 +1,33 @@
 import heapq
 
 
+
+def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises):
+    for i, (pc, exs_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
+        # Retrieve range of intensities possible.
+        pc_intensity = list(range(pc["intensity_min"] or 1, pc["intensity_max"] + 1))
+
+        # Retrieve the new list of available exercises.
+        available_exercises = []
+        for ex_i in exs_for_pc:
+            ex = exercises[ex_i-1]
+            # If the exercise is weighted, determine if the user has the valid weights for it.
+            if ex["is_weighted"]:
+                available_weights = set(ex["weighted_equipment_measurements"])
+
+                # Retrieve the set of possible weights by multiplying the range of intensities with the current 1RM.
+                possible_weights = set([(intensity * ex["one_rep_max"] // 100) for intensity in pc_intensity])
+                possible_weights_that_are_available = available_weights & possible_weights
+                if possible_weights_that_are_available:
+                    available_exercises.append(ex_i)
+
+            # If the exercise isn't weighted, it doesn't need to be checked for weight.
+            else:
+                available_exercises.append(ex_i)
+        exercises_for_pcs[i] = available_exercises
+    return exercises_for_pcs
+
+
 # Find the correct minimum and maximum range for the minimum duration.
 def correct_minimum_duration_for_phase_component(pcs, exercises, exercises_for_pcs):
     for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):

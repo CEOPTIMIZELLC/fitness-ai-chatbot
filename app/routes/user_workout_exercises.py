@@ -29,7 +29,7 @@ from app.utils.common_table_queries import current_workout_day, user_possible_ex
 from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
-from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
+from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component, correct_available_exercises_with_possible_weights
 from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
@@ -47,6 +47,9 @@ def delete_old_user_workout_exercises(workout_day_id):
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
 def verify_phase_component_information(parameters, pcs, exercises):
     exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
+
+    exercises_for_pcs = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
+
 
     # Change the minimum allowed duration if the exercises possible don't allow for it.
     correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
