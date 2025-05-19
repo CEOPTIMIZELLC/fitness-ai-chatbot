@@ -48,7 +48,7 @@ def delete_old_user_workout_exercises(workout_day_id):
 def verify_phase_component_information(parameters, pcs, exercises):
     exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
 
-    exercises_for_pcs = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
+    correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
 
 
     # Change the minimum allowed duration if the exercises possible don't allow for it.

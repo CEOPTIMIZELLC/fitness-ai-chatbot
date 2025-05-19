@@ -23,7 +23,7 @@ def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, ex
             else:
                 available_exercises.append(ex_i)
         exercises_for_pcs[i] = available_exercises
-    return exercises_for_pcs
+    return None
 
 # Find the correct minimum and maximum range for the minimum duration.
 def correct_minimum_duration_for_phase_component(pcs, exercises, exercises_for_pcs):
