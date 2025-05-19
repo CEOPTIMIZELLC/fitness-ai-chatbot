@@ -44,6 +44,15 @@ def create_optional_intvar(model, name_of_entry_var, activator, min_if_active=0,
                                    value_if_inactive=value_if_inactive)
     return var_entry
 
+def declare_model_vars(model, name, active_vars, max_entries, min_if_active, max_if_active):
+    return [
+        create_optional_intvar(
+            model=model, activator=active_vars[i],
+            min_if_active=min_if_active,
+            max_if_active=max_if_active,
+            name_of_entry_var=f'{name}_{i}')
+        for i in range(max_entries)]
+
 # Create an intvar for an optional spread variable to try for later minimization.
 def create_spread_intvar(model, entry_vars, entry_var_name, active_entry_vars, max_value_allowed):
     min_entry_var = model.NewIntVar(0, max_value_allowed, f"min_{entry_var_name}")

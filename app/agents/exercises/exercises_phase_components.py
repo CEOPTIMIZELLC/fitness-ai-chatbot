@@ -7,6 +7,7 @@ from app.agents.constraints import (
     link_entry_and_item, 
     constrain_active_entries_vars, 
     create_optional_intvar, 
+    declare_model_vars, 
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
     symmetry_breaking_constraints, 
@@ -57,15 +58,6 @@ class RelaxationAttempt(BaseRelaxationAttempt):
         self.strain_ratio = strain_ratio
         self.duration = duration
         self.working_duration = working_duration
-
-def declare_model_vars(model, name, active_vars, max_entries, min_if_active, max_if_active):
-    return [
-        create_optional_intvar(
-            model=model, activator=active_vars[i],
-            min_if_active=min_if_active,
-            max_if_active=max_if_active,
-            name_of_entry_var=f'{name}_{i}')
-        for i in range(max_entries)]
 
 def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars=None, name=""):
     return [

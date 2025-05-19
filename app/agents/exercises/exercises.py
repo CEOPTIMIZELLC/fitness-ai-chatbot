@@ -30,12 +30,6 @@ from .get_pc_exercise_bounds import get_bounds
 
 _ = load_dotenv()
 
-def encourage_increase_for_subcomponent(model, exercises, phase_component_ids, used_exercise_vars, performance_vars, max_performance):
-    return [
-        retrieve_indication_of_increase(model, exercises, max_performance, pc_index, performance_var, used_exercise_var)
-        for pc_index, performance_var, used_exercise_var in zip(phase_component_ids, performance_vars, used_exercise_vars)
-    ]
-
 def declare_duration_vars(model, max_entries, phase_component_ids, phase_component_constraints, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars=None, name=""):
     return [
         constrain_duration_var(
@@ -48,6 +42,12 @@ def declare_duration_vars(model, max_entries, phase_component_ids, phase_compone
             name=name,
             working=False if rest_vars is not None else True)
         for i in range(max_entries)]
+
+def encourage_increase_for_subcomponent(model, exercises, phase_component_ids, used_exercise_vars, performance_vars, max_performance):
+    return [
+        retrieve_indication_of_increase(model, exercises, max_performance, pc_index, performance_var, used_exercise_var)
+        for pc_index, performance_var, used_exercise_var in zip(phase_component_ids, performance_vars, used_exercise_vars)
+    ]
 
 class ExerciseAgent(ExercisePhaseComponentAgent):
     def solve_model_node_temp(self, state: State, config=None) -> dict:
