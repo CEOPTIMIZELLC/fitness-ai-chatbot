@@ -288,11 +288,11 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         # Constraint: The resistance components must have the same number of sets.
         if constraints["resistances_have_equal_sets"]:
+            resistances_of_same_bodypart_have_equal_sets(model, phase_components, vars["used_pcs"], vars["sets"])
             logs += "- All resistance exercises have the same number of sets applied.\n"
 
         # Constraint: The resistance components must have the same number of exercises for each bodypart.
         if constraints["resistances_have_equal_counts"]:
-            resistances_of_same_bodypart_have_equal_sets(model, phase_components, vars["used_pcs"], vars["sets"])
             logs += "- All resistance exercises have the same number of exercises for each bodypart.\n"
 
         # Constraint: The duration of a phase component may only be a number between the minimum and maximum duration allowed.
