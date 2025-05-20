@@ -525,6 +525,46 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "performance": ("Performance", 30)
         }
 
+    def formatted_schedule(self, headers, component_count, phase_component, exercise, metrics):
+        (base_strain, seconds_per_exercise, 
+         reps_var, sets_var, rest_var, intensity_var, 
+         one_rep_max_var, training_weight_var, is_weighted_var, 
+         volume_var, density_var, 
+         performance_var, duration, working_duration) = metrics
+        one_rep_max_new = 0
+        volume_max = phase_component["volume_max"]
+        if is_weighted_var:
+            one_rep_max_new = int(round((training_weight_var * (30 + reps_var)) / 30, 2))
+            volume_max = round(volume_max * exercise["one_rep_max"] * (phase_component["intensity_max"] / 100))
+        density_max = phase_component["density_max"] / 100
+        performance_max = round(volume_max * density_max * 100) / 100
+
+        # Format line
+        line_fields = {
+            "number": str(component_count + 1),
+            "exercise": exercise["name"],
+            "phase_component": f"{phase_component['name']}",
+            "bodypart": phase_component["bodypart_name"],
+            "duration": f"({duration} sec",
+            "working_duration": f"({working_duration} sec",
+            "base_strain": str(base_strain),
+            "seconds_per_exercise": f"({seconds_per_exercise} sec",
+            "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
+            "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
+            "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")",
+            "one_rep_max": f"{one_rep_max_var} -> {one_rep_max_new}" if intensity_var else "",
+            "training_weight": str(training_weight_var) if intensity_var else "",
+            "intensity": self._format_range(intensity_var, phase_component["intensity_min"] or 1, phase_component["intensity_max"]) if intensity_var else "",
+            "volume": f"{exercise["volume"]} -> {volume_var} (>={volume_max})",
+            "density": f"{exercise["density"] / 100} -> {density_var} (>={density_max})",
+            "performance": f"{exercise["performance"] / 100} -> {performance_var} (>={performance_max})",
+        }
+
+        line = ""
+        for field, (_, length) in headers.items():
+            line += self._create_formatted_field(field, line_fields[field], length)
+        return line + "\n"
+
     def format_agent_output(self, solution, formatted, schedule, phase_components, exercises, projected_duration, workout_availability):
         final_output = []
 
@@ -541,11 +581,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         headers = self._create_header_fields(longest_sizes)
         
         # Create header line
-        formatted += "\nFinal Training Schedule:\n" + "-" * 120 + "\n"
-        header_line = ""
-        for label, (text, length) in headers.items():
-            header_line += self._create_formatted_field(text, text, length)
-        formatted += header_line + "\n"
+        if log_schedule: 
+            formatted += self.formatted_header_line(headers)
 
         for component_count, (i, exercise_index, phase_component_index, *metrics) in enumerate(schedule):
             exercise = exercises[exercise_index]
@@ -586,39 +623,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             phase_component_count[phase_component_index] += 1
 
             if log_schedule:
-                one_rep_max_new = 0
-                volume_max = phase_component["volume_max"]
-                if is_weighted_var:
-                    one_rep_max_new = int(round((training_weight_var * (30 + reps_var)) / 30, 2))
-                    volume_max = round(volume_max * exercise["one_rep_max"] * (phase_component["intensity_max"] / 100))
-                density_max = phase_component["density_max"] / 100
-                performance_max = round(volume_max * density_max * 100) / 100
-
-                # Format line
-                line_fields = {
-                    "number": str(component_count + 1),
-                    "exercise": exercise["name"],
-                    "phase_component": f"{phase_component['name']}",
-                    "bodypart": phase_component["bodypart_name"],
-                    "duration": f"({duration} sec",
-                    "working_duration": f"({working_duration} sec",
-                    "base_strain": str(base_strain),
-                    "seconds_per_exercise": f"({seconds_per_exercise} sec",
-                    "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
-                    "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
-                    "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")",
-                    "one_rep_max": f"{one_rep_max_var} -> {one_rep_max_new}" if intensity_var else "",
-                    "training_weight": str(training_weight_var) if intensity_var else "",
-                    "intensity": self._format_range(intensity_var, phase_component["intensity_min"] or 1, phase_component["intensity_max"]) if intensity_var else "",
-                    "volume": f"{exercise["volume"]} -> {volume_var} (>={volume_max})",
-                    "density": f"{exercise["density"] / 100} -> {density_var} (>={density_max})",
-                    "performance": f"{exercise["performance"] / 100} -> {performance_var} (>={performance_max})",
-                }
-
-                line = ""
-                for field, (_, length) in headers.items():
-                    line += self._create_formatted_field(field, line_fields[field], length)
-                formatted += line + "\n"
+                formatted += self.formatted_schedule(headers, component_count, phase_component, exercise, metrics)
 
         if log_details:
             formatted += f"Phase Component Counts:\n"

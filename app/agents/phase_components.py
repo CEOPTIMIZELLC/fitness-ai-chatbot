@@ -420,6 +420,38 @@ class PhaseComponentAgent(BaseAgent):
             "duration_sec": ("Duration in Seconds", 30),
         }
 
+    def formatted_header_line(self, headers):
+        header_line = ""
+        for label, (text, length) in headers.items():
+            header_line += self._create_formatted_field(text, text, length)
+        return header_line
+
+    # def formatted_schedule(self, headers, header_line, component_count, phase_component, workday_index, weekday_availability, current_weekday, used_days, exercises_per_bodypart_var, partial_duration_var, duration_var):
+    def formatted_schedule(self, headers, header_line, component_count, phase_component, metrics, current_weekday_info, workday_index, used_days):
+        (active_phase_components, exercises_per_bodypart_var, partial_duration_var, duration_var) = metrics
+        line = ""
+
+        if not used_days[workday_index]["used"]:
+            line += f"\n| Day {workday_index + 1} {current_weekday_info["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
+            used_days[workday_index]["used"] = True
+            line += header_line + "\n"
+
+        # Format line
+        line_fields = {
+            "number": str(component_count + 1),
+            "phase_component": f"{phase_component['name']}",
+            "bodypart": phase_component["bodypart"],
+            "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}",
+            "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
+            "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}",
+            "duration": f"{self._format_duration(duration_var)} sec",
+            "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * phase_component["exercises_per_bodypart_workout_max"])}"
+        }
+
+        for field, (_, length) in headers.items():
+            line += self._create_formatted_field(field, line_fields[field], length)
+        return line + "\n"
+
     def format_agent_output(self, solution, formatted, schedule, phase_components, used_days, workout_time, weekday_availability, microcycle_weekdays):
         final_output = []
 
@@ -435,10 +467,9 @@ class PhaseComponentAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
         
         # Create header line
-        formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
-        header_line = ""
-        for label, (text, length) in headers.items():
-            header_line += self._create_formatted_field(text, text, length)
+        if log_schedule: 
+            formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
+            header_line = self.formatted_header_line(headers)
 
         for component_count, (phase_component_index, workday_index, *metrics) in enumerate(schedule):
             phase_component = phase_components[phase_component_index]
@@ -461,27 +492,7 @@ class PhaseComponentAgent(BaseAgent):
                 phase_component_count[phase_component_index] += 1
 
                 if log_schedule:
-                    if not used_days[workday_index]["used"]:
-                        formatted += f"\n| Day {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
-                        used_days[workday_index]["used"] = True
-                        formatted += header_line + "\n"
-
-                    # Format line
-                    line_fields = {
-                        "number": str(component_count + 1),
-                        "phase_component": f"{phase_component['name']}",
-                        "bodypart": phase_component["bodypart"],
-                        "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}",
-                        "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
-                        "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}",
-                        "duration": f"{self._format_duration(duration_var)} sec",
-                        "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * phase_component["exercises_per_bodypart_workout_max"])}"
-                    }
-
-                    line = ""
-                    for field, (_, length) in headers.items():
-                        line += self._create_formatted_field(field, line_fields[field], length)
-                    formatted += line + "\n"
+                    formatted += self.formatted_schedule(headers, header_line, component_count, phase_component, metrics, weekday_availability[current_weekday], workday_index, used_days)
             else:
                 if log_schedule:
                     formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")

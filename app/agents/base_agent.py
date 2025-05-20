@@ -70,6 +70,15 @@ class BaseAgent:
         formatted = f"{prefix}{value}"
         return f"{formatted:<{header_length}}"
 
+    def formatted_header_line(self, headers):
+        # Create header line
+        schedule_header = "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
+        header_line = ""
+        for label, (text, length) in headers.items():
+            header_line += self._create_formatted_field(text, text, length)
+        schedule_header += header_line + "\n"
+        return schedule_header
+
     def analyze_infeasibility_node(self, state: TState, config=None) -> dict:
         """Use LLM to analyze solver logs and suggest constraints to relax."""
         # Prepare history of what's been tried
