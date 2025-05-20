@@ -10,6 +10,7 @@ from app.agents.constraints import (
     link_entry_and_item, 
     no_repeated_items, 
     only_use_required_items, 
+    ensure_all_vars_equal, 
     entries_equal, 
     retrieve_indication_of_increase)
 
@@ -22,7 +23,8 @@ from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_training_weight_vars, 
     constrain_volume_vars, 
     constrain_density_vars, 
-    constrain_performance_vars)
+    constrain_performance_vars,
+    resistances_of_same_bodypart_have_equal_sets)
 
 from .exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent
 from app.utils.longest_string import longest_string_size_for_key
@@ -243,8 +245,22 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 only_use_required_items(model = model, 
                                         required_items = pc["allowed_exercises"], 
                                         entry_vars = [exercise_vars["exercises"][i]])
-
             logs += "- Only use allowed exercises applied.\n"
+
+        # Constraint: The resistance components must have the same number of sets.
+        if constraints["resistances_have_equal_sets"]:
+            # resistances_of_same_bodypart_have_equal_sets(model, phase_components, vars["used_pcs"], vars["sets"])
+            resistance_phase_components = {}
+            for i, phase_component in enumerate(phase_components):
+                if phase_component["component_name"].lower() == "resistance":
+                    resistance_phase_components.setdefault(phase_component["bodypart_id"],[]).append(i)
+            for _, value in resistance_phase_components.items():
+                ensure_all_vars_equal(model, [pc_vars["sets"][i] for i in value])
+            logs += "- All resistance exercises have the same number of sets applied.\n"
+
+        # Constraint: The resistance components must have the same number of exercises for each bodypart.
+        if constraints["resistances_have_equal_counts"]:
+            logs += "- All resistance exercises have the same number of exercises for each bodypart.\n"
 
         # Constraint: Ensure each exercise only appears once in the schedule
         if constraints["no_duplicate_exercises"]:
