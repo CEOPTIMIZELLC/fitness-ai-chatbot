@@ -253,7 +253,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 if phase_component["component_name"].lower() == "resistance":
                     resistance_phase_components.setdefault(phase_component["bodypart_id"],[]).append(i)
             for _, value in resistance_phase_components.items():
-                ensure_all_vars_equal(model, [pc_vars["sets"][i] for i in value])
+                indices_to_be_equal = [i for i, val in enumerate(phase_component_ids) if val in value]
+                ensure_all_vars_equal(model, [pc_vars["sets"][i] for i in indices_to_be_equal])
             logs += "- All resistance exercises have the same number of sets applied.\n"
 
         # Constraint: The resistance components must have the same number of exercises for each bodypart.
