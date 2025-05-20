@@ -6,7 +6,6 @@ from app.agents.constraints import (
     entries_within_min_max, 
     link_entry_and_item, 
     constrain_active_entries_vars, 
-    create_optional_intvar, 
     declare_model_vars, 
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
@@ -15,11 +14,6 @@ from app.agents.constraints import (
     retrieve_indication_of_increase)
 
 from app.agents.exercises.exercise_model_specific_constraints import (
-    constrain_duration_var, 
-    create_exercise_effort_var, 
-    constrain_weighted_exercises_var, 
-    constrain_intensity_vars, 
-    constrain_training_weight_vars, 
     constrain_volume_vars, 
     constrain_density_vars, 
     constrain_performance_vars,

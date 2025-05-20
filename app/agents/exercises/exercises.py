@@ -23,8 +23,7 @@ from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_training_weight_vars, 
     constrain_volume_vars, 
     constrain_density_vars, 
-    constrain_performance_vars,
-    resistances_of_same_bodypart_have_equal_sets)
+    constrain_performance_vars)
 
 from .exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent
 from app.utils.longest_string import longest_string_size_for_key
@@ -249,7 +248,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Constraint: The resistance components must have the same number of sets.
         if constraints["resistances_have_equal_sets"]:
-            # resistances_of_same_bodypart_have_equal_sets(model, phase_components, vars["used_pcs"], vars["sets"])
             resistance_phase_components = {}
             for i, phase_component in enumerate(phase_components):
                 if phase_component["component_name"].lower() == "resistance":

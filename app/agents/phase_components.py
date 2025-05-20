@@ -8,8 +8,7 @@ from app.agents.constraints import (
     create_spread_intvar, 
     day_duration_within_availability, 
     use_workout_required_components, 
-    use_all_required_items, 
-    only_use_required_items, 
+    use_all_required_items,
     ensure_all_vars_equal, 
     frequency_within_min_max, 
     consecutive_bodyparts_for_component)
