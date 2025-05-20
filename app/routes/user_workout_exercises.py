@@ -183,19 +183,6 @@ def get_user_current_exercises_list():
               for user_workout_exercise in user_workout_exercises]
     return jsonify({"status": "success", "exercises": result}), 200
 
-def perform_exercise_selection(user_workout_day):
-    parameters = retrieve_pc_parameters(user_workout_day)
-
-    # If a tuple error message is returned, return 
-    if isinstance(parameters, tuple):
-        return parameters
-    constraints={}
-
-    result = exercises_main(parameters, constraints)
-    if verbose:
-        print(result["formatted"])
-    return result
-
 # Assigns exercises to workouts.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
@@ -206,10 +193,15 @@ def exercise_initializer():
 
     delete_old_user_workout_exercises(user_workout_day.id)
 
-    # Retrieve results. If a tuple error message is returned, return 
-    result = perform_exercise_selection(user_workout_day)
-    if isinstance(result, tuple):
-        return result
+    # Retrieve parameters. If a tuple error message is returned, return 
+    parameters = retrieve_pc_parameters(user_workout_day)
+    if isinstance(parameters, tuple):
+        return parameters
+    constraints={}
+
+    result = exercises_main(parameters, constraints)
+    if verbose:
+        print(result["formatted"])
 
     user_workout_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
 
@@ -278,9 +270,13 @@ def exercise_phase_components_test():
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
-    # Retrieve results. If a tuple error message is returned, return 
-    result = perform_exercise_selection(user_workout_day)
-    if isinstance(result, tuple):
-        return result
+    # Retrieve parameters. If a tuple error message is returned, return 
+    parameters = retrieve_pc_parameters(user_workout_day)
+    if isinstance(parameters, tuple):
+        return parameters
+    constraints={}
 
+    result = exercise_pc_main(parameters, constraints)
+    if verbose:
+        print(result["formatted"])
     return jsonify({"status": "success", "exercises": result}), 200
