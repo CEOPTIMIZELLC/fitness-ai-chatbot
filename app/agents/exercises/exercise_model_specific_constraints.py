@@ -241,3 +241,32 @@ def constrain_performance_vars(model, performance_vars, volume_vars, density_var
     for volume_var, density_var, performance_var in zip(volume_vars, density_vars, performance_vars):
         model.AddMultiplicationEquality(performance_var, [volume_var, density_var])
     return None
+
+def resistances_of_same_bodypart_have_equal_sets(model, phase_components, used_pcs_vars, sets_vars):
+    resistance_phase_components = {}
+    for i, phase_component in enumerate(phase_components):
+        if phase_component["component_name"].lower() == "resistance":
+            resistance_phase_components.setdefault(phase_component["bodypart_id"],[]).append(i)
+
+    # Boolean variables indicating whether phase component j is used at exercise i.
+    for key, value in resistance_phase_components.items():
+        name_of_resistance = ""
+        for v in value:
+            name_of_resistance += str(v)
+        name_of_resistance += "_" + str(key)
+        indices_with_the_same_sets = []
+        for i, used_pc in enumerate(used_pcs_vars): 
+            is_resistance_of_value = model.NewBoolVar(f"{i}_is_resistance_of_value_{name_of_resistance}")
+            model.AddBoolOr([used_pc[i] for i in value]).OnlyEnforceIf(is_resistance_of_value)
+            model.AddBoolAnd([used_pc[i].Not() for i in value]).OnlyEnforceIf(is_resistance_of_value.Not())
+            indices_with_the_same_sets.append((i, is_resistance_of_value))
+
+        for i in range(len(indices_with_the_same_sets)):
+            for j in range(i+1, len(indices_with_the_same_sets)):
+                i_idx, i_cond = indices_with_the_same_sets[i]
+                j_idx, j_cond = indices_with_the_same_sets[j]
+                b = model.NewBoolVar(f"both_{name_of_resistance}_{i}_{j}")
+                model.AddBoolAnd([i_cond, j_cond]).OnlyEnforceIf(b)
+                model.AddBoolOr([i_cond.Not(), j_cond.Not()]).OnlyEnforceIf(b.Not())
+                model.Add(sets_vars[i_idx] == sets_vars[j_idx]).OnlyEnforceIf(b)
+    return None

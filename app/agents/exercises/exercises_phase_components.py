@@ -22,7 +22,8 @@ from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_training_weight_vars, 
     constrain_volume_vars, 
     constrain_density_vars, 
-    constrain_performance_vars)
+    constrain_performance_vars,
+    resistances_of_same_bodypart_have_equal_sets)
 
 from app.agents.exercises.exercise_model_specific_constraints import create_duration_var
 
@@ -284,6 +285,15 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                    used_vars = vars["used_pcs"], 
                                    duration_vars = vars["rest"])
             logs += "- Rest count within min and max allowed rest applied.\n"
+
+        # Constraint: The resistance components must have the same number of sets.
+        if constraints["resistances_have_equal_sets"]:
+            logs += "- All resistance exercises have the same number of sets applied.\n"
+
+        # Constraint: The resistance components must have the same number of exercises for each bodypart.
+        if constraints["resistances_have_equal_counts"]:
+            resistances_of_same_bodypart_have_equal_sets(model, phase_components, vars["used_pcs"], vars["sets"])
+            logs += "- All resistance exercises have the same number of exercises for each bodypart.\n"
 
         # Constraint: The duration of a phase component may only be a number between the minimum and maximum duration allowed.
         if constraints["duration_within_min_max"]:
