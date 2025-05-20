@@ -565,27 +565,27 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "performance": ("Performance", 30)
         }
 
-    def formatted_schedule(self, headers, component_count, phase_component, metrics):
+    def formatted_schedule(self, headers, i, pc, metrics):
         (active_exercises, seconds_per_exercise, 
          reps_var, sets_var, rest_var, 
          volume_var, density_var, 
          performance_var, duration, working_duration) = metrics
 
-        volume_max = phase_component["volume_max"]
-        density_max = phase_component["density_max"] / 100
+        volume_max = pc["volume_max"]
+        density_max = pc["density_max"] / 100
         performance_max = round(volume_max * density_max * 100) / 100
 
         # Format line
         line_fields = {
-            "number": str(component_count + 1),
-            "phase_component": f"{phase_component['name']}",
-            "bodypart": phase_component["bodypart_name"],
+            "number": str(i + 1),
+            "phase_component": f"{pc['name']}",
+            "bodypart": pc["bodypart_name"],
             "duration": f"({duration} sec",
             "working_duration": f"({working_duration} sec",
             "seconds_per_exercise": f"({seconds_per_exercise} sec",
-            "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
-            "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
-            "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")",
+            "reps": self._format_range(reps_var, pc["reps_min"], pc["reps_max"]),
+            "sets": self._format_range(sets_var, pc["sets_min"], pc["sets_max"]),
+            "rest": self._format_range(rest_var, pc["rest_min"] * 5, pc["rest_max"] * 5) + ")",
             "volume": f"{volume_var} (>={volume_max})",
             "density": f"{density_var} (>={density_max})",
             "performance": f"{performance_var} (>={performance_max})",
@@ -615,7 +615,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             formatted += self.formatted_header_line(headers)
 
         for component_count, (i, phase_component_index, *metrics) in enumerate(schedule):
-            phase_component = phase_components[phase_component_index]
+            pc = phase_components[phase_component_index]
 
             (active_exercises, seconds_per_exercise, 
              reps_var, sets_var, rest_var, 
@@ -626,8 +626,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 final_output.append({
                     "i": i, 
                     "phase_component_index": phase_component_index, 
-                    "phase_component_id": phase_component["phase_component_id"],
-                    "bodypart_id": phase_component["bodypart_id"],
+                    "phase_component_id": pc["phase_component_id"],
+                    "bodypart_id": pc["bodypart_id"],
                     "seconds_per_exercise": seconds_per_exercise, 
                     "active_exercises": active_exercises, 
                     "reps_var": reps_var, 
@@ -640,7 +640,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
                 if log_schedule:
-                    formatted += self.formatted_schedule(headers, component_count, phase_component, metrics)
+                    formatted += self.formatted_schedule(headers, component_count, pc, metrics)
 
             else:
                 if log_schedule:
@@ -648,9 +648,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         if log_details:
             formatted += f"Phase Component Counts:\n"
-            for phase_component_index, phase_component in enumerate(phase_components):
-                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
-                phase_component_range = self._format_range(solution['pc_count'][phase_component_index], phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])
+            for phase_component_index, pc in enumerate(phase_components):
+                phase_component_name = f"{pc['name']:<{longest_sizes['phase_component']+2}} {pc['bodypart_name']:<{longest_sizes['bodypart']+2}}"
+                phase_component_range = self._format_range(solution['pc_count'][phase_component_index], pc["exercises_per_bodypart_workout_min"], pc["exercises_per_bodypart_workout_max"])
                 formatted += f"\t{phase_component_name}: {phase_component_range}\n"
             formatted += f"Total Strain: {solution['strain_ratio']}\n"
             formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"

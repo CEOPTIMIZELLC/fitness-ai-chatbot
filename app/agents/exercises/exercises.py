@@ -525,36 +525,37 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "performance": ("Performance", 30)
         }
 
-    def formatted_schedule(self, headers, component_count, phase_component, exercise, metrics):
+    def formatted_schedule(self, headers, i, pc, exercise, metrics):
         (base_strain, seconds_per_exercise, 
          reps_var, sets_var, rest_var, intensity_var, 
          one_rep_max_var, training_weight_var, is_weighted_var, 
          volume_var, density_var, 
          performance_var, duration, working_duration) = metrics
+
         one_rep_max_new = 0
-        volume_max = phase_component["volume_max"]
+        volume_max = pc["volume_max"]
         if is_weighted_var:
             one_rep_max_new = int(round((training_weight_var * (30 + reps_var)) / 30, 2))
-            volume_max = round(volume_max * exercise["one_rep_max"] * (phase_component["intensity_max"] / 100))
-        density_max = phase_component["density_max"] / 100
+            volume_max = round(volume_max * exercise["one_rep_max"] * (pc["intensity_max"] / 100))
+        density_max = pc["density_max"] / 100
         performance_max = round(volume_max * density_max * 100) / 100
 
         # Format line
         line_fields = {
-            "number": str(component_count + 1),
+            "number": str(i + 1),
             "exercise": exercise["name"],
-            "phase_component": f"{phase_component['name']}",
-            "bodypart": phase_component["bodypart_name"],
+            "phase_component": f"{pc['name']}",
+            "bodypart": pc["bodypart_name"],
             "duration": f"({duration} sec",
             "working_duration": f"({working_duration} sec",
             "base_strain": str(base_strain),
             "seconds_per_exercise": f"({seconds_per_exercise} sec",
-            "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
-            "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
-            "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")",
+            "reps": self._format_range(reps_var, pc["reps_min"], pc["reps_max"]),
+            "sets": self._format_range(sets_var, pc["sets_min"], pc["sets_max"]),
+            "rest": self._format_range(rest_var, pc["rest_min"] * 5, pc["rest_max"] * 5) + ")",
             "one_rep_max": f"{one_rep_max_var} -> {one_rep_max_new}" if intensity_var else "",
             "training_weight": str(training_weight_var) if intensity_var else "",
-            "intensity": self._format_range(intensity_var, phase_component["intensity_min"] or 1, phase_component["intensity_max"]) if intensity_var else "",
+            "intensity": self._format_range(intensity_var, pc["intensity_min"] or 1, pc["intensity_max"]) if intensity_var else "",
             "volume": f"{exercise["volume"]} -> {volume_var} (>={volume_max})",
             "density": f"{exercise["density"] / 100} -> {density_var} (>={density_max})",
             "performance": f"{exercise["performance"] / 100} -> {performance_var} (>={performance_max})",
@@ -586,7 +587,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         for component_count, (i, exercise_index, phase_component_index, *metrics) in enumerate(schedule):
             exercise = exercises[exercise_index]
-            phase_component = phase_components[phase_component_index]
+            pc = phase_components[phase_component_index]
 
             (base_strain, seconds_per_exercise, 
              reps_var, sets_var, rest_var, intensity_var, 
@@ -594,7 +595,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
              volume_var, density_var, 
              performance_var, duration, working_duration) = metrics
 
-            phase_component_name = phase_component["name"] + " " + phase_component["bodypart_name"] 
+            phase_component_name = pc["name"] + " " + pc["bodypart_name"] 
 
             #duration = (bodypart_var * (seconds_per_exercise * reps_var + rest_var) * sets_var)
             final_output.append({
@@ -602,8 +603,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 "exercise_index": exercise_index,
                 "exercise_id": exercise["id"],
                 "phase_component_index": phase_component_index, 
-                "phase_component_id": phase_component["phase_component_id"],
-                "bodypart_id": phase_component["bodypart_id"],
+                "phase_component_id": pc["phase_component_id"],
+                "bodypart_id": pc["bodypart_id"],
                 "base_strain": base_strain, 
                 "seconds_per_exercise": seconds_per_exercise, 
                 "reps_var": reps_var, 
@@ -623,14 +624,14 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             phase_component_count[phase_component_index] += 1
 
             if log_schedule:
-                formatted += self.formatted_schedule(headers, component_count, phase_component, exercise, metrics)
+                formatted += self.formatted_schedule(headers, component_count, pc, exercise, metrics)
 
         if log_details:
             formatted += f"Phase Component Counts:\n"
             for phase_component_index, phase_component_number in enumerate(phase_component_count):
-                phase_component = phase_components[phase_component_index]
-                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
-                formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}\n"
+                pc = phase_components[phase_component_index]
+                phase_component_name = f"{pc['name']:<{longest_sizes['phase_component']+2}} {pc['bodypart_name']:<{longest_sizes['bodypart']+2}}"
+                formatted += f"\t{phase_component_name}: {self._format_range(phase_component_number, pc["exercises_per_bodypart_workout_min"], pc["exercises_per_bodypart_workout_max"])}\n"
             formatted += f"Total Strain: {solution['strain_ratio']}\n"
             formatted += f"Total Strain Solution 2: {solution['working_effort'] / solution['base_effort']}\n"
             formatted += f"Total Strain Scaled: {solution['strain_calc']} >= {solution['max_strain_calc']}\n"

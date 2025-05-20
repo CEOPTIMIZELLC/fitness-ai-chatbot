@@ -91,14 +91,14 @@ def verify_phase_component_information(parameters, pcs, exercises):
 def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability):
     parameters={}
 
-    possible_phase_components_list = construct_phase_component_list(phase_id)
-    for pc in possible_phase_components_list:
+    possible_pc_list = construct_phase_component_list(phase_id)
+    for pc in possible_pc_list:
         pc["duration_min_for_day"] = (pc["duration_min"]) * (pc["exercises_per_bodypart_workout_min"] or 1)
         pc["duration_max_for_day"] = (pc["duration_max"]) * (pc["exercises_per_bodypart_workout_max"] or 1)
 
     parameters["microcycle_weekdays"] = microcycle_weekdays
     parameters["weekday_availability"] = weekday_availability
-    parameters["phase_components"] = possible_phase_components_list
+    parameters["phase_components"] = possible_pc_list
     exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(current_user.id)
     parameters["possible_exercises"] = construct_available_exercises_list(exercises_with_component_phases)
 
@@ -107,7 +107,7 @@ def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, 
         return jsonify({"status": "error", "message": pc_verification_message}), 400
 
     # Check if there is enough time to complete the phase components.
-    not_enough_time_message = check_if_there_is_enough_time_complete(possible_phase_components_list, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
+    not_enough_time_message = check_if_there_is_enough_time_complete(possible_pc_list, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
     if not_enough_time_message:
         return jsonify({"status": "error", "message": not_enough_time_message}), 400
 

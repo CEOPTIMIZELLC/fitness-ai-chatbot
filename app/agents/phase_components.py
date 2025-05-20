@@ -427,7 +427,7 @@ class PhaseComponentAgent(BaseAgent):
         return header_line
 
     # def formatted_schedule(self, headers, header_line, component_count, phase_component, workday_index, weekday_availability, current_weekday, used_days, exercises_per_bodypart_var, partial_duration_var, duration_var):
-    def formatted_schedule(self, headers, header_line, component_count, phase_component, metrics, current_weekday_info, workday_index, used_days):
+    def formatted_schedule(self, headers, header_line, component_count, pc, metrics, current_weekday_info, workday_index, used_days):
         (active_phase_components, exercises_per_bodypart_var, partial_duration_var, duration_var) = metrics
         line = ""
 
@@ -439,13 +439,13 @@ class PhaseComponentAgent(BaseAgent):
         # Format line
         line_fields = {
             "number": str(component_count + 1),
-            "phase_component": f"{phase_component['name']}",
-            "bodypart": phase_component["bodypart"],
-            "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}",
+            "phase_component": f"{pc['name']}",
+            "bodypart": pc["bodypart"],
+            "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), pc["exercises_per_bodypart_workout_min"], pc["exercises_per_bodypart_workout_max"])}",
             "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
-            "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}",
+            "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", pc["duration_min"], pc["duration_max"])}",
             "duration": f"{self._format_duration(duration_var)} sec",
-            "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * phase_component["exercises_per_bodypart_workout_max"])}"
+            "duration_sec": f"{self._format_range(str(duration_var) + " seconds", pc["duration_min"], pc["duration_max"] * pc["exercises_per_bodypart_workout_max"])}"
         }
 
         for field, (_, length) in headers.items():
@@ -472,7 +472,7 @@ class PhaseComponentAgent(BaseAgent):
             header_line = self.formatted_header_line(headers)
 
         for component_count, (phase_component_index, workday_index, *metrics) in enumerate(schedule):
-            phase_component = phase_components[phase_component_index]
+            pc = phase_components[phase_component_index]
 
             (active_phase_components, exercises_per_bodypart_var, partial_duration_var, duration_var) = metrics
 
@@ -480,8 +480,8 @@ class PhaseComponentAgent(BaseAgent):
                 final_output.append({
                     "workday_index": workday_index, 
                     "phase_component_index": phase_component_index, 
-                    "phase_component_id": phase_component["id"],
-                    "bodypart_id": phase_component["bodypart_id"],
+                    "phase_component_id": pc["id"],
+                    "bodypart_id": pc["bodypart_id"],
                     "active_phase_components": active_phase_components, 
                     "duration_var": duration_var
                 })
@@ -492,7 +492,7 @@ class PhaseComponentAgent(BaseAgent):
                 phase_component_count[phase_component_index] += 1
 
                 if log_schedule:
-                    formatted += self.formatted_schedule(headers, header_line, component_count, phase_component, metrics, weekday_availability[current_weekday], workday_index, used_days)
+                    formatted += self.formatted_schedule(headers, header_line, component_count, pc, metrics, weekday_availability[current_weekday], workday_index, used_days)
             else:
                 if log_schedule:
                     formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
@@ -500,10 +500,10 @@ class PhaseComponentAgent(BaseAgent):
         if log_details:
             formatted += f"Phase Component Counts:\n"
             for phase_component_index, phase_component_number in enumerate(phase_component_count):
-                phase_component = phase_components[phase_component_index]
-                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart']:<{longest_sizes['bodypart']+2}}"
-                phase_component_frequency = self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])
-                phase_component_required = f"Required Every Workout: {phase_component["required_every_workout"]}\t\tRequired Every Microcycle: {phase_component['required_within_microcycle']}"
+                pc = phase_components[phase_component_index]
+                phase_component_name = f"{pc['name']:<{longest_sizes['phase_component']+2}} {pc['bodypart']:<{longest_sizes['bodypart']+2}}"
+                phase_component_frequency = self._format_range(phase_component_number, pc["frequency_per_microcycle_min"], pc["frequency_per_microcycle_max"])
+                phase_component_required = f"Required Every Workout: {pc["required_every_workout"]}\t\tRequired Every Microcycle: {pc['required_within_microcycle']}"
                 
                 formatted += f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
             formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
