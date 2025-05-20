@@ -1,3 +1,28 @@
+from app.models import Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts
+
+# Retrieve the phase types and their corresponding constraints for a goal.
+def retrieve_possible_phase_components(phase_id):
+    # Retrieve all possible phase components that can be selected.
+    possible_phase_components = (
+        Phase_Component_Library.query
+        .join(Phase_Library)
+        .filter(Phase_Library.id == phase_id)
+        .order_by(Phase_Component_Library.id.asc())
+        .all()
+    )
+    return possible_phase_components
+
+# Retrieve the phase types and their corresponding constraints for a goal.
+def retrieve_phase_component_bodyparts(phase_id):
+    # Retrieve all possible phase components that can be selected.
+    possible_phase_component_bodyparts = (
+        Phase_Component_Bodyparts.query
+        .filter(Phase_Component_Bodyparts.phase_id == phase_id)
+        .order_by(Phase_Component_Bodyparts.id.asc())
+        .all()
+    )
+    return possible_phase_component_bodyparts    
+
 def phase_component_dict(pc, bodypart_id, bodypart_name):
     """Format the phase component data."""
     return {
@@ -43,3 +68,11 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
             possible_phase_components_list.append(phase_component_dict(possible_phase_component, 1, "total_body"))
     
     return possible_phase_components_list
+
+def Main(phase_id):
+    # Retrieve all possible phase component body parts.
+    possible_phase_component_bodyparts = retrieve_phase_component_bodyparts(phase_id)
+
+    # Retrieve all possible phase components that can be selected for the phase id.
+    possible_phase_components = retrieve_possible_phase_components(phase_id)
+    return construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)

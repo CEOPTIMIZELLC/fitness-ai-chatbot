@@ -11,7 +11,7 @@ bp = Blueprint('user_workout_days', __name__)
 
 from app.agents.phase_components import Main as phase_component_main
 from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time, check_if_there_is_enough_time_complete
+from app.routes.utils import check_if_there_is_enough_time_complete
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
 from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
@@ -22,29 +22,6 @@ def delete_old_user_workout_days(microcycle_id):
     db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
     if verbose:
         print("Successfully deleted")
-
-# Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_possible_phase_components(phase_id):
-    # Retrieve all possible phase components that can be selected.
-    possible_phase_components = (
-        Phase_Component_Library.query
-        .join(Phase_Library)
-        .filter(Phase_Library.id == phase_id)
-        .order_by(Phase_Component_Library.id.asc())
-        .all()
-    )
-    return possible_phase_components
-
-# Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_phase_component_bodyparts(phase_id):
-    # Retrieve all possible phase components that can be selected.
-    possible_phase_component_bodyparts = (
-        Phase_Component_Bodyparts.query
-        .filter(Phase_Component_Bodyparts.phase_id == phase_id)
-        .order_by(Phase_Component_Bodyparts.id.asc())
-        .all()
-    )
-    return possible_phase_component_bodyparts    
 
 # Given a start date and a duration, convert into a list of weekdays and create a corresponding workout day entry.
 def duration_to_weekdays(dur, start_date, microcycle_id):
@@ -69,6 +46,26 @@ def duration_to_weekdays(dur, start_date, microcycle_id):
     
     return microcycle_weekdays, user_workdays
 
+# Retrieves various availability information from the availability query.
+# The availability for each weekday, as well as its name.
+# The total number of available weekdays.
+# The total availability over all. 
+def retrieve_weekday_availability_information_from_availability(availability):
+    weekday_availability = []
+    number_of_available_weekdays = 0
+    total_availability = 0
+
+    for day in availability:
+        weekday_availability.append({
+            "id": day.weekday_id, 
+            "name": day.weekdays.name.title(), 
+            "availability": int(day.availability.total_seconds())
+        })
+        total_availability += day.availability.total_seconds()
+        if day.availability.total_seconds() > 0:
+            number_of_available_weekdays += 1
+    return weekday_availability, number_of_available_weekdays, total_availability
+
 # Verifies and updates the phase component information.
 # Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
 # Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
@@ -83,7 +80,7 @@ def verify_phase_component_information(parameters, pcs, exercises):
     # Check if there are enough exercises to complete the phase components.
     pc_without_enough_ex_message = check_if_there_are_enough_exercises(pcs, exercises_for_pcs)
     if pc_without_enough_ex_message:
-        return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
+        return pc_without_enough_ex_message
 
     # Replace the ends of both lists. 
     parameters["phase_components"] = pcs
@@ -94,17 +91,10 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     parameters={}
     constraints={}
 
-    # Retrieve all possible phase component body parts.
-    possible_phase_component_bodyparts = retrieve_phase_component_bodyparts(phase_id)
-
-    # Retrieve all possible phase components that can be selected for the phase id.
-    possible_phase_components = retrieve_possible_phase_components(phase_id)
-    possible_phase_components_list = construct_phase_component_list(possible_phase_components, possible_phase_component_bodyparts)
+    possible_phase_components_list = construct_phase_component_list(phase_id)
 
     # Check if there is enough time to complete the phase components.
-    maximum_min_duration = max(item["duration_min"] for item in possible_phase_components_list)
-    total_time_needed = retrieve_total_time_needed(possible_phase_components_list, "duration_min", "frequency_per_microcycle_min", number_of_available_weekdays)
-    not_enough_time_message = check_if_there_is_enough_time(total_time_needed, total_availability, maximum_min_duration)
+    not_enough_time_message = check_if_there_is_enough_time_complete(possible_phase_components_list, total_availability, "duration_min", "frequency_per_microcycle_min", number_of_available_weekdays)
     if not_enough_time_message:
         return jsonify({"status": "error", "message": not_enough_time_message}), 400
 
@@ -116,8 +106,7 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
 
     pc_verification_message = verify_phase_component_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:])
     if pc_verification_message:
-        return pc_verification_message
-
+        return jsonify({"status": "error", "message": pc_verification_message}), 400
 
     result = phase_component_main(parameters, constraints)
     if verbose:
@@ -189,19 +178,7 @@ def workout_day_initializer():
     delete_old_user_workout_days(user_microcycle.id)
     microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
 
-    weekday_availability = []
-
-    number_of_available_weekdays = 0
-    total_availability = 0
-    for day in availability:
-        weekday_availability.append({
-            "id": day.weekday_id, 
-            "name": day.weekdays.name.title(), 
-            "availability": int(day.availability.total_seconds())
-        })
-        total_availability += day.availability.total_seconds()
-        if day.availability.total_seconds() > 0:
-            number_of_available_weekdays += 1
+    weekday_availability, number_of_available_weekdays, total_availability = retrieve_weekday_availability_information_from_availability(availability)
 
     result = perform_workout_day_selection(user_microcycle.mesocycles.phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
     # If a tuple error message is returned, return 
@@ -237,19 +214,7 @@ def workout_day_initializer_by_id(phase_id):
     delete_old_user_workout_days(user_microcycle.id)
     microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
 
-    weekday_availability = []
-
-    number_of_available_weekdays = 0
-    total_availability = 0
-    for day in availability:
-        weekday_availability.append({
-            "id": day.weekday_id, 
-            "name": day.weekdays.name.title(), 
-            "availability": int(day.availability.total_seconds())
-        })
-        total_availability += day.availability.total_seconds()
-        if day.availability.total_seconds() > 0:
-            number_of_available_weekdays += 1
+    weekday_availability, number_of_available_weekdays, total_availability = retrieve_weekday_availability_information_from_availability(availability)
 
     result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
     # If a tuple error message is returned, return 
@@ -265,9 +230,8 @@ def workout_day_initializer_by_id(phase_id):
 
     return jsonify({"status": "success", "workdays": result}), 200
 
-# Testing for the parameter programming for phase component assignment.
-@bp.route('/test/<phase_id>', methods=['GET', 'POST'])
-def test_workout_day_by_id(phase_id):
+
+def retrieve_availability_for_test():
     weekday_availability_temp = [
         {"id": 0, "name": "Monday", "availability": 6 * 60 * 60},
         {"id": 1, "name": "Tuesday", "availability": 3 * 60 * 60},
@@ -292,8 +256,14 @@ def test_workout_day_by_id(phase_id):
         total_availability += availability
         if availability > 0:
             number_of_available_weekdays += 1
+    return microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability
 
+# Testing for the parameter programming for phase component assignment.
+@bp.route('/test/<phase_id>', methods=['GET', 'POST'])
+def test_workout_day_by_id(phase_id):
+    microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability = retrieve_availability_for_test()
     result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
+
     # If a tuple error message is returned, return 
     if isinstance(result, tuple):
         return result
@@ -305,17 +275,6 @@ def test_workout_day_by_id(phase_id):
 def phase_component_classification_test():
     test_results = []
 
-    weekday_availability_temp = [
-        {"id": 0, "name": "Monday", "availability": 6 * 60 * 60},
-        {"id": 1, "name": "Tuesday", "availability": 3 * 60 * 60},
-        {"id": 2, "name": "Wednesday", "availability": 2 * 60 * 60},
-        {"id": 3, "name": "Thursday", "availability": 35 * 60},
-        {"id": 4, "name": "Friday", "availability": 0 * 60 * 60},
-        {"id": 5, "name": "Saturday", "availability": 2 * 60 * 60},
-        {"id": 6, "name": "Sunday", "availability": 0 * 60 * 60},
-    ]
-    microcycle_weekdays =  [0, 1, 2, 3, 4, 5, 6]
-
     # Retrieve all possible phases.
     phases = (
         db.session.query(Phase_Library.id)
@@ -324,20 +283,7 @@ def phase_component_classification_test():
         .all()
     )
 
-    weekday_availability = []
-
-    number_of_available_weekdays = 0
-    total_availability = 0
-    for day in microcycle_weekdays:
-        availability = weekday_availability_temp[day]["availability"]
-        weekday_availability.append({
-            "id": weekday_availability_temp[day]["id"], 
-            "name": weekday_availability_temp[day]["name"].title(), 
-            "availability": availability
-        })
-        total_availability += availability
-        if availability > 0:
-            number_of_available_weekdays += 1
+    microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability = retrieve_availability_for_test()
 
     for phase in phases:
         result = perform_workout_day_selection(phase.id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays)
