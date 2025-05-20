@@ -5,7 +5,7 @@ from datetime import timedelta
 user_equipment_population_default = 2
 ortools_solver_time_in_seconds = 5
 verbose = True
-log_schedule = False
+log_schedule = True
 log_steps = True
 log_details = True
 
