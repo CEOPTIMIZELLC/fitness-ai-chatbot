@@ -10,6 +10,7 @@ from app.agents.constraints import (
     use_workout_required_components, 
     use_all_required_items, 
     only_use_required_items, 
+    ensure_all_vars_equal, 
     frequency_within_min_max, 
     consecutive_bodyparts_for_component)
 
@@ -25,6 +26,7 @@ available_constraints = """
 - use_microcycle_required_components: Forces all phase components required for a microcycle to be assigned at lease once in the microcycle.
 - frequency_within_min_max: Forces each phase component that does occur to occur between the minimum and maximum values allowed.
 - consecutive_bodyparts_for_component: Forces phase components of the same component and subcomponent type to occur simultaneously on a workout where any is assigned.
+- resistances_have_equal_counts: Forces all phase components of different subcomponent types to have the same quantity if they are resistance components in a day.
 - minimize_duration_delta: Secondary objective to minimize the amount of spread of phase component durations.
 - maximize_exercise_time: Objective to maximize the amount of time spent overall.
 """
@@ -90,6 +92,7 @@ class PhaseComponentAgent(BaseAgent):
             "use_microcycle_required_components": True,     # Include phase components that are required in every microcycle at least once.
             "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
             "consecutive_bodyparts_for_component": False,    # Every bodypart division must be done consecutively for a phase component.
+            "resistances_have_equal_counts": True,          # Forces all phase components of different subcomponent types to have the same quantity if they are resistance components in the same day.
             "minimize_duration_delta": True,                # Minimize the amount of spread across the duration of phase component over the microcycle.
             "maximize_exercise_time": True,                 # Objective function constraint
         }
@@ -221,6 +224,18 @@ class PhaseComponentAgent(BaseAgent):
                                                 phase_components=phase_components, 
                                                 active_phase_components=vars["active_phase_components"])
             logs += "- Bodypart division for components are done consecutively activated.\n"
+
+
+        # Constraint: All resistances of different subcomponents will have the same number.
+        if constraints["resistances_have_equal_counts"]:
+            resistance_phase_components = {}
+            for i, phase_component in enumerate(phase_components):
+                if phase_component["component_name"].lower() == "resistance":
+                    resistance_phase_components.setdefault(phase_component["bodypart_id"],[]).append(i)
+            for active_phase_components_for_day in vars["active_phase_components"]:
+                for _, value in resistance_phase_components.items():
+                    ensure_all_vars_equal(model, [active_phase_components_for_day[i] for i in value])
+            logs += "- All resistances of different subcomponents will have the same number activated.\n"
 
         # Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
         if constraints["frequency_within_min_max"]:
@@ -442,13 +457,13 @@ class PhaseComponentAgent(BaseAgent):
 
                 current_weekday = microcycle_weekdays[workday_index]
 
+                # Count the number of occurrences of each phase component
+                phase_component_count[phase_component_index] += 1
+
                 if not used_days[workday_index]["used"]:
                     formatted += f"\n| Day {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
                     used_days[workday_index]["used"] = True
                     formatted += header_line + "\n"
-
-                # Count the number of occurrences of each phase component
-                phase_component_count[phase_component_index] += 1
 
                 # Format line
                 line_fields = {
@@ -459,7 +474,7 @@ class PhaseComponentAgent(BaseAgent):
                     "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
                     "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}",
                     "duration": f"{self._format_duration(duration_var)} sec",
-                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * len(phase_components))}"
+                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * phase_component["exercises_per_bodypart_workout_max"])}"
                 }
 
                 line = ""
