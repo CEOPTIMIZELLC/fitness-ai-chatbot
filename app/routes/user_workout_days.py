@@ -87,14 +87,17 @@ def verify_phase_component_information(parameters, pcs, exercises):
     correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
     return None
 
-def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose=False):
+# Retrieves the parameters used by the solver.
+def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability):
     parameters={}
-    constraints={}
 
     possible_phase_components_list = construct_phase_component_list(phase_id)
+    for pc in possible_phase_components_list:
+        pc["duration_min_for_day"] = (pc["duration_min"]) * (pc["exercises_per_bodypart_workout_min"] or 1)
+        pc["duration_max_for_day"] = (pc["duration_max"]) * (pc["exercises_per_bodypart_workout_max"] or 1)
 
     # Check if there is enough time to complete the phase components.
-    not_enough_time_message = check_if_there_is_enough_time_complete(possible_phase_components_list, total_availability, "duration_min", "frequency_per_microcycle_min", number_of_available_weekdays)
+    not_enough_time_message = check_if_there_is_enough_time_complete(possible_phase_components_list, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
     if not_enough_time_message:
         return jsonify({"status": "error", "message": not_enough_time_message}), 400
 
@@ -107,6 +110,16 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     pc_verification_message = verify_phase_component_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:])
     if pc_verification_message:
         return jsonify({"status": "error", "message": pc_verification_message}), 400
+
+    return parameters
+
+def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose=False):
+    parameters=retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability)
+
+    # If a tuple error message is returned, return 
+    if isinstance(parameters, tuple):
+        return parameters
+    constraints={}
 
     result = phase_component_main(parameters, constraints)
     if verbose:
@@ -158,49 +171,15 @@ def read_user_current_workout_day():
         return jsonify({"status": "error", "message": "No active phase component found."}), 404
     return jsonify({"status": "success", "phase_components": user_workout_day.to_dict()}), 200
 
-# Assigns phase components to days along with projected length.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def workout_day_initializer():
+
+def workout_day_executor(phase_id=None):
     user_microcycle = current_microcycle(current_user.id)
     if not user_microcycle:
         return jsonify({"status": "error", "message": "No active microcycle found."}), 404
-
-    availability = (
-        User_Weekday_Availability.query
-        .join(Weekday_Library)
-        .filter(User_Weekday_Availability.user_id == current_user.id)
-        .order_by(User_Weekday_Availability.user_id.asc())
-        .all())
-    if not availability:
-        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
-
-    delete_old_user_workout_days(user_microcycle.id)
-    microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
-
-    weekday_availability, number_of_available_weekdays, total_availability = retrieve_weekday_availability_information_from_availability(availability)
-
-    result = perform_workout_day_selection(user_microcycle.mesocycles.phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
-    # If a tuple error message is returned, return 
-    if isinstance(result, tuple):
-        return result
-
-    if result["output"] == "error":
-        return jsonify({"status": "error", "message": result["message"]}), 404
-
-    user_workdays = agent_output_to_sqlalchemy_model(result["output"], user_workdays)
-    db.session.add_all(user_workdays)
-    db.session.commit()
-
-    return jsonify({"status": "success", "workdays": result}), 200
-
-# Assigns phase components to days along with projected length.
-@bp.route('/<phase_id>', methods=['POST', 'PATCH'])
-@login_required
-def workout_day_initializer_by_id(phase_id):
-    user_microcycle = current_microcycle(current_user.id)
-    if not user_microcycle:
-        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
+    
+    # If no phase id given, retrieve the currently active one. 
+    if not phase_id:
+        phase_id = user_microcycle.mesocycles.phase_id
 
     availability = (
         User_Weekday_Availability.query
@@ -228,6 +207,27 @@ def workout_day_initializer_by_id(phase_id):
     db.session.add_all(user_workdays)
     db.session.commit()
 
+    return result
+
+
+# Assigns phase components to days along with projected length.
+@bp.route('/', methods=['POST', 'PATCH'])
+@login_required
+def workout_day_initializer():
+    # Retrieve results. If a tuple error message is returned, return the error message.
+    result = workout_day_executor()
+    if isinstance(result, tuple):
+        return result
+    return jsonify({"status": "success", "workdays": result}), 200
+
+# Assigns phase components to days along with projected length.
+@bp.route('/<phase_id>', methods=['POST', 'PATCH'])
+@login_required
+def workout_day_initializer_by_id(phase_id):
+    # Retrieve results. If a tuple error message is returned, return the error message.
+    result = workout_day_executor(phase_id)
+    if isinstance(result, tuple):
+        return result
     return jsonify({"status": "success", "workdays": result}), 200
 
 
