@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
+from config import ortools_solver_time_in_seconds, verbose, log_schedule, log_steps, log_details
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from dotenv import load_dotenv
@@ -585,39 +585,40 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             # Count the number of occurrences of each phase component
             phase_component_count[phase_component_index] += 1
 
-            one_rep_max_new = 0
-            volume_max = phase_component["volume_max"]
-            if is_weighted_var:
-                one_rep_max_new = int(round((training_weight_var * (30 + reps_var)) / 30, 2))
-                volume_max = round(volume_max * exercise["one_rep_max"] * (phase_component["intensity_max"] / 100))
-            density_max = phase_component["density_max"] / 100
-            performance_max = round(volume_max * density_max * 100) / 100
+            if log_schedule:
+                one_rep_max_new = 0
+                volume_max = phase_component["volume_max"]
+                if is_weighted_var:
+                    one_rep_max_new = int(round((training_weight_var * (30 + reps_var)) / 30, 2))
+                    volume_max = round(volume_max * exercise["one_rep_max"] * (phase_component["intensity_max"] / 100))
+                density_max = phase_component["density_max"] / 100
+                performance_max = round(volume_max * density_max * 100) / 100
 
-            # Format line
-            line_fields = {
-                "number": str(component_count + 1),
-                "exercise": exercise["name"],
-                "phase_component": f"{phase_component['name']}",
-                "bodypart": phase_component["bodypart_name"],
-                "duration": f"({duration} sec",
-                "working_duration": f"({working_duration} sec",
-                "base_strain": str(base_strain),
-                "seconds_per_exercise": f"({seconds_per_exercise} sec",
-                "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
-                "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
-                "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")",
-                "one_rep_max": f"{one_rep_max_var} -> {one_rep_max_new}" if intensity_var else "",
-                "training_weight": str(training_weight_var) if intensity_var else "",
-                "intensity": self._format_range(intensity_var, phase_component["intensity_min"] or 1, phase_component["intensity_max"]) if intensity_var else "",
-                "volume": f"{exercise["volume"]} -> {volume_var} (>={volume_max})",
-                "density": f"{exercise["density"] / 100} -> {density_var} (>={density_max})",
-                "performance": f"{exercise["performance"] / 100} -> {performance_var} (>={performance_max})",
-            }
+                # Format line
+                line_fields = {
+                    "number": str(component_count + 1),
+                    "exercise": exercise["name"],
+                    "phase_component": f"{phase_component['name']}",
+                    "bodypart": phase_component["bodypart_name"],
+                    "duration": f"({duration} sec",
+                    "working_duration": f"({working_duration} sec",
+                    "base_strain": str(base_strain),
+                    "seconds_per_exercise": f"({seconds_per_exercise} sec",
+                    "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
+                    "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
+                    "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")",
+                    "one_rep_max": f"{one_rep_max_var} -> {one_rep_max_new}" if intensity_var else "",
+                    "training_weight": str(training_weight_var) if intensity_var else "",
+                    "intensity": self._format_range(intensity_var, phase_component["intensity_min"] or 1, phase_component["intensity_max"]) if intensity_var else "",
+                    "volume": f"{exercise["volume"]} -> {volume_var} (>={volume_max})",
+                    "density": f"{exercise["density"] / 100} -> {density_var} (>={density_max})",
+                    "performance": f"{exercise["performance"] / 100} -> {performance_var} (>={performance_max})",
+                }
 
-            line = ""
-            for field, (_, length) in headers.items():
-                line += self._create_formatted_field(field, line_fields[field], length)
-            formatted += line + "\n"
+                line = ""
+                for field, (_, length) in headers.items():
+                    line += self._create_formatted_field(field, line_fields[field], length)
+                formatted += line + "\n"
 
         if log_details:
             formatted += f"Phase Component Counts:\n"

@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
+from config import ortools_solver_time_in_seconds, verbose, log_schedule, log_steps, log_details
 from config import ortools_solver_time_in_seconds
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -460,29 +460,31 @@ class PhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
-                if not used_days[workday_index]["used"]:
-                    formatted += f"\n| Day {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
-                    used_days[workday_index]["used"] = True
-                    formatted += header_line + "\n"
+                if log_schedule:
+                    if not used_days[workday_index]["used"]:
+                        formatted += f"\n| Day {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
+                        used_days[workday_index]["used"] = True
+                        formatted += header_line + "\n"
 
-                # Format line
-                line_fields = {
-                    "number": str(component_count + 1),
-                    "phase_component": f"{phase_component['name']}",
-                    "bodypart": phase_component["bodypart"],
-                    "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}",
-                    "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
-                    "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}",
-                    "duration": f"{self._format_duration(duration_var)} sec",
-                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * phase_component["exercises_per_bodypart_workout_max"])}"
-                }
+                    # Format line
+                    line_fields = {
+                        "number": str(component_count + 1),
+                        "phase_component": f"{phase_component['name']}",
+                        "bodypart": phase_component["bodypart"],
+                        "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}",
+                        "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
+                        "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}",
+                        "duration": f"{self._format_duration(duration_var)} sec",
+                        "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * phase_component["exercises_per_bodypart_workout_max"])}"
+                    }
 
-                line = ""
-                for field, (_, length) in headers.items():
-                    line += self._create_formatted_field(field, line_fields[field], length)
-                formatted += line + "\n"
+                    line = ""
+                    for field, (_, length) in headers.items():
+                        line += self._create_formatted_field(field, line_fields[field], length)
+                    formatted += line + "\n"
             else:
-                formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
+                if log_schedule:
+                    formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
 
         if log_details:
             formatted += f"Phase Component Counts:\n"
