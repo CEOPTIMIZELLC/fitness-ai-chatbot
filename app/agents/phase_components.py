@@ -298,10 +298,10 @@ class PhaseComponentAgent(BaseAgent):
         solver.parameters.max_time_in_seconds = ortools_solver_time_in_seconds
 
         # solver.parameters.log_search_progress = True
-        self._solve_and_time_solver(solver, model)
+        status = self._solve_and_time_solver(solver, model)
 
         # If the duration spread should be minimized, then ensure the final duration is the same, with the new goal of minimizing the spread.
-        if duration_spread_var != None:
+        if status in (cp_model.FEASIBLE, cp_model.OPTIMAL) and duration_spread_var != None:
             model.Add((total_duration_to_maximize == solver.Value(total_duration_to_maximize)))
             model.Minimize(duration_spread_var)
             status = solver.Solve(model)
