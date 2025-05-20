@@ -39,6 +39,8 @@ available_constraints = """
 - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
 - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
 - rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
+- resistances_have_equal_sets: Forces all exercises for resistance components to have the same number of sets.
+- resistances_have_equal_counts: Forces all phase components of different subcomponent types to have the same quantity if they are resistance components.
 - duration_within_min_max: Forces the amount of duration to be between the minimum and maximum values allowed for the phase component.
 - exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
 - exercise_metric_increase: Forces the prioritized metric of an exercise chosen to increase.
@@ -115,6 +117,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "reps_within_min_max": True,                    # The number of reps of the exercise may only be a number between the minimum and maximum reps allowed for the phase component.
             "sets_within_min_max": True,                    # The number of sets of the exercise may only be a number between the minimum and maximum sets allowed for the phase component.
             "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number between the minimum and maximum rest allowed for the phase component.
+            "resistances_have_equal_sets": True,            # Forces all exercises for resistance components to have the same number of sets.
+            "resistances_have_equal_counts": True,          # Forces all phase components of different subcomponent types to have the same quantity if they are resistance components.
             "duration_within_min_max": True,                # The number of duration of the exercise may only be a number between the minimum and maximum duration allowed for the phase component.
             "intensity_within_min_max": True,               # The amount of intensity for the exercise may only be a number between the minimum and maximum intensity allowed for the phase component.
             "exercises_per_bodypart_within_min_max": True,  # The number of exercises for the phase components of the exercise may only be a number between the minimum and maximum exercises per bodypart allowed for the phase component.
