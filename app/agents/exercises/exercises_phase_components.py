@@ -4,6 +4,7 @@ from typing import Set, Optional
 from app.agents.constraints import (
     entries_equal, 
     entries_within_min_max, 
+    ensure_all_vars_equal, 
     link_entry_and_item, 
     constrain_active_entries_vars, 
     declare_model_vars, 
@@ -287,6 +288,13 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         # Constraint: The resistance components must have the same number of exercises for each bodypart.
         if constraints["resistances_have_equal_counts"]:
+            resistance_phase_components = {}
+            for i, phase_component in enumerate(phase_components):
+                if phase_component["component_name"].lower() == "resistance":
+                    resistance_phase_components.setdefault(phase_component["bodypart_id"],[]).append(i)
+            for _, value in resistance_phase_components.items():
+                ensure_all_vars_equal(model, [vars["pc_count"][i] for i in value])
+            # resistances_of_same_bodypart_have_equal_sets(model, phase_components, vars["used_pcs"], vars["pc_count"])
             logs += "- All resistance exercises have the same number of exercises for each bodypart.\n"
 
         # Constraint: The duration of a phase component may only be a number between the minimum and maximum duration allowed.
