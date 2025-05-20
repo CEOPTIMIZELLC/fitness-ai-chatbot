@@ -83,7 +83,7 @@ def verify_phase_component_information(parameters, pcs, exercises):
         pc["allowed_exercises"] = exercises_for_pc
         pc["performance"]=min(exercises[exercise_for_pc-1]["performance"] for exercise_for_pc in exercises_for_pc)
 
-    # Replace the ends of both lists. 
+    # Replace the ends of both lists with the corrected versions. 
     parameters["phase_components"][1:] = pcs
     parameters["possible_exercises"][1:] = exercises
     return None

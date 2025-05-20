@@ -82,7 +82,7 @@ def verify_phase_component_information(parameters, pcs, exercises):
     if pc_without_enough_ex_message:
         return pc_without_enough_ex_message
 
-    # Replace the ends of both lists. 
+    # Replace the list of phase components with the corrected version. 
     parameters["phase_components"] = pcs
     correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
     return None
@@ -96,11 +96,6 @@ def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, 
         pc["duration_min_for_day"] = (pc["duration_min"]) * (pc["exercises_per_bodypart_workout_min"] or 1)
         pc["duration_max_for_day"] = (pc["duration_max"]) * (pc["exercises_per_bodypart_workout_max"] or 1)
 
-    # Check if there is enough time to complete the phase components.
-    not_enough_time_message = check_if_there_is_enough_time_complete(possible_phase_components_list, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
-    if not_enough_time_message:
-        return jsonify({"status": "error", "message": not_enough_time_message}), 400
-
     parameters["microcycle_weekdays"] = microcycle_weekdays
     parameters["weekday_availability"] = weekday_availability
     parameters["phase_components"] = possible_phase_components_list
@@ -110,6 +105,11 @@ def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, 
     pc_verification_message = verify_phase_component_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:])
     if pc_verification_message:
         return jsonify({"status": "error", "message": pc_verification_message}), 400
+
+    # Check if there is enough time to complete the phase components.
+    not_enough_time_message = check_if_there_is_enough_time_complete(possible_phase_components_list, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
+    if not_enough_time_message:
+        return jsonify({"status": "error", "message": not_enough_time_message}), 400
 
     return parameters
 
