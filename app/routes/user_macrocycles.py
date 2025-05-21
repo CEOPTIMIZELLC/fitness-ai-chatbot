@@ -109,10 +109,8 @@ def change_macrocycle():
 @bp.route('/<goal_id>', methods=['POST', 'PATCH'])
 @login_required
 def change_macrocycle_by_id(goal_id):
-    from app.utils.db_helpers import get_item_by_id
-
     # Ensure that id is possible.
-    goal = get_item_by_id(Goal_Library, goal_id)
+    goal = db.session.get(Goal_Library, goal_id)
     if not goal:
         return jsonify({"status": "error", "message": f"Goal {goal_id} not found."}), 404
 
@@ -124,7 +122,7 @@ def change_macrocycle_by_id(goal_id):
 
     return jsonify({
         "new_goal": f"Goal of {goal_id}",
-        "goal_classification": goal["name"],
+        "goal_classification": goal.name,
         "goal_id": goal_id
     }), 200
 

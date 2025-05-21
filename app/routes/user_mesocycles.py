@@ -58,11 +58,8 @@ def mesocycle_phase_adding(goal_id=None):
 
 # Method to perform phase selection on a goal of a specified id.
 def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
-    from app.utils.db_helpers import get_item_by_id
-    goal = get_item_by_id(Goal_Library, goal_id)
-    if not goal:
+    if not db.session.get(Goal_Library, goal_id):
         return None
-
     return perform_phase_selection(goal_id, macrocycle_allowed_weeks, verbose)
 
 def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_start_date):
