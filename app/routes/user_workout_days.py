@@ -12,6 +12,7 @@ bp = Blueprint('user_workout_days', __name__)
 from app.agents.phase_components import Main as phase_component_main
 from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
 from app.routes.utils import check_if_there_is_enough_time_complete
+from app.utils.print_long_output import print_long_output
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
 from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
@@ -123,7 +124,7 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
 
     result = phase_component_main(parameters, constraints)
     if verbose:
-        print(result["formatted"])
+        print_long_output(result["formatted"])
     return result
 
 def agent_output_to_sqlalchemy_model(phase_components_output, user_workdays):
@@ -293,7 +294,7 @@ def phase_component_classification_test():
 
         if verbose:
             print(str(phase.id))
-            print(result["formatted"])
+            print_long_output(result["formatted"])
         test_results.append({
             # "phase_components": parameters["phase_components"], 
             "phase_id": phase.id,
