@@ -38,26 +38,14 @@ def register_blueprints(app):
         from .routes import dev_tests
         app.register_blueprint(dev_tests.bp, url_prefix='/dev_tests')
 
-        from .routes import equipment
-        app.register_blueprint(equipment.bp, url_prefix='/equipment')
-
-        from .routes import exercises
-        app.register_blueprint(exercises.bp, url_prefix='/exercises')
-
-        from .routes import goals
-        app.register_blueprint(goals.bp, url_prefix='/goals')
-
-        from .routes import phases
-        app.register_blueprint(phases.bp, url_prefix='/phases')
-
-        from .routes import phase_components
-        app.register_blueprint(phase_components.bp, url_prefix='/phase_components')
-
-        from .routes import components
-        app.register_blueprint(components.bp, url_prefix='/components')
-
-        from .routes import subcomponents
-        app.register_blueprint(subcomponents.bp, url_prefix='/subcomponents')
+        from .routes import libraries as library_routes
+        app.register_blueprint(library_routes.equipment_bp, url_prefix='/equipment')
+        app.register_blueprint(library_routes.exercises_bp, url_prefix='/exercises')
+        app.register_blueprint(library_routes.goals_bp, url_prefix='/goals')
+        app.register_blueprint(library_routes.phases_bp, url_prefix='/phases')
+        app.register_blueprint(library_routes.phase_components_bp, url_prefix='/phase_components')
+        app.register_blueprint(library_routes.components_bp, url_prefix='/components')
+        app.register_blueprint(library_routes.subcomponents_bp, url_prefix='/subcomponents')
 
         from .routes import user_weekday_availability
         app.register_blueprint(user_weekday_availability.bp, url_prefix='/user_weekday_availability')
