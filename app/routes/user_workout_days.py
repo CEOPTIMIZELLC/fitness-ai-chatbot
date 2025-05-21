@@ -2,21 +2,34 @@ from config import verbose
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 import math
+from datetime import timedelta
 
 from app import db
-from app.models import Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, Weekday_Library, User_Weekday_Availability, User_Workout_Components, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days
-from datetime import timedelta
+from app.models import (
+    Phase_Library, 
+    Phase_Component_Library, 
+    Phase_Component_Bodyparts, 
+    Weekday_Library, 
+    User_Weekday_Availability, 
+    User_Workout_Components, 
+    User_Macrocycles, 
+    User_Mesocycles, 
+    User_Microcycles, 
+    User_Workout_Days
+)
+
+from app.agents.phase_components import Main as phase_component_main
+
+from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
+from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
+from app.utils.print_long_output import print_long_output
+
+from app.routes.utils import check_if_there_is_enough_time_complete
+from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
+from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
 
 bp = Blueprint('user_workout_days', __name__)
 
-from app.agents.phase_components import Main as phase_component_main
-from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.routes.utils import check_if_there_is_enough_time_complete
-from app.utils.print_long_output import print_long_output
-from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
-
-from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
-from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
 # ----------------------------------------- Workout Days -----------------------------------------
 
 def delete_old_user_workout_days(microcycle_id):

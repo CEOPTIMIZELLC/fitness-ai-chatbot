@@ -7,11 +7,6 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.models import (
-    Exercise_Library, 
-    Exercise_Component_Phases, 
-    Phase_Library, 
-    Phase_Component_Library, 
-    Phase_Component_Bodyparts, 
     User_Exercises, 
     User_Weekday_Availability, 
     User_Macrocycles, 
@@ -21,17 +16,17 @@ from app.models import (
     User_Workout_Exercises
 )
 
-bp = Blueprint('user_workout_exercises', __name__)
+from app.agents.exercises import exercises_main, exercise_pc_main
 
-from app.agents.exercises import exercises_main
-from app.agents.exercises import exercise_pc_main
 from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time_complete
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 from app.utils.print_long_output import print_long_output
 
+from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time_complete
 from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component, correct_available_exercises_with_possible_weights
 from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list
+
+bp = Blueprint('user_workout_exercises', __name__)
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 

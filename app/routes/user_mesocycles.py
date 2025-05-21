@@ -4,12 +4,18 @@ from flask_login import current_user, login_required
 from datetime import timedelta
 
 from app import db
-from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, User_Mesocycles, User_Macrocycles
-
-bp = Blueprint('user_mesocycles', __name__)
+from app.models import (
+    Goal_Library, 
+    Goal_Phase_Requirements, 
+    Phase_Library, 
+    User_Mesocycles, 
+    User_Macrocycles
+)
 
 from app.agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
+
+bp = Blueprint('user_mesocycles', __name__)
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 

@@ -3,10 +3,10 @@ from flask import request, jsonify, Blueprint
 
 from flask_login import current_user, login_required
 
-bp = Blueprint('dev_tests', __name__)
-
 from app.utils.sql import sql_app
 from app.utils.table_context_parser import context_retriever_app
+
+bp = Blueprint('dev_tests', __name__)
 
 # ----------------------------------------- Dev Tests -----------------------------------------
 

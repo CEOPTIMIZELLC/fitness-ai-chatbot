@@ -4,6 +4,8 @@ from app.utils.db_helpers import get_all_items, get_item_by_id
 
 bp = Blueprint('components', __name__)
 
+# ----------------------------------------- Components -----------------------------------------
+
 @bp.route('/', methods=['GET'])
 def get_components_list():
     result = get_all_items(Component_Library)

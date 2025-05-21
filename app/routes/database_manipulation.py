@@ -3,10 +3,10 @@ from flask import request, jsonify, current_app, Blueprint
 from app import db
 from app.models import table_object
 
-bp = Blueprint('database_manipulation', __name__)
-
 from app.utils.table_schema_cache import get_database_schema
 from app.routes.auth import register
+
+bp = Blueprint('database_manipulation', __name__)
 
 # ----------------------------------------- Database Manipulation -----------------------------------------
 
