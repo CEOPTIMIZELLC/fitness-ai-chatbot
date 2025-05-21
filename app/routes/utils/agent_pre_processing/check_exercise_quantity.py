@@ -25,6 +25,7 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     phase_requirements = [{
         "id": pc["phase_component_id"],
         "name": pc["name"],
+        "component_name": pc["component_name"],
         "bodypart_name": pc["bodypart_name"],
         "required_within_microcycle": pc["required_within_microcycle"],
         "required": pc["exercises_per_bodypart_workout_min"],
@@ -40,6 +41,7 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     for i, req in enumerate(phase_requirements):
         available = req["options"] - used_exercises
         if len(available) < req["required"]:
+            print(req)
             message = f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available."
             is_required = req["required_within_microcycle"] == "always"
             is_resistance = req["component_name"].lower() == "resistance"
