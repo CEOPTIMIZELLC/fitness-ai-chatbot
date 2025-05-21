@@ -1,3 +1,4 @@
 from .exercises import construct_available_exercises_list
+from .phases import Main as construct_phases_list
 from .phase_components import Main as construct_phase_component_list
 from .user_workout_components import construct_user_workout_components_list
