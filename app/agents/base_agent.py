@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
+from config import ortools_solver_time_in_seconds, verbose, log_steps, log_constraints
 from time import perf_counter
 from typing_extensions import TypedDict, TypeVar
 from langgraph.graph import StateGraph, START, END
@@ -169,7 +169,7 @@ class BaseAgent:
             final_output, formatted = self.format_agent_output(solution, formatted, schedule, *agent_output_args)
 
             # Show final constraint status
-            if log_details:
+            if log_constraints:
                 formatted += self.format_constraint_status(state["constraints"])
 
         return {"formatted": formatted, "output": final_output}

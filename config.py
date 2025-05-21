@@ -8,6 +8,7 @@ verbose = True
 log_schedule = True
 log_steps = True
 log_counts = True
+log_constraints = True
 log_details = True
 
 class Config:
