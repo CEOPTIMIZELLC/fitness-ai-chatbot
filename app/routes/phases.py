@@ -17,5 +17,8 @@ def get_phase_list():
 def read_phase(phase_id):
     result = get_item_by_id(Phase_Library, phase_id)
     if not result:
-        return jsonify({"status": "error", "message": "Phase " + phase_id + " not found."}), 404
+        return jsonify({
+            "status": "error", 
+            "message": f"Phase {phase_id} not found."
+        }), 404
     return jsonify({"status": "success", "phases": result}), 200

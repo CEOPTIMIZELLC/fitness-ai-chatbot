@@ -17,5 +17,8 @@ def get_goal_list():
 def read_goal(goal_id):
     result = get_item_by_id(Goal_Library, goal_id)
     if not result:
-        return jsonify({"status": "error", "message": "Goal " + goal_id + " not found."}), 404
+        return jsonify({
+            "status": "error", 
+            "message": f"Goal {goal_id} not found."
+        }), 404
     return jsonify({"status": "success", "goals": result}), 200

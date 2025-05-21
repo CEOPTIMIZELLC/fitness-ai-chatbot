@@ -18,5 +18,8 @@ def get_equipment_list():
 def read_equipment(equipment_id):
     result = get_item_by_id(Equipment_Library, equipment_id)
     if not result:
-        return jsonify({"status": "error", "message": "Equipment " + equipment_id + " not found."}), 404
+        return jsonify({
+            "status": "error", 
+            "message": f"Equipment {equipment_id} not found."
+        }), 404
     return jsonify({"status": "success", "equipment": result}), 200

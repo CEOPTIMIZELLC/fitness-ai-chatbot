@@ -6,11 +6,13 @@ bp = Blueprint('phase_components', __name__)
 
 # ----------------------------------------- Phase Components -----------------------------------------
 
+# Retrieve phase components
 @bp.route('/', methods=['GET'])
 def get_phase_components_list():
     result = get_all_items(Phase_Component_Library)
     return jsonify({"status": "success", "phase_components": result}), 200
 
+# Show phase components based on id.
 @bp.route('/<phase_component_id>', methods=['GET'])
 def read_phase_component(phase_component_id):
     result = get_item_by_id(Phase_Component_Library, phase_component_id)

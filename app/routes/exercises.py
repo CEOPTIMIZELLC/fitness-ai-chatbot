@@ -17,5 +17,8 @@ def get_exercise_list():
 def read_exercise(exercise_id):
     result = get_item_by_id(Exercise_Library, exercise_id)
     if not result:
-        return jsonify({"status": "error", "message": "Exercise " + exercise_id + " not found."}), 404
+        return jsonify({
+            "status": "error", 
+            "message": f"Exercise {exercise_id} not found."
+        }), 404
     return jsonify({"status": "success", "exercises": result}), 200
