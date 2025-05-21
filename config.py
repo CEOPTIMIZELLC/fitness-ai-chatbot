@@ -4,12 +4,21 @@ from datetime import timedelta
 
 user_equipment_population_default = 2
 ortools_solver_time_in_seconds = 5
+
 verbose = True
+
+# Configurations for agent logging.
 log_schedule = True
 log_steps = True
 log_counts = True
 log_constraints = True
 log_details = True
+
+# Configurations for exerecises to be included for phase components upon initial failure.
+include_all_exercises_for_desired_full_body = True
+include_all_exercises_for_desired_bodypart = True
+incude_all_exercises_for_desired_phase_component = False
+include_all_exercises = False
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
