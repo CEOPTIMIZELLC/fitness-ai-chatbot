@@ -78,6 +78,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
         duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
 
+        phase_components = state["parameters"]["phase_components"]
+
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
         solver.parameters.max_time_in_seconds = ortools_solver_time_in_seconds
@@ -94,11 +96,17 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             schedule = []
             # Each day in the microcycle
             for i in range(len(duration_vars)):
+                phase_component_var = solver.Value(phase_component_vars[i])
+                phase_component = phase_components[phase_component_var]
+
                 # Ensure that the phase component is active.
                 if(solver.Value(active_exercise_vars[i])):
                     schedule.append((
                         i, 
-                        solver.Value(phase_component_vars[i]), 
+                        phase_component_var, 
+                        phase_component["component_id"],                                    # ID of the component for the phase component chosen.
+                        phase_component["subcomponent_id"],                                 # ID of the subcomponent for the phase component chosen.
+                        phase_component["bodypart_id"],                                     # ID of the bodypart for the phase component chosen.
                         solver.Value(active_exercise_vars[i]), 
                         solver.Value(seconds_per_exercise_vars[i]), 
                         solver.Value(reps_vars[i]), 
@@ -107,7 +115,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                         solver.Value(duration_vars[i]), 
                         solver.Value(working_duration_vars[i])
                     ))
-            schedule = sorted(schedule, key=lambda x: x[1])
+            schedule = sorted(schedule, key=lambda x: (x[2], x[4], x[3]))
             solution = {
                 "schedule": schedule,
                 "status": status
@@ -382,7 +390,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         projected_duration = parameters["projected_duration"]
         schedule_old = state["solution"]["schedule"]
 
-        phase_component_ids = [phase_component_index for (_, phase_component_index, _, _, _, _, _, _, _) in (schedule_old)]
+        phase_component_ids = [phase_component_index for (_, phase_component_index, _, _, _, _, _, _, _, _, _, _) in (schedule_old)]
 
         # Upper bound on number of exercises (greedy estimation)
         max_exercises = len(phase_component_ids)
@@ -438,6 +446,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             schedule = []
             # Each day in the microcycle
             for i in range(len(duration_vars)):
+                phase_component = phase_components[phase_component_vars[i]]
 
                 # Ensure that the phase component is active.
                 duration_vars_current = solver.Value(duration_vars[i])
@@ -449,6 +458,9 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                     i, 
                     solver.Value(exercise_vars[i]),                                     # Index of the exercise chosen.
                     phase_component_vars[i],                                            # Index of the phase component chosen.
+                    phase_component["component_id"],                                    # ID of the component for the phase component chosen.
+                    phase_component["subcomponent_id"],                                 # ID of the subcomponent for the phase component chosen.
+                    phase_component["bodypart_id"],                                     # ID of the bodypart for the phase component chosen.
                     solver.Value(base_strain_vars[i]),                                  # Base strain of the exercise chosen.
                     solver.Value(seconds_per_exercise_vars[i]),                         # Seconds per exercise of the exercise chosen.
                     solver.Value(reps_vars[i]),                                         # Reps of the exercise chosen.
@@ -471,7 +483,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 working_effort += working_effort_vars_current
 
                 strain_ratio += working_effort_vars_current/base_effort_vars_current
-            schedule = sorted(schedule, key=lambda x: x[2])
+            # schedule = sorted(schedule, key=lambda x: (x[3], x[5], x[4]))
             solution = {
                 "schedule": schedule,
                 "duration": duration,
@@ -521,6 +533,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
     def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
+            "superset": ("Superset", 11),
             "number": ("", 5),
             "exercise": ("Exercise", longest_sizes["exercise"] + 4),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
@@ -537,10 +550,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "intensity": ("Intensity", 14),
             "volume": ("Volume", 24),
             "density": ("Density", 24),
-            "performance": ("Performance", 30)
+            "performance": ("Performance", 30),
         }
 
-    def formatted_schedule(self, headers, i, pc, exercise, metrics):
+    def formatted_schedule(self, headers, i, pc, exercise, superset_var, metrics):
         (base_strain, seconds_per_exercise, 
          reps_var, sets_var, rest_var, intensity_var, 
          one_rep_max_var, training_weight_var, is_weighted_var, 
@@ -557,6 +570,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Format line
         line_fields = {
+            "superset": str(superset_var["superset_current"]) if superset_var["is_resistance"] else str(superset_var["not_a_superset"]),
             "number": str(i + 1),
             "exercise": exercise["name"],
             "phase_component": f"{pc['name']}",
@@ -600,7 +614,14 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         if log_schedule: 
             formatted += self.formatted_header_line(headers)
 
-        for component_count, (i, exercise_index, phase_component_index, *metrics) in enumerate(schedule):
+        superset_var = {
+            "not_a_superset": "-", 
+            "superset_current": 0, 
+            "superset_previous": 0, 
+            "bodypart_id": 0,
+            "is_resistance": False}
+
+        for component_count, (i, exercise_index, phase_component_index, component_id, subcomponent_id, bodypart_id, *metrics) in enumerate(schedule):
             exercise = exercises[exercise_index]
             pc = phase_components[phase_component_index]
 
@@ -638,8 +659,22 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             # Count the number of occurrences of each phase component
             phase_component_count[phase_component_index] += 1
 
+            superset_var["superset_previous"] = superset_var["superset_current"]
+
+            # Check if the current component is resistance.
+            if component_id == 6:
+                superset_var["is_resistance"] = True
+
+                # Count up the superset count if a new superset is encountered.
+                if superset_var["bodypart_id"] != bodypart_id:
+                    superset_var["superset_current"] += 1
+                
+                superset_var["bodypart_id"] = bodypart_id
+            else:
+                superset_var["is_resistance"] = False
+
             if log_schedule:
-                formatted += self.formatted_schedule(headers, component_count, pc, exercise, metrics)
+                formatted += self.formatted_schedule(headers, component_count, pc, exercise, superset_var, metrics)
 
         if log_details:
             formatted += f"Phase Component Counts:\n"

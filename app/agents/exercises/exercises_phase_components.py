@@ -459,6 +459,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
         duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
 
+        phase_components = state["parameters"]["phase_components"]
+
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
         solver.parameters.max_time_in_seconds = ortools_solver_time_in_seconds
@@ -478,11 +480,16 @@ class ExercisePhaseComponentAgent(BaseAgent):
             for i in range(len(duration_vars)):
                 # Ensure that the phase component is active.
                 if(solver.Value(active_exercise_vars[i])):
+                    phase_component_var = solver.Value(phase_component_vars[i])
+                    phase_component = phase_components[phase_component_var]
                     duration_vars_current = solver.Value(duration_vars[i])
                     working_duration_vars_current = solver.Value(working_duration_vars[i])
                     schedule.append((
                         i, 
-                        solver.Value(phase_component_vars[i]), 
+                        phase_component_var, 
+                        phase_component["component_id"],                                    # ID of the component for the phase component chosen.
+                        phase_component["subcomponent_id"],                                 # ID of the subcomponent for the phase component chosen.
+                        phase_component["bodypart_id"],                                     # ID of the bodypart for the phase component chosen.
                         solver.Value(active_exercise_vars[i]), 
                         solver.Value(seconds_per_exercise_vars[i]),                         # Seconds per exercise of the exercise chosen.
                         solver.Value(reps_vars[i]),                                         # Reps of the exercise chosen.
@@ -497,7 +504,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                     duration += duration_vars_current
                     working_duration += working_duration_vars_current
                     strain_ratio += duration_vars_current/working_duration_vars_current
-            schedule = sorted(schedule, key=lambda x: x[1])
+            schedule = sorted(schedule, key=lambda x: (x[2], x[4], x[3]))
             pc_count = [
                 solver.Value(pc_count_var)
                 for pc_count_var in pc_count_vars
@@ -626,7 +633,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         if log_schedule: 
             formatted += self.formatted_header_line(headers)
 
-        for component_count, (i, phase_component_index, *metrics) in enumerate(schedule):
+        for component_count, (i, phase_component_index, _, _, _, *metrics) in enumerate(schedule):
             pc = phase_components[phase_component_index]
 
             (active_exercises, seconds_per_exercise, 
