@@ -3,8 +3,17 @@ def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercise
     # Remove the indices that were considered impossible but weren't required.
     # Sort indices in reverse so we don't shift elements prematurely
     for i in sorted(pcs_to_remove, reverse=True):
-        pcs.pop(i)
-        exercises_for_pcs.pop(i)
+        if pcs[i]["component_name"].lower() == "resistance":
+            for pc in pcs:
+                if (pc["component_name"].lower() == pcs[i]["component_name"].lower() and pc["bodypart_name"].lower() == pcs[i]["bodypart_name"].lower()):
+                    pc["frequency_per_microcycle_min"]=0
+                    pc["frequency_per_microcycle_max"]=0
+                    pc["exercises_per_bodypart_workout_min"]=0
+                    pc["exercises_per_bodypart_workout_max"]=0
+                    pc["required_within_microcycle"]="No"
+        # print(pcs[i])
+        # pcs.pop(i)
+        # exercises_for_pcs.pop(i)
     return None
 
 def check_for_required(index_of_phase_component, unsatisfiable, pcs_to_remove, message="", is_required=False, is_resistance=False):
