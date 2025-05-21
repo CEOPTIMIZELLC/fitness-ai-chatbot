@@ -1,3 +1,4 @@
+from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
 from config import ortools_solver_time_in_seconds
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -8,6 +9,7 @@ from app.agents.constraints import (
     day_duration_within_availability, 
     use_workout_required_components, 
     use_all_required_items, 
+    only_use_required_items, 
     frequency_within_min_max, 
     consecutive_bodyparts_for_component)
 
@@ -19,6 +21,7 @@ _ = load_dotenv()
 available_constraints = """
 - day_duration_within_availability: Prevents workout from exceeding the time allowed for that given day.
 - use_workout_required_components: Forces all phase components required for a workout to be assigned in every workout.
+- only_use_required_components: Forces only required phase components to be assigned.
 - use_microcycle_required_components: Forces all phase components required for a microcycle to be assigned at lease once in the microcycle.
 - frequency_within_min_max: Forces each phase component that does occur to occur between the minimum and maximum values allowed.
 - consecutive_bodyparts_for_component: Forces phase components of the same component and subcomponent type to occur simultaneously on a workout where any is assigned.
@@ -83,6 +86,7 @@ class PhaseComponentAgent(BaseAgent):
         constraints = {
             "day_duration_within_availability": True,       # The time of a workout won't exceed the time allowed for that given day.
             "use_workout_required_components": True,        # Include phase components that are required in every workout at least once.
+            "only_use_required_components": True,           # Only required phase components are included.
             "use_microcycle_required_components": True,     # Include phase components that are required in every microcycle at least once.
             "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
             "consecutive_bodyparts_for_component": False,    # Every bodypart division must be done consecutively for a phase component.
@@ -134,17 +138,41 @@ class PhaseComponentAgent(BaseAgent):
             for index_for_phase_component in range(len(phase_components))]
             for index_for_day in range(len(microcycle_weekdays))]
 
+        # Create the entry for phase component's count
+        # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
+        vars["exercises_per_bodypart"] = [[
+            create_optional_intvar(
+                model=model, 
+                activator = vars["active_phase_components"][index_for_day][index_for_phase_component],
+                min_if_active = phase_components[index_for_phase_component]["exercises_per_bodypart_workout_min"],
+                max_if_active = phase_components[index_for_phase_component]["exercises_per_bodypart_workout_max"],
+                name_of_entry_var = f'phase_component_{index_for_phase_component}_number_of_exercises_on_day_{index_for_day}')
+            for index_for_phase_component in range(len(phase_components))]
+            for index_for_day in range(len(microcycle_weekdays))]
+
         # Create the entry for phase component's duration
         # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
-        vars["duration"] = [[
+        vars["partial_duration"] = [[
             create_optional_intvar(
                 model=model, 
                 activator = vars["active_phase_components"][index_for_day][index_for_phase_component],
                 min_if_active = phase_components[index_for_phase_component]["duration_min"],
                 max_if_active = phase_components[index_for_phase_component]["duration_max"],
-                name_of_entry_var = f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}')
+                name_of_entry_var = f'phase_component_{index_for_phase_component}_partial_duration_on_day_{index_for_day}')
             for index_for_phase_component in range(len(phase_components))]
             for index_for_day in range(len(microcycle_weekdays))]
+
+        # Create the entry for phase component's duration
+        # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
+        vars["duration"] = [[
+            model.NewIntVar(0, len(phase_components) * phase_components[index_for_phase_component]["duration_max"], f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}') 
+            for index_for_phase_component in range(len(phase_components))]
+            for index_for_day in range(len(microcycle_weekdays))]
+
+        # Add relationship between exercises per bodypart and the partial duration.
+        for exs_for_day, partial_durations_for_day, durations_for_day in zip(vars["exercises_per_bodypart"], vars["partial_duration"], vars["duration"]):
+            for ex_for_pc, partial_duration_for_pc, duration_for_pc in zip(exs_for_day, partial_durations_for_day, durations_for_day):
+                model.AddMultiplicationEquality(duration_for_pc, [ex_for_pc, partial_duration_for_pc])
         return vars
 
 
@@ -168,6 +196,15 @@ class PhaseComponentAgent(BaseAgent):
                                             used_vars=vars["active_phase_components"], 
                                             active_entry_vars=vars["active_workday"])
             logs += "- All phase components required every workout will be included in every workout applied.\n"
+
+        # Constraint: Only use required phase components
+        if constraints["only_use_required_components"]:
+            # Retrieves the index of all required phases.
+            not_required_phase_components = [i for i, phase_component in enumerate(phase_components) if phase_component["required_within_microcycle"] != "always"]
+            for item_index in not_required_phase_components:
+                conditions = [row[item_index].Not() for row in vars["active_phase_components"]]
+                model.AddBoolAnd(conditions)
+            logs += "- Only use required phases components applied.\n"
 
         # Constraint: Force all phase components required in every microcycle to be included at least once.
         if constraints["use_microcycle_required_components"]:
@@ -249,21 +286,22 @@ class PhaseComponentAgent(BaseAgent):
         logs, duration_spread_var, total_duration_to_maximize = self.apply_model_objective(constraints, model, vars, workout_availability)
         state["logs"] += logs
 
-        return {"opt_model": (model, workout_availability, vars["active_phase_components"], vars["duration"], duration_spread_var, total_duration_to_maximize)}
+        return {"opt_model": (model, workout_availability, vars, duration_spread_var, total_duration_to_maximize)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""
-        model, workout_availability, active_phase_components, duration_vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]
+        model, workout_availability, vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]
+        active_phase_components, exercises_per_bodypart_vars, partial_duration_vars, duration_vars = vars["active_phase_components"], vars["exercises_per_bodypart"], vars["partial_duration"], vars["duration"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 12
         solver.parameters.max_time_in_seconds = ortools_solver_time_in_seconds
 
         # solver.parameters.log_search_progress = True
-        self._solve_and_time_solver(solver, model)
+        status = self._solve_and_time_solver(solver, model)
 
         # If the duration spread should be minimized, then ensure the final duration is the same, with the new goal of minimizing the spread.
-        if duration_spread_var != None:
+        if status in (cp_model.FEASIBLE, cp_model.OPTIMAL) and duration_spread_var != None:
             model.Add((total_duration_to_maximize == solver.Value(total_duration_to_maximize)))
             model.Minimize(duration_spread_var)
             status = solver.Solve(model)
@@ -276,12 +314,12 @@ class PhaseComponentAgent(BaseAgent):
             schedule = []
 
             # Each day in the microcycle
-            for index_for_day, values_for_day in enumerate(zip(workout_availability, active_phase_components, duration_vars)):
-                workout_availability_for_day, active_phase_components_for_day, duration_vars_for_day = values_for_day
+            for index_for_day, values_for_day in enumerate(zip(workout_availability, active_phase_components, exercises_per_bodypart_vars, partial_duration_vars, duration_vars)):
+                workout_availability_for_day, active_phase_components_for_day, exercises_per_bodypart_vars_for_day, partial_duration_vars_for_day, duration_vars_for_day = values_for_day
 
                 # Each phase used in the day.
-                for index_for_phase_component, values_for_phase_component in enumerate(zip(active_phase_components_for_day, duration_vars_for_day)):
-                    active_phase_components_for_phase_component, duration_vars_for_phase_component = values_for_phase_component
+                for index_for_phase_component, values_for_phase_component in enumerate(zip(active_phase_components_for_day, exercises_per_bodypart_vars_for_day, partial_duration_vars_for_day, duration_vars_for_day)):
+                    active_phase_components_for_phase_component, exercises_per_bodypart_vars_for_phase_component, partial_duration_vars_for_phase_component, duration_vars_for_phase_component = values_for_phase_component
 
                     # Ensure that the phase component is active.
                     if(solver.Value(active_phase_components_for_phase_component)):
@@ -290,6 +328,8 @@ class PhaseComponentAgent(BaseAgent):
                         schedule.append((
                             index_for_phase_component, index_for_day, 
                             solver.Value(active_phase_components_for_phase_component), 
+                            solver.Value(exercises_per_bodypart_vars_for_phase_component), 
+                            solver.Value(partial_duration_vars_for_phase_component), 
                             duration_vars_current
                         ))
                         microcycle_duration += duration_vars_current
@@ -358,7 +398,10 @@ class PhaseComponentAgent(BaseAgent):
             "number": ("Component", 12),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
-            "duration": ("Duration", 30),
+            "exercises_per_bodypart": ("Exercises Per Bodypart", 30),
+            "partial_duration": ("Partial Duration", 35),
+            "partial_duration_sec": ("Partial Duration in Seconds", 30),
+            "duration": ("Duration", 35),
             "duration_sec": ("Duration in Seconds", 30),
         }
 
@@ -385,7 +428,7 @@ class PhaseComponentAgent(BaseAgent):
         for component_count, (phase_component_index, workday_index, *metrics) in enumerate(schedule):
             phase_component = phase_components[phase_component_index]
 
-            (active_phase_components, duration_var) = metrics
+            (active_phase_components, exercises_per_bodypart_var, partial_duration_var, duration_var) = metrics
 
             if active_phase_components:
                 final_output.append({
@@ -412,8 +455,11 @@ class PhaseComponentAgent(BaseAgent):
                     "number": str(component_count + 1),
                     "phase_component": f"{phase_component['name']}",
                     "bodypart": phase_component["bodypart"],
+                    "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}",
+                    "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
+                    "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}",
                     "duration": f"{self._format_duration(duration_var)} sec",
-                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}"
+                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * len(phase_components))}"
                 }
 
                 line = ""
@@ -423,16 +469,17 @@ class PhaseComponentAgent(BaseAgent):
             else:
                 formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
 
-        formatted += f"Phase Component Counts:\n"
-        for phase_component_index, phase_component_number in enumerate(phase_component_count):
-            phase_component = phase_components[phase_component_index]
-            phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart']:<{longest_sizes['bodypart']+2}}"
-            phase_component_frequency = self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])
-            phase_component_required = f"Required Every Workout: {phase_component["required_every_workout"]}\t\tRequired Every Microcycle: {phase_component['required_within_microcycle']}"
-            
-            formatted += f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
-        formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
-        formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
+        if log_details:
+            formatted += f"Phase Component Counts:\n"
+            for phase_component_index, phase_component_number in enumerate(phase_component_count):
+                phase_component = phase_components[phase_component_index]
+                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart']:<{longest_sizes['bodypart']+2}}"
+                phase_component_frequency = self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])
+                phase_component_required = f"Required Every Workout: {phase_component["required_every_workout"]}\t\tRequired Every Microcycle: {phase_component['required_within_microcycle']}"
+                
+                formatted += f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
+            formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
+            formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
 
         return final_output, formatted
 

@@ -1,5 +1,5 @@
+from config import verbose
 import random
-import heapq
 import math
 
 from flask import jsonify, Blueprint
@@ -23,192 +23,32 @@ from app.models import (
 
 bp = Blueprint('user_workout_exercises', __name__)
 
-from app.agents.exercises import get_exercises_for_pc, get_exercises_for_all_pcs
-from app.agents.exercises import Main as exercises_main
-from app.agents.exercises_phase_components import Main as exercise_pc_main
+from app.agents.exercises import exercises_main
+from app.agents.exercises import exercise_pc_main
 from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.utils.agent_pre_processing import retrieve_total_time_needed, check_if_there_is_enough_time
+from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time_complete
+from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 
-
+from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component, correct_available_exercises_with_possible_weights
+from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 
-dummy_exercise = {
-    "id": 0,
-    "name": "Inactive",
-    "base_strain": 0,
-    "technical_difficulty": 0,
-    "component_id": 0,
-    "subcomponent_id": 0,
-    "body_region_ids": None,
-    "bodypart_ids": None,
-    "muscle_group_ids": None,
-    "muscle_ids": None
-}
-
-dummy_phase_component = {
-    "id": 0,
-    "name": "Inactive",
-    "bodypart_name": "Inactive",
-    "duration": 0,
-    "duration_min": 0,
-    "duration_min_max": 0,
-    "duration_max": 0,
-    "working_duration_min": 0,
-    "working_duration_max": 0,
-    'reps_min': 0, 
-    'reps_max': 0, 
-    'sets_min': 0, 
-    'sets_max': 0, 
-    'seconds_per_exercise': 0, 
-    'intensity_min': 0, 
-    'intensity_max': 0, 
-    'rest_min': 0, 
-    'rest_max': 0,
-    'exercises_per_bodypart_workout_min': 0,
-    'exercises_per_bodypart_workout_max': 0,
-    'exercise_selection_note': None
-}
-
-def user_component_dict(workout, pc):
-    """Format the user workout component data."""
-    return {
-        "workout_component_id": workout.id,
-        "workout_day_id": workout.workout_day_id,
-        "bodypart_id": workout.bodypart_id,
-        "bodypart_name": workout.bodyparts.name,
-        "duration": workout.duration,
-        "phase_component_id": pc.id,
-        "phase_id": pc.phase_id,
-        "phase_name": pc.phases.name,
-        "component_id": pc.component_id,
-        "component_name": pc.components.name,
-        "subcomponent_id": pc.subcomponent_id,
-        "subcomponent_name": pc.subcomponents.name,
-        "pc_ids": [pc.component_id, pc.subcomponent_id],
-        "density_priority": pc.subcomponents.density,
-        "volume_priority": pc.subcomponents.volume,
-        "load_priority": pc.subcomponents.load,
-        "name": pc.name,
-        "reps_min": pc.reps_min, "reps_max": pc.reps_max,
-        "sets_min": pc.sets_min,
-        "sets_max": pc.sets_max,
-        "tempo": pc.tempo,
-        "seconds_per_exercise": pc.seconds_per_exercise,
-        "intensity_min": pc.intensity_min,
-        "intensity_max": pc.intensity_max,
-        "rest_min": pc.rest_min // 5,                          # Adjusted so that rest is a multiple of 5.
-        "rest_max": pc.rest_max // 5,                          # Adjusted so that rest is a multiple of 5.
-        "duration_min": pc.duration_min,
-        "duration_min_max": pc.duration_min,
-        "duration_max": pc.duration_max,
-        "working_duration_min": pc.working_duration_min,
-        "working_duration_max": pc.working_duration_max,
-        "volume_min": pc.volume_min,
-        "volume_max": pc.volume_max,
-        "density_min": int(pc.density_min * 100),              # Scaled up to avoid floating point errors from model.
-        "density_max": int(pc.density_max * 100),              # Scaled up to avoid floating point errors from model.
-        "exercises_per_bodypart_workout_min": pc.exercises_per_bodypart_workout_min if pc.exercises_per_bodypart_workout_min != None else 1,
-        "exercises_per_bodypart_workout_max": pc.exercises_per_bodypart_workout_max,
-        "exercise_selection_note": pc.exercise_selection_note,
-    }
-
-def exercise_dict(exercise, user_exercise):
-    """Format the exercise data."""
-    return {
-        "id": exercise.id,
-        "name": exercise.name.lower(),
-        "base_strain": exercise.base_strain,
-        "technical_difficulty": exercise.technical_difficulty,
-        "component_ids": [component_phase.component_id for component_phase in exercise.component_phases],
-        "subcomponent_ids": [component_phase.subcomponent_id for component_phase in exercise.component_phases],
-        "pc_ids": [[component_phase.component_id, component_phase.subcomponent_id] for component_phase in exercise.component_phases],
-        "body_region_ids": exercise.all_body_region_ids,
-        "bodypart_ids": exercise.all_bodypart_ids,
-        "muscle_group_ids": exercise.all_muscle_group_ids,
-        "muscle_ids": exercise.all_muscle_ids,
-        "supportive_equipment_ids": exercise.all_supportive_equipment,
-        "assistive_equipment_ids": exercise.all_assistive_equipment,
-        "weighted_equipment_ids": exercise.all_weighted_equipment,
-        "is_weighted": exercise.is_weighted,
-        "marking_equipment_ids": exercise.all_marking_equipment,
-        "other_equipment_ids": exercise.all_other_equipment,
-        "one_rep_max": int(user_exercise.one_rep_max * 100),                    # Scaled up to avoid floating point errors from model.
-        "one_rep_load": int(user_exercise.one_rep_load * 100),                  # Scaled up to avoid floating point errors from model.
-        "volume": int(user_exercise.volume * (100 * 100)),                      # Scaled up to avoid floating point errors from model.
-        "density": int(user_exercise.density * 100),                            # Scaled up to avoid floating point errors from model.
-        "intensity": int(user_exercise.intensity),
-        "performance": int(user_exercise.performance * (100 * 100 * 100)),      # Scaled up to avoid floating point errors from model.
-        "duration": user_exercise.duration,
-        "working_duration": user_exercise.working_duration,
-    }
 
 def delete_old_user_workout_exercises(workout_day_id):
     db.session.query(User_Workout_Exercises).filter_by(workout_day_id=workout_day_id).delete()
-    print("Successfully deleted")
-
-# Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_available_exercises():
-    # Retrieve all possible exercises with their component phases
-    results = user_possible_exercises_with_user_exercise_info(current_user.id)
-
-    possible_exercises_list = [dummy_exercise]
-
-    for exercise, user_exercise in results:
-        possible_exercises_list.append(exercise_dict(exercise, user_exercise))
-    return possible_exercises_list
-
-def construct_user_workout_components_list(user_workout_components):
-    user_workout_components_list = [dummy_phase_component]
-
-    # Convert the query into a list of dictionaries, adding the information for the phase restrictions.
-    for user_workout_component in user_workout_components:
-        user_workout_components_list.append(user_component_dict(user_workout_component, user_workout_component.phase_components))
-    return user_workout_components_list
-
-
-# Find the correct minimum and maximum range for the minimum duration.
-def correct_minimum_duration_for_phase_component(pcs, exercises, exercises_for_pcs):
-    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
-        pc_exercises_duration = [exercises[i]["duration"]# if not exercises[i]["is_weighted"] else 0
-                                 for i in exercises_for_pc
-                                 #if not exercises[i]["is_weighted"]
-                                 ]
-        if pc_exercises_duration == []:
-            min_exercise_duration_min = 0
-            min_exercise_duration_max = 0
-        else:
-            min_exercise_duration_min = heapq.nsmallest((pc["exercises_per_bodypart_workout_min"] or 1), pc_exercises_duration)[-1]# + 1
-            min_exercise_duration_max = heapq.nsmallest((pc["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)[-1]# + 1
-            min_exercise_duration = heapq.nsmallest((pc["exercises_per_bodypart_workout_max"] or 1), pc_exercises_duration)
-
-        pc["duration_min"] = max(min_exercise_duration_min, pc["duration_min"])
-        pc["duration_min_max"] = max(min_exercise_duration_max, pc["duration_min_max"])
-
+    if verbose:
+        print("Successfully deleted")
     return None
 
-def check_if_there_are_enough_exercises(pcs, exercises_for_pcs):
-    pcs_without_enough_ex = [{"phase_component_id": pc["phase_component_id"], "name": pc["name"], 
-                              "bodypart_id": pc["bodypart_id"], "bodypart_name": pc["bodypart_name"], 
-                              "number_of_exercises_needed": pc["exercises_per_bodypart_workout_min"], 
-                              "number_of_exercises_available": len(exercises_for_pc)}
-                              for pc, exercises_for_pc in zip(pcs, exercises_for_pcs)
-                              if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc)]
-    if pcs_without_enough_ex:
-        return [
-            f"{pc_without_enough_ex["name"]} requires a minimum of {pc_without_enough_ex["number_of_exercises_needed"]} to be successful but only has {pc_without_enough_ex["number_of_exercises_available"]}"
-            for pc_without_enough_ex in pcs_without_enough_ex]
-    return None
-
-# Update the maximum exercises for a phase component if the number of exercises in the database is less than this.
-def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs):
-    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
-        number_of_exercises_available = len(exercises_for_pc)
-        # Correct upper bound for exercises.
-        if pc["exercises_per_bodypart_workout_max"]:
-            pc["exercises_per_bodypart_workout_max"] = min(number_of_exercises_available, pc["exercises_per_bodypart_workout_max"])
-        else:
-            pc["exercises_per_bodypart_workout_max"] = number_of_exercises_available
+def retrieve_availability_for_day(user_workout_day):
+    # Retrieve availability for day.
+    availability = (
+        User_Weekday_Availability.query
+        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
+        .first())
+    if availability: 
+        return int(availability.availability.total_seconds())
     return None
 
 # Verifies and updates the phase component information.
@@ -219,22 +59,33 @@ def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs
 def verify_phase_component_information(parameters, pcs, exercises):
     exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
 
+    no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
+    if no_weighted_exercises:
+        return no_weighted_exercises
+
     # Change the minimum allowed duration if the exercises possible don't allow for it.
     correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
 
     # Check if there is enough time to complete the phase components.
-    maximum_min_duration = max(item["duration_min"] for item in pcs)
-    total_time_needed = retrieve_total_time_needed(pcs, "duration_min", "exercises_per_bodypart_workout_min")
-    not_enough_time_message = check_if_there_is_enough_time(total_time_needed, parameters["availability"], maximum_min_duration)
+    not_enough_time_message = check_if_there_is_enough_time_complete(pcs, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min")
     if not_enough_time_message:
-        return jsonify({"status": "error", "message": not_enough_time_message}), 400
+        return not_enough_time_message
 
     # Check if there are enough exercises to complete the phase components.
     pc_without_enough_ex_message = check_if_there_are_enough_exercises(pcs, exercises_for_pcs)
     if pc_without_enough_ex_message:
-        return jsonify({"status": "error", "message": pc_without_enough_ex_message}), 400
+        return pc_without_enough_ex_message
 
     correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
+
+    # Attach allowed exercises to phase component.
+    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
+        pc["allowed_exercises"] = exercises_for_pc
+        pc["performance"]=min(exercises[exercise_for_pc-1]["performance"] for exercise_for_pc in exercises_for_pc)
+
+    # Replace the ends of both lists with the corrected versions. 
+    parameters["phase_components"][1:] = pcs
+    parameters["possible_exercises"][1:] = exercises
     return None
 
 # Retrieves the total projected duration for the workout. 
@@ -264,22 +115,19 @@ def retrieve_pc_parameters(user_workout_day):
         return jsonify({"status": "error", "exercises": "This phase component is inactive. No exercises for today."}), 400
 
     # Retrieve availability for day.
-    availability = (
-        User_Weekday_Availability.query
-        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
-        .first())
+    availability = retrieve_availability_for_day(user_workout_day)
     if not availability:
         return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
-    availability = int(availability.availability.total_seconds())
 
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = availability
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
-    parameters["possible_exercises"] = retrieve_available_exercises()
+    exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(current_user.id)
+    parameters["possible_exercises"] = construct_available_exercises_list(exercises_with_component_phases)
 
     pc_verification_message = verify_phase_component_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
     if pc_verification_message:
-        return pc_verification_message
+        return jsonify({"status": "error", "message": pc_verification_message}), 400
 
     parameters["projected_duration"] = retrieve_projected_duration(user_workout_components, parameters["phase_components"][1:])
     return parameters
@@ -335,6 +183,19 @@ def get_user_current_exercises_list():
               for user_workout_exercise in user_workout_exercises]
     return jsonify({"status": "success", "exercises": result}), 200
 
+def perform_exercise_selection(user_workout_day):
+    parameters = retrieve_pc_parameters(user_workout_day)
+
+    # If a tuple error message is returned, return 
+    if isinstance(parameters, tuple):
+        return parameters
+    constraints={}
+
+    result = exercises_main(parameters, constraints)
+    if verbose:
+        print(result["formatted"])
+    return result
+
 # Assigns exercises to workouts.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
@@ -344,15 +205,11 @@ def exercise_initializer():
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
     delete_old_user_workout_exercises(user_workout_day.id)
-    parameters = retrieve_pc_parameters(user_workout_day)
 
-    # If a tuple error message is returned, return 
-    if isinstance(parameters, tuple):
-        return parameters
-    constraints={}
-
-    result = exercises_main(parameters, constraints)
-    print(result["formatted"])
+    # Retrieve results. If a tuple error message is returned, return 
+    result = perform_exercise_selection(user_workout_day)
+    if isinstance(result, tuple):
+        return result
 
     user_workout_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
 
@@ -421,13 +278,9 @@ def exercise_phase_components_test():
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
-    parameters = retrieve_pc_parameters(user_workout_day)
-    # If a tuple error message is returned, return 
-    if isinstance(parameters, tuple):
-        return parameters
-    constraints={}
-
-    result = exercise_pc_main(parameters, constraints)
-    print(result["formatted"])
+    # Retrieve results. If a tuple error message is returned, return 
+    result = perform_exercise_selection(user_workout_day)
+    if isinstance(result, tuple):
+        return result
 
     return jsonify({"status": "success", "exercises": result}), 200

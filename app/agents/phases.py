@@ -1,3 +1,4 @@
+from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
 from config import ortools_solver_time_in_seconds
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -118,11 +119,9 @@ class PhaseAgent(BaseAgent):
             for i in range(max_mesocycles)]
 
         # Boolean variables indicating whether phase j is used at mesocycle i.
-        vars["used"] = [
-            [
-                model.NewBoolVar(f'mesocycle_{i}_is_phase_{j}') 
-                for j in range(phase_amount)
-            ] 
+        vars["used"] = [[
+            model.NewBoolVar(f'mesocycle_{i}_is_phase_{j}') 
+            for j in range(phase_amount)]
             for i in range(max_mesocycles)]
 
         # Boolean variables indicating whether mesocycle i is active.
@@ -400,10 +399,11 @@ class PhaseAgent(BaseAgent):
             for field, (_, length) in headers.items():
                 line += self._create_formatted_field(field, line_fields[field], length)
             formatted += line + "\n"
-            
-        formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
-        formatted += f"Total Time Used: {solution['total_weeks_time']} weeks\n"
-        formatted += f"Total Time Allowed: {macrocycle_allowed_weeks} weeks\n"
+
+        if log_details:
+            formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
+            formatted += f"Total Time Used: {solution['total_weeks_time']} weeks\n"
+            formatted += f"Total Time Allowed: {macrocycle_allowed_weeks} weeks\n"
 
         return final_output, formatted
 

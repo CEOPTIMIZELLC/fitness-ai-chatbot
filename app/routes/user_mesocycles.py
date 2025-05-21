@@ -1,3 +1,4 @@
+from config import verbose
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 from datetime import timedelta
@@ -14,7 +15,8 @@ from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 def delete_old_user_phases(macrocycle_id):
     db.session.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
-    print("Successfully deleted")
+    if verbose:
+        print("Successfully deleted")
 
 # Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_phase_constraints_for_goal(goal_id):
@@ -85,7 +87,7 @@ def mesocycle_phase_adding(goal_id=None):
         goal_id = user_macro.goal_id
 
     delete_old_user_phases(user_macro.id)
-    result = perform_phase_selection(goal_id, 26, True)
+    result = perform_phase_selection(goal_id, 26, verbose)
     user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
     db.session.add_all(user_phases)
     db.session.commit()
@@ -98,7 +100,7 @@ def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
     if not goal:
         return None
 
-    return perform_phase_selection(goal_id, macrocycle_allowed_weeks, True)
+    return perform_phase_selection(goal_id, macrocycle_allowed_weeks, verbose)
 
 def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_start_date):
     # Convert output to form that may be stored.
@@ -183,14 +185,16 @@ def phase_classification_test():
 
     # Test with default test values.
     result = phase_main(parameters, constraints)
-    print("TESTING")
-    print(result["formatted"])
+    if verbose:
+        print("TESTING")
+        print(result["formatted"])
     test_results.append({
         "macrocycle_allowed_weeks": parameters["macrocycle_allowed_weeks"], 
         "goal_id": 0,
         "result": result
     })
-    print("----------------------")
+    if verbose:
+        print("----------------------")
     
 
     # Retrieve all possible goals.
@@ -206,14 +210,16 @@ def phase_classification_test():
 
     # Test for all goals that exist.
     for goal in goals:
-        print("----------------------")
-        print(str(goal.id))
-        result = perform_phase_selection(goal.id, macrocycle_allowed_weeks, True)
+        if verbose:
+            print("----------------------")
+            print(str(goal.id))
+        result = perform_phase_selection(goal.id, macrocycle_allowed_weeks, verbose)
         test_results.append({
             "macrocycle_allowed_weeks": macrocycle_allowed_weeks, 
             "goal_id": goal.id,
             "result": result
         })
-        print(f"----------------------\n")
+        if verbose:
+            print(f"----------------------\n")
 
     return jsonify({"status": "success", "test_results": test_results}), 200

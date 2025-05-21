@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds
+from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from app.agents.constraints import (
@@ -7,16 +7,28 @@ from app.agents.constraints import (
     link_entry_and_item, 
     constrain_active_entries_vars, 
     create_optional_intvar, 
+    declare_model_vars, 
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
     symmetry_breaking_constraints, 
-    add_tight_bounds)
+    add_tight_bounds, 
+    retrieve_indication_of_increase)
 
-from app.agents.exercise_model_specific_constraints import create_duration_var
+from app.agents.exercises.exercise_model_specific_constraints import (
+    constrain_duration_var, 
+    create_exercise_effort_var, 
+    constrain_weighted_exercises_var, 
+    constrain_intensity_vars, 
+    constrain_training_weight_vars, 
+    constrain_volume_vars, 
+    constrain_density_vars, 
+    constrain_performance_vars)
+
+from app.agents.exercises.exercise_model_specific_constraints import create_duration_var
 
 from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 from app.utils.longest_string import longest_string_size_for_key
-from app.utils.min_and_max_in_dict import get_item_bounds
+from .get_pc_exercise_bounds import get_phase_component_bounds
 
 available_constraints = """
 - use_all_phase_components: Forces all phase components to be assigned at least once in a workout.
@@ -47,15 +59,6 @@ class RelaxationAttempt(BaseRelaxationAttempt):
         self.duration = duration
         self.working_duration = working_duration
 
-def declare_model_vars(model, name, active_vars, max_entries, min_if_active, max_if_active):
-    return [
-        create_optional_intvar(
-            model=model, activator=active_vars[i],
-            min_if_active=min_if_active,
-            max_if_active=max_if_active,
-            name_of_entry_var=f'{name}_{i}')
-        for i in range(max_entries)]
-
 def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars=None, name=""):
     return [
         create_duration_var(
@@ -68,17 +71,11 @@ def declare_duration_vars(model, max_entries, max_duration, seconds_per_exercise
             name=name)
         for i in range(max_entries)]
 
-def get_phase_component_bounds(phase_components):
-    return {
-        'seconds_per_exercise': get_item_bounds("seconds_per_exercise", "seconds_per_exercise", phase_components),
-        'reps': get_item_bounds("reps_min", "reps_max", phase_components),
-        'sets': get_item_bounds("sets_min", "sets_max", phase_components),
-        'rest': get_item_bounds("rest_min", "rest_max", phase_components),
-        'volume': get_item_bounds("volume_min", "volume_max", phase_components),
-        'density': get_item_bounds("density_min", "density_max", phase_components),
-        'duration': get_item_bounds("duration_min", "duration_max", phase_components),
-        'working_duration': get_item_bounds("working_duration_min", "working_duration_max", phase_components)
-    }
+def encourage_increase_for_subcomponent(model, pcs, used_pc_vars, performance_vars, max_performance):
+    return [
+        retrieve_indication_of_increase(model, pcs, max_performance, pc_index, performance_var, used_pc_var)
+        for pc_index, (performance_var, used_pc_var) in enumerate(zip(performance_vars, used_pc_vars))
+    ]
 
 class State(BaseAgentState):
     parameter_input: dict
@@ -148,10 +145,10 @@ class ExercisePhaseComponentAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, phase_components, workout_availability, phase_component_amount, pc_bounds, min_exercises, max_exercises):
-        min_seconds_per_exercise, max_seconds_per_exercise = pc_bounds["seconds_per_exercise"]["min"], pc_bounds["seconds_per_exercise"]["max"]
-        min_reps, max_reps = pc_bounds["reps"]["min"], pc_bounds["reps"]["max"]
-        min_sets, max_sets = pc_bounds["sets"]["min"], pc_bounds["sets"]["max"]
-        min_rest, max_rest = pc_bounds["rest"]["min"], pc_bounds["rest"]["max"]
+        seconds_per_exercise_bounds = pc_bounds["seconds_per_exercise"]
+        reps_bounds, sets_bounds, rest_bounds = pc_bounds["reps"], pc_bounds["sets"], pc_bounds["rest"]
+        volume_bounds, density_bounds, duration_bounds = pc_bounds["volume"], pc_bounds["density"], pc_bounds["duration"]
+        performance_bounds = pc_bounds["performance"]
 
         # Define variables =====================================
         vars = {}
@@ -176,10 +173,13 @@ class ExercisePhaseComponentAgent(BaseAgent):
             for i in list(range(len(phase_components)))]
 
         # Optional integer variable for the phase component values chosen at exercise i.
-        vars["seconds_per_exercise"] = declare_model_vars(model, "seconds_per_exercise", vars["active_exercises"], max_exercises, min_seconds_per_exercise, max_seconds_per_exercise)
-        vars["reps"] = declare_model_vars(model, "reps", vars["active_exercises"], max_exercises, min_reps, max_reps)
-        vars["sets"] = declare_model_vars(model, "sets", vars["active_exercises"], max_exercises, min_sets, max_sets)
-        vars["rest"] = declare_model_vars(model, "rest", vars["active_exercises"], max_exercises, min_rest, max_rest)
+        vars["seconds_per_exercise"] = declare_model_vars(model, "seconds_per_exercise", vars["active_exercises"], max_exercises, seconds_per_exercise_bounds["min"], seconds_per_exercise_bounds["max"])
+        vars["reps"] = declare_model_vars(model, "reps", vars["active_exercises"], max_exercises, reps_bounds["min"], reps_bounds["max"])
+        vars["sets"] = declare_model_vars(model, "sets", vars["active_exercises"], max_exercises, sets_bounds["min"], sets_bounds["max"])
+        vars["rest"] = declare_model_vars(model, "rest", vars["active_exercises"], max_exercises, rest_bounds["min"], rest_bounds["max"])
+        vars["volume"] = declare_model_vars(model, "volume", vars["active_exercises"], max_exercises, volume_bounds["min"], volume_bounds["max"])
+        vars["density"] = declare_model_vars(model, "density", vars["active_exercises"], max_exercises, density_bounds["min"], density_bounds["max"])
+        vars["performance"] = declare_model_vars(model, "performance", vars["active_exercises"], max_exercises, performance_bounds["min"], performance_bounds["max"])
 
         # duration_vars = declare_duration_vars(model, max_exercises, workout_availability, vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"])
         vars["duration"] = declare_duration_vars(model, max_exercises, workout_availability, vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"], name="base")
@@ -188,6 +188,10 @@ class ExercisePhaseComponentAgent(BaseAgent):
         # Introduce dynamic selection variables
         num_exercises_used = model.NewIntVar(min_exercises, max_exercises, 'num_exercises_used')
         model.Add(num_exercises_used == sum(vars["active_exercises"]))
+
+        constrain_volume_vars(model, vars["volume"], vars["reps"], vars["sets"], volume_bounds["max"])
+        constrain_density_vars(model, vars["density"], vars["duration"], vars["working_duration"], duration_bounds["max"])
+        constrain_performance_vars(model, vars["performance"], vars["volume"], vars["density"])
 
         # Links the phase components variables and the phase components via the used phase components variables.
         link_entry_and_item(model = model, 
@@ -218,7 +222,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         model.Add(sum(vars["duration"]) >= (projected_duration - (2 * 60)))
 
         vars["phase_component_use_penalty"] = None
-        penalty = 2
+        pc_use_penalty_scale = 2
 
         # Constraint: Use all required phases at least once
         if constraints["use_all_phase_components"]:
@@ -229,7 +233,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                                                       used_vars = vars["used_pcs"], 
                                                                       soft_constraint=True)
             vars["phase_component_use_penalty"] = [
-                penalty * (1-i)
+                pc_use_penalty_scale * (1-i)
                 for i in phase_component_use_conditionals
             ]
             logs += "- Use every required phase at least once applied.\n"
@@ -308,19 +312,30 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                                   maximum_key="exercises_per_bodypart_workout_max", 
                                                   used_vars=vars["used_pcs"])
             logs += "- Exercises count within min and max allowed exercises applied (optimized).\n"
+        
+        # Constraint: The desired metric of an exercise must be an increase from the current metric.
+        vars["performance_increase_penalty"] = None
+        penalty = 100
+        if constraints["exercise_metric_increase"]:
+            performance_increase_conditions = encourage_increase_for_subcomponent(model, phase_components, vars["used_pcs"], vars["performance"], max(pc["performance"] for pc in phase_components[1:]))
+            vars["performance_increase_penalty"] = [
+                penalty * i
+                for i in performance_increase_conditions
+            ]
+            logs += "- Exercise metric increase constraint applied.\n"
         return logs
     
     def duration_strain_as_sum(self, model, vars, workout_availability, pc_bounds, min_exercises, max_exercises):
         # max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
-        min_duration, max_duration = pc_bounds["duration"]["min"], pc_bounds["duration"]["max"]
-        min_working_duration, max_working_duration = pc_bounds["working_duration"]["min"], pc_bounds["working_duration"]["max"]
-        total_working_duration_time = model.NewIntVar(1, max_exercises * max_working_duration, 'total_working_duration_time')
-        total_duration_time = model.NewIntVar(1, max_exercises * max_duration, 'total_duration_time')
+        duration_bounds = pc_bounds["duration"]
+        working_duration_bounds = pc_bounds["working_duration"]
+        total_working_duration_time = model.NewIntVar(1, max_exercises * working_duration_bounds["max"], 'total_working_duration_time')
+        total_duration_time = model.NewIntVar(1, max_exercises * duration_bounds["max"], 'total_duration_time')
 
         model.Add(total_working_duration_time == sum(vars["working_duration"]))
         model.Add(total_duration_time == sum(vars["duration"]))
 
-        non_zero_total_duration_time = model.NewIntVar(1, max_exercises * max_duration, f'non_zero_total_duration_time')
+        non_zero_total_duration_time = model.NewIntVar(1, max_exercises * duration_bounds["max"], f'non_zero_total_duration_time')
         total_duration_is_0 = model.NewBoolVar(f'total_duration_time_is_0')
 
         # Ensure no division by 0 occurs.
@@ -342,8 +357,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
     
     def duration_strain_divided(self, model, vars, workout_availability, pc_bounds, min_exercises, max_exercises):
         # max_duration = ((max_seconds_per_exercise * max_reps) + (max_rest * 5)) * max_sets
-        min_duration, max_duration = pc_bounds["duration"]["min"], pc_bounds["duration"]["max"]
-        min_working_duration, max_working_duration = pc_bounds["working_duration"]["min"], pc_bounds["working_duration"]["max"]
+        duration_bounds = pc_bounds["duration"]
+        working_duration_bounds = pc_bounds["working_duration"]
 
         # List of contributions to goal time.
         strain_terms = []
@@ -353,7 +368,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         for i, (base_duration_var, working_duration_var) in enumerate(zip(vars["duration"], vars["working_duration"])):
             # Create the entry for phase component's duration
             # total_working_duration = (seconds_per_exercise * rep_count) * set_count
-            non_zero_base_duration_var = model.NewIntVar(1, max_duration, f'non_zero_base_duration_{i}')
+            non_zero_base_duration_var = model.NewIntVar(1, duration_bounds["max"], f'non_zero_base_duration_{i}')
             base_duration_is_0 = model.NewBoolVar(f'base_duration_{i}_is_0')
 
             # Ensure no division by 0 occurs.
@@ -388,7 +403,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return logs
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
-        print("Building First Step")
+        self._log_steps("Building First Step")
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
         constraints = state["constraints"]
@@ -407,6 +422,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         min_exercises = sum((phase_component["exercises_per_bodypart_workout_min"] or 1) for phase_component in phase_components[1:])
         max_exercises = sum((phase_component["exercises_per_bodypart_workout_max"] or 1) for phase_component in phase_components[1:])
         pc_bounds = get_phase_component_bounds(phase_components[1:])
+        pc_bounds["performance"] = {"min": pc_bounds["volume"]["min"] * pc_bounds["density"]["min"], 
+                                    "max": pc_bounds["volume"]["max"] * pc_bounds["density"]["max"]}
 
         vars = self.create_model_vars(model, phase_components, workout_availability, phase_component_amount, pc_bounds, min_exercises, max_exercises)
         state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, workout_availability, max_exercises, projected_duration)
@@ -414,13 +431,17 @@ class ExercisePhaseComponentAgent(BaseAgent):
         model_with_divided_strain = model.clone()
         state["logs"] += self.app_model_objective(constraints, model, model_with_divided_strain, vars, workout_availability, pc_bounds, min_exercises, max_exercises)
 
-        return {"opt_model": (model, model_with_divided_strain, vars["phase_components"], vars["pc_count"], vars["active_exercises"], vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"], vars["duration"], vars["working_duration"])}
+        return {"opt_model": (model, model_with_divided_strain, vars)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
-        print("Solving First Step")
+        self._log_steps("Solving First Step")
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
-        model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
+        model, model_with_divided_strain, vars = state["opt_model"]
+        phase_component_vars, pc_count_vars, active_exercise_vars = vars["phase_components"], vars["pc_count"], vars["active_exercises"]
+        seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars = vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"]
+        volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
+        duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -447,12 +468,15 @@ class ExercisePhaseComponentAgent(BaseAgent):
                         i, 
                         solver.Value(phase_component_vars[i]), 
                         solver.Value(active_exercise_vars[i]), 
-                        solver.Value(seconds_per_exercise_vars[i]), 
-                        solver.Value(reps_vars[i]), 
-                        solver.Value(sets_vars[i]), 
-                        solver.Value(rest_vars[i]) * 5, 
-                        duration_vars_current,
-                        working_duration_vars_current
+                        solver.Value(seconds_per_exercise_vars[i]),                         # Seconds per exercise of the exercise chosen.
+                        solver.Value(reps_vars[i]),                                         # Reps of the exercise chosen.
+                        solver.Value(sets_vars[i]),                                         # Sets of the exercise chosen.
+                        solver.Value(rest_vars[i]) * 5,                                     # Rest of the exercise chosen.
+                        solver.Value(volume_vars[i]),                                       # Volume of the exercise chosen.
+                        round(solver.Value(density_vars[i]) / 100, 2),                      # Density of the exercise chosen. Scaled down due to scaling up division.
+                        round(solver.Value(performance_vars[i]) / 100, 2),                  # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                        duration_vars_current,                                              # Duration of the exercise chosen.
+                        working_duration_vars_current,                                      # Working duration of the exercise chosen.
                     ))
                     duration += duration_vars_current
                     working_duration += working_duration_vars_current
@@ -532,6 +556,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "reps": ("Reps", 14),
             "sets": ("Sets", 10),
             "rest": ("Rest)", 17),
+            "volume": ("Volume", 24),
+            "density": ("Density", 24),
+            "performance": ("Performance", 30)
         }
 
     def format_agent_output(self, solution, formatted, schedule, phase_components, projected_duration, workout_availability):
@@ -560,7 +587,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
             (active_exercises, seconds_per_exercise, 
              reps_var, sets_var, rest_var, 
-             duration, working_duration) = metrics
+             volume_var, density_var, 
+             performance_var, duration, working_duration) = metrics
 
             if active_exercises:
                 final_output.append({
@@ -580,6 +608,10 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
+                volume_max = phase_component["volume_max"]
+                density_max = phase_component["density_max"] / 100
+                performance_max = round(volume_max * density_max * 100) / 100
+
                 # Format line
                 line_fields = {
                     "number": str(component_count + 1),
@@ -590,7 +622,10 @@ class ExercisePhaseComponentAgent(BaseAgent):
                     "seconds_per_exercise": f"({seconds_per_exercise} sec",
                     "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
                     "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
-                    "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")"
+                    "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")",
+                    "volume": f"{volume_var} (>={volume_max})",
+                    "density": f"{density_var} (>={density_max})",
+                    "performance": f"{performance_var} (>={performance_max})",
                 }
 
                 line = ""
@@ -600,15 +635,16 @@ class ExercisePhaseComponentAgent(BaseAgent):
             else:
                 formatted += (f"| {(component_count + 1):<{2}} ----\n")
 
-        formatted += f"Phase Component Counts:\n"
-        for phase_component_index, phase_component in enumerate(phase_components):
-            phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
-            phase_component_range = self._format_range(solution['pc_count'][phase_component_index], phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])
-            formatted += f"\t{phase_component_name}: {phase_component_range}\n"
-        formatted += f"Total Strain: {solution['strain_ratio']}\n"
-        formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
-        formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
-        formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
+        if log_details:
+            formatted += f"Phase Component Counts:\n"
+            for phase_component_index, phase_component in enumerate(phase_components):
+                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
+                phase_component_range = self._format_range(solution['pc_count'][phase_component_index], phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])
+                formatted += f"\t{phase_component_name}: {phase_component_range}\n"
+            formatted += f"Total Strain: {solution['strain_ratio']}\n"
+            formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
+            formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
+            formatted += f"Total Work Duration: {self._format_duration(solution['working_duration'])}\n"
 
         return final_output, formatted
 
