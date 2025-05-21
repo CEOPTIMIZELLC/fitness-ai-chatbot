@@ -13,17 +13,18 @@ def get_exercises_for_pc(exercises, phase_component):
     exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions)
 
     message = None
-    pc_name = f"'{phase_component['phase_name']}' '{phase_component['component_name']}' '{phase_component['subcomponent_name']}'"
 
     if (exercises_for_pc == []) and (phase_component["bodypart_id"] == 1):
-        message = f"{pc_name} has no true exercises for bodypart '{phase_component['bodypart_name']}'. If total body, include all exercises for this component phase."
+        message = f"Bodypart is total body, so all exercises for this component phase will be included."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:1])
 
     if exercises_for_pc == []:
-        message = f"{pc_name} still has no exercises for bodypart '{phase_component['bodypart_name']}'."
+        message = f"No solution found."
 
     if message and verbose:
-        print(message)
+        pc_name = f"'{phase_component['phase_name'].upper()}' '{phase_component['component_name'].upper()}' '{phase_component['subcomponent_name'].upper()}'"
+        true_exercises_message = f"{pc_name} has no true exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
+        print(f"{true_exercises_message} {message}")
     return exercises_for_pc
 
 # A method for retrieving the possible exercises for all phase components.
