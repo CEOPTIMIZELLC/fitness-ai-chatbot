@@ -533,7 +533,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
     def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
-            "superset": ("Superset", 11),
+            "superset": ("S", 5),
             "number": ("", 5),
             "exercise": ("Exercise", longest_sizes["exercise"] + 4),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
