@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, verbose, log_schedule, log_steps, log_details
+from config import ortools_solver_time_in_seconds, verbose, log_schedule, log_steps, log_counts, log_details
 from config import ortools_solver_time_in_seconds
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -451,6 +451,21 @@ class PhaseComponentAgent(BaseAgent):
             line += self._create_formatted_field(field, line_fields[field], length)
         return line + "\n"
 
+    def formatted_counts(self, pcs, pc_count, longest_sizes):
+        schedule_counts = f"\nPhase Component Counts:\n"
+        schedule_not_included = f"\nNot Included Phase Components:\n"
+        for pc_index, pc_no in enumerate(pc_count):
+            pc = pcs[pc_index]
+            phase_component_name = f"{pc['name']:<{longest_sizes['phase_component']+2}} {pc['bodypart']:<{longest_sizes['bodypart']+2}}"
+            phase_component_frequency = self._format_range(pc_no, pc["frequency_per_microcycle_min"], pc["frequency_per_microcycle_max"])
+            phase_component_required = f"Required Every Workout: {pc["required_every_workout"]}\t\tRequired Every Microcycle: {pc['required_within_microcycle']}"
+            count_string = f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
+            if pc_no:
+                schedule_counts += count_string
+            elif pc_no == 0:
+                schedule_not_included += count_string
+        return schedule_counts + schedule_not_included + "\n"
+
     def format_agent_output(self, solution, formatted, schedule, phase_components, used_days, workout_time, weekday_availability, microcycle_weekdays):
         final_output = []
 
@@ -495,16 +510,10 @@ class PhaseComponentAgent(BaseAgent):
             else:
                 if log_schedule:
                     formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
-
+        
+        if log_counts:
+            formatted += self.formatted_counts(phase_components, phase_component_count, longest_sizes)
         if log_details:
-            formatted += f"Phase Component Counts:\n"
-            for phase_component_index, phase_component_number in enumerate(phase_component_count):
-                pc = phase_components[phase_component_index]
-                phase_component_name = f"{pc['name']:<{longest_sizes['phase_component']+2}} {pc['bodypart']:<{longest_sizes['bodypart']+2}}"
-                phase_component_frequency = self._format_range(phase_component_number, pc["frequency_per_microcycle_min"], pc["frequency_per_microcycle_max"])
-                phase_component_required = f"Required Every Workout: {pc["required_every_workout"]}\t\tRequired Every Microcycle: {pc['required_within_microcycle']}"
-                
-                formatted += f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
             formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
             formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
 

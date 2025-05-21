@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, verbose, log_schedule, log_steps, log_details
+from config import ortools_solver_time_in_seconds, verbose, log_schedule, log_steps, log_counts, log_details
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from app.agents.constraints import (
@@ -615,6 +615,20 @@ class ExercisePhaseComponentAgent(BaseAgent):
             line += self._create_formatted_field(field, line_fields[field], length)
         return line + "\n"
 
+    def formatted_counts(self, pcs, solution, longest_sizes):
+        schedule_counts = f"\nPhase Component Counts:\n"
+        schedule_not_included = f"\nNot Included Phase Components:\n"
+        for pc_index, pc in enumerate(pcs):
+            pc_no = solution['pc_count'][pc_index]
+            phase_component_name = f"{pc['name']:<{longest_sizes['phase_component']+2}} {pc['bodypart_name']:<{longest_sizes['bodypart']+2}}"
+            phase_component_range = self._format_range(solution['pc_count'][pc_index], pc["exercises_per_bodypart_workout_min"], pc["exercises_per_bodypart_workout_max"])
+            count_string = f"\t{phase_component_name}: {phase_component_range}\n"
+            if pc_no:
+                schedule_counts += count_string
+            elif pc_no == 0:
+                schedule_not_included += count_string
+        return schedule_counts + schedule_not_included + "\n"
+
     def format_agent_output(self, solution, formatted, schedule, phase_components, projected_duration, workout_availability):
         final_output = []
 
@@ -665,12 +679,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 if log_schedule:
                     formatted += (f"| {(component_count + 1):<{2}} ----\n")
 
+        if log_counts:
+            formatted += self.formatted_counts(phase_components, solution, longest_sizes)
         if log_details:
-            formatted += f"Phase Component Counts:\n"
-            for phase_component_index, pc in enumerate(phase_components):
-                phase_component_name = f"{pc['name']:<{longest_sizes['phase_component']+2}} {pc['bodypart_name']:<{longest_sizes['bodypart']+2}}"
-                phase_component_range = self._format_range(solution['pc_count'][phase_component_index], pc["exercises_per_bodypart_workout_min"], pc["exercises_per_bodypart_workout_max"])
-                formatted += f"\t{phase_component_name}: {phase_component_range}\n"
             formatted += f"Total Strain: {solution['strain_ratio']}\n"
             formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
             formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"
