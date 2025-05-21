@@ -11,7 +11,6 @@ def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercise
                     pc["exercises_per_bodypart_workout_min"]=0
                     pc["exercises_per_bodypart_workout_max"]=0
                     pc["required_within_microcycle"]="No"
-        # print(pcs[i])
         # pcs.pop(i)
         # exercises_for_pcs.pop(i)
     return None
