@@ -115,7 +115,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                         solver.Value(duration_vars[i]), 
                         solver.Value(working_duration_vars[i])
                     ))
-            schedule = sorted(schedule, key=lambda x: (x[2], x[4], x[3]))
+            schedule = sorted(schedule, key=lambda x: (x[2], x[4], -x[3]))
             solution = {
                 "schedule": schedule,
                 "status": status

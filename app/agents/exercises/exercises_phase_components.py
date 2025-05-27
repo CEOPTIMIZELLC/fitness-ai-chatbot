@@ -504,7 +504,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                     duration += duration_vars_current
                     working_duration += working_duration_vars_current
                     strain_ratio += duration_vars_current/working_duration_vars_current
-            schedule = sorted(schedule, key=lambda x: (x[2], x[4], x[3]))
+            schedule = sorted(schedule, key=lambda x: (x[2], x[4], -x[3]))
             pc_count = [
                 solver.Value(pc_count_var)
                 for pc_count_var in pc_count_vars
