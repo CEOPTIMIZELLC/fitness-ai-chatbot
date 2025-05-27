@@ -533,7 +533,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
     def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
-            "superset": ("S", 5),
+            "superset": ("Sub", 6),
             "number": ("", 5),
             "exercise": ("Exercise", longest_sizes["exercise"] + 4),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
@@ -542,7 +542,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "working_duration": ("WDuration", 12),
             "base_strain": ("BStrain", 10),
             "seconds_per_exercise": ("(Sec/Exercise", 16),
-            "reps": ("Reps", 14),
+            "reps": ("Reps", 13),
             "sets": ("Sets", 10),
             "rest": ("Rest)", 17),
             "one_rep_max": ("1RM", 17),
@@ -551,6 +551,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "volume": ("Volume", 24),
             "density": ("Density", 24),
             "performance": ("Performance", 30),
+            "end": ("", 2),
         }
 
     def formatted_schedule(self, headers, i, pc, exercise, superset_var, metrics):
@@ -588,6 +589,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "volume": f"{exercise["volume"]} -> {volume_var} (>={volume_max})",
             "density": f"{exercise["density"] / 100} -> {density_var} (>={density_max})",
             "performance": f"{exercise["performance"] / 100} -> {performance_var} (>={performance_max})",
+            "end": "",
         }
 
         line = ""
