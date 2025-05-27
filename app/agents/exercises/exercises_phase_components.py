@@ -1,4 +1,5 @@
 from config import ortools_solver_time_in_seconds, verbose, log_schedule, log_steps, log_counts, log_details
+from collections import defaultdict
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from app.agents.constraints import (
@@ -449,6 +450,29 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         return {"opt_model": (model, model_with_divided_strain, vars)}
 
+    def sort_schedule(self, phase_components, schedule, component_i=1, subcomponent_i=2, bodypart_i=3):
+        # Step 1: Create ordering for bodypart_id groups
+        grouped_by_bodypart = defaultdict(list)
+        for pc in phase_components:
+            key = (pc['component_id'], pc['bodypart_id'])
+            if pc['subcomponent_id'] not in grouped_by_bodypart[key]:
+                grouped_by_bodypart[key].append(pc['subcomponent_id'])
+
+        # Step 2: Create a stable rank key
+        rank_mapping = {}
+        rank_counter = 0
+        for (comp_id, body_id), subcomps in sorted(grouped_by_bodypart.items(), key=lambda x: x[0][1]):  # sort by bodypart_id
+            for subcomp_id in subcomps:
+                key = (comp_id, subcomp_id, body_id)
+                if key not in rank_mapping:
+                    rank_mapping[key] = rank_counter
+                    rank_counter += 1
+
+        # Step 3: Sort the schedule
+        sorted_schedule = sorted(schedule, key=lambda x: rank_mapping.get((x[component_i], x[subcomponent_i], x[bodypart_i]), float('inf')))
+
+        return sorted_schedule
+
     def solve_model_node(self, state: State, config=None) -> dict:
         self._log_steps("Solving First Step")
         """Solve model and record relaxation attempt results."""
@@ -504,7 +528,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                     duration += duration_vars_current
                     working_duration += working_duration_vars_current
                     strain_ratio += duration_vars_current/working_duration_vars_current
-            schedule = sorted(schedule, key=lambda x: (x[2], x[4], -x[3]))
+            schedule = self.sort_schedule(phase_components, schedule, 2, 3, 4)
             pc_count = [
                 solver.Value(pc_count_var)
                 for pc_count_var in pc_count_vars
