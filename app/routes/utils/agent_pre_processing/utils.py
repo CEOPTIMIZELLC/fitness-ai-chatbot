@@ -1,3 +1,10 @@
+def turn_off_impossible_pcs(pc):
+    pc["frequency_per_microcycle_min"]=0
+    pc["frequency_per_microcycle_max"]=0
+    pc["exercises_per_bodypart_workout_min"]=0
+    pc["exercises_per_bodypart_workout_max"]=0
+    pc["required_within_microcycle"]="No"
+
 # Remove all of the infeasible but not required items. 
 def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs):
     # Remove the indices that were considered impossible but weren't required.
@@ -6,11 +13,10 @@ def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercise
         if pcs[i]["component_name"].lower() == "resistance":
             for pc in pcs:
                 if (pc["component_name"].lower() == pcs[i]["component_name"].lower() and pc["bodypart_name"].lower() == pcs[i]["bodypart_name"].lower()):
-                    pc["frequency_per_microcycle_min"]=0
-                    pc["frequency_per_microcycle_max"]=0
-                    pc["exercises_per_bodypart_workout_min"]=0
-                    pc["exercises_per_bodypart_workout_max"]=0
-                    pc["required_within_microcycle"]="No"
+                    turn_off_impossible_pcs(pc)
+        else:
+            turn_off_impossible_pcs(pcs[i])
+            exercises_for_pcs[i] = []
         # pcs.pop(i)
         # exercises_for_pcs.pop(i)
     return None
