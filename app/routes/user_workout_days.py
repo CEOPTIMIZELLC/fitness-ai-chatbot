@@ -86,7 +86,7 @@ def retrieve_weekday_availability_information_from_availability(availability):
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
 def verify_and_update_pc_information(parameters, pcs, exercises, total_availability, number_of_available_weekdays):
     # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
-    verification_message = verify_pc_information(parameters, pcs, exercises, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
+    verification_message = verify_pc_information(parameters, pcs, exercises, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", check_globally=False, default_count_if_none=number_of_available_weekdays)
     if isinstance(verification_message, tuple):
         pcs = verification_message[0]
     else:

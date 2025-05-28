@@ -51,7 +51,7 @@ def retrieve_availability_for_day(user_workout_day):
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
 def verify_and_update_pc_information(parameters, pcs, exercises):
     # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
-    verification_message = verify_pc_information(parameters, pcs, exercises, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min")
+    verification_message = verify_pc_information(parameters, pcs, exercises, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min", check_globally=True)
     if isinstance(verification_message, tuple):
         pcs, exercises = verification_message
     else:

@@ -15,26 +15,26 @@ def get_exercises_for_pc(exercises, phase_component):
     pc_name = f"'{phase_component['component_name'].upper()}' '{phase_component['subcomponent_name'].upper()}'"
 
     # Adds all exercises for the phase component if the body part is full body.
-    if include_all_exercises_for_desired_full_body and (exercises_for_pc == []) and (phase_component["bodypart_id"] == 1):
+    if include_all_exercises_for_desired_full_body and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:1])
 
     # Adds all exercises of a bodypart if there are still no exercises.
-    if include_all_exercises_for_desired_bodypart and exercises_for_pc == []:
+    if include_all_exercises_for_desired_bodypart and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         message = f"Including all exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[1:2])
 
     # Adds all exercises for a phase component if there are still no exercises.
-    if incude_all_exercises_for_desired_phase_component and exercises_for_pc == []:
+    if incude_all_exercises_for_desired_phase_component and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         message = f"Including all exercises for component {pc_name}."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:1])
 
     # Adds all exercises if there are still no exercises.
-    if exercises_for_pc == []:
+    if (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         message = f"Including all exercises."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component)
 
-    if include_all_exercises and exercises_for_pc == []:
+    if include_all_exercises and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         message = f"No solution found."
 
     if message and verbose:

@@ -57,15 +57,16 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
 
     return unsatisfiable
 
-def Main(pcs, exercises_for_pcs):
+def Main(pcs, exercises_for_pcs, check_globally=False):
     # Step 1: Initial check for individual phase components
     unsatisfiable = _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs)
     if unsatisfiable:
         return unsatisfiable
 
     # Step 2: Check for global feasibility
-    unsatisfiable = _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs)
-    if unsatisfiable:
-        return unsatisfiable
+    if check_globally:
+        unsatisfiable = _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs)
+        if unsatisfiable:
+            return unsatisfiable
     
     return None

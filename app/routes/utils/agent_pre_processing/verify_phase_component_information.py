@@ -19,7 +19,7 @@ def attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs):
 # Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
 # Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
 # Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
-def Main(parameters, pcs, exercises, total_availability, duration_key, count_key, default_count_if_none=1):
+def Main(parameters, pcs, exercises, total_availability, duration_key, count_key, check_globally=False, default_count_if_none=1):
     exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
 
     no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
@@ -30,7 +30,8 @@ def Main(parameters, pcs, exercises, total_availability, duration_key, count_key
     correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
 
     # Check if there are enough exercises to complete the phase components.
-    pc_without_enough_ex_message = check_exercise_quantity(pcs, exercises_for_pcs)
+    pc_without_enough_ex_message = check_exercise_quantity(pcs, exercises_for_pcs, check_globally)
+
     if pc_without_enough_ex_message:
         return pc_without_enough_ex_message
 
