@@ -1,3 +1,2 @@
-from .check_exercise_quantity import check_if_there_are_enough_exercises
-from .correct_parameters import *
-from .check_for_enough_time import *
+from .verify_phase_component_information import Main as verify_pc_information
+from .check_for_enough_time import retrieve_total_time_needed, check_if_there_is_enough_time

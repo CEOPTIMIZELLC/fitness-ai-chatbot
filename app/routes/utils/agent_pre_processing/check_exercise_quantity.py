@@ -6,7 +6,8 @@ def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
     pcs_to_remove = []
     for i, (pc, exercises_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
         if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc):
-            message = f"{pc["name"]} for {pc["bodypart_name"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}."
+            pc_name = f"'{pc['phase_name'].upper()}' '{pc['component_name'].upper()}' '{pc['subcomponent_name'].upper()}' for bodypart '{pc['bodypart_name'].upper()}'"
+            message = f"{pc_name} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}."
             is_required = pc["required_within_microcycle"] == "always"
             is_resistance = pc["component_name"].lower() == "resistance"
             check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
@@ -25,7 +26,9 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     phase_requirements = [{
         "id": pc["phase_component_id"],
         "name": pc["name"],
+        "phase_name": pc["phase_name"],
         "component_name": pc["component_name"],
+        "subcomponent_name": pc["subcomponent_name"],
         "bodypart_name": pc["bodypart_name"],
         "required_within_microcycle": pc["required_within_microcycle"],
         "required": pc["exercises_per_bodypart_workout_min"],
@@ -41,7 +44,8 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     for i, req in enumerate(phase_requirements):
         available = req["options"] - used_exercises
         if len(available) < req["required"]:
-            message = f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available."
+            req_name = f"'{req['phase_name'].upper()}' '{req['component_name'].upper()}' '{req['subcomponent_name'].upper()}' for bodypart '{req['bodypart_name'].upper()}'"
+            message = f"{req_name} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available."
             is_required = req["required_within_microcycle"] == "always"
             is_resistance = req["component_name"].lower() == "resistance"
             check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
@@ -54,7 +58,7 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
 
     return unsatisfiable
 
-def check_if_there_are_enough_exercises(pcs, exercises_for_pcs):
+def Main(pcs, exercises_for_pcs):
     # Step 1: Initial check for individual phase components
     unsatisfiable = _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs)
     if unsatisfiable:
