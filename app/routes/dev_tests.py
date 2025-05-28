@@ -37,7 +37,6 @@ def check_pipeline():
 @bp.route('/pipeline', methods=['POST'])
 @login_required
 def run_pipeline():
-    from app.routes.current_user import change_workout_length
     from app.routes.user_weekday_availability import change_weekday_availability, get_user_weekday_list
     from app.routes.user_macrocycles import change_macrocycle
     from app.routes.user_mesocycles import mesocycle_phases
@@ -54,8 +53,6 @@ def run_pipeline():
     results = []
     for i in range(1, runs+1):
         result = {}
-        print(f"\n========================== WORKOUT LENGTH RUN {i} ==========================")
-        result["workout_length"] = change_workout_length()[0].get_json()["message"]
         print(f"\n========================== USER AVAILABILITY RUN {i} ==========================")
         change_weekday_availability()
         result["user_availability"] = get_user_weekday_list()[0].get_json()["weekdays"]

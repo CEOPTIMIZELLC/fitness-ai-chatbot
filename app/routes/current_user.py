@@ -39,33 +39,6 @@ def patch_current_user():
     db.session.commit()
     return jsonify(current_user.to_dict()), 200
 
-
-# Update account email.
-@bp.route('/change_workout_length', methods=['PUT', 'PATCH'])
-@login_required
-def change_workout_length():
-    # Input is a json.
-    data = request.get_json()
-    if not data:
-        return jsonify({"status": "error", "message": "Invalid request"}), 400
-    
-    if ('workout_length' not in data):
-        return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
-
-    workout_app = create_workout_availability_extraction_graph()
-
-    # Invoke with new workout_ and possible workout_ types.
-    state = workout_app.invoke(
-        {
-            "new_availability": data.get("workout_length", ""), 
-            "attempts": 0
-        })
-    
-    current_user.workout_length = state["workout_availability"]
-    db.session.commit()
-
-    return jsonify({"status": "success", "message": "Availability changed to: " + str(state["workout_availability"])}), 200
-
 # Update account email.
 @bp.route('/change_email', methods=['PUT', 'PATCH'])
 @login_required
