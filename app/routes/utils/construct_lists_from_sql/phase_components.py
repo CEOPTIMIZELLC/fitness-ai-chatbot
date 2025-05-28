@@ -40,6 +40,8 @@ def phase_component_dict(pc, bodypart_id, bodypart_name, required_within_microcy
         "required_within_microcycle": required_within_microcycle,
         "frequency_per_microcycle_min": pc.frequency_per_microcycle_min,
         "frequency_per_microcycle_max": pc.frequency_per_microcycle_max,
+        "intensity_min": pc.intensity_min,
+        "intensity_max": pc.intensity_max or 100,
         "exercises_per_bodypart_workout_min": pc.exercises_per_bodypart_workout_min if pc.exercises_per_bodypart_workout_min != None else 1,
         "exercises_per_bodypart_workout_max": pc.exercises_per_bodypart_workout_max if pc.exercises_per_bodypart_workout_max != None else 1,
         # "duration_min": ((pc.exercises_per_bodypart_workout_min or 1) * pc.duration_min),

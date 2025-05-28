@@ -25,7 +25,7 @@ from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 from app.utils.print_long_output import print_long_output
 
 from app.routes.utils import check_if_there_is_enough_time_complete
-from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
+from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component, correct_available_exercises_with_possible_weights
 from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
 
 bp = Blueprint('user_workout_days', __name__)
@@ -88,6 +88,10 @@ def retrieve_weekday_availability_information_from_availability(availability):
 def verify_phase_component_information(parameters, pcs, exercises):
     exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
 
+    no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
+    if no_weighted_exercises:
+        return no_weighted_exercises
+
     # Change the minimum allowed duration if the exercises possible don't allow for it.
     correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
 
@@ -96,9 +100,10 @@ def verify_phase_component_information(parameters, pcs, exercises):
     if pc_without_enough_ex_message:
         return pc_without_enough_ex_message
 
+    correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
+
     # Replace the list of phase components with the corrected version. 
     parameters["phase_components"] = pcs
-    correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
     return None
 
 # Retrieves the parameters used by the solver.
