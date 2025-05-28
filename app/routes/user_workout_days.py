@@ -21,12 +21,12 @@ from app.models import (
 from app.agents.phase_components import Main as phase_component_main
 
 from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 from app.utils.print_long_output import print_long_output
 
 from app.routes.utils import check_if_there_is_enough_time_complete
-from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component, correct_available_exercises_with_possible_weights
 from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
+
+from app.routes.utils import verify_phase_component_information
 
 bp = Blueprint('user_workout_days', __name__)
 
@@ -85,24 +85,18 @@ def retrieve_weekday_availability_information_from_availability(availability):
 # Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
 # Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
-def verify_phase_component_information(parameters, pcs, exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
+def verify_and_update_pc_information(parameters, pcs, exercises, total_availability, number_of_available_weekdays):
+    # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
+    verification_message = verify_phase_component_information(parameters, pcs, exercises)
+    if isinstance(verification_message, tuple):
+        pcs = verification_message[0]
+    else:
+        return verification_message    # Replace the list of phase components with the corrected version. 
 
-    no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
-    if no_weighted_exercises:
-        return no_weighted_exercises
-
-    # Change the minimum allowed duration if the exercises possible don't allow for it.
-    correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
-
-    # Check if there are enough exercises to complete the phase components.
-    pc_without_enough_ex_message = check_if_there_are_enough_exercises(pcs, exercises_for_pcs)
-    if pc_without_enough_ex_message:
-        return pc_without_enough_ex_message
-
-    correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
-
-    # Replace the list of phase components with the corrected version. 
+    # Check if there is enough time to complete the phase components.
+    not_enough_time_message = check_if_there_is_enough_time_complete(pcs, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
+    if not_enough_time_message:
+        return not_enough_time_message
     parameters["phase_components"] = pcs
     return None
 
@@ -121,14 +115,9 @@ def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, 
     exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(current_user.id)
     parameters["possible_exercises"] = construct_available_exercises_list(exercises_with_component_phases)
 
-    pc_verification_message = verify_phase_component_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:])
+    pc_verification_message = verify_and_update_pc_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:], total_availability, number_of_available_weekdays)
     if pc_verification_message:
         return jsonify({"status": "error", "message": pc_verification_message}), 400
-
-    # Check if there is enough time to complete the phase components.
-    not_enough_time_message = check_if_there_is_enough_time_complete(possible_pc_list, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
-    if not_enough_time_message:
-        return jsonify({"status": "error", "message": not_enough_time_message}), 400
 
     return parameters
 

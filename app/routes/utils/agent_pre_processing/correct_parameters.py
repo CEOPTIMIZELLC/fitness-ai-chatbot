@@ -1,5 +1,7 @@
 import heapq
+from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 from .utils import check_for_required, remove_impossible_not_required_phase_components
+from .check_exercise_quantity import check_if_there_are_enough_exercises
 
 def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises):
     unsatisfiable = []
@@ -27,7 +29,8 @@ def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, ex
                 available_exercises.append(ex_i)
         exercises_for_pcs[i] = available_exercises
         if not exercises_for_pcs[i]:
-            message = f"{pc["name"]} for {pc["bodypart_name"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises."
+            pc_name = f"'{pc['phase_name'].upper()}' '{pc['component_name'].upper()}' '{pc['subcomponent_name'].upper()}' for bodypart '{pc['bodypart_name'].upper()}'"
+            message = f"{pc_name} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises."
             is_required = pc["required_within_microcycle"] == "always"
             is_resistance = pc["component_name"].lower() == "resistance"
             check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
@@ -67,3 +70,26 @@ def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs
         else:
             pc["exercises_per_bodypart_workout_max"] = number_of_exercises_available
     return None
+
+# Verifies and updates the phase component information.
+# Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
+# Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
+# Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
+def verify_phase_component_information(parameters, pcs, exercises):
+    exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
+
+    no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
+    if no_weighted_exercises:
+        return no_weighted_exercises
+
+    # Change the minimum allowed duration if the exercises possible don't allow for it.
+    correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
+
+    # Check if there are enough exercises to complete the phase components.
+    pc_without_enough_ex_message = check_if_there_are_enough_exercises(pcs, exercises_for_pcs)
+    if pc_without_enough_ex_message:
+        return pc_without_enough_ex_message
+
+    correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
+
+    return pcs, exercises, exercises_for_pcs
