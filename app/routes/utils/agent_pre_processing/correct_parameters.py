@@ -72,6 +72,16 @@ def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs
             pc["exercises_per_bodypart_workout_max"] = number_of_exercises_available
     return None
 
+# Attach allowed exercises to phase components.
+def attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs):
+    # Attach allowed exercises to phase component.
+    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
+        pc["allowed_exercises"] = exercises_for_pc
+        if exercises_for_pc:
+            pc["performance"]=min(exercises[exercise_for_pc-1]["performance"] for exercise_for_pc in exercises_for_pc)
+        else:
+            pc["performance"]=0
+    return pcs
 
 # Verifies and updates the phase component information.
 # Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
@@ -99,4 +109,7 @@ def verify_phase_component_information(parameters, pcs, exercises, total_availab
     if not_enough_time_message:
         return not_enough_time_message
 
-    return pcs, exercises, exercises_for_pcs
+    # Attach allowed exercises to phase component.
+    pcs = attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs)
+
+    return pcs, exercises

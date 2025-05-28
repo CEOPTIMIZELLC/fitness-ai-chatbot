@@ -53,17 +53,9 @@ def verify_and_update_pc_information(parameters, pcs, exercises):
     # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
     verification_message = verify_phase_component_information(parameters, pcs, exercises, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min")
     if isinstance(verification_message, tuple):
-        pcs, exercises, exercises_for_pcs = verification_message
+        pcs, exercises = verification_message
     else:
         return verification_message
-
-    # Attach allowed exercises to phase component.
-    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
-        pc["allowed_exercises"] = exercises_for_pc
-        if exercises_for_pc:
-            pc["performance"]=min(exercises[exercise_for_pc-1]["performance"] for exercise_for_pc in exercises_for_pc)
-        else:
-            pc["performance"]=0
 
     # Replace the ends of both lists with the corrected versions. 
     parameters["phase_components"][1:] = pcs
