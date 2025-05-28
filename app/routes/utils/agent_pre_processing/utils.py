@@ -4,6 +4,7 @@ def turn_off_impossible_pcs(pc):
     pc["exercises_per_bodypart_workout_min"]=0
     pc["exercises_per_bodypart_workout_max"]=0
     pc["required_within_microcycle"]="No"
+    return pc
 
 # Remove all of the infeasible but not required items. 
 def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs):
