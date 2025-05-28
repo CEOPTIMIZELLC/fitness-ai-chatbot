@@ -1,5 +1,7 @@
 dummy_phase_component = {
     "id": 0,
+    "pc_name": "Inactive",
+    "pc_name_for_bodypart": "Inactive",
     "workout_component_id": 0,
     "workout_day_id": 0,
     "bodypart_id": 0,
@@ -47,19 +49,30 @@ dummy_phase_component = {
 
 def user_component_dict(workout, pc):
     """Format the user workout component data."""
+
+    phase_name = pc.phases.name
+    component_name = pc.components.name
+    subcomponent_name = pc.subcomponents.name
+    bodypart_name = workout.bodyparts.name
+
+    pc_name = f"'{phase_name.upper()}' '{component_name.upper()}' '{subcomponent_name.upper()}'"
+    pc_name_for_bodypart = f"{pc_name} for bodypart '{bodypart_name.upper()}'"
+
     return {
         "workout_component_id": workout.id,
         "workout_day_id": workout.workout_day_id,
         "bodypart_id": workout.bodypart_id,
-        "bodypart_name": workout.bodyparts.name,
+        "bodypart_name": bodypart_name,
         "duration": workout.duration,
+        "pc_name": pc_name,
+        "pc_name_for_bodypart": pc_name_for_bodypart,
         "phase_component_id": pc.id,
         "phase_id": pc.phase_id,
-        "phase_name": pc.phases.name,
+        "phase_name": phase_name,
         "component_id": pc.component_id,
-        "component_name": pc.components.name,
+        "component_name": component_name,
         "subcomponent_id": pc.subcomponent_id,
-        "subcomponent_name": pc.subcomponents.name,
+        "subcomponent_name": subcomponent_name,
         "pc_ids": [pc.component_id, pc.subcomponent_id],
         "required_every_workout": pc.required_every_workout,
         "required_within_microcycle": pc.required_within_microcycle,

@@ -25,16 +25,25 @@ def retrieve_phase_component_bodyparts(phase_id):
 
 def phase_component_dict(pc, bodypart_id, bodypart_name, required_within_microcycle):
     """Format the phase component data."""
+    phase_name = pc.phases.name
+    component_name = pc.components.name
+    subcomponent_name = pc.subcomponents.name
+
+    pc_name = f"'{phase_name.upper()}' '{component_name.upper()}' '{subcomponent_name.upper()}'"
+    pc_name_for_bodypart = f"{pc_name} for bodypart '{bodypart_name.upper()}'"
+
     return {
         "id": pc.id,
         "phase_component_id": pc.id,
         "name": pc.name,
+        "pc_name": pc_name,
+        "pc_name_for_bodypart": pc_name_for_bodypart,
         "phase_id": pc.phase_id,
-        "phase_name": pc.phases.name,
+        "phase_name": phase_name,
         "component_id": pc.component_id,
-        "component_name": pc.components.name,
+        "component_name": component_name,
         "subcomponent_id": pc.subcomponent_id,
-        "subcomponent_name": pc.subcomponents.name,
+        "subcomponent_name": subcomponent_name,
         "pc_ids": [pc.component_id, pc.subcomponent_id],
         "required_every_workout": pc.required_every_workout,
         "required_within_microcycle": required_within_microcycle,

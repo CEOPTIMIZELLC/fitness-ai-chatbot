@@ -27,8 +27,7 @@ def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, ex
                 available_exercises.append(ex_i)
         exercises_for_pcs[i] = available_exercises
         if not exercises_for_pcs[i]:
-            pc_name = f"'{pc['phase_name'].upper()}' '{pc['component_name'].upper()}' '{pc['subcomponent_name'].upper()}' for bodypart '{pc['bodypart_name'].upper()}'"
-            message = f"{pc_name} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises."
+            message = f"{pc["pc_name_for_bodypart"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises."
             is_required = pc["required_within_microcycle"] == "always"
             is_resistance = pc["component_name"].lower() == "resistance"
             check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)

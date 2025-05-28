@@ -12,20 +12,21 @@ def get_exercises_for_pc(exercises, phase_component):
     exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:2])
 
     message = None
+    pc_name = f"'{phase_component['component_name'].upper()}' '{phase_component['subcomponent_name'].upper()}'"
 
     # Adds all exercises for the phase component if the body part is full body.
     if include_all_exercises_for_desired_full_body and (exercises_for_pc == []) and (phase_component["bodypart_id"] == 1):
-        message = f"Bodypart is total body, so all exercises for this component phase will be included."
+        message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:1])
 
     # Adds all exercises of a bodypart if there are still no exercises.
     if include_all_exercises_for_desired_bodypart and exercises_for_pc == []:
-        message = f"Including all exercises for bodypart {phase_component['bodypart_name'].upper()}."
+        message = f"Including all exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[1:2])
 
     # Adds all exercises for a phase component if there are still no exercises.
     if incude_all_exercises_for_desired_phase_component and exercises_for_pc == []:
-        message = f"Including all exercises for phase component '{phase_component['component_name'].upper()}' '{phase_component['subcomponent_name'].upper()}'."
+        message = f"Including all exercises for component {pc_name}."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, conditions[0:1])
 
     # Adds all exercises if there are still no exercises.
@@ -37,8 +38,7 @@ def get_exercises_for_pc(exercises, phase_component):
         message = f"No solution found."
 
     if message and verbose:
-        pc_name = f"'{phase_component['phase_name'].upper()}' '{phase_component['component_name'].upper()}' '{phase_component['subcomponent_name'].upper()}'"
-        true_exercises_message = f"{pc_name} has no true exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
+        true_exercises_message = f"{phase_component['pc_name']} has no true exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
         print(f"{true_exercises_message} {message}")
     return exercises_for_pc
 
