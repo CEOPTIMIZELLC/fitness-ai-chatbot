@@ -22,7 +22,6 @@ from app.utils.common_table_queries import current_workout_day, user_possible_ex
 from app.utils.print_long_output import print_long_output
 
 from app.routes.utils import retrieve_total_time_needed
-from app.routes.utils import check_if_there_is_enough_time_complete
 from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list
 
 from app.routes.utils import verify_phase_component_information
@@ -52,7 +51,7 @@ def retrieve_availability_for_day(user_workout_day):
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
 def verify_and_update_pc_information(parameters, pcs, exercises):
     # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
-    verification_message = verify_phase_component_information(parameters, pcs, exercises)
+    verification_message = verify_phase_component_information(parameters, pcs, exercises, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min")
     if isinstance(verification_message, tuple):
         pcs, exercises, exercises_for_pcs = verification_message
     else:
@@ -65,11 +64,6 @@ def verify_and_update_pc_information(parameters, pcs, exercises):
             pc["performance"]=min(exercises[exercise_for_pc-1]["performance"] for exercise_for_pc in exercises_for_pc)
         else:
             pc["performance"]=0
-
-    # Check if there is enough time to complete the phase components.
-    not_enough_time_message = check_if_there_is_enough_time_complete(pcs, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min")
-    if not_enough_time_message:
-        return not_enough_time_message
 
     # Replace the ends of both lists with the corrected versions. 
     parameters["phase_components"][1:] = pcs

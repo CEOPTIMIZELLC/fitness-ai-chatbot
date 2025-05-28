@@ -23,7 +23,6 @@ from app.agents.phase_components import Main as phase_component_main
 from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
 from app.utils.print_long_output import print_long_output
 
-from app.routes.utils import check_if_there_is_enough_time_complete
 from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
 
 from app.routes.utils import verify_phase_component_information
@@ -87,16 +86,12 @@ def retrieve_weekday_availability_information_from_availability(availability):
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
 def verify_and_update_pc_information(parameters, pcs, exercises, total_availability, number_of_available_weekdays):
     # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
-    verification_message = verify_phase_component_information(parameters, pcs, exercises)
+    verification_message = verify_phase_component_information(parameters, pcs, exercises, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
     if isinstance(verification_message, tuple):
         pcs = verification_message[0]
     else:
         return verification_message    # Replace the list of phase components with the corrected version. 
 
-    # Check if there is enough time to complete the phase components.
-    not_enough_time_message = check_if_there_is_enough_time_complete(pcs, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
-    if not_enough_time_message:
-        return not_enough_time_message
     parameters["phase_components"] = pcs
     return None
 

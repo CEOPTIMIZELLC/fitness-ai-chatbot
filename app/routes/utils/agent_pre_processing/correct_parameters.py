@@ -2,6 +2,7 @@ import heapq
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 from .utils import check_for_required, remove_impossible_not_required_phase_components
 from .check_exercise_quantity import check_if_there_are_enough_exercises
+from .check_for_enough_time import Main as check_if_there_is_enough_time_complete
 
 def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises):
     unsatisfiable = []
@@ -71,11 +72,12 @@ def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs
             pc["exercises_per_bodypart_workout_max"] = number_of_exercises_available
     return None
 
+
 # Verifies and updates the phase component information.
 # Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
 # Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
 # Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
-def verify_phase_component_information(parameters, pcs, exercises):
+def verify_phase_component_information(parameters, pcs, exercises, total_availability, duration_key, count_key, default_count_if_none=1):
     exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
 
     no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
@@ -91,5 +93,10 @@ def verify_phase_component_information(parameters, pcs, exercises):
         return pc_without_enough_ex_message
 
     correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
+
+    # Check if there is enough time to complete the phase components.
+    not_enough_time_message = check_if_there_is_enough_time_complete(pcs, total_availability, duration_key, count_key, default_count_if_none)
+    if not_enough_time_message:
+        return not_enough_time_message
 
     return pcs, exercises, exercises_for_pcs
