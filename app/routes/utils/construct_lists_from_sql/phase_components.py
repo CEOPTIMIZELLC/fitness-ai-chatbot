@@ -32,6 +32,14 @@ def phase_component_dict(pc, bodypart_id, bodypart_name, required_within_microcy
     pc_name = f"'{phase_name.upper()}' '{component_name.upper()}' '{subcomponent_name.upper()}'"
     pc_name_for_bodypart = f"{pc_name} for bodypart '{bodypart_name.upper()}'"
 
+    # Pull out vales that are used in calculations.
+    # Find the min and max exercises per bodypart for the phase component or give a default value.
+    exercises_per_bodypart_workout_min = pc.exercises_per_bodypart_workout_min if pc.exercises_per_bodypart_workout_min != None else 1
+    exercises_per_bodypart_workout_max = pc.exercises_per_bodypart_workout_max if pc.exercises_per_bodypart_workout_max != None else exercises_per_bodypart_workout_min
+
+    duration_min = pc.duration_min
+    duration_max = pc.duration_max
+
     return {
         "id": pc.id,
         "phase_component_id": pc.id,
@@ -51,14 +59,14 @@ def phase_component_dict(pc, bodypart_id, bodypart_name, required_within_microcy
         "frequency_per_microcycle_max": pc.frequency_per_microcycle_max,
         "intensity_min": pc.intensity_min,
         "intensity_max": pc.intensity_max or 100,
-        "exercises_per_bodypart_workout_min": pc.exercises_per_bodypart_workout_min if pc.exercises_per_bodypart_workout_min != None else 1,
-        "exercises_per_bodypart_workout_max": pc.exercises_per_bodypart_workout_max if pc.exercises_per_bodypart_workout_max != None else 1,
-        # "duration_min": ((pc.exercises_per_bodypart_workout_min or 1) * pc.duration_min),
-        # "duration_max": ((pc.exercises_per_bodypart_workout_max or 1) * pc.duration_max),
-        "duration_min": pc.duration_min,
-        "duration_max": pc.duration_max,
-        "duration_min_desired": pc.duration_min,
-        "duration_min_max": pc.duration_min,
+        "exercises_per_bodypart_workout_min": exercises_per_bodypart_workout_min,
+        "exercises_per_bodypart_workout_max": exercises_per_bodypart_workout_max,
+        "duration_min": duration_min,
+        "duration_max": duration_max,
+        "duration_min_for_day": duration_min * exercises_per_bodypart_workout_min,
+        "duration_max_for_day": duration_max * exercises_per_bodypart_workout_max,
+        "duration_min_desired": duration_min,
+        "duration_min_max": duration_min,
         "bodypart_id": bodypart_id, 
         "bodypart": bodypart_name, 
         "bodypart_name": bodypart_name
@@ -77,7 +85,7 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
         # Append only once for full body if any other phase component.
         else:
             possible_phase_components_list.append(phase_component_dict(possible_phase_component, 1, "total_body", possible_phase_component.required_within_microcycle))
-    
+
     return possible_phase_components_list
 
 def Main(phase_id):

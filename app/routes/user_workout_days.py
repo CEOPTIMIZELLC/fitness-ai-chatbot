@@ -99,14 +99,9 @@ def verify_and_update_pc_information(parameters, pcs, exercises, total_availabil
 def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability):
     parameters = {"valid": True, "status": None}
 
-    possible_pc_list = construct_phase_component_list(phase_id)
-    for pc in possible_pc_list:
-        pc["duration_min_for_day"] = (pc["duration_min"]) * (pc["exercises_per_bodypart_workout_min"] or 1)
-        pc["duration_max_for_day"] = (pc["duration_max"]) * (pc["exercises_per_bodypart_workout_max"] or 1)
-
     parameters["microcycle_weekdays"] = microcycle_weekdays
     parameters["weekday_availability"] = weekday_availability
-    parameters["phase_components"] = possible_pc_list
+    parameters["phase_components"] = construct_phase_component_list(phase_id)
     exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(current_user.id)
     parameters["possible_exercises"] = construct_available_exercises_list(exercises_with_component_phases)
 
