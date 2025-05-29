@@ -68,7 +68,7 @@ def retrieve_projected_duration(user_workout_components, pcs):
     # Get the total desired duration.
     projected_duration = 0
     for user_workout_component in user_workout_components:
-        projected_duration += user_workout_component.duration
+        projected_duration += user_workout_component["duration"]
 
     # If the maximum possible duration is larger than the projected duration, lower the projected duration to be this maximum.
     max_time_possible = retrieve_total_time_needed(pcs, "duration_max", "exercises_per_bodypart_workout_max")
@@ -102,7 +102,7 @@ def retrieve_pc_parameters(user_workout_day):
     if pc_verification_message:
         return jsonify({"status": "error", "message": pc_verification_message}), 400
 
-    parameters["projected_duration"] = retrieve_projected_duration(user_workout_components, parameters["phase_components"][1:])
+    parameters["projected_duration"] = retrieve_projected_duration(parameters["phase_components"][1:], parameters["phase_components"][1:])
     return parameters
 
 def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
