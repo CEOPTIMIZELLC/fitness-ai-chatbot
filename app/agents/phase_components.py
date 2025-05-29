@@ -1,5 +1,4 @@
-from config import ortools_solver_time_in_seconds, verbose, log_schedule, log_steps, log_counts, log_details
-from config import ortools_solver_time_in_seconds
+from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
