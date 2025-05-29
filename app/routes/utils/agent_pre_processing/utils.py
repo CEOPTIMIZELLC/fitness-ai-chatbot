@@ -5,7 +5,8 @@ def turn_off_impossible_pcs(pc):
     pc["frequency_per_microcycle_max"]=0
     pc["exercises_per_bodypart_workout_min"]=0
     pc["exercises_per_bodypart_workout_max"]=0
-    pc["required_within_microcycle"]="No"
+    if pc["required_within_microcycle"] == "always":
+        pc["required_within_microcycle"]="required yet not possible"
     return pc
 
 # Remove all of the infeasible but not required items. 
