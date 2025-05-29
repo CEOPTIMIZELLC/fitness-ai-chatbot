@@ -20,7 +20,7 @@ from app.models import (
 
 from app.agents.phase_components import Main as phase_component_main
 
-from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
+from app.utils.common_table_queries import current_microcycle, current_workout_day
 from app.utils.print_long_output import print_long_output
 
 from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
@@ -102,8 +102,7 @@ def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, 
     parameters["microcycle_weekdays"] = microcycle_weekdays
     parameters["weekday_availability"] = weekday_availability
     parameters["phase_components"] = construct_phase_component_list(phase_id)
-    exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(current_user.id)
-    parameters["possible_exercises"] = construct_available_exercises_list(exercises_with_component_phases)
+    parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
 
     pc_verification_message = verify_and_update_pc_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:], total_availability, number_of_available_weekdays)
     if pc_verification_message:

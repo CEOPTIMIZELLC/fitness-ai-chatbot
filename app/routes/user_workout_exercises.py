@@ -18,7 +18,7 @@ from app.models import (
 
 from app.agents.exercises import exercises_main, exercise_pc_main
 
-from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
+from app.utils.common_table_queries import current_workout_day
 from app.utils.print_long_output import print_long_output
 
 from app.routes.utils import retrieve_total_time_needed
@@ -96,8 +96,7 @@ def retrieve_pc_parameters(user_workout_day):
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = availability
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
-    exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(current_user.id)
-    parameters["possible_exercises"] = construct_available_exercises_list(exercises_with_component_phases)
+    parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
 
     pc_verification_message = verify_and_update_pc_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
     if pc_verification_message:
