@@ -1,7 +1,25 @@
 from config import verbose
 from .utils import check_for_required, remove_impossible_not_required_phase_components
 
-# Step 1: Initial check for individual phase components
+# Step 1: Remove Empty Phase Components
+def _check_if_there_are_no_exercises(pcs, exercises_for_pcs):
+    unsatisfiable = []
+    pcs_to_remove = []
+    for i, (pc, exercises_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
+        if len(exercises_for_pc) == 0:
+            message = f"{pc["pc_name_for_bodypart"]} has no exercises."
+            if pc["exercises_per_bodypart_workout_min"] == 0:
+                message += " Yet it also requires no exercises."
+            is_required = pc["required_within_microcycle"] == "always"
+            is_resistance = pc["component_name"].lower() == "resistance"
+            check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
+
+    # Remove the indices that were considered impossible but weren't required.
+    remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs)
+
+    return unsatisfiable
+
+# Step 2: Initial check for individual phase components
 def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
     unsatisfiable = []
     pcs_to_remove = []
@@ -17,7 +35,7 @@ def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
 
     return unsatisfiable
 
-# Step 2: Check for global feasibility
+# Step 3: Check for global feasibility
 def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     unsatisfiable = []
     pcs_to_remove = []
@@ -59,14 +77,21 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     return unsatisfiable
 
 def Main(pcs, exercises_for_pcs, check_globally=False):
-    # Step 1: Initial check for individual phase components
+    # Step 1: Initial check for empty phase components
+    if verbose:
+        print("EMPTY")
+    unsatisfiable = _check_if_there_are_no_exercises(pcs, exercises_for_pcs)
+    if unsatisfiable:
+        return unsatisfiable
+
+    # Step 2: Initial check for local feasibility
     if verbose:
         print("LOCALLY")
     unsatisfiable = _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs)
     if unsatisfiable:
         return unsatisfiable
 
-    # Step 2: Check for global feasibility
+    # Step 3: Check for global feasibility
     if check_globally:
         if verbose:
             print("GLOBALLY")
