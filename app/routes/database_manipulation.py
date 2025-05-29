@@ -67,8 +67,9 @@ def create_db():
     
         from app.existing_data.user_equipment import get_default_user_equipment
         user_equipment = get_default_user_equipment()
-        db.session.add_all(user_equipment)
-        db.session.commit()
+        if user_equipment:
+            db.session.add_all(user_equipment)
+            db.session.commit()
 
     current_app.table_schema = get_database_schema(db)
 
