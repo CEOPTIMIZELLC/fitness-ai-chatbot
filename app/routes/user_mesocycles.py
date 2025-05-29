@@ -26,7 +26,7 @@ def delete_old_user_phases(macrocycle_id):
     if verbose:
         print("Successfully deleted")
 
-def perform_phase_selection(goal_id, macrocycle_allowed_weeks, verbose=False):
+def perform_phase_selection(goal_id, macrocycle_allowed_weeks):
     parameters={
         "macrocycle_allowed_weeks": macrocycle_allowed_weeks,
         "goal_type": goal_id}
@@ -50,7 +50,7 @@ def mesocycle_phase_adding(goal_id=None):
         goal_id = user_macro.goal_id
 
     delete_old_user_phases(user_macro.id)
-    result = perform_phase_selection(goal_id, 26, verbose)
+    result = perform_phase_selection(goal_id, 26)
     user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
     db.session.add_all(user_phases)
     db.session.commit()
@@ -60,7 +60,7 @@ def mesocycle_phase_adding(goal_id=None):
 def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
     if not db.session.get(Goal_Library, goal_id):
         return None
-    return perform_phase_selection(goal_id, macrocycle_allowed_weeks, verbose)
+    return perform_phase_selection(goal_id, macrocycle_allowed_weeks)
 
 def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_start_date):
     # Convert output to form that may be stored.
@@ -173,7 +173,7 @@ def phase_classification_test():
         if verbose:
             print("----------------------")
             print(str(goal.id))
-        result = perform_phase_selection(goal.id, macrocycle_allowed_weeks, verbose)
+        result = perform_phase_selection(goal.id, macrocycle_allowed_weeks)
         test_results.append({
             "macrocycle_allowed_weeks": macrocycle_allowed_weeks, 
             "goal_id": goal.id,

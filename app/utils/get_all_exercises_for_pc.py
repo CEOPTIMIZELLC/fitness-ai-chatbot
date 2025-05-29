@@ -1,4 +1,4 @@
-from config import verbose, verbose_exercises_for_pc_steps, include_all_exercises_for_desired_full_body, include_all_exercises_for_desired_bodypart, incude_all_exercises_for_desired_phase_component, include_all_exercises
+from config import verbose_agent_preprocessing, verbose_exercises_for_pc_steps, include_all_exercises_for_desired_full_body, include_all_exercises_for_desired_bodypart, incude_all_exercises_for_desired_phase_component, include_all_exercises
 
 def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):
     return [i for i, exercise in enumerate(exercises, start=1) 
@@ -94,13 +94,13 @@ def get_exercises_for_pc(exercises, phase_component):
         message = f"No solution found."
 
     # Log whether other exercises needed to be included.
-    if message and verbose:
+    if message and verbose_agent_preprocessing:
         print(f"{action_message} {true_exercises_message} {message}")
         if verbose_exercises_for_pc_steps:
             print("")
 
     # Log whether no exercises were found yet none were needed.
-    elif phase_component['exercises_per_bodypart_workout_min'] == 0 and len(exercises_for_pc) == 0 and verbose:
+    elif phase_component['exercises_per_bodypart_workout_min'] == 0 and len(exercises_for_pc) == 0 and verbose_agent_preprocessing:
         action_message = "INCLUDE NO EXERCISES:"
         true_exercises_message = f"{phase_component['pc_name']} had and needs NO exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
         message = "None were required so no action was taken."

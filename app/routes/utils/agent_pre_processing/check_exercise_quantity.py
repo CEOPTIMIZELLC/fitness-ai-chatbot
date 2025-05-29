@@ -1,4 +1,4 @@
-from config import verbose
+from config import verbose_agent_preprocessing
 from .utils import check_for_required, remove_impossible_not_required_phase_components
 
 # Step 1: Remove Empty Phase Components
@@ -78,14 +78,14 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
 
 def Main(pcs, exercises_for_pcs, check_globally=False):
     # Step 1: Initial check for empty phase components
-    if verbose:
+    if verbose_agent_preprocessing:
         print("EMPTY")
     unsatisfiable = _check_if_there_are_no_exercises(pcs, exercises_for_pcs)
     if unsatisfiable:
         return unsatisfiable
 
     # Step 2: Initial check for local feasibility
-    if verbose:
+    if verbose_agent_preprocessing:
         print("LOCALLY")
     unsatisfiable = _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs)
     if unsatisfiable:
@@ -93,7 +93,7 @@ def Main(pcs, exercises_for_pcs, check_globally=False):
 
     # Step 3: Check for global feasibility
     if check_globally:
-        if verbose:
+        if verbose_agent_preprocessing:
             print("GLOBALLY")
         unsatisfiable = _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs)
         if unsatisfiable:

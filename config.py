@@ -7,6 +7,7 @@ ortools_solver_time_in_seconds = 5
 
 # Configurations for verbose options.
 verbose = True
+verbose_agent_preprocessing = False
 verbose_exercises_for_pc_steps = False
 verbose_agent_time = True
 verbose_agent_steps = True
