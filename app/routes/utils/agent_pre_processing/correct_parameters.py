@@ -5,6 +5,10 @@ def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, ex
     unsatisfiable = []
     pcs_to_remove = []
     for i, (pc, exs_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
+        # Skip if empty.
+        if not exs_for_pc:
+            continue
+
         # Retrieve range of intensities possible.
         pc_intensity = list(range(pc["intensity_min"] or 1, pc["intensity_max"] + 1))
 
