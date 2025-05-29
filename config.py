@@ -14,6 +14,9 @@ log_counts = True
 log_constraints = True
 log_details = True
 
+# Configuration for phase components to be removed.
+turn_off_required_resistances = False
+
 # Configurations for exerecises to be included for phase components upon initial failure.
 include_all_exercises_for_desired_full_body = True
 include_all_exercises_for_desired_bodypart = True

@@ -1,3 +1,5 @@
+from config import turn_off_required_resistances
+
 def turn_off_impossible_pcs(pc):
     pc["frequency_per_microcycle_min"]=0
     pc["frequency_per_microcycle_max"]=0
@@ -11,7 +13,7 @@ def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercise
     # Remove the indices that were considered impossible but weren't required.
     # Sort indices in reverse so we don't shift elements prematurely
     for i in sorted(pcs_to_remove, reverse=True):
-        if pcs[i]["component_name"].lower() == "resistance":
+        if turn_off_required_resistances and pcs[i]["component_name"].lower() == "resistance":
             for pc in pcs:
                 if (pc["component_name"].lower() == pcs[i]["component_name"].lower() and pc["bodypart_name"].lower() == pcs[i]["bodypart_name"].lower()):
                     turn_off_impossible_pcs(pc)
@@ -28,7 +30,7 @@ def check_for_required(index_of_phase_component, unsatisfiable, pcs_to_remove, m
     if not_required:
         print(f"{message} Not required, so removing from available.")
         pcs_to_remove.append(index_of_phase_component)
-    elif is_resistance:
+    elif turn_off_required_resistances and is_resistance:
         print(f"{message} Is a resistance component, so removing from available.")
         pcs_to_remove.append(index_of_phase_component)
     # If the component is required, append to message.
