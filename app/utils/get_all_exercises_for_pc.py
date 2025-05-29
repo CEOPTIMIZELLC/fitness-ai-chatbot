@@ -29,7 +29,7 @@ def get_exercises_for_pc(exercises, phase_component):
 
     # Adds all exercises for the phase component if the body part is full body.
     if include_all_exercises_for_desired_full_body and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
-        action_message = "INCLUDE ALL EXERCISES SINCE TOTAL BODY:"
+        action_message = "INCLUDE ALL EXERCISES FOR PHASE COMPONENT SINCE TOTAL BODY:"
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
@@ -58,8 +58,17 @@ def get_exercises_for_pc(exercises, phase_component):
                                                                exercise_has_valid_weights
                                                            ])
 
+    # Adds all exercises if the body part is full body.
+    if include_all_exercises_for_desired_full_body and include_all_exercises_for_desired_bodypart and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
+        action_message = "INCLUDE ALL EXERCISES SINCE TOTAL BODY:"
+        message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
+        exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
+                                                           conditions=[
+                                                               exercise_has_valid_weights
+                                                           ])
+
     # Adds all exercises if there are still no exercises.
-    if (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
+    if include_all_exercises and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = "INCLUDE ALL EXERCISES:"
         message = f"Including all exercises."
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
@@ -67,7 +76,8 @@ def get_exercises_for_pc(exercises, phase_component):
                                                                exercise_has_valid_weights
                                                            ])
 
-    if include_all_exercises and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
+    if len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']:
+        action_message = "NO SOLUTION:"
         message = f"No solution found."
 
     # Log whether other exercises needed to be included.
@@ -102,10 +112,13 @@ def get_exercises_for_all_pcs(exercises, phase_components):
 
     # Remove the exercises from the phase components without true exercises for minimum searching.
     for i in pc_indices_without_true_exercises:
+        exercises_for_pc = exercises_for_pcs[i]
         # Compare to every other list of exercises that have true exercises.
         for j in range(len(exercises_for_pcs)):
             if j in pc_indices_without_true_exercises:
                 continue
-            exercises_for_pcs[i] = list(set(exercises_for_pcs[i]) - set(exercises_for_pcs[j]))
+            exercises_for_pc = list(set(exercises_for_pc) - set(exercises_for_pcs[j]))
+        if exercises_for_pc:
+            exercises_for_pcs[i] = exercises_for_pc
 
     return exercises_for_pcs
