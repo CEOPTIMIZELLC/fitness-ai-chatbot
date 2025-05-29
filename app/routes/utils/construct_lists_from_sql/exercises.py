@@ -1,3 +1,5 @@
+from app.utils.common_table_queries import user_possible_exercises_with_user_exercise_info
+
 dummy_exercise = {
     "id": 0,
     "name": "Inactive",
@@ -78,7 +80,6 @@ def construct_available_exercises_list(exercises_with_component_phases):
         possible_exercises_list.append(exercise_dict(exercise, user_exercise))
     return possible_exercises_list
 
-from app.utils.common_table_queries import user_possible_exercises_with_user_exercise_info
 def Main(user_id):
     exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(user_id)
     return construct_available_exercises_list(exercises_with_component_phases)
