@@ -97,7 +97,7 @@ def verify_and_update_pc_information(parameters, pcs, exercises, total_availabil
 
 # Retrieves the parameters used by the solver.
 def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability):
-    parameters={}
+    parameters = {"valid": True, "status": None}
 
     possible_pc_list = construct_phase_component_list(phase_id)
     for pc in possible_pc_list:
