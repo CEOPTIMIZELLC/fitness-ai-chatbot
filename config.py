@@ -5,12 +5,14 @@ from datetime import timedelta
 user_equipment_population_default = 2
 ortools_solver_time_in_seconds = 5
 
+# Configurations for verbose options.
 verbose = True
 verbose_exercises_for_pc_steps = False
+verbose_agent_time = True
+verbose_agent_steps = True
 
 # Configurations for agent logging.
 log_schedule = True
-log_steps = True
 log_counts = True
 log_constraints = True
 log_details = True

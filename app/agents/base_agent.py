@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, verbose, log_steps, log_constraints
+from config import ortools_solver_time_in_seconds, verbose, verbose_agent_time, verbose_agent_steps, log_constraints
 from time import perf_counter
 from typing_extensions import TypedDict, TypeVar
 from langgraph.graph import StateGraph, START, END
@@ -52,7 +52,7 @@ class BaseAgent:
         }
     
     def _log_steps(self, message):
-        if log_steps:
+        if verbose_agent_steps:
             print(message)
         return None
 
@@ -95,7 +95,7 @@ class BaseAgent:
         status = solver.Solve(model)
         end_time = perf_counter()
         solver_duration = end_time - start_time
-        if verbose:
+        if verbose_agent_time:
             print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
         return status
 
@@ -158,7 +158,7 @@ class BaseAgent:
         formatted += "=" * 50 + "\n\n"
 
         # Show relaxation attempts history
-        if log_steps:
+        if verbose_agent_steps:
             formatted = self.format_relaxation_attempts(state["relaxation_attempts"], formatted, *relaxation_attempts_args)
 
         if solution is None:
