@@ -6,6 +6,7 @@ user_equipment_population_default = 2
 ortools_solver_time_in_seconds = 5
 
 verbose = True
+verbose_steps = False
 
 # Configurations for agent logging.
 log_schedule = True

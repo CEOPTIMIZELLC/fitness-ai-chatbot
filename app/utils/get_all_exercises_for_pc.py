@@ -1,4 +1,4 @@
-from config import verbose, include_all_exercises_for_desired_full_body, include_all_exercises_for_desired_bodypart, incude_all_exercises_for_desired_phase_component, include_all_exercises
+from config import verbose, verbose_steps, include_all_exercises_for_desired_full_body, include_all_exercises_for_desired_bodypart, incude_all_exercises_for_desired_phase_component, include_all_exercises
 
 def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):
     return [i for i, exercise in enumerate(exercises, start=1) 
@@ -26,11 +26,14 @@ def get_exercises_for_pc(exercises, phase_component):
 
     message = None
     pc_name = f"'{phase_component['component_name'].upper()}' '{phase_component['subcomponent_name'].upper()}'"
+    true_exercises_message = f"{phase_component['pc_name']} doesn't have enough exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
 
     # Adds all exercises for the phase component if the body part is full body.
     if include_all_exercises_for_desired_full_body and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
         action_message = "INCLUDE ALL EXERCISES FOR PHASE COMPONENT SINCE TOTAL BODY:"
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
+        if verbose_steps:
+            print(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_is_allowed_for_phase_component,
@@ -41,6 +44,8 @@ def get_exercises_for_pc(exercises, phase_component):
     if include_all_exercises_for_desired_bodypart and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = "INCLUDE ALL EXERCISES FOR BODYPART:"
         message = f"Including all exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
+        if verbose_steps:
+            print(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_is_of_desired_bodypart,
@@ -52,6 +57,8 @@ def get_exercises_for_pc(exercises, phase_component):
     if incude_all_exercises_for_desired_phase_component and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = "INCLUDE ALL EXERCISES FOR PHASE COMPONENT:"
         message = f"Including all exercises for component {pc_name}."
+        if verbose_steps:
+            print(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_is_allowed_for_phase_component,
@@ -62,6 +69,8 @@ def get_exercises_for_pc(exercises, phase_component):
     if include_all_exercises_for_desired_full_body and include_all_exercises_for_desired_bodypart and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
         action_message = "INCLUDE ALL EXERCISES SINCE TOTAL BODY:"
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
+        if verbose_steps:
+            print(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_has_valid_weights
@@ -71,6 +80,8 @@ def get_exercises_for_pc(exercises, phase_component):
     if include_all_exercises and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = "INCLUDE ALL EXERCISES:"
         message = f"Including all exercises."
+        if verbose_steps:
+            print(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_has_valid_weights
@@ -78,12 +89,15 @@ def get_exercises_for_pc(exercises, phase_component):
 
     if len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']:
         action_message = "NO SOLUTION:"
+        if verbose_steps:
+            print(f"{action_message} {true_exercises_message} {message}")
         message = f"No solution found."
 
     # Log whether other exercises needed to be included.
     if message and verbose:
-        true_exercises_message = f"{phase_component['pc_name']} doesn't have enough exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
         print(f"{action_message} {true_exercises_message} {message}")
+        if verbose_steps:
+            print("")
 
     # Log whether no exercises were found yet none were needed.
     elif phase_component['exercises_per_bodypart_workout_min'] == 0 and len(exercises_for_pc) == 0 and verbose:
