@@ -50,6 +50,19 @@ def retrieve_output_from_endpoint(result, key):
     else:
         return output, success_check
 
+def run_segment(result, segment_method, result_key, output_key, segment_name=None):
+    if segment_name:
+        print(f"\n========================== {segment_name} ==========================")
+    result_temp = segment_method()
+    result[result_key], success_check = retrieve_output_from_endpoint(result_temp, output_key)
+    return success_check
+
+def run_availability_segment(result, segment_method, segment_method_2, result_key, output_key, segment_name):
+    print(f"\n========================== {segment_name} ==========================")
+    segment_method()
+    return run_segment(result, segment_method_2, result_key, output_key)
+
+
 
 # Quick test of the entire pipeline
 @bp.route('/pipeline', methods=['POST'])
@@ -71,35 +84,20 @@ def run_pipeline():
     results = []
     for i in range(1, runs+1):
         result = {}
-        print(f"\n========================== USER AVAILABILITY RUN {i} ==========================")
-        change_weekday_availability()
-        result_temp = get_user_weekday_list()
-        result["user_availability"], success_check = retrieve_output_from_endpoint(result_temp, "weekdays")
-        if not success_check: return failed_run(result, results, i)
-        print(f"\n========================== MACROCYCLES RUN {i} ==========================")
-        result_temp = change_macrocycle()
-        result["user_macrocycles"], success_check = retrieve_output_from_endpoint(result_temp, "macrocycles")
-        if not success_check: return failed_run(result, results, i)
-        print(f"\n========================== MESOCYCLES RUN {i} ==========================")
-        result_temp = mesocycle_phases()
-        result["user_mesocycles"], success_check = retrieve_output_from_endpoint(result_temp, "mesocycles")
-        if not success_check: return failed_run(result, results, i)
-        print(f"\n========================== MICROCYCLES RUN {i} ==========================")
-        result_temp = microcycle_initializer()
-        result["user_microcycles"], success_check = retrieve_output_from_endpoint(result_temp, "microcycles")
-        if not success_check: return failed_run(result, results, i)
-        print(f"\n========================== WORKOUT DAYS RUN {i} ==========================")
-        result_temp = workout_day_initializer()
-        result["user_workout_days"], success_check = retrieve_output_from_endpoint(result_temp, "workdays")
-        if not success_check: return failed_run(result, results, i)
-        print(f"\n========================== EXERCISES RUN {i} ==========================")
-        result_temp = exercise_initializer()
-        result["user_workout_exercises"], success_check = retrieve_output_from_endpoint(result_temp, "exercises")
-        if not success_check: return failed_run(result, results, i)
-        print(f"\n========================== WORKOUT COMPLETED RUN {i} ==========================")
-        result_temp = complete_workout()
-        result["user_exercises"], success_check = retrieve_output_from_endpoint(result_temp, "user_exercises")
-        if not success_check: return failed_run(result, results, i)
+        if not run_availability_segment(result, change_weekday_availability, get_user_weekday_list, "user_availability", "weekdays", f"USER AVAILABILITY RUN {i}"):
+            return failed_run(result, results, i)
+        if not run_segment(result, change_macrocycle, "user_macrocycles", "macrocycles", f"MACROCYCLES RUN {i}"):
+            return failed_run(result, results, i)
+        if not run_segment(result, mesocycle_phases, "user_mesocycles", "mesocycles", f"MESOCYCLES RUN {i}"):
+            return failed_run(result, results, i)
+        if not run_segment(result, microcycle_initializer, "user_microcycles", "microcycles", f"MICROCYCLES RUN {i}"):
+            return failed_run(result, results, i)
+        if not run_segment(result, workout_day_initializer, "user_workout_days", "workdays", f"WORKOUT DAYS RUN {i}"):
+            return failed_run(result, results, i)
+        if not run_segment(result, exercise_initializer, "user_workout_exercises", "exercises", f"EXERCISES RUN {i}"):
+            return failed_run(result, results, i)
+        if not run_segment(result, complete_workout, "user_exercises", "user_exercises", f"WORKOUT COMPLETED RUN {i}"):
+            return failed_run(result, results, i)
         results.append(result)
         print(f"\n========================== FINISHED RUN {i} ==========================\n\n")
 
