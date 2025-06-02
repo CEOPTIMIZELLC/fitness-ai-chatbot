@@ -1,10 +1,26 @@
-from config import verbose_agent_preprocessing, verbose_exercises_for_pc_steps, include_all_exercises_for_desired_full_body, include_all_exercises_for_desired_bodypart, incude_all_exercises_for_desired_phase_component, include_all_exercises
+from config import verbose_agent_preprocessing, verbose_exercises_for_pc_steps
+from config import (
+    include_all_exercises_for_desired_full_body, 
+    include_all_exercises_for_desired_bodypart, 
+    incude_all_exercises_for_desired_phase_component, 
+    include_all_exercises)
 
 def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):
     return [i for i, exercise in enumerate(exercises, start=1) 
             if all(f(exercise, phase_component) for f in conditions)]
 
 def get_exercises_for_pc(exercises, phase_component):
+    action_messages=[
+        "INCLUDE ALL EXERCISES FOR PHASE COMPONENT SINCE TOTAL BODY:",
+        "INCLUDE ALL EXERCISES FOR BODYPART:",
+        "INCLUDE ALL EXERCISES FOR PHASE COMPONENT:",
+        "INCLUDE ALL EXERCISES SINCE TOTAL BODY:",
+        "INCLUDE ALL EXERCISES:",
+        "NO SOLUTION:",
+        "INCLUDE NO EXERCISES:"
+        ]
+    action_messages_max_length = len(max(action_messages, key=len))
+
     # Retrieve range of intensities possible.
     pc_intensity = list(range(phase_component["intensity_min"] or 1, phase_component["intensity_max"] + 1))
 
@@ -30,7 +46,7 @@ def get_exercises_for_pc(exercises, phase_component):
 
     # Adds all exercises for the phase component if the body part is full body.
     if include_all_exercises_for_desired_full_body and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
-        action_message = "INCLUDE ALL EXERCISES FOR PHASE COMPONENT SINCE TOTAL BODY:"
+        action_message = action_messages[0]
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
         if verbose_exercises_for_pc_steps:
             print(f"{action_message} {true_exercises_message} {message}")
@@ -42,7 +58,7 @@ def get_exercises_for_pc(exercises, phase_component):
 
     # Adds all exercises of a bodypart if there are still no exercises.
     if include_all_exercises_for_desired_bodypart and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
-        action_message = "INCLUDE ALL EXERCISES FOR BODYPART:"
+        action_message = action_messages[1]
         message = f"Including all exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
         if verbose_exercises_for_pc_steps:
             print(f"{action_message} {true_exercises_message} {message}")
@@ -55,7 +71,7 @@ def get_exercises_for_pc(exercises, phase_component):
 
     # Adds all exercises for a phase component if there are still no exercises.
     if incude_all_exercises_for_desired_phase_component and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
-        action_message = "INCLUDE ALL EXERCISES FOR PHASE COMPONENT:"
+        action_message = action_messages[2]
         message = f"Including all exercises for component {pc_name}."
         if verbose_exercises_for_pc_steps:
             print(f"{action_message} {true_exercises_message} {message}")
@@ -67,7 +83,7 @@ def get_exercises_for_pc(exercises, phase_component):
 
     # Adds all exercises if the body part is full body.
     if include_all_exercises_for_desired_full_body and include_all_exercises_for_desired_bodypart and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
-        action_message = "INCLUDE ALL EXERCISES SINCE TOTAL BODY:"
+        action_message = action_messages[3]
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
         if verbose_exercises_for_pc_steps:
             print(f"{action_message} {true_exercises_message} {message}")
@@ -78,7 +94,7 @@ def get_exercises_for_pc(exercises, phase_component):
 
     # Adds all exercises if there are still no exercises.
     if include_all_exercises and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
-        action_message = "INCLUDE ALL EXERCISES:"
+        action_message = action_messages[-3]
         message = f"Including all exercises."
         if verbose_exercises_for_pc_steps:
             print(f"{action_message} {true_exercises_message} {message}")
@@ -88,23 +104,24 @@ def get_exercises_for_pc(exercises, phase_component):
                                                            ])
 
     if len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']:
-        action_message = "NO SOLUTION:"
+        action_message = action_messages[-2]
         if verbose_exercises_for_pc_steps:
-            print(f"{action_message} {true_exercises_message} {message}")
+            print(f"{action_message:<{action_messages_max_length}} {true_exercises_message} {message}")
         message = f"No solution found."
 
     # Log whether other exercises needed to be included.
     if message and verbose_agent_preprocessing:
-        print(f"{action_message} {true_exercises_message} {message}")
+        print(f"{action_message:<{action_messages_max_length}} {true_exercises_message} {message}")
         if verbose_exercises_for_pc_steps:
             print("")
 
     # Log whether no exercises were found yet none were needed.
     elif phase_component['exercises_per_bodypart_workout_min'] == 0 and len(exercises_for_pc) == 0 and verbose_agent_preprocessing:
-        action_message = "INCLUDE NO EXERCISES:"
+        action_message = action_messages[-1]
         true_exercises_message = f"{phase_component['pc_name']} had and needs NO exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
         message = "None were required so no action was taken."
-        print(f"{action_message} {true_exercises_message} {message}")
+        print(f"{action_message:<{action_messages_max_length}} {true_exercises_message} {message}")
+
     return exercises_for_pc
 
 # A method for retrieving the possible exercises for all phase components.
