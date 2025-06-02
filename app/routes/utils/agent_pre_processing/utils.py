@@ -1,4 +1,5 @@
-from config import turn_off_required_resistances
+from config import turn_off_invalid_phase_components, turn_off_required_resistances
+from config import verbose_agent_preprocessing
 
 def turn_off_impossible_pcs(pc):
     pc["frequency_per_microcycle_min"]=0
@@ -30,10 +31,16 @@ def check_for_required(index_of_phase_component, unsatisfiable, pcs_to_remove, m
     not_required = not(is_required)
     # If the component isn't required, simply remove it from the available phase components.
     if not_required:
-        print(f"{message} Not required, so removing from available.")
+        if verbose_agent_preprocessing:
+            print(f"{message} Not required, so removing from available.")
+        pcs_to_remove.append(index_of_phase_component)
+    elif turn_off_invalid_phase_components:
+        if verbose_agent_preprocessing:
+            print(f"{message} Required but invalid, so removing from available.")
         pcs_to_remove.append(index_of_phase_component)
     elif turn_off_required_resistances and is_resistance:
-        print(f"{message} Is a resistance component, so removing from available.")
+        if verbose_agent_preprocessing:
+            print(f"{message} Is a resistance component, so removing from available.")
         pcs_to_remove.append(index_of_phase_component)
     # If the component is required, append to message.
     else:
