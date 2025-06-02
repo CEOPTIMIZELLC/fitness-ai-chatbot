@@ -42,6 +42,7 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
 
     # Build a list of requirements
     phase_requirements = [{
+        "index": i,
         "id": pc["phase_component_id"],
         "name": pc["name"],
         "pc_name_for_bodypart": pc["pc_name_for_bodypart"],
@@ -52,7 +53,7 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
         "required_within_microcycle": pc["required_within_microcycle"],
         "required": pc["exercises_per_bodypart_workout_min"],
         "options": set(exercises_for_pc)}
-        for pc, exercises_for_pc in zip(pcs, exercises_for_pcs)]
+        for i, (pc, exercises_for_pc) in enumerate(zip(pcs, exercises_for_pcs))]
 
     # Try to allocate unique exercises without reuse
     used_exercises = set()
@@ -66,7 +67,7 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
             message = f"{req["pc_name_for_bodypart"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available."
             is_required = req["required_within_microcycle"] == "always"
             is_resistance = req["component_name"].lower() == "resistance"
-            check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
+            check_for_required(req["index"], unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
         else:
             # Reserve exercises
             used_exercises.update(list(available)[:req["required"]])
