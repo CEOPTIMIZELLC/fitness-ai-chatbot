@@ -56,9 +56,11 @@ def verify_and_update_pc_information(parameters, pcs, exercises):
         pcs, exercises = verification_message
     else:
         return verification_message
+    
+    pcs_new = [pc for pc in pcs if pc.get("allowed_exercises")]
 
     # Replace the ends of both lists with the corrected versions. 
-    parameters["phase_components"][1:] = pcs
+    parameters["phase_components"][1:] = pcs_new
     parameters["possible_exercises"][1:] = exercises
     return None
 
