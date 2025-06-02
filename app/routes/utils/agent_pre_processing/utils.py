@@ -27,20 +27,23 @@ def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercise
         # exercises_for_pcs.pop(i)
     return None
 
+def log_action(message, not_required, turn_off_invalid_phase_components, is_resistance):
+    if not_required:
+        action = "Not required, so removing from available."
+    elif turn_off_invalid_phase_components:
+        action = "Required but invalid, so removing from available."
+    elif turn_off_required_resistances and is_resistance:
+        action = "Is a resistance component, so removing from available."
+    if action:
+        print(f"{message} {action}")
+    return None
+
 def check_for_required(index_of_phase_component, unsatisfiable, pcs_to_remove, message="", is_required=False, is_resistance=False):
     not_required = not(is_required)
     # If the component isn't required, simply remove it from the available phase components.
-    if not_required:
+    if not_required or turn_off_invalid_phase_components or (turn_off_required_resistances and is_resistance):
         if verbose_agent_preprocessing:
-            print(f"{message} Not required, so removing from available.")
-        pcs_to_remove.append(index_of_phase_component)
-    elif turn_off_invalid_phase_components:
-        if verbose_agent_preprocessing:
-            print(f"{message} Required but invalid, so removing from available.")
-        pcs_to_remove.append(index_of_phase_component)
-    elif turn_off_required_resistances and is_resistance:
-        if verbose_agent_preprocessing:
-            print(f"{message} Is a resistance component, so removing from available.")
+            log_action(message, not_required, turn_off_invalid_phase_components, is_resistance)
         pcs_to_remove.append(index_of_phase_component)
     # If the component is required, append to message.
     else:
