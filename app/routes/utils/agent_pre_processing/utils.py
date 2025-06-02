@@ -15,9 +15,10 @@ def remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercise
     # Sort indices in reverse so we don't shift elements prematurely
     for i in sorted(pcs_to_remove, reverse=True):
         if turn_off_required_resistances and pcs[i]["component_name"].lower() == "resistance":
-            for pc in pcs:
-                if (pc["component_name"].lower() == pcs[i]["component_name"].lower() and pc["bodypart_name"].lower() == pcs[i]["bodypart_name"].lower()):
-                    turn_off_impossible_pcs(pc)
+            for j in range(len(pcs) - 1, -1, -1):
+                if (pcs[j]["component_name"].lower() == pcs[i]["component_name"].lower() and pcs[j]["bodypart_name"].lower() == pcs[i]["bodypart_name"].lower()):
+                    turn_off_impossible_pcs(pcs[j])
+                    exercises_for_pcs[j] = []
         else:
             turn_off_impossible_pcs(pcs[i])
             exercises_for_pcs[i] = []
