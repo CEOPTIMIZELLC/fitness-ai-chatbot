@@ -33,6 +33,24 @@ def check_pipeline():
     return result
 
 
+def failed_run(result, results, i=0):
+    results.append(result)
+    print(f"\n========================== FAILED RUN {i} ==========================\n\n")
+    return results
+
+
+def retrieve_output_from_endpoint(result, key):
+    success_check = (result[1] == 200)
+    output = result[0].get_json()
+    if success_check:
+        output_value = output[key]
+        if not isinstance(output_value, dict):
+            return output_value, success_check
+        return output_value.get("output", output_value), success_check
+    else:
+        return output, success_check
+
+
 # Quick test of the entire pipeline
 @bp.route('/pipeline', methods=['POST'])
 @login_required
@@ -55,19 +73,33 @@ def run_pipeline():
         result = {}
         print(f"\n========================== USER AVAILABILITY RUN {i} ==========================")
         change_weekday_availability()
-        result["user_availability"] = get_user_weekday_list()[0].get_json()["weekdays"]
+        result_temp = get_user_weekday_list()
+        result["user_availability"], success_check = retrieve_output_from_endpoint(result_temp, "weekdays")
+        if not success_check: return failed_run(result, results, i)
         print(f"\n========================== MACROCYCLES RUN {i} ==========================")
-        result["user_macrocycles"] = change_macrocycle()[0].get_json()
+        result_temp = change_macrocycle()
+        result["user_macrocycles"], success_check = retrieve_output_from_endpoint(result_temp, "macrocycles")
+        if not success_check: return failed_run(result, results, i)
         print(f"\n========================== MESOCYCLES RUN {i} ==========================")
-        result["user_mesocycles"] = mesocycle_phases()[0].get_json()["mesocycles"]["output"]
+        result_temp = mesocycle_phases()
+        result["user_mesocycles"], success_check = retrieve_output_from_endpoint(result_temp, "mesocycles")
+        if not success_check: return failed_run(result, results, i)
         print(f"\n========================== MICROCYCLES RUN {i} ==========================")
-        result["user_microcycles"] = microcycle_initializer()[0].get_json()["microcycles"]
+        result_temp = microcycle_initializer()
+        result["user_microcycles"], success_check = retrieve_output_from_endpoint(result_temp, "microcycles")
+        if not success_check: return failed_run(result, results, i)
         print(f"\n========================== WORKOUT DAYS RUN {i} ==========================")
-        result["user_workout_days"] = workout_day_initializer()[0].get_json()["workdays"]["output"]
+        result_temp = workout_day_initializer()
+        result["user_workout_days"], success_check = retrieve_output_from_endpoint(result_temp, "workdays")
+        if not success_check: return failed_run(result, results, i)
         print(f"\n========================== EXERCISES RUN {i} ==========================")
-        result["user_workout_exercises"] = exercise_initializer()[0].get_json()["exercises"]["output"]
+        result_temp = exercise_initializer()
+        result["user_workout_exercises"], success_check = retrieve_output_from_endpoint(result_temp, "exercises")
+        if not success_check: return failed_run(result, results, i)
         print(f"\n========================== WORKOUT COMPLETED RUN {i} ==========================")
-        result["user_exercises"] = complete_workout()[0].get_json()["user_exercises"]
+        result_temp = complete_workout()
+        result["user_exercises"], success_check = retrieve_output_from_endpoint(result_temp, "user_exercises")
+        if not success_check: return failed_run(result, results, i)
         results.append(result)
         print(f"\n========================== FINISHED RUN {i} ==========================\n\n")
 
