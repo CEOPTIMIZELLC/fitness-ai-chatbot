@@ -10,35 +10,6 @@ bp = Blueprint('dev_tests', __name__)
 
 # ----------------------------------------- Dev Tests -----------------------------------------
 
-# Quick check of the entire pipeline
-@bp.route('/pipeline', methods=['GET'])
-@login_required
-def check_pipeline():
-    from app.routes.user_weekday_availability import get_user_weekday_list
-    from app.routes.user_macrocycles import read_user_current_macrocycle
-    from app.routes.user_mesocycles import get_user_current_mesocycles_list
-    from app.routes.user_microcycles import get_user_current_microcycles_list
-    from app.routes.user_workout_days import get_user_current_workout_days_list
-    from app.routes.user_workout_exercises import get_user_current_exercises_list
-    from app.routes.user_exercises import get_user_current_exercise_list
-
-    result = {}
-    result["user_availability"] = get_user_weekday_list()[0].get_json()["weekdays"]
-    result["user_macrocycles"] = read_user_current_macrocycle()[0].get_json()["macrocycles"]
-    result["user_mesocycles"] = get_user_current_mesocycles_list()[0].get_json()["mesocycles"]
-    result["user_microcycles"] = get_user_current_microcycles_list()[0].get_json()["microcycles"]
-    result["user_workout_days"] = get_user_current_workout_days_list()[0].get_json()["phase_components"]
-    result["user_workout_exercises"] = get_user_current_exercises_list()[0].get_json()["exercises"]
-    result["user_exercises"] = get_user_current_exercise_list()[0].get_json()["user_exercises"]
-    return result
-
-
-def failed_run(result, results, i=0):
-    results.append(result)
-    print(f"\n========================== FAILED RUN {i} ==========================\n\n")
-    return results
-
-
 def retrieve_output_from_endpoint(result, key):
     success_check = (result[1] == 200)
     output = result[0].get_json()
@@ -56,6 +27,34 @@ def run_segment(result, segment_method, result_key, output_key, segment_name=Non
     result_temp = segment_method()
     result[result_key], success_check = retrieve_output_from_endpoint(result_temp, output_key)
     return success_check
+
+# Quick check of the entire pipeline
+@bp.route('/pipeline', methods=['GET'])
+@login_required
+def check_pipeline():
+    from app.routes.user_weekday_availability import get_user_weekday_list
+    from app.routes.user_macrocycles import read_user_current_macrocycle
+    from app.routes.user_mesocycles import get_user_current_mesocycles_list
+    from app.routes.user_microcycles import get_user_current_microcycles_list
+    from app.routes.user_workout_days import get_user_current_workout_days_list
+    from app.routes.user_workout_exercises import get_user_current_exercises_list
+    from app.routes.user_exercises import get_user_current_exercise_list
+
+    result = {}
+    run_segment(result, get_user_weekday_list, "user_availability", "weekdays")
+    run_segment(result, read_user_current_macrocycle, "user_macrocycles", "macrocycles")
+    run_segment(result, get_user_current_mesocycles_list, "user_mesocycles", "mesocycles")
+    run_segment(result, get_user_current_microcycles_list, "user_microcycles", "microcycles")
+    run_segment(result, get_user_current_workout_days_list, "user_workout_days", "phase_components")
+    run_segment(result, get_user_current_exercises_list, "user_workout_exercises", "exercises")
+    run_segment(result, get_user_current_exercise_list, "user_exercises", "user_exercises")
+    return result
+
+
+def failed_run(result, results, i=0):
+    results.append(result)
+    print(f"\n========================== FAILED RUN {i} ==========================\n\n")
+    return results
 
 def run_availability_segment(result, segment_method, segment_method_2, result_key, output_key, segment_name):
     print(f"\n========================== {segment_name} ==========================")
