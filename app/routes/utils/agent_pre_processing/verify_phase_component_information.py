@@ -1,8 +1,8 @@
-from config import verbose_agent_preprocessing
+from config import verbose_agent_preprocessing, change_min_max_exercises_for_those_available
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 from .check_exercise_quantity import Main as check_exercise_quantity
 from .check_for_enough_time import Main as check_for_enough_time
-from .correct_parameters import correct_available_exercises_with_possible_weights, correct_minimum_duration_for_phase_component, correct_maximum_allowed_exercises_for_phase_component
+from .correct_parameters import correct_available_exercises_with_possible_weights, correct_minimum_duration_for_phase_component, correct_min_max_allowed_exercises_for_phase_component
 
 def print_logging_message(message):
     if verbose_agent_preprocessing:
@@ -36,14 +36,18 @@ def Main(parameters, pcs, exercises, total_availability, duration_key, count_key
     print_logging_message("CORRECT MINIMUM POSSIBLE DURATION")
     correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
 
+    if change_min_max_exercises_for_those_available:
+        min_max_log_message = "MINIMUM AND MAXIMUM"
+    else: 
+        min_max_log_message = "MAXIMUM"
+    print_logging_message(f"CORRECT {min_max_log_message} ALLOWED EXERCISES")
+    correct_min_max_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
+
     # Check if there are enough exercises to complete the phase components.
     print_logging_message("CHECK IF THERE ARE ENOUGH EXERCISES")
     pc_without_enough_ex_message = check_exercise_quantity(pcs, exercises_for_pcs, check_globally)
     if pc_without_enough_ex_message:
         return pc_without_enough_ex_message
-
-    print_logging_message("CORRECT MAXIMUM ALLOWED EXERCISES")
-    correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
 
     # Check if there is enough time to complete the phase components.
     print_logging_message("CHECK IF THERE IS ENOUGH TIME")
