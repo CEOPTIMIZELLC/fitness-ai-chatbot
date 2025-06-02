@@ -77,26 +77,25 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     return unsatisfiable
 
 def Main(pcs, exercises_for_pcs, check_globally=False):
+    unsatisfiable = []
+
     # Step 1: Initial check for empty phase components
     if verbose_agent_preprocessing:
         print("EMPTY")
-    unsatisfiable = _check_if_there_are_no_exercises(pcs, exercises_for_pcs)
-    if unsatisfiable:
-        return unsatisfiable
+    unsatisfiable += _check_if_there_are_no_exercises(pcs, exercises_for_pcs)
 
     # Step 2: Initial check for local feasibility
     if verbose_agent_preprocessing:
         print("LOCALLY")
-    unsatisfiable = _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs)
-    if unsatisfiable:
-        return unsatisfiable
+    unsatisfiable += _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs)
 
     # Step 3: Check for global feasibility
     if check_globally:
         if verbose_agent_preprocessing:
             print("GLOBALLY")
-        unsatisfiable = _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs)
-        if unsatisfiable:
-            return unsatisfiable
+        unsatisfiable += _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs)
+
+    if unsatisfiable:
+        return unsatisfiable
     
     return None
