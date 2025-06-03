@@ -312,6 +312,7 @@ class Data_Importer:
                 sides=row["Sides"], 
                 body_position=row["Body Position"], 
                 option_for_added_weight=row["Option for added weight"], 
+                # is_weighted=pd.notna(row["Weighted Equipment"]),
                 proprioceptive_progressions=row["Proprioceptive Progressions"])
             db.session.merge(db_entry)
         db.session.commit()

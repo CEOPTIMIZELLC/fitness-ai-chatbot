@@ -1,50 +1,32 @@
 from app.models import Users, Exercise_Library, User_Exercises
-from sqlalchemy.event import listens_for
+from sqlalchemy import event
 
-@listens_for(Users, 'after_insert')
-def connect_user_to_exercises(mapper, connection, user):
-    # Get all existing exercises using the connection directly
-    exercises = connection.execute(
-        Exercise_Library.__table__.select()
-    ).fetchall()
-    
-    # Prepare the values for bulk insert
-    values = [
-        {
-            'user_id': user.id,
-            'exercise_id': exercise.id,
-            'one_rep_max': 10
-        }
-        for exercise in exercises
-    ]
-    
-    if values:
-        # Use the same connection to insert the records
-        connection.execute(
-            User_Exercises.__table__.insert(),
-            values
-        )
+from sqlalchemy.orm import Session
 
-@listens_for(Exercise_Library, 'after_insert')
-def connect_exercise_to_users(mapper, connection, exercise):
-    # Get all existing users using the connection directly
-    users = connection.execute(
-        Users.__table__.select()
-    ).fetchall()
+# When a new user is added, create User_Exercises for all exercises
+@event.listens_for(Users, 'after_insert')
+def add_user_exercises(mapper, connection, target):
+    session = Session(bind=connection)
+    exercises = session.query(Exercise_Library).all()
+
+    for exercise in exercises:
+        one_rep_max = 10 if exercise.is_weighted else 0
+        one_rep_load = 10 if exercise.is_weighted else 0
+        session.add(User_Exercises(user_id=target.id, exercise_id=exercise.id, one_rep_max=one_rep_max, one_rep_load=one_rep_load))
     
-    # Prepare the values for bulk insert
-    values = [
-        {
-            'user_id': user.id,
-            'exercise_id': exercise.id,
-            'one_rep_max': 10
-        }
-        for user in users
-    ]
-    
-    if values:
-        # Use the same connection to insert the records
-        connection.execute(
-            User_Exercises.__table__.insert(),
-            values
-        )
+    session.commit()
+    session.close()
+
+# When a new exercise is added, create User_Exercises for all users
+@event.listens_for(Exercise_Library, 'after_insert')
+def add_exercise_for_users(mapper, connection, target):
+    session = Session(bind=connection)
+    users = session.query(Users).all()
+
+    one_rep_max = 10 if target.is_weighted else 0
+    one_rep_load = 10 if target.is_weighted else 0
+    for user in users:
+        session.add(User_Exercises(user_id=user.id, exercise_id=target.id, one_rep_max=one_rep_max, one_rep_load=one_rep_load))
+
+    session.commit()
+    session.close()
