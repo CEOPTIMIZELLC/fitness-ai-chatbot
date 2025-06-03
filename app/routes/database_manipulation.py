@@ -3,10 +3,10 @@ from flask import request, jsonify, current_app, Blueprint
 from app import db
 from app.models import table_object
 
-bp = Blueprint('database_manipulation', __name__)
-
 from app.utils.table_schema_cache import get_database_schema
 from app.routes.auth import register
+
+bp = Blueprint('database_manipulation', __name__)
 
 # ----------------------------------------- Database Manipulation -----------------------------------------
 
@@ -67,8 +67,9 @@ def create_db():
     
         from app.existing_data.user_equipment import get_default_user_equipment
         user_equipment = get_default_user_equipment()
-        db.session.add_all(user_equipment)
-        db.session.commit()
+        if user_equipment:
+            db.session.add_all(user_equipment)
+            db.session.commit()
 
     current_app.table_schema = get_database_schema(db)
 

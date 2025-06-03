@@ -2,17 +2,11 @@ from flask import request, jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import User_Exercises, User_Equipment, Exercise_Library, Exercise_Supportive_Equipment, Exercise_Assistive_Equipment, Exercise_Weighted_Equipment, Exercise_Marking_Equipment, Exercise_Other_Equipment
-
-
-from sqlalchemy.sql import func, distinct
-
-from app.models import Equipment_Library
+from app.models import User_Exercises
 
 from app.utils.common_table_queries import user_possible_exercises, user_possible_exercises_with_user_exercise_info
 from app.utils.common_table_queries import user_available_exercises
 from app.utils.common_table_queries import current_workout_day
-
 
 bp = Blueprint('user_exercises', __name__)
 

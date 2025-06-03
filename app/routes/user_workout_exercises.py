@@ -7,11 +7,6 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.models import (
-    Exercise_Library, 
-    Exercise_Component_Phases, 
-    Phase_Library, 
-    Phase_Component_Library, 
-    Phase_Component_Bodyparts, 
     User_Exercises, 
     User_Weekday_Availability, 
     User_Macrocycles, 
@@ -21,16 +16,17 @@ from app.models import (
     User_Workout_Exercises
 )
 
-bp = Blueprint('user_workout_exercises', __name__)
+from app.agents.exercises import exercises_main, exercise_pc_main
 
-from app.agents.exercises import exercises_main
-from app.agents.exercises import exercise_pc_main
-from app.utils.common_table_queries import current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.routes.utils import retrieve_total_time_needed, check_if_there_is_enough_time_complete
-from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
+from app.utils.common_table_queries import current_workout_day
+from app.utils.print_long_output import print_long_output
 
-from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component, correct_available_exercises_with_possible_weights
+from app.routes.utils import retrieve_total_time_needed
 from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list
+
+from app.routes.utils import verify_pc_information
+
+bp = Blueprint('user_workout_exercises', __name__)
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 
@@ -52,39 +48,19 @@ def retrieve_availability_for_day(user_workout_day):
     return None
 
 # Verifies and updates the phase component information.
-# Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
-# Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
-# Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
-def verify_phase_component_information(parameters, pcs, exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
-
-    no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
-    if no_weighted_exercises:
-        return no_weighted_exercises
-
-    # Change the minimum allowed duration if the exercises possible don't allow for it.
-    correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
-
-    # Check if there is enough time to complete the phase components.
-    not_enough_time_message = check_if_there_is_enough_time_complete(pcs, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min")
-    if not_enough_time_message:
-        return not_enough_time_message
-
-    # Check if there are enough exercises to complete the phase components.
-    pc_without_enough_ex_message = check_if_there_are_enough_exercises(pcs, exercises_for_pcs)
-    if pc_without_enough_ex_message:
-        return pc_without_enough_ex_message
-
-    correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
-
-    # Attach allowed exercises to phase component.
-    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
-        pc["allowed_exercises"] = exercises_for_pc
-        pc["performance"]=min(exercises[exercise_for_pc-1]["performance"] for exercise_for_pc in exercises_for_pc)
+def verify_and_update_pc_information(parameters, pcs, exercises):
+    # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
+    verification_message = verify_pc_information(parameters, pcs, exercises, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min", check_globally=True)
+    if isinstance(verification_message, tuple):
+        pcs, exercises = verification_message
+    else:
+        return verification_message
+    
+    pcs_new = [pc for pc in pcs if pc.get("allowed_exercises")]
 
     # Replace the ends of both lists with the corrected versions. 
-    parameters["phase_components"][1:] = pcs
+    parameters["phase_components"][1:] = pcs_new
     parameters["possible_exercises"][1:] = exercises
     return None
 
@@ -94,7 +70,7 @@ def retrieve_projected_duration(user_workout_components, pcs):
     # Get the total desired duration.
     projected_duration = 0
     for user_workout_component in user_workout_components:
-        projected_duration += user_workout_component.duration
+        projected_duration += user_workout_component["duration"]
 
     # If the maximum possible duration is larger than the projected duration, lower the projected duration to be this maximum.
     max_time_possible = retrieve_total_time_needed(pcs, "duration_max", "exercises_per_bodypart_workout_max")
@@ -122,14 +98,13 @@ def retrieve_pc_parameters(user_workout_day):
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = availability
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
-    exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(current_user.id)
-    parameters["possible_exercises"] = construct_available_exercises_list(exercises_with_component_phases)
+    parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
 
-    pc_verification_message = verify_phase_component_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
+    pc_verification_message = verify_and_update_pc_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
     if pc_verification_message:
         return jsonify({"status": "error", "message": pc_verification_message}), 400
 
-    parameters["projected_duration"] = retrieve_projected_duration(user_workout_components, parameters["phase_components"][1:])
+    parameters["projected_duration"] = retrieve_projected_duration(parameters["phase_components"][1:], parameters["phase_components"][1:])
     return parameters
 
 def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
@@ -183,19 +158,6 @@ def get_user_current_exercises_list():
               for user_workout_exercise in user_workout_exercises]
     return jsonify({"status": "success", "exercises": result}), 200
 
-def perform_exercise_selection(user_workout_day):
-    parameters = retrieve_pc_parameters(user_workout_day)
-
-    # If a tuple error message is returned, return 
-    if isinstance(parameters, tuple):
-        return parameters
-    constraints={}
-
-    result = exercises_main(parameters, constraints)
-    if verbose:
-        print(result["formatted"])
-    return result
-
 # Assigns exercises to workouts.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
@@ -206,10 +168,15 @@ def exercise_initializer():
 
     delete_old_user_workout_exercises(user_workout_day.id)
 
-    # Retrieve results. If a tuple error message is returned, return 
-    result = perform_exercise_selection(user_workout_day)
-    if isinstance(result, tuple):
-        return result
+    # Retrieve parameters. If a tuple error message is returned, return 
+    parameters = retrieve_pc_parameters(user_workout_day)
+    if isinstance(parameters, tuple):
+        return parameters
+    constraints={}
+
+    result = exercises_main(parameters, constraints)
+    if verbose:
+        print_long_output(result["formatted"])
 
     user_workout_exercises = agent_output_to_sqlalchemy_model(result["output"], user_workout_day.id)
 
@@ -278,9 +245,13 @@ def exercise_phase_components_test():
     if not user_workout_day:
         return jsonify({"status": "error", "message": "No active workout day found."}), 404
 
-    # Retrieve results. If a tuple error message is returned, return 
-    result = perform_exercise_selection(user_workout_day)
-    if isinstance(result, tuple):
-        return result
+    # Retrieve parameters. If a tuple error message is returned, return 
+    parameters = retrieve_pc_parameters(user_workout_day)
+    if isinstance(parameters, tuple):
+        return parameters
+    constraints={}
 
+    result = exercise_pc_main(parameters, constraints)
+    if verbose:
+        print_long_output(result["formatted"])
     return jsonify({"status": "success", "exercises": result}), 200

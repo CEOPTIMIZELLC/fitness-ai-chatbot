@@ -1,12 +1,13 @@
-from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
+from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from collections import defaultdict
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from app.agents.constraints import (
     entries_equal, 
     entries_within_min_max, 
+    ensure_all_vars_equal, 
     link_entry_and_item, 
     constrain_active_entries_vars, 
-    create_optional_intvar, 
     declare_model_vars, 
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
@@ -15,14 +16,10 @@ from app.agents.constraints import (
     retrieve_indication_of_increase)
 
 from app.agents.exercises.exercise_model_specific_constraints import (
-    constrain_duration_var, 
-    create_exercise_effort_var, 
-    constrain_weighted_exercises_var, 
-    constrain_intensity_vars, 
-    constrain_training_weight_vars, 
     constrain_volume_vars, 
     constrain_density_vars, 
-    constrain_performance_vars)
+    constrain_performance_vars,
+    resistances_of_same_bodypart_have_equal_sets)
 
 from app.agents.exercises.exercise_model_specific_constraints import create_duration_var
 
@@ -39,6 +36,8 @@ available_constraints = """
 - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
 - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
 - rest_within_min_max: Forces the amount of rest to be between the minimum and maximum values allowed for the phase component.
+- resistances_have_equal_sets: Forces all exercises for resistance components to have the same number of sets.
+- resistances_have_equal_counts: Forces all phase components of different subcomponent types to have the same quantity if they are resistance components.
 - duration_within_min_max: Forces the amount of duration to be between the minimum and maximum values allowed for the phase component.
 - exercises_per_bodypart_within_min_max: Forces the number of exercises for a phase component to be between the minimum and maximum values allowed.
 - exercise_metric_increase: Forces the prioritized metric of an exercise chosen to increase.
@@ -115,6 +114,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "reps_within_min_max": True,                    # The number of reps of the exercise may only be a number between the minimum and maximum reps allowed for the phase component.
             "sets_within_min_max": True,                    # The number of sets of the exercise may only be a number between the minimum and maximum sets allowed for the phase component.
             "rest_within_min_max": True,                    # The number of rest of the exercise may only be a number between the minimum and maximum rest allowed for the phase component.
+            "resistances_have_equal_sets": True,            # Forces all exercises for resistance components to have the same number of sets.
+            "resistances_have_equal_counts": True,          # Forces all phase components of different subcomponent types to have the same quantity if they are resistance components.
             "duration_within_min_max": True,                # The number of duration of the exercise may only be a number between the minimum and maximum duration allowed for the phase component.
             "intensity_within_min_max": True,               # The amount of intensity for the exercise may only be a number between the minimum and maximum intensity allowed for the phase component.
             "exercises_per_bodypart_within_min_max": True,  # The number of exercises for the phase components of the exercise may only be a number between the minimum and maximum exercises per bodypart allowed for the phase component.
@@ -281,6 +282,22 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                    duration_vars = vars["rest"])
             logs += "- Rest count within min and max allowed rest applied.\n"
 
+        # Constraint: The resistance components must have the same number of sets.
+        if constraints["resistances_have_equal_sets"]:
+            resistances_of_same_bodypart_have_equal_sets(model, phase_components, vars["used_pcs"], vars["sets"])
+            logs += "- All resistance exercises have the same number of sets applied.\n"
+
+        # Constraint: The resistance components must have the same number of exercises for each bodypart.
+        if constraints["resistances_have_equal_counts"]:
+            resistance_phase_components = {}
+            for i, phase_component in enumerate(phase_components):
+                if phase_component["component_name"].lower() == "resistance":
+                    resistance_phase_components.setdefault(phase_component["bodypart_id"],[]).append(i)
+            for _, value in resistance_phase_components.items():
+                ensure_all_vars_equal(model, [vars["pc_count"][i] for i in value])
+            # resistances_of_same_bodypart_have_equal_sets(model, phase_components, vars["used_pcs"], vars["pc_count"])
+            logs += "- All resistance exercises have the same number of exercises for each bodypart.\n"
+
         # Constraint: The duration of a phase component may only be a number between the minimum and maximum duration allowed.
         if constraints["duration_within_min_max"]:
             entries_within_min_max(model = model, 
@@ -433,6 +450,29 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         return {"opt_model": (model, model_with_divided_strain, vars)}
 
+    def sort_schedule(self, phase_components, schedule, component_i=1, subcomponent_i=2, bodypart_i=3):
+        # Step 1: Create ordering for bodypart_id groups
+        grouped_by_bodypart = defaultdict(list)
+        for pc in phase_components:
+            key = (pc['component_id'], pc['bodypart_id'])
+            if pc['subcomponent_id'] not in grouped_by_bodypart[key]:
+                grouped_by_bodypart[key].append(pc['subcomponent_id'])
+
+        # Step 2: Create a stable rank key
+        rank_mapping = {}
+        rank_counter = 0
+        for (comp_id, body_id), subcomps in sorted(grouped_by_bodypart.items(), key=lambda x: x[0][1]):  # sort by bodypart_id
+            for subcomp_id in subcomps:
+                key = (comp_id, subcomp_id, body_id)
+                if key not in rank_mapping:
+                    rank_mapping[key] = rank_counter
+                    rank_counter += 1
+
+        # Step 3: Sort the schedule
+        sorted_schedule = sorted(schedule, key=lambda x: rank_mapping.get((x[component_i], x[subcomponent_i], x[bodypart_i]), float('inf')))
+
+        return sorted_schedule
+
     def solve_model_node(self, state: State, config=None) -> dict:
         self._log_steps("Solving First Step")
         """Solve model and record relaxation attempt results."""
@@ -442,6 +482,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars = vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"]
         volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
         duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
+
+        phase_components = state["parameters"]["phase_components"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -462,11 +504,16 @@ class ExercisePhaseComponentAgent(BaseAgent):
             for i in range(len(duration_vars)):
                 # Ensure that the phase component is active.
                 if(solver.Value(active_exercise_vars[i])):
+                    phase_component_var = solver.Value(phase_component_vars[i])
+                    phase_component = phase_components[phase_component_var]
                     duration_vars_current = solver.Value(duration_vars[i])
                     working_duration_vars_current = solver.Value(working_duration_vars[i])
                     schedule.append((
                         i, 
-                        solver.Value(phase_component_vars[i]), 
+                        phase_component_var, 
+                        phase_component["component_id"],                                    # ID of the component for the phase component chosen.
+                        phase_component["subcomponent_id"],                                 # ID of the subcomponent for the phase component chosen.
+                        phase_component["bodypart_id"],                                     # ID of the bodypart for the phase component chosen.
                         solver.Value(active_exercise_vars[i]), 
                         solver.Value(seconds_per_exercise_vars[i]),                         # Seconds per exercise of the exercise chosen.
                         solver.Value(reps_vars[i]),                                         # Reps of the exercise chosen.
@@ -481,7 +528,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                     duration += duration_vars_current
                     working_duration += working_duration_vars_current
                     strain_ratio += duration_vars_current/working_duration_vars_current
-            schedule = sorted(schedule, key=lambda x: x[1])
+            schedule = self.sort_schedule(phase_components, schedule, 2, 3, 4)
             pc_count = [
                 solver.Value(pc_count_var)
                 for pc_count_var in pc_count_vars
@@ -561,6 +608,51 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "performance": ("Performance", 30)
         }
 
+    def formatted_schedule(self, headers, i, pc, metrics):
+        (active_exercises, seconds_per_exercise, 
+         reps_var, sets_var, rest_var, 
+         volume_var, density_var, 
+         performance_var, duration, working_duration) = metrics
+
+        volume_max = pc["volume_max"]
+        density_max = pc["density_max"] / 100
+        performance_max = round(volume_max * density_max * 100) / 100
+
+        # Format line
+        line_fields = {
+            "number": str(i + 1),
+            "phase_component": f"{pc['name']}",
+            "bodypart": pc["bodypart_name"],
+            "duration": f"({duration} sec",
+            "working_duration": f"({working_duration} sec",
+            "seconds_per_exercise": f"({seconds_per_exercise} sec",
+            "reps": self._format_range(reps_var, pc["reps_min"], pc["reps_max"]),
+            "sets": self._format_range(sets_var, pc["sets_min"], pc["sets_max"]),
+            "rest": self._format_range(rest_var, pc["rest_min"] * 5, pc["rest_max"] * 5) + ")",
+            "volume": f"{volume_var} (>={volume_max})",
+            "density": f"{density_var} (>={density_max})",
+            "performance": f"{performance_var} (>={performance_max})",
+        }
+
+        line = ""
+        for field, (_, length) in headers.items():
+            line += self._create_formatted_field(field, line_fields[field], length)
+        return line + "\n"
+
+    def formatted_counts(self, pcs, solution, longest_sizes):
+        schedule_counts = f"\nPhase Component Counts:\n"
+        schedule_not_included = f"\nNot Included Phase Components:\n"
+        for pc_index, pc in enumerate(pcs):
+            pc_no = solution['pc_count'][pc_index]
+            phase_component_name = f"{pc['name']:<{longest_sizes['phase_component']+2}} {pc['bodypart_name']:<{longest_sizes['bodypart']+2}}"
+            phase_component_range = self._format_range(solution['pc_count'][pc_index], pc["exercises_per_bodypart_workout_min"], pc["exercises_per_bodypart_workout_max"])
+            count_string = f"\t{phase_component_name}: {phase_component_range}\n"
+            if pc_no:
+                schedule_counts += count_string
+            elif pc_no == 0:
+                schedule_not_included += count_string
+        return schedule_counts + schedule_not_included + "\n"
+
     def format_agent_output(self, solution, formatted, schedule, phase_components, projected_duration, workout_availability):
         final_output = []
 
@@ -576,14 +668,11 @@ class ExercisePhaseComponentAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
         
         # Create header line
-        formatted += "\nFinal Training Schedule:\n" + "-" * 120 + "\n"
-        header_line = ""
-        for label, (text, length) in headers.items():
-            header_line += self._create_formatted_field(text, text, length)
-        formatted += header_line + "\n"
+        if log_schedule: 
+            formatted += self.formatted_header_line(headers)
 
-        for component_count, (i, phase_component_index, *metrics) in enumerate(schedule):
-            phase_component = phase_components[phase_component_index]
+        for component_count, (i, phase_component_index, _, _, _, *metrics) in enumerate(schedule):
+            pc = phase_components[phase_component_index]
 
             (active_exercises, seconds_per_exercise, 
              reps_var, sets_var, rest_var, 
@@ -594,8 +683,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 final_output.append({
                     "i": i, 
                     "phase_component_index": phase_component_index, 
-                    "phase_component_id": phase_component["phase_component_id"],
-                    "bodypart_id": phase_component["bodypart_id"],
+                    "phase_component_id": pc["phase_component_id"],
+                    "bodypart_id": pc["bodypart_id"],
                     "seconds_per_exercise": seconds_per_exercise, 
                     "active_exercises": active_exercises, 
                     "reps_var": reps_var, 
@@ -607,40 +696,16 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
+                if log_schedule:
+                    formatted += self.formatted_schedule(headers, component_count, pc, metrics)
 
-                volume_max = phase_component["volume_max"]
-                density_max = phase_component["density_max"] / 100
-                performance_max = round(volume_max * density_max * 100) / 100
-
-                # Format line
-                line_fields = {
-                    "number": str(component_count + 1),
-                    "phase_component": f"{phase_component['name']}",
-                    "bodypart": phase_component["bodypart_name"],
-                    "duration": f"({duration} sec",
-                    "working_duration": f"({working_duration} sec",
-                    "seconds_per_exercise": f"({seconds_per_exercise} sec",
-                    "reps": self._format_range(reps_var, phase_component["reps_min"], phase_component["reps_max"]),
-                    "sets": self._format_range(sets_var, phase_component["sets_min"], phase_component["sets_max"]),
-                    "rest": self._format_range(rest_var, phase_component["rest_min"] * 5, phase_component["rest_max"] * 5) + ")",
-                    "volume": f"{volume_var} (>={volume_max})",
-                    "density": f"{density_var} (>={density_max})",
-                    "performance": f"{performance_var} (>={performance_max})",
-                }
-
-                line = ""
-                for field, (_, length) in headers.items():
-                    line += self._create_formatted_field(field, line_fields[field], length)
-                formatted += line + "\n"
             else:
-                formatted += (f"| {(component_count + 1):<{2}} ----\n")
+                if log_schedule:
+                    formatted += (f"| {(component_count + 1):<{2}} ----\n")
 
+        if log_counts:
+            formatted += self.formatted_counts(phase_components, solution, longest_sizes)
         if log_details:
-            formatted += f"Phase Component Counts:\n"
-            for phase_component_index, phase_component in enumerate(phase_components):
-                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart_name']:<{longest_sizes['bodypart']+2}}"
-                phase_component_range = self._format_range(solution['pc_count'][phase_component_index], phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])
-                formatted += f"\t{phase_component_name}: {phase_component_range}\n"
             formatted += f"Total Strain: {solution['strain_ratio']}\n"
             formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
             formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"

@@ -133,11 +133,10 @@
 > > ## Run Pipeline
 > > - Runs the pipeline for the current user, including the availability for each workday and the maximum workout length. 
 > > - Body type: `raw`
-> > - Required inputs: `workout_length`, `availability`, `goal`
+> > - Required inputs: `availability`, `goal`
 > > - Optional inputs: `runs` (default=1)
 > > ```
 > > [POST] /dev_tests/pipeline
-> > workout_length
 > > availability
 > > goal
 > > runs (optional, default=1)
@@ -166,15 +165,6 @@
 > > [PATCH] /current_user
 > > first_name (optional)
 > > last_name (optional)
-> > ```
-> > 
-> > ### Change current user's maximum workout length
-> > - Changes the maximum workout length for the user.
-> > - Body type: `raw`
-> > - Required inputs: `workout_length`
-> > ```
-> > [PATCH] /current_user/change_workout_length
-> > workout_length
 > > ```
 > > 
 > > ### Change current user's email

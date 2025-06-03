@@ -2,20 +2,33 @@ from config import verbose
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 import math
+from datetime import timedelta
 
 from app import db
-from app.models import Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts, Weekday_Library, User_Weekday_Availability, User_Workout_Components, User_Macrocycles, User_Mesocycles, User_Microcycles, User_Workout_Days
-from datetime import timedelta
+from app.models import (
+    Phase_Library, 
+    Phase_Component_Library, 
+    Phase_Component_Bodyparts, 
+    Weekday_Library, 
+    User_Weekday_Availability, 
+    User_Workout_Components, 
+    User_Macrocycles, 
+    User_Mesocycles, 
+    User_Microcycles, 
+    User_Workout_Days
+)
+
+from app.agents.phase_components import Main as phase_component_main
+
+from app.utils.common_table_queries import current_microcycle, current_workout_day
+from app.utils.print_long_output import print_long_output
+
+from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
+
+from app.routes.utils import verify_pc_information
 
 bp = Blueprint('user_workout_days', __name__)
 
-from app.agents.phase_components import Main as phase_component_main
-from app.utils.common_table_queries import current_microcycle, current_workout_day, user_possible_exercises_with_user_exercise_info
-from app.routes.utils import check_if_there_is_enough_time_complete
-from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
-
-from app.routes.utils import correct_minimum_duration_for_phase_component, check_if_there_are_enough_exercises, correct_maximum_allowed_exercises_for_phase_component
-from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
 # ----------------------------------------- Workout Days -----------------------------------------
 
 def delete_old_user_workout_days(microcycle_id):
@@ -71,45 +84,29 @@ def retrieve_weekday_availability_information_from_availability(availability):
 # Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
 # Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
-def verify_phase_component_information(parameters, pcs, exercises):
-    exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
+def verify_and_update_pc_information(parameters, pcs, exercises, total_availability, number_of_available_weekdays):
+    # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
+    verification_message = verify_pc_information(parameters, pcs, exercises, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", check_globally=False, default_count_if_none=number_of_available_weekdays)
+    if isinstance(verification_message, tuple):
+        pcs = verification_message[0]
+    else:
+        return verification_message    # Replace the list of phase components with the corrected version. 
 
-    # Change the minimum allowed duration if the exercises possible don't allow for it.
-    correct_minimum_duration_for_phase_component(pcs, parameters["possible_exercises"], exercises_for_pcs)
-
-    # Check if there are enough exercises to complete the phase components.
-    pc_without_enough_ex_message = check_if_there_are_enough_exercises(pcs, exercises_for_pcs)
-    if pc_without_enough_ex_message:
-        return pc_without_enough_ex_message
-
-    # Replace the list of phase components with the corrected version. 
     parameters["phase_components"] = pcs
-    correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs)
     return None
 
 # Retrieves the parameters used by the solver.
 def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability):
-    parameters={}
-
-    possible_phase_components_list = construct_phase_component_list(phase_id)
-    for pc in possible_phase_components_list:
-        pc["duration_min_for_day"] = (pc["duration_min"]) * (pc["exercises_per_bodypart_workout_min"] or 1)
-        pc["duration_max_for_day"] = (pc["duration_max"]) * (pc["exercises_per_bodypart_workout_max"] or 1)
+    parameters = {"valid": True, "status": None}
 
     parameters["microcycle_weekdays"] = microcycle_weekdays
     parameters["weekday_availability"] = weekday_availability
-    parameters["phase_components"] = possible_phase_components_list
-    exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(current_user.id)
-    parameters["possible_exercises"] = construct_available_exercises_list(exercises_with_component_phases)
+    parameters["phase_components"] = construct_phase_component_list(phase_id)
+    parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
 
-    pc_verification_message = verify_phase_component_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:])
+    pc_verification_message = verify_and_update_pc_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:], total_availability, number_of_available_weekdays)
     if pc_verification_message:
         return jsonify({"status": "error", "message": pc_verification_message}), 400
-
-    # Check if there is enough time to complete the phase components.
-    not_enough_time_message = check_if_there_is_enough_time_complete(possible_phase_components_list, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", number_of_available_weekdays)
-    if not_enough_time_message:
-        return jsonify({"status": "error", "message": not_enough_time_message}), 400
 
     return parameters
 
@@ -123,7 +120,7 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
 
     result = phase_component_main(parameters, constraints)
     if verbose:
-        print(result["formatted"])
+        print_long_output(result["formatted"])
     return result
 
 def agent_output_to_sqlalchemy_model(phase_components_output, user_workdays):
@@ -293,7 +290,7 @@ def phase_component_classification_test():
 
         if verbose:
             print(str(phase.id))
-            print(result["formatted"])
+            print_long_output(result["formatted"])
         test_results.append({
             # "phase_components": parameters["phase_components"], 
             "phase_id": phase.id,

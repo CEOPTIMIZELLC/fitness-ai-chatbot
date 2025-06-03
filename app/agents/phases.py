@@ -1,5 +1,4 @@
-from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
-from config import ortools_solver_time_in_seconds
+from config import ortools_solver_time_in_seconds, log_schedule, log_details
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -363,6 +362,20 @@ class PhaseAgent(BaseAgent):
             "goal_duration": ("Goal Duration", 17),
         }
 
+    def formatted_schedule(self, headers, i, phase, phase_duration):
+        # Format line
+        line_fields = {
+            "number": str(i + 1),
+            "phase": f"{phase['name']}",
+            "duration": f"{self._format_range(str(phase_duration), phase["element_minimum"], phase["element_maximum"])} weeks",
+            "goal_duration": f"+{phase_duration if phase['is_goal_phase'] else 0} weeks"
+        }
+
+        line = ""
+        for field, (_, length) in headers.items():
+            line += self._create_formatted_field(field, line_fields[field], length)
+        return line + "\n"
+
     def format_agent_output(self, solution, formatted, schedule, phases, macrocycle_allowed_weeks):
         final_output = []
 
@@ -373,11 +386,8 @@ class PhaseAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
 
         # Create header line
-        formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
-        header_line = ""
-        for label, (text, length) in headers.items():
-            header_line += self._create_formatted_field(text, text, length)
-        formatted += header_line + "\n"
+        if log_schedule: 
+            formatted += self.formatted_header_line(headers)
 
         for i, (phase_type, phase_duration) in enumerate(schedule):
             phase = phases[phase_type]
@@ -387,18 +397,8 @@ class PhaseAgent(BaseAgent):
                 "duration": phase_duration
             })
 
-            # Format line
-            line_fields = {
-                "number": str(i + 1),
-                "phase": f"{phase['name']}",
-                "duration": f"{self._format_range(str(phase_duration), phase["element_minimum"], phase["element_maximum"])} weeks",
-                "goal_duration": f"+{phase_duration if phase['is_goal_phase'] else 0} weeks"
-            }
-
-            line = ""
-            for field, (_, length) in headers.items():
-                line += self._create_formatted_field(field, line_fields[field], length)
-            formatted += line + "\n"
+            if log_schedule:
+                formatted += self.formatted_schedule(headers, i, phase, phase_duration)
 
         if log_details:
             formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"

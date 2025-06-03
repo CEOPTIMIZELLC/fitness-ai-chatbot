@@ -1,10 +1,16 @@
 import heapq
 from .utils import check_for_required, remove_impossible_not_required_phase_components
+from config import change_min_max_exercises_for_those_available
+from config import verbose_agent_preprocessing
 
 def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises):
     unsatisfiable = []
     pcs_to_remove = []
     for i, (pc, exs_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
+        # Skip if empty.
+        if not exs_for_pc:
+            continue
+
         # Retrieve range of intensities possible.
         pc_intensity = list(range(pc["intensity_min"] or 1, pc["intensity_max"] + 1))
 
@@ -27,7 +33,7 @@ def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, ex
                 available_exercises.append(ex_i)
         exercises_for_pcs[i] = available_exercises
         if not exercises_for_pcs[i]:
-            message = f"{pc["name"]} for {pc["bodypart_name"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises."
+            message = f"{pc["pc_name_for_bodypart"]} doesn't have the weights for a satisfactory intensity as well as no non-weighted exercises."
             is_required = pc["required_within_microcycle"] == "always"
             is_resistance = pc["component_name"].lower() == "resistance"
             check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
@@ -57,13 +63,23 @@ def correct_minimum_duration_for_phase_component(pcs, exercises, exercises_for_p
 
     return None
 
+def _correct_allowed_exercises(pc, key, number_of_exercises_available):
+    original_value = pc.get(key)
+    if original_value:
+        if original_value > number_of_exercises_available:
+            if verbose_agent_preprocessing:
+                print(f"{pc["pc_name_for_bodypart"]}'s {key} value of {original_value} is less than the {number_of_exercises_available} exercises available. Correcting to {number_of_exercises_available}")
+            pc[key] = number_of_exercises_available
+    else:
+        pc[key] = number_of_exercises_available
+    return None
+
 # Update the maximum exercises for a phase component if the number of exercises in the database is less than this.
-def correct_maximum_allowed_exercises_for_phase_component(pcs, exercises_for_pcs):
+def correct_min_max_allowed_exercises_for_phase_component(pcs, exercises_for_pcs):
     for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
         number_of_exercises_available = len(exercises_for_pc)
-        # Correct upper bound for exercises.
-        if pc["exercises_per_bodypart_workout_max"]:
-            pc["exercises_per_bodypart_workout_max"] = min(number_of_exercises_available, pc["exercises_per_bodypart_workout_max"])
-        else:
-            pc["exercises_per_bodypart_workout_max"] = number_of_exercises_available
+        # Correct bounds for exercises.
+        if change_min_max_exercises_for_those_available:
+            _correct_allowed_exercises(pc, "exercises_per_bodypart_workout_min", number_of_exercises_available)
+        _correct_allowed_exercises(pc, "exercises_per_bodypart_workout_max", number_of_exercises_available)
     return None

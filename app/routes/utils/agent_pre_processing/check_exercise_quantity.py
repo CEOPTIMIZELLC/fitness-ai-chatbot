@@ -1,12 +1,15 @@
+from config import verbose_agent_preprocessing
 from .utils import check_for_required, remove_impossible_not_required_phase_components
 
-# Step 1: Initial check for individual phase components
-def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
+# Step 1: Remove Empty Phase Components
+def _check_if_there_are_no_exercises(pcs, exercises_for_pcs):
     unsatisfiable = []
     pcs_to_remove = []
     for i, (pc, exercises_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
-        if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc):
-            message = f"{pc["name"]} for {pc["bodypart_name"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}."
+        if len(exercises_for_pc) == 0:
+            message = f"{pc["pc_name_for_bodypart"]} has no exercises."
+            if pc["exercises_per_bodypart_workout_min"] == 0:
+                message += " Yet it also requires no exercises."
             is_required = pc["required_within_microcycle"] == "always"
             is_resistance = pc["component_name"].lower() == "resistance"
             check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
@@ -16,20 +19,41 @@ def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
 
     return unsatisfiable
 
-# Step 2: Check for global feasibility
+# Step 2: Initial check for individual phase components
+def _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs):
+    unsatisfiable = []
+    pcs_to_remove = []
+    for i, (pc, exercises_for_pc) in enumerate(zip(pcs, exercises_for_pcs)):
+        if pc["exercises_per_bodypart_workout_min"] > len(exercises_for_pc):
+            message = f"{pc["pc_name_for_bodypart"]} requires a minimum of {pc["exercises_per_bodypart_workout_min"]} to be successful but only has {len(exercises_for_pc)}."
+            is_required = pc["required_within_microcycle"] == "always"
+            is_resistance = pc["component_name"].lower() == "resistance"
+            check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
+
+    # Remove the indices that were considered impossible but weren't required.
+    remove_impossible_not_required_phase_components(pcs_to_remove, pcs, exercises_for_pcs)
+
+    return unsatisfiable
+
+# Step 3: Check for global feasibility
 def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     unsatisfiable = []
     pcs_to_remove = []
 
     # Build a list of requirements
     phase_requirements = [{
+        "index": i,
         "id": pc["phase_component_id"],
         "name": pc["name"],
+        "pc_name_for_bodypart": pc["pc_name_for_bodypart"],
+        "phase_name": pc["phase_name"],
+        "component_name": pc["component_name"],
+        "subcomponent_name": pc["subcomponent_name"],
         "bodypart_name": pc["bodypart_name"],
         "required_within_microcycle": pc["required_within_microcycle"],
         "required": pc["exercises_per_bodypart_workout_min"],
         "options": set(exercises_for_pc)}
-        for pc, exercises_for_pc in zip(pcs, exercises_for_pcs)]
+        for i, (pc, exercises_for_pc) in enumerate(zip(pcs, exercises_for_pcs))]
 
     # Try to allocate unique exercises without reuse
     used_exercises = set()
@@ -40,10 +64,10 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
     for i, req in enumerate(phase_requirements):
         available = req["options"] - used_exercises
         if len(available) < req["required"]:
-            message = f"{req["name"]} for {req["bodypart_name"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available."
+            message = f"{req["pc_name_for_bodypart"]} requires {req["required"]} unique exercises, but only {len(available)} unused exercises are available."
             is_required = req["required_within_microcycle"] == "always"
             is_resistance = req["component_name"].lower() == "resistance"
-            check_for_required(i, unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
+            check_for_required(req["index"], unsatisfiable, pcs_to_remove, message, is_required, is_resistance)
         else:
             # Reserve exercises
             used_exercises.update(list(available)[:req["required"]])
@@ -53,14 +77,25 @@ def _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs):
 
     return unsatisfiable
 
-def check_if_there_are_enough_exercises(pcs, exercises_for_pcs):
-    # Step 1: Initial check for individual phase components
-    unsatisfiable = _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs)
-    if unsatisfiable:
-        return unsatisfiable
+def Main(pcs, exercises_for_pcs, check_globally=False):
+    unsatisfiable = []
 
-    # Step 2: Check for global feasibility
-    unsatisfiable = _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs)
+    # Step 1: Initial check for empty phase components
+    if verbose_agent_preprocessing:
+        print("EMPTY")
+    unsatisfiable += _check_if_there_are_no_exercises(pcs, exercises_for_pcs)
+
+    # Step 2: Initial check for local feasibility
+    if verbose_agent_preprocessing:
+        print("LOCALLY")
+    unsatisfiable += _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs)
+
+    # Step 3: Check for global feasibility
+    if check_globally:
+        if verbose_agent_preprocessing:
+            print("GLOBALLY")
+        unsatisfiable += _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs)
+
     if unsatisfiable:
         return unsatisfiable
     

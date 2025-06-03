@@ -4,10 +4,10 @@ from flask_login import current_user, login_required
 from app import db
 from app.models import Goal_Library, User_Macrocycles
 
-bp = Blueprint('user_macrocycles', __name__)
-
 from app.agents.goals import create_goal_classification_graph
 from app.utils.common_table_queries import current_macrocycle
+
+bp = Blueprint('user_macrocycles', __name__)
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 # Retrieve possible goal types.
@@ -100,19 +100,19 @@ def change_macrocycle():
             alter_macrocycle(state["goal_id"], state["new_goal"])
 
     return jsonify({
-        "new_goal": state["new_goal"],
-        "goal_classification": state["goal_class"],
-        "goal_id": state["goal_id"]
+        "status": "success",
+        "macrocycles": {
+            "new_goal": state["new_goal"],
+            "goal_classification": state["goal_class"],
+            "goal_id": state["goal_id"]}
     }), 200
 
 # Change the current user's macrocycle by the id (doesn't restrict what can be assigned).
 @bp.route('/<goal_id>', methods=['POST', 'PATCH'])
 @login_required
 def change_macrocycle_by_id(goal_id):
-    from app.utils.db_helpers import get_item_by_id
-
     # Ensure that id is possible.
-    goal = get_item_by_id(Goal_Library, goal_id)
+    goal = db.session.get(Goal_Library, goal_id)
     if not goal:
         return jsonify({"status": "error", "message": f"Goal {goal_id} not found."}), 404
 
@@ -123,9 +123,12 @@ def change_macrocycle_by_id(goal_id):
         alter_macrocycle(goal_id, f"Goal of {goal_id}")
 
     return jsonify({
-        "new_goal": f"Goal of {goal_id}",
-        "goal_classification": goal["name"],
-        "goal_id": goal_id
+        "status": "success",
+        "macrocycles": {
+            "new_goal": f"Goal of {goal_id}",
+            "goal_classification": goal.name,
+            "goal_id": goal_id
+        }
     }), 200
 
 # Testing for goal classification.
@@ -145,6 +148,6 @@ def goal_classification_test():
 
     for user_goal in user_goals:
         result.append(goal_classification_test_run(goal_app, goal_types, user_goal))
-    
-    return jsonify(result), 200
+
+    return jsonify({"status": "success", "test_results": result}), 200
 

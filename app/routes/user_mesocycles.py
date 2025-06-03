@@ -4,12 +4,20 @@ from flask_login import current_user, login_required
 from datetime import timedelta
 
 from app import db
-from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library, User_Mesocycles, User_Macrocycles
-
-bp = Blueprint('user_mesocycles', __name__)
+from app.models import (
+    Goal_Library, 
+    Goal_Phase_Requirements, 
+    Phase_Library, 
+    User_Mesocycles, 
+    User_Macrocycles
+)
 
 from app.agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
+
+from app.routes.utils import construct_phases_list
+
+bp = Blueprint('user_mesocycles', __name__)
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
@@ -18,59 +26,14 @@ def delete_old_user_phases(macrocycle_id):
     if verbose:
         print("Successfully deleted")
 
-# Retrieve the phase types and their corresponding constraints for a goal.
-def retrieve_phase_constraints_for_goal(goal_id):
-    # Retrieve all possible phases that can be selected.
-    possible_phases = (
-        db.session.query(
-            Phase_Library.id,
-            Phase_Library.name,
-            Phase_Library.phase_duration_minimum_in_weeks,
-            Phase_Library.phase_duration_maximum_in_weeks,
-            Goal_Phase_Requirements.required_phase,
-            Goal_Phase_Requirements.is_goal_phase,
-        )
-        .join(Goal_Phase_Requirements, Goal_Phase_Requirements.phase_id == Phase_Library.id)
-        .join(Goal_Library, Goal_Library.id == Goal_Phase_Requirements.goal_id)
-        .filter(Goal_Library.id == goal_id)
-        .order_by(Phase_Library.id.asc())
-        .all()
-    )
-
-    return possible_phases
-
-def construct_phases_list(possible_phases):
-    # Convert the phases to a list form.
-    possible_phases_list = [{
-            "id": 0,
-            "name": "Inactive",
-            "element_minimum": 0,
-            "element_maximum": 0,
-            "required_phase": False,
-            "is_goal_phase": False,
-        }]
-
-    for possible_phase in possible_phases:
-        possible_phases_list.append({
-            "id": possible_phase.id,
-            "name": possible_phase.name.lower(),
-            "element_minimum": possible_phase.phase_duration_minimum_in_weeks.days // 7,
-            "element_maximum": possible_phase.phase_duration_maximum_in_weeks.days // 7,
-            "required_phase": True if possible_phase.required_phase == "required" else False,
-            #"required_phase": possible_phase.required_phase,
-            "is_goal_phase": possible_phase.is_goal_phase,
-        })
-    return possible_phases_list
-
-def perform_phase_selection(goal_id, macrocycle_allowed_weeks, verbose=False):
+def perform_phase_selection(goal_id, macrocycle_allowed_weeks):
     parameters={
         "macrocycle_allowed_weeks": macrocycle_allowed_weeks,
         "goal_type": goal_id}
     constraints={}
 
     # Retrieve all possible phases that can be selected and convert them into a list form.
-    possible_phases = retrieve_phase_constraints_for_goal(int(goal_id))
-    parameters["possible_phases"] = construct_phases_list(possible_phases)
+    parameters["possible_phases"] = construct_phases_list(int(goal_id))
 
     result = phase_main(parameters, constraints)
 
@@ -87,7 +50,7 @@ def mesocycle_phase_adding(goal_id=None):
         goal_id = user_macro.goal_id
 
     delete_old_user_phases(user_macro.id)
-    result = perform_phase_selection(goal_id, 26, verbose)
+    result = perform_phase_selection(goal_id, 26)
     user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
     db.session.add_all(user_phases)
     db.session.commit()
@@ -95,12 +58,9 @@ def mesocycle_phase_adding(goal_id=None):
 
 # Method to perform phase selection on a goal of a specified id.
 def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
-    from app.utils.db_helpers import get_item_by_id
-    goal = get_item_by_id(Goal_Library, goal_id)
-    if not goal:
+    if not db.session.get(Goal_Library, goal_id):
         return None
-
-    return perform_phase_selection(goal_id, macrocycle_allowed_weeks, verbose)
+    return perform_phase_selection(goal_id, macrocycle_allowed_weeks)
 
 def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_start_date):
     # Convert output to form that may be stored.
@@ -213,7 +173,7 @@ def phase_classification_test():
         if verbose:
             print("----------------------")
             print(str(goal.id))
-        result = perform_phase_selection(goal.id, macrocycle_allowed_weeks, verbose)
+        result = perform_phase_selection(goal.id, macrocycle_allowed_weeks)
         test_results.append({
             "macrocycle_allowed_weeks": macrocycle_allowed_weeks, 
             "goal_id": goal.id,

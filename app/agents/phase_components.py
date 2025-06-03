@@ -1,5 +1,4 @@
-from config import ortools_solver_time_in_seconds, verbose, log_steps, log_details
-from config import ortools_solver_time_in_seconds
+from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -8,8 +7,8 @@ from app.agents.constraints import (
     create_spread_intvar, 
     day_duration_within_availability, 
     use_workout_required_components, 
-    use_all_required_items, 
-    only_use_required_items, 
+    use_all_required_items,
+    ensure_all_vars_equal, 
     frequency_within_min_max, 
     consecutive_bodyparts_for_component)
 
@@ -25,6 +24,7 @@ available_constraints = """
 - use_microcycle_required_components: Forces all phase components required for a microcycle to be assigned at lease once in the microcycle.
 - frequency_within_min_max: Forces each phase component that does occur to occur between the minimum and maximum values allowed.
 - consecutive_bodyparts_for_component: Forces phase components of the same component and subcomponent type to occur simultaneously on a workout where any is assigned.
+- resistances_have_equal_counts: Forces all phase components of different subcomponent types to have the same quantity if they are resistance components in a day.
 - minimize_duration_delta: Secondary objective to minimize the amount of spread of phase component durations.
 - maximize_exercise_time: Objective to maximize the amount of time spent overall.
 """
@@ -90,6 +90,7 @@ class PhaseComponentAgent(BaseAgent):
             "use_microcycle_required_components": True,     # Include phase components that are required in every microcycle at least once.
             "frequency_within_min_max": True,               # The number of times that a phase component may be used in a microcycle is within number allowed.
             "consecutive_bodyparts_for_component": False,    # Every bodypart division must be done consecutively for a phase component.
+            "resistances_have_equal_counts": True,          # Forces all phase components of different subcomponent types to have the same quantity if they are resistance components in the same day.
             "minimize_duration_delta": True,                # Minimize the amount of spread across the duration of phase component over the microcycle.
             "maximize_exercise_time": True,                 # Objective function constraint
         }
@@ -221,6 +222,18 @@ class PhaseComponentAgent(BaseAgent):
                                                 phase_components=phase_components, 
                                                 active_phase_components=vars["active_phase_components"])
             logs += "- Bodypart division for components are done consecutively activated.\n"
+
+
+        # Constraint: All resistances of different subcomponents will have the same number.
+        if constraints["resistances_have_equal_counts"]:
+            resistance_phase_components = {}
+            for i, phase_component in enumerate(phase_components):
+                if phase_component["component_name"].lower() == "resistance":
+                    resistance_phase_components.setdefault(phase_component["bodypart_id"],[]).append(i)
+            for active_phase_components_for_day in vars["active_phase_components"]:
+                for _, value in resistance_phase_components.items():
+                    ensure_all_vars_equal(model, [active_phase_components_for_day[i] for i in value])
+            logs += "- All resistances of different subcomponents will have the same number activated.\n"
 
         # Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
         if constraints["frequency_within_min_max"]:
@@ -405,6 +418,53 @@ class PhaseComponentAgent(BaseAgent):
             "duration_sec": ("Duration in Seconds", 30),
         }
 
+    def formatted_header_line(self, headers):
+        header_line = ""
+        for label, (text, length) in headers.items():
+            header_line += self._create_formatted_field(text, text, length)
+        return header_line
+
+    # def formatted_schedule(self, headers, header_line, component_count, phase_component, workday_index, weekday_availability, current_weekday, used_days, exercises_per_bodypart_var, partial_duration_var, duration_var):
+    def formatted_schedule(self, headers, header_line, component_count, pc, metrics, current_weekday_info, workday_index, used_days):
+        (active_phase_components, exercises_per_bodypart_var, partial_duration_var, duration_var) = metrics
+        line = ""
+
+        if not used_days[workday_index]["used"]:
+            line += f"\n| Day {workday_index + 1} {current_weekday_info["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
+            used_days[workday_index]["used"] = True
+            line += header_line + "\n"
+
+        # Format line
+        line_fields = {
+            "number": str(component_count + 1),
+            "phase_component": f"{pc['name']}",
+            "bodypart": pc["bodypart"],
+            "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), pc["exercises_per_bodypart_workout_min"], pc["exercises_per_bodypart_workout_max"])}",
+            "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
+            "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", pc["duration_min"], pc["duration_max"])}",
+            "duration": f"{self._format_duration(duration_var)} sec",
+            "duration_sec": f"{self._format_range(str(duration_var) + " seconds", pc["duration_min"], pc["duration_max"] * pc["exercises_per_bodypart_workout_max"])}"
+        }
+
+        for field, (_, length) in headers.items():
+            line += self._create_formatted_field(field, line_fields[field], length)
+        return line + "\n"
+
+    def formatted_counts(self, pcs, pc_count, longest_sizes):
+        schedule_counts = f"\nPhase Component Counts:\n"
+        schedule_not_included = f"\nNot Included Phase Components:\n"
+        for pc_index, pc_no in enumerate(pc_count):
+            pc = pcs[pc_index]
+            phase_component_name = f"{pc['name']:<{longest_sizes['phase_component']+2}} {pc['bodypart']:<{longest_sizes['bodypart']+2}}"
+            phase_component_frequency = self._format_range(pc_no, pc["frequency_per_microcycle_min"], pc["frequency_per_microcycle_max"])
+            phase_component_required = f"Required Every Workout: {pc["required_every_workout"]}\t\tRequired Every Microcycle: {pc['required_within_microcycle']}"
+            count_string = f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
+            if pc_no:
+                schedule_counts += count_string
+            elif pc_no == 0:
+                schedule_not_included += count_string
+        return schedule_counts + schedule_not_included + "\n"
+
     def format_agent_output(self, solution, formatted, schedule, phase_components, used_days, workout_time, weekday_availability, microcycle_weekdays):
         final_output = []
 
@@ -420,13 +480,12 @@ class PhaseComponentAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
         
         # Create header line
-        formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
-        header_line = ""
-        for label, (text, length) in headers.items():
-            header_line += self._create_formatted_field(text, text, length)
+        if log_schedule: 
+            formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
+            header_line = self.formatted_header_line(headers)
 
         for component_count, (phase_component_index, workday_index, *metrics) in enumerate(schedule):
-            phase_component = phase_components[phase_component_index]
+            pc = phase_components[phase_component_index]
 
             (active_phase_components, exercises_per_bodypart_var, partial_duration_var, duration_var) = metrics
 
@@ -434,50 +493,26 @@ class PhaseComponentAgent(BaseAgent):
                 final_output.append({
                     "workday_index": workday_index, 
                     "phase_component_index": phase_component_index, 
-                    "phase_component_id": phase_component["id"],
-                    "bodypart_id": phase_component["bodypart_id"],
+                    "phase_component_id": pc["id"],
+                    "bodypart_id": pc["bodypart_id"],
                     "active_phase_components": active_phase_components, 
                     "duration_var": duration_var
                 })
 
                 current_weekday = microcycle_weekdays[workday_index]
 
-                if not used_days[workday_index]["used"]:
-                    formatted += f"\n| Day {workday_index + 1} {weekday_availability[current_weekday]["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
-                    used_days[workday_index]["used"] = True
-                    formatted += header_line + "\n"
-
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
-                # Format line
-                line_fields = {
-                    "number": str(component_count + 1),
-                    "phase_component": f"{phase_component['name']}",
-                    "bodypart": phase_component["bodypart"],
-                    "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), phase_component["exercises_per_bodypart_workout_min"], phase_component["exercises_per_bodypart_workout_max"])}",
-                    "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
-                    "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"])}",
-                    "duration": f"{self._format_duration(duration_var)} sec",
-                    "duration_sec": f"{self._format_range(str(duration_var) + " seconds", phase_component["duration_min"], phase_component["duration_max"] * len(phase_components))}"
-                }
-
-                line = ""
-                for field, (_, length) in headers.items():
-                    line += self._create_formatted_field(field, line_fields[field], length)
-                formatted += line + "\n"
+                if log_schedule:
+                    formatted += self.formatted_schedule(headers, header_line, component_count, pc, metrics, weekday_availability[current_weekday], workday_index, used_days)
             else:
-                formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
-
+                if log_schedule:
+                    formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
+        
+        if log_counts:
+            formatted += self.formatted_counts(phase_components, phase_component_count, longest_sizes)
         if log_details:
-            formatted += f"Phase Component Counts:\n"
-            for phase_component_index, phase_component_number in enumerate(phase_component_count):
-                phase_component = phase_components[phase_component_index]
-                phase_component_name = f"{phase_component['name']:<{longest_sizes['phase_component']+2}} {phase_component['bodypart']:<{longest_sizes['bodypart']+2}}"
-                phase_component_frequency = self._format_range(phase_component_number, phase_component["frequency_per_microcycle_min"], phase_component["frequency_per_microcycle_max"])
-                phase_component_required = f"Required Every Workout: {phase_component["required_every_workout"]}\t\tRequired Every Microcycle: {phase_component['required_within_microcycle']}"
-                
-                formatted += f"\t{phase_component_name}: {phase_component_frequency:<16} {phase_component_required}\n"
             formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
             formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
 

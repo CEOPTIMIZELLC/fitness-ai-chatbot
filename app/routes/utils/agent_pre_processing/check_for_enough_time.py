@@ -14,7 +14,7 @@ def check_if_there_is_enough_time(total_time_needed, total_availability, maximum
         return f"Not enough time to complete the phase components. Need {total_time_needed} seconds but only have {total_availability}. Need {number_of_phase_components_that_need_to_fit} but can fit {number_of_phase_components_that_can_fit}"
     return None
 
-def check_if_there_is_enough_time_complete(pc_list, total_availability, duration_key, count_key, default_count_if_none=1):
+def Main(pc_list, total_availability, duration_key, count_key, default_count_if_none=1):
     # Check if there is enough time to complete the phase components.
     maximum_min_duration = max(item[duration_key] for item in pc_list)
     total_time_needed = retrieve_total_time_needed(pc_list, duration_key, count_key, default_count_if_none)

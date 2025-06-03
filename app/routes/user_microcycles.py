@@ -1,14 +1,14 @@
 from config import verbose
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
+from datetime import timedelta
 
 from app import db
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
-from datetime import timedelta
-
-bp = Blueprint('user_microcycles', __name__)
 
 from app.utils.common_table_queries import current_mesocycle, current_microcycle
+
+bp = Blueprint('user_microcycles', __name__)
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 

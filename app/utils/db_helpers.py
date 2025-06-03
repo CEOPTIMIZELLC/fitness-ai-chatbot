@@ -15,9 +15,7 @@ def get_item_by_id(model_class, item_id) -> Optional[Dict[str, Any]]:
     return item.to_dict()
 
 def get_or_create(session, model, defaults=None, **kwargs):
-	"""
-	Get or create a model instance while preserving integrity.
-	"""
+	"""Get or create a model instance while preserving integrity."""
 	try:
 		return session.query(model).filter_by(**kwargs).one(), False
 	except NoResultFound:
