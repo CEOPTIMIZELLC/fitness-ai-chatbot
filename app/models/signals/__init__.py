@@ -1,0 +1,1 @@
+from .user_exercise_signals import connect_user_to_exercises, connect_exercise_to_users
