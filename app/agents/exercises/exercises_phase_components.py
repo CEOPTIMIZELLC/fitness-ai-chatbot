@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from config import vertical_loading, ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
 from collections import defaultdict
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -19,6 +19,7 @@ from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_volume_vars, 
     constrain_density_vars, 
     constrain_performance_vars,
+    constrain_non_warmup_vars,
     resistances_of_same_bodypart_have_equal_sets)
 
 from app.agents.exercises.exercise_model_specific_constraints import create_duration_var
@@ -151,6 +152,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         volume_bounds, density_bounds, duration_bounds = pc_bounds["volume"], pc_bounds["density"], pc_bounds["duration"]
         performance_bounds = pc_bounds["performance"]
 
+        non_warmup_exercise_indices = [i for i, pc in enumerate(phase_components[1:], start=1) if pc["component_name"].lower() != "flexibility"]
+
         # Define variables =====================================
         vars = {}
 
@@ -186,10 +189,16 @@ class ExercisePhaseComponentAgent(BaseAgent):
         vars["duration"] = declare_duration_vars(model, max_exercises, workout_availability, vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"], name="base")
         vars["working_duration"] = declare_duration_vars(model, max_exercises, workout_availability, vars["seconds_per_exercise"], vars["reps"], vars["sets"], name="working")
 
+        # Boolean variable representing whether exercise i is warmup.
+        vars["non_warmup"] = [
+            model.NewBoolVar(f'exercise_{i}_is_not_a_warmup') 
+            for i in range(max_exercises)]
+
         # Introduce dynamic selection variables
         num_exercises_used = model.NewIntVar(min_exercises, max_exercises, 'num_exercises_used')
         model.Add(num_exercises_used == sum(vars["active_exercises"]))
 
+        constrain_non_warmup_vars(model, vars["used_pcs"], vars["non_warmup"], non_warmup_exercise_indices)
         constrain_volume_vars(model, vars["volume"], vars["reps"], vars["sets"], volume_bounds["max"])
         constrain_density_vars(model, vars["density"], vars["duration"], vars["working_duration"], duration_bounds["max"])
         constrain_performance_vars(model, vars["performance"], vars["volume"], vars["density"])
@@ -281,6 +290,11 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                    used_vars = vars["used_pcs"], 
                                    duration_vars = vars["rest"])
             logs += "- Rest count within min and max allowed rest applied.\n"
+
+        # Constraint: All components must have the same number of sets.
+        if vertical_loading:
+            ensure_all_vars_equal(model, vars["sets"], vars["non_warmup"])
+            logs += "- All non-warmup exercises have the same number of sets applied.\n"
 
         # Constraint: The resistance components must have the same number of sets.
         if constraints["resistances_have_equal_sets"]:
@@ -480,6 +494,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         model, model_with_divided_strain, vars = state["opt_model"]
         phase_component_vars, pc_count_vars, active_exercise_vars = vars["phase_components"], vars["pc_count"], vars["active_exercises"]
         seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars = vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"]
+        non_warmup_vars = vars["non_warmup"]
         volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
         duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
 
@@ -522,6 +537,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                         solver.Value(volume_vars[i]),                                       # Volume of the exercise chosen.
                         round(solver.Value(density_vars[i]) / 100, 2),                      # Density of the exercise chosen. Scaled down due to scaling up division.
                         round(solver.Value(performance_vars[i]) / 100, 2),                  # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                        not solver.Value(non_warmup_vars[i]),                               # Exercise chosen is a warmup.
                         duration_vars_current,                                              # Duration of the exercise chosen.
                         working_duration_vars_current,                                      # Working duration of the exercise chosen.
                     ))
@@ -602,6 +618,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "seconds_per_exercise": ("(Sec/Exercise", 16),
             "reps": ("Reps", 14),
             "sets": ("Sets", 10),
+            "warmup": ("Warmup", 9),
             "rest": ("Rest)", 17),
             "volume": ("Volume", 24),
             "density": ("Density", 24),
@@ -612,7 +629,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         (active_exercises, seconds_per_exercise, 
          reps_var, sets_var, rest_var, 
          volume_var, density_var, 
-         performance_var, duration, working_duration) = metrics
+         performance_var, warmup_var, 
+         duration, working_duration) = metrics
 
         volume_max = pc["volume_max"]
         density_max = pc["density_max"] / 100
@@ -628,6 +646,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "seconds_per_exercise": f"({seconds_per_exercise} sec",
             "reps": self._format_range(reps_var, pc["reps_min"], pc["reps_max"]),
             "sets": self._format_range(sets_var, pc["sets_min"], pc["sets_max"]),
+            "warmup": str(warmup_var),
             "rest": self._format_range(rest_var, pc["rest_min"] * 5, pc["rest_max"] * 5) + ")",
             "volume": f"{volume_var} (>={volume_max})",
             "density": f"{density_var} (>={density_max})",
@@ -677,7 +696,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
             (active_exercises, seconds_per_exercise, 
              reps_var, sets_var, rest_var, 
              volume_var, density_var, 
-             performance_var, duration, working_duration) = metrics
+             performance_var, warmup_var, 
+             duration, working_duration) = metrics
 
             if active_exercises:
                 final_output.append({

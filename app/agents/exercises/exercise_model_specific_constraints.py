@@ -242,7 +242,19 @@ def constrain_performance_vars(model, performance_vars, volume_vars, density_var
         model.AddMultiplicationEquality(performance_var, [volume_var, density_var])
     return None
 
+# Indicate that the phase component chosen is not a warmup if the exercise is a non warmup phase component.
+def constrain_non_warmup_vars(model, used_pc_vars, non_warmup_vars, non_warmup_exercise_indices):
+    for used_pc_var, non_warmup_var in zip(used_pc_vars, non_warmup_vars):
+        non_warmup_pc_used = [used_pc_var[i] for i in non_warmup_exercise_indices]
+        warmup_pc_used = [used_pc_var[i].Not() for i in non_warmup_exercise_indices]
+
+        # If any non warmup phase component is selected, non_warmup_var should be True
+        model.AddBoolOr(non_warmup_pc_used).OnlyEnforceIf(non_warmup_var)
+        model.AddBoolAnd(warmup_pc_used).OnlyEnforceIf(non_warmup_var.Not())
+    return None
+
 def resistances_of_same_bodypart_have_equal_sets(model, phase_components, used_pcs_vars, sets_vars):
+    # Create dictionary of the resistances per bodypart.
     resistance_phase_components = {}
     for i, phase_component in enumerate(phase_components):
         if phase_component["component_name"].lower() == "resistance":

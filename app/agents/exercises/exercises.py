@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from config import vertical_loading, ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from dotenv import load_dotenv
@@ -253,6 +253,14 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                                         required_items = pc["allowed_exercises"], 
                                         entry_vars = [exercise_vars["exercises"][i]])
             logs += "- Only use allowed exercises applied.\n"
+
+        # Constraint: All components must have the same number of sets.
+        if vertical_loading:
+            non_warmup_pc_indices = [i for i, pc in enumerate(phase_components[1:], start=1) if pc["component_name"].lower() != "flexibility"]
+            non_warmup_exercise_indices = [i for i, pc in enumerate(phase_component_ids) if pc in non_warmup_pc_indices]
+            non_warmup_sets = [pc_vars["sets"][i] for i in non_warmup_exercise_indices]
+            ensure_all_vars_equal(model, non_warmup_sets)
+            logs += "- All exercises have the same number of sets applied.\n"
 
         # Constraint: The resistance components must have the same number of sets.
         if constraints["resistances_have_equal_sets"]:
