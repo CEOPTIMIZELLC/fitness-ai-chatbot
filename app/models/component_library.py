@@ -5,6 +5,12 @@ from app.models.mixins import TableNameMixin, NameMixin
 # The components that exist for phase components.
 class Component_Library(BaseModel, TableNameMixin, NameMixin):
     __table_args__ = {'comment': "The library of components that exist for phase components."}
+    # Fields
+    is_warmup = db.Column(
+        db.Boolean, 
+        nullable=False, 
+        comment='Whether or not the component is considered a warmup phase.')
+
     # Relationships
     phase_components = db.relationship(
         "Phase_Component_Library", 
@@ -24,5 +30,6 @@ class Component_Library(BaseModel, TableNameMixin, NameMixin):
     def to_dict(self):
         return {
             "id": self.id, 
-            "name": self.name
+            "name": self.name,
+            "is_warmup": self.is_warmup
         }

@@ -205,7 +205,16 @@ class Data_Importer:
         # Retrieve Components from phase components sheet
         component_names = self.phase_components_df['component'].unique()
 
-        self.component_ids = create_list_of_table_entries(self.component_ids, component_names, Component_Library)
+        # Create list of Subcomponents
+        for i, name in enumerate(component_names):
+            self.component_ids[name] = i+1
+            db_entry = Component_Library(
+                id=i+1, 
+                name=name, 
+                is_warmup=True if (name.lower() == "flexibility") else False)
+            db.session.merge(db_entry)
+        db.session.commit()
+
         return None
 
     def subcomponents(self):
