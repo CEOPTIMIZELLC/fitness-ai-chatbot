@@ -44,7 +44,8 @@ dummy_phase_component = {
     "exercises_per_bodypart_workout_min": 0,
     "exercises_per_bodypart_workout_max": 0,
     "exercise_selection_note": 0,
-    'allowed_exercises': [0],
+    "allowed_exercises": [0],
+    "is_warmup": True,
 }
 
 def user_component_dict(workout, pc):
@@ -76,6 +77,7 @@ def user_component_dict(workout, pc):
         "pc_ids": [pc.component_id, pc.subcomponent_id],
         "required_every_workout": pc.required_every_workout,
         "required_within_microcycle": pc.required_within_microcycle,
+        "is_warmup": pc.components.is_warmup,
         "density_priority": pc.subcomponents.density,
         "volume_priority": pc.subcomponents.volume,
         "load_priority": pc.subcomponents.load,

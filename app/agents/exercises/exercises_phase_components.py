@@ -152,7 +152,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         volume_bounds, density_bounds, duration_bounds = pc_bounds["volume"], pc_bounds["density"], pc_bounds["duration"]
         performance_bounds = pc_bounds["performance"]
 
-        non_warmup_exercise_indices = [i for i, pc in enumerate(phase_components[1:], start=1) if pc["component_name"].lower() != "flexibility"]
+        non_warmup_pc_indices = [i for i, pc in enumerate(phase_components) if not pc["is_warmup"]]
 
         # Define variables =====================================
         vars = {}
@@ -198,7 +198,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         num_exercises_used = model.NewIntVar(min_exercises, max_exercises, 'num_exercises_used')
         model.Add(num_exercises_used == sum(vars["active_exercises"]))
 
-        constrain_non_warmup_vars(model, vars["used_pcs"], vars["non_warmup"], non_warmup_exercise_indices)
+        constrain_non_warmup_vars(model, vars["used_pcs"], vars["non_warmup"], non_warmup_pc_indices)
         constrain_volume_vars(model, vars["volume"], vars["reps"], vars["sets"], volume_bounds["max"])
         constrain_density_vars(model, vars["density"], vars["duration"], vars["working_duration"], duration_bounds["max"])
         constrain_performance_vars(model, vars["performance"], vars["volume"], vars["density"])
