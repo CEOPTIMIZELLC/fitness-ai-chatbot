@@ -542,7 +542,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         """Create all header fields with consistent formatting"""
         return {
             "superset": ("Sub", 6),
-            "number": ("", 5),
+            "number": ("No", 5),
             "exercise": ("Exercise", longest_sizes["exercise"] + 4),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),

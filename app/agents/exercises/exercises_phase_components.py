@@ -610,7 +610,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
     def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
-            "number": ("", 5),
+            "number": ("No", 5),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
             "warmup": ("Warmup", 9),
