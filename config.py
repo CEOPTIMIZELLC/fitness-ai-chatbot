@@ -5,6 +5,7 @@ from datetime import timedelta
 user_equipment_population_default = 2
 ortools_solver_time_in_seconds = 5
 vertical_loading = True
+performance_decay_grace_period = 10
 
 # Configurations for verbose options.
 verbose = True
