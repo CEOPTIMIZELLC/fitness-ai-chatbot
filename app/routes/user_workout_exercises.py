@@ -202,7 +202,7 @@ def complete_workout():
         new_one_rep_max = round((new_weight * (30 + exercise.reps)) / 30, 2)
 
         # Only replace if the new one rep max is larger.
-        user_exercise.one_rep_max = max(user_exercise.one_rep_max, new_one_rep_max)
+        user_exercise.one_rep_max = max(user_exercise.decayed_one_rep_max, new_one_rep_max)
         user_exercise.one_rep_load = new_one_rep_max
         user_exercise.volume = exercise.volume
         user_exercise.density = exercise.density

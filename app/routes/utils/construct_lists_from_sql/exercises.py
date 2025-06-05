@@ -63,7 +63,7 @@ def exercise_dict(exercise, user_exercise):
         "marking_equipment_measurements": user_exercise.has_marking_equipment[1],
         "other_equipment_ids": exercise.all_other_equipment,
         "other_equipment_measurements": user_exercise.has_other_equipment[1],
-        "one_rep_max": user_exercise.one_rep_max,                               # Scaled up to avoid floating point errors from model.
+        "one_rep_max": user_exercise.decayed_one_rep_max,                       # Scaled up to avoid floating point errors from model.
         "one_rep_load": user_exercise.one_rep_load,                             # Scaled up to avoid floating point errors from model.
         "volume": user_exercise.volume,                                         # Scaled up to avoid floating point errors from model.
         "density": int(user_exercise.density * 100),                            # Scaled up to avoid floating point errors from model.

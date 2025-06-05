@@ -8,12 +8,10 @@ from app.models.base import BaseModel
 from app.models.mixins import TableNameMixin
 from collections import defaultdict, Counter
 
-def linear_value_change(original_value, days_since, minimum_value=0):
+def linear_value_change(original_value, days_since):
     decay_rate = 0.01
     performance_change = (-decay_rate * days_since)
     decayed_value = original_value + performance_change
-    if decayed_value < minimum_value:
-        return minimum_value
     return decayed_value
 
 def exponential_value_change(original_value, days_since):
@@ -21,6 +19,17 @@ def exponential_value_change(original_value, days_since):
     performance_change = math.exp(-decay_rate * days_since)
     decayed_value = original_value * performance_change
     return decayed_value
+
+def decayed_value(original_value, days_since):
+    # Wait for the grace period to end before altering the original value.
+    if days_since <= grace_period:
+        return original_value
+
+    # Only use period of time after the grace period.
+    effective_days = days_since - grace_period
+    if exponential_decay:
+        return exponential_value_change(original_value, effective_days)
+    return linear_value_change(original_value, effective_days)
 
 class User_Exercises(db.Model, TableNameMixin):
     """Exercise available to a user during a training period."""
@@ -49,18 +58,17 @@ class User_Exercises(db.Model, TableNameMixin):
         return days_since
 
     @hybrid_property
+    def decayed_one_rep_max(self):
+        if not self.exercises.is_weighted: 
+            return 0
+        one_rep_max = int(decayed_value(self.one_rep_max, self.days_since))
+        if one_rep_max < 10:
+            return 10
+        return one_rep_max
+
+    @hybrid_property
     def decayed_performance(self):
-        days_since = self.days_since
-
-        # Wait for the grace period to end before altering performance.
-        if days_since <= grace_period:
-            return float(self.performance)
-
-        # Only use period of time after the grace period.
-        effective_days = days_since - grace_period
-        if exponential_decay:
-            return exponential_value_change(float(self.performance), effective_days)
-        return linear_value_change(float(self.performance), effective_days)
+        return decayed_value(float(self.performance), self.days_since)
 
     def has_equipment(self, required_equipment):
         if not required_equipment:
@@ -148,6 +156,7 @@ class User_Exercises(db.Model, TableNameMixin):
             "days_since": self.days_since,
             "last_performed": self.last_performed,
             "one_rep_max": self.one_rep_max,
+            "decayed_one_rep_max": self.decayed_one_rep_max,
             "one_rep_load": self.one_rep_load,
             "volume": self.volume,
             "density": self.density,
