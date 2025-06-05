@@ -5,7 +5,12 @@ from datetime import timedelta
 user_equipment_population_default = 2
 ortools_solver_time_in_seconds = 5
 vertical_loading = True
+
+# Configurations for exercise performance decay.
 performance_decay_grace_period = 10
+
+## Linear decay if False.
+exponential_decay = True
 
 # Configurations for verbose options.
 verbose = True

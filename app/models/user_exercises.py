@@ -2,15 +2,25 @@ from datetime import datetime, date
 import math
 from app import db
 from config import performance_decay_grace_period as grace_period
+from config import exponential_decay
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.models.base import BaseModel
 from app.models.mixins import TableNameMixin
 from collections import defaultdict, Counter
 
-def performance_change(days_since):
-    decay_rate = 0.01  # Tune as needed
+def linear_value_change(original_value, days_since, minimum_value=0):
+    decay_rate = 0.01
+    performance_change = (-decay_rate * days_since)
+    decayed_value = original_value + performance_change
+    if decayed_value < minimum_value:
+        return minimum_value
+    return decayed_value
+
+def exponential_value_change(original_value, days_since):
+    decay_rate = 0.01
     performance_change = math.exp(-decay_rate * days_since)
-    return performance_change
+    decayed_value = original_value * performance_change
+    return decayed_value
 
 class User_Exercises(db.Model, TableNameMixin):
     """Exercise available to a user during a training period."""
@@ -46,8 +56,11 @@ class User_Exercises(db.Model, TableNameMixin):
         if days_since <= grace_period:
             return float(self.performance)
 
+        # Only use period of time after the grace period.
         effective_days = days_since - grace_period
-        return float(self.performance) * performance_change(effective_days)
+        if exponential_decay:
+            return exponential_value_change(float(self.performance), effective_days)
+        return linear_value_change(float(self.performance), effective_days)
 
     def has_equipment(self, required_equipment):
         if not required_equipment:
