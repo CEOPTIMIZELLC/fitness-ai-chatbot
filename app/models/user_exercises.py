@@ -1,9 +1,16 @@
+from datetime import datetime, date
+import math
 from app import db
+from config import performance_decay_grace_period as grace_period
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.models.base import BaseModel
 from app.models.mixins import TableNameMixin
 from collections import defaultdict, Counter
 
+def performance_change(days_since):
+    decay_rate = 0.01  # Tune as needed
+    performance_change = math.exp(-decay_rate * days_since)
+    return performance_change
 
 class User_Exercises(db.Model, TableNameMixin):
     """Exercise available to a user during a training period."""
@@ -20,10 +27,27 @@ class User_Exercises(db.Model, TableNameMixin):
     performance = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='density * volume')
     duration = db.Column(db.Integer, nullable=False, default=0, comment='The duration of the exercise.')
     working_duration = db.Column(db.Integer, nullable=False, default=0, comment='The working duration of the exercise.')
+    last_performed = db.Column(db.Date, nullable=False, default=db.func.current_timestamp(), comment='Date that the exercise was last performed.')
 
     # Relationships
     users = db.relationship("Users", back_populates="exercises")
     exercises = db.relationship("Exercise_Library", back_populates="users")
+
+    @hybrid_property
+    def days_since(self):
+        days_since = (date.today() - self.last_performed).days
+        return days_since
+
+    @hybrid_property
+    def decayed_performance(self):
+        days_since = self.days_since
+
+        # Wait for the grace period to end before altering performance.
+        if days_since <= grace_period:
+            return float(self.performance)
+
+        effective_days = days_since - grace_period
+        return float(self.performance) * performance_change(effective_days)
 
     def has_equipment(self, required_equipment):
         if not required_equipment:
@@ -108,12 +132,15 @@ class User_Exercises(db.Model, TableNameMixin):
             "user_id": self.user_id, 
             "exercise_id": self.exercise_id, 
             "exercise_name": self.exercises.name,
+            "days_since": self.days_since,
+            "last_performed": self.last_performed,
             "one_rep_max": self.one_rep_max,
             "one_rep_load": self.one_rep_load,
             "volume": self.volume,
             "density": self.density,
             "intensity": self.intensity,
             "performance": self.performance,
+            "decayed_performance": self.decayed_performance, 
             "duration": self.duration,
             "working_duration": self.working_duration,
             "has_supportive_equipment": self.has_supportive_equipment,

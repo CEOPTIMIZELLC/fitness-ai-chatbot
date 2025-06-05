@@ -209,6 +209,7 @@ def complete_workout():
         user_exercise.intensity = exercise.intensity
         user_exercise.duration = exercise.duration
         user_exercise.working_duration = exercise.working_duration
+        user_exercise.last_performed = exercise.workout_days.date
 
         # Only replace if the new performance is larger.
         user_exercise.performance = max(user_exercise.performance, exercise.performance)
