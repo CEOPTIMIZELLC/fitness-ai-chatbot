@@ -68,7 +68,7 @@ def exercise_dict(exercise, user_exercise):
         "volume": user_exercise.volume,                                         # Scaled up to avoid floating point errors from model.
         "density": int(user_exercise.density * 100),                            # Scaled up to avoid floating point errors from model.
         "intensity": user_exercise.intensity,
-        "performance": int(user_exercise.performance * 100),                    # Scaled up to avoid floating point errors from model.
+        "performance": int(user_exercise.decayed_performance * 100),                    # Scaled up to avoid floating point errors from model.
         "duration": user_exercise.duration,
         "working_duration": user_exercise.working_duration,
     }

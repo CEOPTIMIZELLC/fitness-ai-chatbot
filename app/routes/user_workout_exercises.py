@@ -212,7 +212,7 @@ def complete_workout():
         user_exercise.last_performed = exercise.workout_days.date
 
         # Only replace if the new performance is larger.
-        user_exercise.performance = max(user_exercise.performance, exercise.performance)
+        user_exercise.performance = max(user_exercise.decayed_performance, exercise.performance)
 
         db.session.commit()
 
