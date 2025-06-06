@@ -1,4 +1,4 @@
-from config import vertical_loading, ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from dotenv import load_dotenv
@@ -255,12 +255,12 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             logs += "- Only use allowed exercises applied.\n"
 
         # Constraint: All components must have the same number of sets.
-        if vertical_loading:
+        if constraints["vertical_loading"]:
             non_warmup_pc_indices = [i for i, pc in enumerate(phase_components) if not pc["is_warmup"]]
             non_warmup_exercise_indices = [i for i, pc in enumerate(phase_component_ids) if pc in non_warmup_pc_indices]
             non_warmup_sets = [pc_vars["sets"][i] for i in non_warmup_exercise_indices]
             ensure_all_vars_equal(model, non_warmup_sets)
-            logs += "- All exercises have the same number of sets applied.\n"
+            logs += "- All non warm-up exercises have the same number of sets applied.\n"
 
         # Constraint: The resistance components must have the same number of sets.
         if constraints["resistances_have_equal_sets"]:
@@ -622,7 +622,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return schedule_counts + schedule_not_included + "\n"
 
     def format_agent_output(self, solution, formatted, schedule, phase_components, exercises, projected_duration, workout_availability):
-        self.format_output_schedule_separated(formatted, schedule, phase_components, exercises)
         final_output = []
 
         phase_component_count = [0] * len(phase_components)
@@ -716,159 +715,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             formatted += f"Total Working Effort: {solution['working_effort']}\n"
             formatted += f"Workout Length Allowed: {self._format_duration(workout_availability)}\n"
         return final_output, formatted
-
-    def formatted_sub_header_line(self, headers):
-        header_line = ""
-        for label, (text, length) in headers.items():
-            header_line += self._create_formatted_field(text, text, length)
-        return header_line
-
-    def _create_final_header_fields(self, longest_sizes: dict) -> dict:
-        """Create all header fields with consistent formatting"""
-        return {
-            "set": ("Set", 6),
-            "superset": ("Sub", 6),
-            "number": ("No", 5),
-            "exercise": ("Exercise", longest_sizes["exercise"] + 4),
-            "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
-            "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
-            "warmup": ("Warmup", 9),
-            "duration": ("Duration", 12),
-            "working_duration": ("WDuration", 12),
-            "base_strain": ("BStrain", 10),
-            "seconds_per_exercise": ("Sec/Exer", 11),
-            "reps": ("Reps", 7),
-            # "sets": ("Sets", 7),
-            "rest": ("Rest", 7),
-            "one_rep_max": ("1RM", 6),
-            "training_weight": ("Weight", 9),
-            "intensity": ("Intensity", 12),
-            "volume": ("Volume", 9),
-            "density": ("Density", 10),
-            "performance": ("Performance", 14),
-            "end": ("", 2),
-        }
-
-
-    def formatted_final_schedule(self, headers, i, pc, exercise, set_count, superset_var, metrics):
-        (base_strain, seconds_per_exercise, 
-         reps_var, sets_var, rest_var, intensity_var, 
-         one_rep_max_var, training_weight_var, is_weighted_var, 
-         volume_var, density_var, 
-         performance_var, duration, working_duration) = metrics
-
-        # Format line
-        line_fields = {
-            "set": str(set_count),
-            "superset": str(superset_var["superset_current"]) if superset_var["is_resistance"] else str(superset_var["not_a_superset"]),
-            "number": str(i + 1),
-            "exercise": exercise["name"],
-            "phase_component": f"{pc['name']}",
-            "bodypart": pc["bodypart_name"],
-            "warmup": f"{pc["is_warmup"]}",
-            "duration": f"{duration // sets_var} sec",
-            "working_duration": f"{working_duration // sets_var} sec",
-            "base_strain": str(base_strain),
-            "seconds_per_exercise": f"{seconds_per_exercise} sec",
-            "reps": str(reps_var),
-            # "sets": str(sets_var),
-            "rest": str(rest_var),
-            "one_rep_max": str(one_rep_max_var),
-            "training_weight": str(training_weight_var) if is_weighted_var else "",
-            "intensity": str(intensity_var) if is_weighted_var else "",
-            "volume": str(volume_var),
-            "density": str(density_var),
-            "performance": str(performance_var),
-            "end": "",
-        }
-
-        line = ""
-        for field, (_, length) in headers.items():
-            line += self._create_formatted_field(field, line_fields[field], length)
-        return line + "\n"
-
-    def check_if_component_is_resistance(self, component_id, bodypart_id, superset_var):
-        # Check if the current component is resistance.
-        if component_id == 6:
-            superset_var["is_resistance"] = True
-
-            # Count up the superset count if a new superset is encountered.
-            if superset_var["bodypart_id"] != bodypart_id:
-                superset_var["superset_current"] += 1
-            
-            superset_var["bodypart_id"] = bodypart_id
-        else:
-            superset_var["is_resistance"] = False
-        return superset_var
-    
-    def log_sub_schedule(self, vertical_sub_schedule, sub_schedule_name, headers, header_line, phase_component_count, phase_components, exercises, schedule, set_count=None):
-        formatted = ""
-        # Create header line
-        if log_schedule: 
-            formatted += f"\n| {sub_schedule_name} |\n"
-            formatted += header_line
-
-        superset_var = {
-            "not_a_superset": "-", 
-            "superset_current": 0, 
-            "superset_previous": 0, 
-            "bodypart_id": 0,
-            "is_resistance": False}
-
-        for component_count, (i, exercise_index, phase_component_index, component_id, subcomponent_id, bodypart_id, *metrics) in enumerate(schedule):
-            exercise = exercises[exercise_index]
-            pc = phase_components[phase_component_index]
-            sub_schedule_part = not pc["is_warmup"] if vertical_sub_schedule else pc["is_warmup"]
-            if sub_schedule_part:
-                # Count the number of occurrences of each phase component
-                phase_component_count[phase_component_index] += 1
-
-                superset_var["superset_previous"] = superset_var["superset_current"]
-
-                # Check if the current component is resistance.
-                superset_var = self.check_if_component_is_resistance(component_id, bodypart_id, superset_var)
-
-                if log_schedule:
-                    if set_count:
-                        formatted += self.formatted_final_schedule(headers, component_count, pc, exercise, set_count, superset_var, metrics)
-                    else:
-                        set_var = metrics[3]
-                        for set_count in range(1, set_var+1):
-                            formatted += self.formatted_final_schedule(headers, component_count, pc, exercise, set_count, superset_var, metrics)
-        return formatted
-
-    def format_output_schedule_separated(self, formatted, schedule, phase_components, exercises):
-        phase_component_count = [0] * len(phase_components)
-
-        # Calculate longest string sizes
-        longest_sizes = {
-            "phase_component": longest_string_size_for_key(phase_components[1:], "name"),
-            "bodypart": longest_string_size_for_key(phase_components[1:], "bodypart_name"),
-            "exercise": longest_string_size_for_key(exercises[1:], "name")
-        }
-
-        # Create headers
-        headers = self._create_final_header_fields(longest_sizes)
-
-        # Create header line
-        if log_schedule: 
-            formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
-            header_line = self.formatted_sub_header_line(headers) + "\n"
-
-        max_sets = max(entry[9] if not phase_components[entry[2]]["is_warmup"] else 1 for entry in schedule)
-
-        # Create header line
-        sub_schedule_name = "WARM UP"
-
-        formatted += self.log_sub_schedule(False, sub_schedule_name, headers, header_line, phase_component_count, phase_components, exercises, schedule)
-        
-        for set_count in range(1, max_sets+1):
-            sub_schedule_name = f"VERTICAL SET {set_count}"
-            formatted += self.log_sub_schedule(True, sub_schedule_name, headers, header_line, phase_component_count, phase_components, exercises, schedule, set_count)
-        
-        print(formatted)
-
-        return formatted
 
     def create_optimization_graph(self, state_class):
         builder = StateGraph(state_class)
