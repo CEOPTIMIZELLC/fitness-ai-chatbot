@@ -1,3 +1,4 @@
+from config import vertical_loading
 from config import verbose
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
@@ -49,9 +50,15 @@ def duration_to_weekdays(dur, start_date, microcycle_id):
         weekday_number = (start_date_number + i) % 7
         microcycle_weekdays.append(weekday_number)
 
+        if vertical_loading:
+            loading_system_id = 1
+        else:
+            loading_system_id = 2
+
         new_workday = User_Workout_Days(
             microcycle_id = microcycle_id,
             weekday_id = weekday_number,
+            loading_system_id = loading_system_id,
             order = i+1,
             date = (start_date + timedelta(days=i))
         )

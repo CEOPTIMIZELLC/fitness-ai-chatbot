@@ -9,6 +9,7 @@ class User_Workout_Days(BaseModel, TableNameMixin, OrderedMixin):
     # Fields
     microcycle_id = db.Column(db.Integer, db.ForeignKey("user_microcycles.id", ondelete='CASCADE'), nullable=False)
     weekday_id = db.Column(db.Integer, db.ForeignKey("weekday_library.id", ondelete='CASCADE'), nullable=False)
+    loading_system_id = db.Column(db.Integer, db.ForeignKey("loading_system_library.id", ondelete='CASCADE'), nullable=False)
 
     date = db.Column(
         db.Date, 
@@ -19,6 +20,7 @@ class User_Workout_Days(BaseModel, TableNameMixin, OrderedMixin):
     # Relationships
     weekdays = db.relationship("Weekday_Library", back_populates="workout_days")
     microcycles = db.relationship("User_Microcycles", back_populates="workout_days")
+    loading_systems = db.relationship("Loading_System_Library", back_populates="workout_days")
     workout_components = db.relationship(
         "User_Workout_Components", 
         back_populates="workout_days", 
@@ -41,6 +43,8 @@ class User_Workout_Days(BaseModel, TableNameMixin, OrderedMixin):
             "microcycle_id": self.microcycle_id, 
             "weekday_id": self.weekday_id, 
             "weekday_name": self.weekdays.name, 
+            "loading_system_id": self.loading_system_id, 
+            "loading_system_name": self.loading_systems.name, 
             "order": self.order, 
             "date": self.date, 
             "components": components, 
