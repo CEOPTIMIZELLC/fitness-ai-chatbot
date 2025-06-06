@@ -68,7 +68,7 @@ class User_Exercises(db.Model, TableNameMixin):
 
     @hybrid_property
     def performance_decayed(self):
-        return decayed_value(float(self.performance), self.days_since)
+        return round(decayed_value(float(self.performance), self.days_since), 2)
 
     def has_equipment(self, required_equipment):
         if not required_equipment:
