@@ -115,7 +115,7 @@ def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
             workout_day_id = workout_day_id,
             phase_component_id = exercise["phase_component_id"],
             exercise_id = exercise["exercise_id"],
-            #bodypart_id = exercise["bodypart_id"],
+            bodypart_id = exercise["bodypart_id"],
             order = i,
             reps = exercise["reps_var"],
             sets = exercise["sets_var"],
