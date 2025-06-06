@@ -172,7 +172,7 @@ def exercise_initializer():
     parameters = retrieve_pc_parameters(user_workout_day)
     if isinstance(parameters, tuple):
         return parameters
-    constraints={}
+    constraints={"vertical_loading": user_workout_day.loading_systems.id == 1}
 
     result = exercises_main(parameters, constraints)
     if verbose:
@@ -250,7 +250,7 @@ def exercise_phase_components_test():
     parameters = retrieve_pc_parameters(user_workout_day)
     if isinstance(parameters, tuple):
         return parameters
-    constraints={}
+    constraints={"vertical_loading": user_workout_day.loading_systems.id == 1}
 
     result = exercise_pc_main(parameters, constraints)
     if verbose:

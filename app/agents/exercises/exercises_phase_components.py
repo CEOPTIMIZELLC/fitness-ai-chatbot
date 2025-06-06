@@ -1,4 +1,4 @@
-from config import vertical_loading, ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
 from collections import defaultdict
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -33,6 +33,7 @@ available_constraints = """
 - base_strain_equals: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
 - use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
 - no_duplicate_exercises: Forces each exercise to only appear once in the schedule.
+- vertical_loading: Forces all non warm-up exercises to have the same number of sets.
 - secs_equals: Forces the number of seconds per exercise to be between the minimum and maximum values allowed for the phase component.
 - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
 - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
@@ -108,6 +109,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "duration_within_availability": True,           # The time of a workout won't exceed the time allowed for that given day.
             "use_allowed_exercises": True,                  # Only use exercises that are allowed for the phase component and bodypart combination.
             "no_duplicate_exercises": True,                 # Ensure each exercise only appears once
+            "vertical_loading": True,                       # Non Warm-Up phases will have the same number of sets.
             "use_all_phase_components": True,               # At least one exercise should be given each phase component.
             "base_strain_equals": True,                     # The base strain of the exercise may only be a number equal to the base strain allowed for the exercise.
             "one_rep_max_equals": True,                     # The 1RM of the exercise may only be a number equal to the 1RM allowed for the exercise selected.
@@ -291,8 +293,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                    duration_vars = vars["rest"])
             logs += "- Rest count within min and max allowed rest applied.\n"
 
-        # Constraint: All components must have the same number of sets.
-        if vertical_loading:
+        # Constraint: All non warmup components must have the same number of sets.
+        if constraints["vertical_loading"]:
             ensure_all_vars_equal(model, vars["sets"], vars["non_warmup"])
             logs += "- All non-warmup exercises have the same number of sets applied.\n"
 
