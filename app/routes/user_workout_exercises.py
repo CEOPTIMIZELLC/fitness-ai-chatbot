@@ -25,6 +25,7 @@ from app.routes.utils import retrieve_total_time_needed
 from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list
 
 from app.routes.utils import verify_pc_information
+from app.routes.utils import print_workout_exercises_schedule
 
 bp = Blueprint('user_workout_exercises', __name__)
 
@@ -157,6 +158,29 @@ def get_user_current_exercises_list():
     result = [user_workout_exercise.to_dict() 
               for user_workout_exercise in user_workout_exercises]
     return jsonify({"status": "success", "exercises": result}), 200
+
+# Retrieve user's current microcycle's workout exercises
+@bp.route('/current_formatted_list', methods=['GET'])
+@login_required
+def get_user_current_exercises_formatted_list():
+    user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+
+    user_workout_exercises = user_workout_day.exercises
+    if not user_workout_exercises:
+        return jsonify({"status": "error", "message": "No exercises day found."}), 404
+    
+    loading_system_id = user_workout_day.loading_system_id
+
+    user_workout_exercises_dict = [user_workout_exercise.to_dict() | 
+                                   {"component_id": user_workout_exercise.phase_components.components.id}
+                                   for user_workout_exercise in user_workout_exercises]
+    
+    formatted_schedule = print_workout_exercises_schedule(loading_system_id, user_workout_exercises_dict)
+    if verbose:
+        print(formatted_schedule)
+    return jsonify({"status": "success", "exercises": formatted_schedule}), 200
 
 # Assigns exercises to workouts.
 @bp.route('/', methods=['POST', 'PATCH'])
