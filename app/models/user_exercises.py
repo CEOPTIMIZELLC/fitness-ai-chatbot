@@ -58,7 +58,7 @@ class User_Exercises(db.Model, TableNameMixin):
         return days_since
 
     @hybrid_property
-    def decayed_one_rep_max(self):
+    def one_rep_max_decayed(self):
         if not self.exercises.is_weighted: 
             return 0
         one_rep_max = int(decayed_value(self.one_rep_max, self.days_since))
@@ -67,7 +67,7 @@ class User_Exercises(db.Model, TableNameMixin):
         return one_rep_max
 
     @hybrid_property
-    def decayed_performance(self):
+    def performance_decayed(self):
         return decayed_value(float(self.performance), self.days_since)
 
     def has_equipment(self, required_equipment):
@@ -156,13 +156,13 @@ class User_Exercises(db.Model, TableNameMixin):
             "days_since": self.days_since,
             "last_performed": self.last_performed,
             "one_rep_max": self.one_rep_max,
-            "decayed_one_rep_max": self.decayed_one_rep_max,
+            "one_rep_max_decayed": self.one_rep_max_decayed,
             "one_rep_load": self.one_rep_load,
             "volume": self.volume,
             "density": self.density,
             "intensity": self.intensity,
             "performance": self.performance,
-            "decayed_performance": self.decayed_performance, 
+            "performance_decayed": self.performance_decayed, 
             "duration": self.duration,
             "working_duration": self.working_duration,
             "has_supportive_equipment": self.has_supportive_equipment,
