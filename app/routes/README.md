@@ -141,6 +141,12 @@
 > > goal
 > > runs (optional, default=1)
 > > ```
+> > 
+> > ## Populate Current User's Exercises With Random Performances
+> > - For the current user's exercises, each is given a random: last day performed (relative to current date), density, volume, and performance. This allows for easier testing of the decayed performance and decayed 1RM.
+> > ```
+> > [POST] /dev_tests/populate_user_exercises
+> > ```
 
 <hr style="border:2px solid gray">
 

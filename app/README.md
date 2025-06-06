@@ -21,6 +21,7 @@ All endpoints should begin with `localhost:5000`
 | --- | --- | --- | --- |
 | **[GET]** | `/dev_tests/pipeline` | | Retrieves the current state of the pipeline for the current user. |
 | **[POST]** | `/dev_tests/pipeline` | **(raw)**: `availability, goal, runs (optional, default=1)` | Runs the pipeline for the current user, including the availability for each workday and the maximum workout length. |
+| **[GET]** | `/dev_tests/populate_user_exercises` | | Populates current user's exercises with random performance values. |
 
 ### [Authentication](routes/auth.py)
 Routes related to the creation and deletion of accounts and users, as well as logging in and logging out.

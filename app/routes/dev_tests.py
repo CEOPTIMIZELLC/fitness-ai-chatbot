@@ -1,8 +1,11 @@
-from random import randrange
+from random import randint
+from datetime import timedelta, date
 from flask import request, jsonify, Blueprint
 
 from flask_login import current_user, login_required
 
+from config import performance_decay_grace_period
+from app import db
 from app.utils.sql import sql_app
 from app.utils.table_context_parser import context_retriever_app
 
@@ -138,6 +141,38 @@ def test_equipment_sql():
 
     return results
 
+
+# Apply random performance metrics to all user exercises.
+def populate_user_exercise(user_exercise):
+    # Set the last performed to be a date to allow for performance decay
+    days_since = randint(performance_decay_grace_period - 1, 
+                         performance_decay_grace_period + 10)
+    user_exercise.last_performed = date.today() - timedelta(days=days_since)
+
+    # Set user exercise metrics to random performance values.
+    new_density = randint(1, 100) / 100
+    new_volume = randint(0, 40)
+
+    # Add random weight to volume if weighted
+    if user_exercise.exercises.is_weighted:
+        new_volume *= randint(1, 100)
+        user_exercise.one_rep_max = randint(10, 100)
+    
+    user_exercise.density = new_density
+    user_exercise.volume = new_volume
+    user_exercise.performance = new_density * new_volume
+    db.session.commit()
+    return user_exercise.to_dict()
+
+# Set all of the user exercise performances to test performances and 1RM at a previous date for testing purposes.
+@bp.route('/populate_user_exercises', methods=['POST'])
+@login_required
+def populate_user_exercises():
+    user_exercises = current_user.exercises
+    result = []
+    for user_exercise in user_exercises:
+        result.append(populate_user_exercise(user_exercise))
+    return jsonify({"status": "success", "exercises": result}), 200
 
 
 # Testing for the SQL to add and check training equipment.
