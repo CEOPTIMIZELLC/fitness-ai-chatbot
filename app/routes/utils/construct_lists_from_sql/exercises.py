@@ -63,12 +63,12 @@ def exercise_dict(exercise, user_exercise):
         "marking_equipment_measurements": user_exercise.has_marking_equipment[1],
         "other_equipment_ids": exercise.all_other_equipment,
         "other_equipment_measurements": user_exercise.has_other_equipment[1],
-        "one_rep_max": user_exercise.decayed_one_rep_max,
+        "one_rep_max": user_exercise.one_rep_max_decayed,
         "one_rep_load": user_exercise.one_rep_load,
         "volume": user_exercise.volume,
         "density": int(user_exercise.density * 100),                                    # Scaled up to avoid floating point errors from model.
         "intensity": user_exercise.intensity,
-        "performance": int(user_exercise.decayed_performance * 100),                    # Scaled up to avoid floating point errors from model.
+        "performance": int(user_exercise.performance_decayed * 100),                    # Scaled up to avoid floating point errors from model.
         "duration": user_exercise.duration,
         "working_duration": user_exercise.working_duration,
     }
