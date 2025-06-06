@@ -55,7 +55,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     # Performance of the exercise.
     @hybrid_property
     def performance(self):
-        return self.volume * self.density
+        return math.floor(self.volume * self.density * 100) / 100
 
     # Duration of the exercise based on the formula adjusted with strain.
     @hybrid_property
