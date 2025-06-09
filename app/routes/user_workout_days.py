@@ -9,7 +9,7 @@ from app import db
 from app.models import (
     Phase_Library, 
     Phase_Component_Library, 
-    Phase_Component_Bodyparts, 
+    Bodypart_Library, 
     Weekday_Library, 
     User_Weekday_Availability, 
     User_Workout_Components, 
@@ -21,12 +21,14 @@ from app.models import (
 
 from app.agents.phase_components import Main as phase_component_main
 
+from app.utils.db_helpers import get_all_items
 from app.utils.common_table_queries import current_microcycle, current_workout_day
 from app.utils.print_long_output import print_long_output
 
 from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
 
 from app.routes.utils import verify_pc_information
+from app.routes.utils import print_workout_days_schedule
 
 bp = Blueprint('user_workout_days', __name__)
 
@@ -165,6 +167,29 @@ def get_user_current_workout_days_list():
     for user_workout_day in user_workout_days:
         result.append(user_workout_day.to_dict())
     return jsonify({"status": "success", "phase_components": result}), 200
+
+
+# Retrieve user's current microcycle's phase components
+@bp.route('/current_formatted_list', methods=['GET'])
+@login_required
+def get_user_current_workout_days_formatted_list():
+    user_microcycle = current_microcycle(current_user.id)
+    if not user_microcycle:
+        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
+
+    user_workout_days = user_microcycle.workout_days
+    if not user_workout_days:
+        return jsonify({"status": "error", "message": "No workout days for the microcycle found."}), 404
+
+    user_workout_days_dict = [user_workout_day.to_dict() for user_workout_day in user_workout_days]
+
+    pc_dict = get_all_items(Phase_Component_Library)
+    bodypart_dict = get_all_items(Bodypart_Library)
+
+    formatted_schedule = print_workout_days_schedule(pc_dict, bodypart_dict, user_workout_days_dict)
+    if verbose:
+        print(formatted_schedule)
+    return jsonify({"status": "success", "phase_components": formatted_schedule}), 200
 
 # Retrieve user's current phase component
 @bp.route('/current', methods=['GET'])
