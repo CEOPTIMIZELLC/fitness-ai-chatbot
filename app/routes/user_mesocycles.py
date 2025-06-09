@@ -70,6 +70,7 @@ def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_sta
         new_phase = User_Mesocycles(
             macrocycle_id = macrocycle_id,
             phase_id = phase["id"],
+            is_goal_phase = phase["is_goal_phase"],
             order = order,
             start_date = mesocycle_start_date,
             end_date = mesocycle_start_date + timedelta(weeks=phase["duration"])

@@ -394,6 +394,7 @@ class PhaseAgent(BaseAgent):
             final_output.append({
                 "name": phase["name"],
                 "id": phase["id"],
+                "is_goal_phase": phase["is_goal_phase"],
                 "duration": phase_duration
             })
 
