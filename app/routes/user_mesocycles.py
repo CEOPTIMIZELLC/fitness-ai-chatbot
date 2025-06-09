@@ -109,7 +109,7 @@ def get_user_current_mesocycles_list():
 # Retrieve user's current macrocycle's mesocycles
 @bp.route('/current_formatted_list', methods=['GET'])
 @login_required
-def get_user_current_exercises_formatted_list():
+def get_user_current_mesocycles_formatted_list():
     user_macrocycle = current_macrocycle(current_user.id)
     if not user_macrocycle:
         return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
