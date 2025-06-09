@@ -41,7 +41,7 @@ def _create_final_header_fields(longest_sizes: dict) -> dict:
 def formatted_final_schedule(headers, i, exercise, set_count, superset_var):
     new_weight = exercise["weight"] or 0
 
-    one_rep_max = round((new_weight * (30 + exercise["reps"])) / 30, 2)
+    one_rep_max = int(round((new_weight * (30 + exercise["reps"])) / 30, 2))
 
     # Format line
     line_fields = {
@@ -58,7 +58,7 @@ def formatted_final_schedule(headers, i, exercise, set_count, superset_var):
         "seconds_per_exercise": f"{exercise["seconds_per_exercise"]} sec",
         "reps": str(exercise["reps"]),
         "rest": str(exercise["rest"]),
-        "one_rep_max": str(one_rep_max),
+        "one_rep_max": str(one_rep_max) if one_rep_max else "",
         "training_weight": str(exercise["weight"]) if exercise["weight"] else "",
         "intensity": str(exercise["intensity"]) if exercise["intensity"] else "",
         "volume": str(exercise["volume"]),
