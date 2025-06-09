@@ -45,7 +45,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     # Volume of the exercise.
     @hybrid_property
     def volume(self):
-        return self.reps * self.sets * (float(self.weight) or 1)
+        return self.reps * self.sets * (self.weight or 1)
 
     # Density of the exercise.
     @hybrid_property
