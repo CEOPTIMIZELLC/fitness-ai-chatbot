@@ -169,7 +169,7 @@ def get_user_current_exercises_formatted_list():
 
     user_workout_exercises = user_workout_day.exercises
     if not user_workout_exercises:
-        return jsonify({"status": "error", "message": "No exercises day found."}), 404
+        return jsonify({"status": "error", "message": "No exercises for the day found."}), 404
     
     loading_system_id = user_workout_day.loading_system_id
 
