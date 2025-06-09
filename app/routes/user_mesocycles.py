@@ -106,7 +106,7 @@ def get_user_current_mesocycles_list():
         result.append(user_mesocycle.to_dict())
     return jsonify({"status": "success", "mesocycles": result}), 200
 
-# Retrieve user's current microcycle's workout exercises
+# Retrieve user's current macrocycle's mesocycles
 @bp.route('/current_formatted_list', methods=['GET'])
 @login_required
 def get_user_current_exercises_formatted_list():
