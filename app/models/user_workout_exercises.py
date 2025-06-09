@@ -20,7 +20,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     sets = db.Column(db.Integer, nullable=False, comment='')
     intensity = db.Column(db.Integer, comment='')
     rest = db.Column(db.Integer, nullable=False, comment='')
-    weight = db.Column(db.Numeric(10, 2), comment='')
+    weight = db.Column(db.Integer, comment='')
 
     # Seconds per exercise of the exercise.
     @hybrid_property
