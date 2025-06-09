@@ -123,7 +123,7 @@ def get_user_current_exercises_formatted_list():
     formatted_schedule = print_mesocycles_schedule(user_mesocycles_dict)
     if verbose:
         print(formatted_schedule)
-    return jsonify({"status": "success", "exercises": formatted_schedule}), 200
+    return jsonify({"status": "success", "mesocycles": formatted_schedule}), 200
 
 # Retrieve user's current mesocycle
 @bp.route('/current', methods=['GET'])
