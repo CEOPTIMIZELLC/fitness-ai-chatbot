@@ -563,7 +563,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "end": ("", 2),
         }
 
-    def formatted_schedule(self, headers, i, pc, exercise, superset_var, metrics):
+    def line_fields(self, i, pc, exercise, superset_var, metrics):
         (base_strain, seconds_per_exercise, 
          reps_var, sets_var, rest_var, intensity_var, 
          one_rep_max_var, training_weight_var, is_weighted_var, 
@@ -579,7 +579,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         performance_max = round(volume_max * density_max * 100) / 100
 
         # Format line
-        line_fields = {
+        return {
             "superset": str(superset_var["superset_current"]) if superset_var["is_resistance"] else str(superset_var["not_a_superset"]),
             "number": str(i + 1),
             "exercise": exercise["name"],
@@ -601,11 +601,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "performance": f"{exercise["performance"] / 100} -> {performance_var} (>={performance_max})",
             "end": "",
         }
-
-        line = ""
-        for field, (_, length) in headers.items():
-            line += self._create_formatted_field(field, line_fields[field], length)
-        return line + "\n"
 
     def formatted_counts(self, pcs, pc_count, longest_sizes):
         schedule_counts = f"\nPhase Component Counts:\n"
@@ -638,6 +633,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         
         # Create header line
         if log_schedule: 
+            formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
         superset_var = {
@@ -700,7 +696,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 superset_var["is_resistance"] = False
 
             if log_schedule:
-                formatted += self.formatted_schedule(headers, component_count, pc, exercise, superset_var, metrics)
+                line_fields = self.line_fields(component_count, pc, exercise, superset_var, metrics)
+                formatted += self.formatted_schedule_line(headers, line_fields)
 
         if log_counts:
             formatted += self.formatted_counts(phase_components, phase_component_count, longest_sizes)

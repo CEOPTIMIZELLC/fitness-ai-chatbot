@@ -627,7 +627,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "performance": ("Performance", 30)
         }
 
-    def formatted_schedule(self, headers, i, pc, metrics):
+    def line_fields(self, i, pc, metrics):
         (active_exercises, seconds_per_exercise, 
          reps_var, sets_var, rest_var, 
          volume_var, density_var, 
@@ -639,7 +639,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         performance_max = round(volume_max * density_max * 100) / 100
 
         # Format line
-        line_fields = {
+        return {
             "number": str(i + 1),
             "phase_component": f"{pc['name']}",
             "bodypart": pc["bodypart_name"],
@@ -654,11 +654,6 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "density": f"{density_var} (>={density_max})",
             "performance": f"{performance_var} (>={performance_max})",
         }
-
-        line = ""
-        for field, (_, length) in headers.items():
-            line += self._create_formatted_field(field, line_fields[field], length)
-        return line + "\n"
 
     def formatted_counts(self, pcs, solution, longest_sizes):
         schedule_counts = f"\nPhase Component Counts:\n"
@@ -690,6 +685,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         
         # Create header line
         if log_schedule: 
+            formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
         for component_count, (i, phase_component_index, _, _, _, *metrics) in enumerate(schedule):
@@ -719,7 +715,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
                 if log_schedule:
-                    formatted += self.formatted_schedule(headers, component_count, pc, metrics)
+                    line_fields = line_fields(component_count, pc, metrics)
+                    formatted += self.formatted_schedule_line(headers, line_fields)
 
             else:
                 if log_schedule:

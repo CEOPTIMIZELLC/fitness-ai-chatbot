@@ -361,20 +361,14 @@ class PhaseAgent(BaseAgent):
             "duration": ("Duration", 17),
             "goal_duration": ("Goal Duration", 17),
         }
-
-    def formatted_schedule(self, headers, i, phase, phase_duration):
-        # Format line
-        line_fields = {
+    
+    def line_fields(self, i, phase, phase_duration):
+        return {
             "number": str(i + 1),
             "phase": f"{phase['name']}",
             "duration": f"{self._format_range(str(phase_duration), phase["element_minimum"], phase["element_maximum"])} weeks",
             "goal_duration": f"+{phase_duration if phase['is_goal_phase'] else 0} weeks"
         }
-
-        line = ""
-        for field, (_, length) in headers.items():
-            line += self._create_formatted_field(field, line_fields[field], length)
-        return line + "\n"
 
     def format_agent_output(self, solution, formatted, schedule, phases, macrocycle_allowed_weeks):
         final_output = []
@@ -387,6 +381,7 @@ class PhaseAgent(BaseAgent):
 
         # Create header line
         if log_schedule: 
+            formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
         for i, (phase_type, phase_duration) in enumerate(schedule):
@@ -399,7 +394,8 @@ class PhaseAgent(BaseAgent):
             })
 
             if log_schedule:
-                formatted += self.formatted_schedule(headers, i, phase, phase_duration)
+                line_fields = self.line_fields(i, phase, phase_duration)
+                formatted += self.formatted_schedule_line(headers, line_fields)
 
         if log_details:
             formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"

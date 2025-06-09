@@ -35,6 +35,8 @@ class BaseAgentState(TypedDict):
 TState = TypeVar('TState', bound=BaseAgentState)
 
 class BaseAgent:
+    schedule_title_line = "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
+
     # Each child class should override this with their specific constraints
     available_constraints = ""
 
@@ -71,13 +73,16 @@ class BaseAgent:
         return f"{formatted:<{header_length}}"
 
     def formatted_header_line(self, headers):
-        # Create header line
-        schedule_header = "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
         header_line = ""
         for label, (text, length) in headers.items():
             header_line += self._create_formatted_field(text, text, length)
-        schedule_header += header_line + "\n"
-        return schedule_header
+        return header_line + "\n"
+
+    def formatted_schedule_line(self, headers, line_fields):
+        line = ""
+        for field, (_, length) in headers.items():
+            line += self._create_formatted_field(field, line_fields[field], length)
+        return line + "\n"
 
     def analyze_infeasibility_node(self, state: TState, config=None) -> dict:
         """Use LLM to analyze solver logs and suggest constraints to relax."""
