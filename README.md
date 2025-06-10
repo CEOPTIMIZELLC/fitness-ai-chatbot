@@ -4,6 +4,7 @@ AI based personal trainer with ability to chat with clients to build and maintai
 # Setup
 Ensure that you have an environment file with the following environment variables filled out at the route level.
 
+## Environment Variables
 ```bash
 POSTRGRES_HOST="localhost"
 POSTRGRES_DATABASE="fitness_db"
@@ -12,6 +13,50 @@ POSTRGRES_PASSWORD="postgres"
 
 LANGUAGE_MODEL="gpt-4o-mini"
 OPENAI_API_KEY=
+```
+
+## Configuration Variables
+```bash
+user_equipment_population_default = [1-3]                   # If a dummy user is created in the database initialization, there are three presets for equipment to be included, each including more equipment and more varieties of measurements.
+ortools_solver_time_in_seconds = 5                          # The maximum number of seconds that the solver is allowed to take on default.
+vertical_loading = True                                     # Whether the workout schedule will use vertical loading.
+
+# Configurations for exercise performance decay.
+performance_decay_grace_period = 14                         # The number of days before the performance of an exercise will begin to decay.
+performance_decay_rate = -0.05                              # The rate at which the performance will decay after the grace period.
+one_rep_max_decay_grace_period = 14                         # The number of days before the 1RM of an exercise will begin to decay.
+one_rep_max_decay_rate = -0.05                              # The rate at which the 1RM will decay after the grace period.
+exponential_decay = True                                    # Whether the rate of decay will be exponential (linear decay if false).
+
+# Configurations for verbose options.
+verbose = True                                              # Print various messages throughout project.
+verbose_agent_preprocessing = True                          # Whether the various steps taken before the agent processing (time correction, exercises for phase components) will be printed.
+verbose_exercises_for_pc_steps = False                      # Whether ALL of the steps taken when finding the exercises for phase components will be printed.
+verbose_agent_time = True                                   # Whether the time taken for an agent to be completed will be printed.
+verbose_agent_steps = True                                  # Whether the current steps for the agent will be printed as they are reached.
+
+# Configurations for agent logging (the schedule printed).
+log_schedule = True                                         # Log the schedule itself.
+log_counts = True                                           # Log the number of elements included in the schedule.
+log_constraints = True                                      # Log the final constraints used by the solver.
+log_details = True                                          # Log the values relevant to the schedule (total time, total strain).
+
+# Configuration for phase components to be removed during preprocessing.
+change_min_max_exercises_for_those_available = True         # If a phase component has fewer exercises available to it than the minimum required, change the minimum and maximum to the be quantity available.
+turn_off_invalid_phase_components = True                    # If a phase component is completely impossible, turn it off as required.
+turn_off_required_resistances = True                        # If a required resistance phase component is completely impossible, turn it off.
+
+
+# Configuration for exerecise inclusion for phase components upon initial failure. 
+# When determining what exercises are allowed for a phase component, 
+# various options can be taken to attempt to fill in exercises. The 
+# configurations will not be applied all at once, but will rather 
+# be carried out in order: 
+# (if no exercises are found --> look for all exercises for full body --> if no exercises are found, look for all exercises for the bodypart)`
+include_all_exercises_for_desired_full_body = True          # All exercises for the phase component will be included if the bodypart is full body.
+include_all_exercises_for_desired_bodypart = True           # All exercises for the desired bodypart will be included.
+incude_all_exercises_for_desired_phase_component = False    # All exercises for the desired phase compoent will be included.
+include_all_exercises = False                               # All exercises in the database will be inlcuded.
 ```
 
 # Database Initial Setup
