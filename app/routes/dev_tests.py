@@ -4,7 +4,7 @@ from flask import request, jsonify, Blueprint
 
 from flask_login import current_user, login_required
 
-from config import performance_decay_grace_period
+from config import verbose, performance_decay_grace_period
 from app import db
 from app.utils.sql import sql_app
 from app.utils.table_context_parser import context_retriever_app
@@ -25,7 +25,7 @@ def retrieve_output_from_endpoint(result, key):
         return output, success_check
 
 def run_segment(result, segment_method, result_key, output_key, segment_name=None):
-    if segment_name:
+    if verbose and segment_name:
         print(f"\n========================== {segment_name} ==========================")
     result_temp = segment_method()
     result[result_key], success_check = retrieve_output_from_endpoint(result_temp, output_key)
@@ -56,11 +56,13 @@ def check_pipeline():
 
 def failed_run(result, results, i=0):
     results.append(result)
-    print(f"\n========================== FAILED RUN {i} ==========================\n\n")
+    if verbose:
+        print(f"\n========================== FAILED RUN {i} ==========================\n\n")
     return results
 
 def run_availability_segment(result, segment_method, segment_method_2, result_key, output_key, segment_name):
-    print(f"\n========================== {segment_name} ==========================")
+    if verbose:
+        print(f"\n========================== {segment_name} ==========================")
     segment_method()
     return run_segment(result, segment_method_2, result_key, output_key)
 
@@ -101,7 +103,8 @@ def run_pipeline():
         if not run_segment(result, complete_workout, "user_exercises", "user_exercises", f"WORKOUT COMPLETED RUN {i}"):
             return failed_run(result, results, i)
         results.append(result)
-        print(f"\n========================== FINISHED RUN {i} ==========================\n\n")
+        if verbose:
+            print(f"\n========================== FINISHED RUN {i} ==========================\n\n")
 
     return results
 
