@@ -1,26 +1,25 @@
 from datetime import datetime, date
 import math
 from app import db
-from config import performance_decay_grace_period, one_rep_max_decay_grace_period
+from config import performance_decay_grace_period, performance_decay_rate
+from config import one_rep_max_decay_grace_period, one_rep_max_decay_rate
 from config import exponential_decay
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.models.base import BaseModel
 from app.models.mixins import TableNameMixin
 from collections import defaultdict, Counter
 
-def linear_value_change(original_value, days_since):
-    decay_rate = 0.01
-    performance_change = (-decay_rate * days_since)
+def linear_value_change(original_value, days_since, decay_rate=-0.01):
+    performance_change = (decay_rate * days_since)
     decayed_value = original_value + performance_change
     return decayed_value
 
-def exponential_value_change(original_value, days_since):
-    decay_rate = 0.01
-    performance_change = math.exp(-decay_rate * days_since)
+def exponential_value_change(original_value, days_since, decay_rate=-0.01):
+    performance_change = math.exp(decay_rate * days_since)
     decayed_value = original_value * performance_change
     return decayed_value
 
-def decayed_value(original_value, days_since, grace_period):
+def decayed_value(original_value, days_since, grace_period, decay_rate=-0.01):
     # Wait for the grace period to end before altering the original value.
     if days_since <= grace_period:
         return original_value
@@ -28,8 +27,8 @@ def decayed_value(original_value, days_since, grace_period):
     # Only use period of time after the grace period.
     effective_days = days_since - grace_period
     if exponential_decay:
-        return exponential_value_change(original_value, effective_days)
-    return linear_value_change(original_value, effective_days)
+        return exponential_value_change(original_value, effective_days, decay_rate)
+    return linear_value_change(original_value, effective_days, decay_rate)
 
 class User_Exercises(db.Model, TableNameMixin):
     """Exercise available to a user during a training period."""
@@ -61,15 +60,26 @@ class User_Exercises(db.Model, TableNameMixin):
     def one_rep_max_decayed(self):
         if not self.exercises.is_weighted: 
             return 0
-        decayed_one_rep_max = decayed_value(self.one_rep_max, self.days_since, one_rep_max_decay_grace_period)
+        decayed_one_rep_max = decayed_value(
+            self.one_rep_max, 
+            self.days_since, 
+            one_rep_max_decay_grace_period, 
+            -abs(one_rep_max_decay_rate))
+
         one_rep_max = int(decayed_one_rep_max)
+
         if one_rep_max < 10:
             return 10
         return one_rep_max
 
     @hybrid_property
     def performance_decayed(self):
-        decayed_performance = decayed_value(float(self.performance), self.days_since, performance_decay_grace_period)
+        decayed_performance = decayed_value(
+            float(self.performance), 
+            self.days_since, 
+            performance_decay_grace_period,
+            -abs(performance_decay_rate))
+
         return round(decayed_performance, 2)
 
     def has_equipment(self, required_equipment):
