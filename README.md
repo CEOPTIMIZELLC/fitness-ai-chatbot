@@ -46,7 +46,6 @@ change_min_max_exercises_for_those_available = True         # If a phase compone
 turn_off_invalid_phase_components = True                    # If a phase component is completely impossible, turn it off as required.
 turn_off_required_resistances = True                        # If a required resistance phase component is completely impossible, turn it off.
 
-
 # Configuration for exerecise inclusion for phase components upon initial failure. 
 # When determining what exercises are allowed for a phase component, 
 # various options can be taken to attempt to fill in exercises. The 
