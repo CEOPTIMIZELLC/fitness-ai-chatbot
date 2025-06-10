@@ -30,6 +30,8 @@ from app.routes.utils import construct_available_exercises_list, construct_phase
 from app.routes.utils import verify_pc_information
 from app.routes.utils import print_workout_days_schedule
 
+from app.routes.utils import retrieve_output_from_endpoint
+
 bp = Blueprint('user_workout_days', __name__)
 
 # ----------------------------------------- Workout Days -----------------------------------------
@@ -235,6 +237,9 @@ def workout_day_executor(phase_id=None):
     user_workdays = agent_output_to_sqlalchemy_model(result["output"], user_workdays)
     db.session.add_all(user_workdays)
     db.session.commit()
+
+    result_temp = get_user_current_workout_days_formatted_list()
+    result["formatted_schedule"], _ = retrieve_output_from_endpoint(result_temp, "phase_components")
 
     return result
 

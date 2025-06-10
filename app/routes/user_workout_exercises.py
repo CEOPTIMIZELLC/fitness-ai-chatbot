@@ -27,6 +27,8 @@ from app.routes.utils import construct_user_workout_components_list, construct_a
 from app.routes.utils import verify_pc_information
 from app.routes.utils import print_workout_exercises_schedule
 
+from app.routes.utils import retrieve_output_from_endpoint
+
 bp = Blueprint('user_workout_exercises', __name__)
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
@@ -206,6 +208,10 @@ def exercise_initializer():
 
     db.session.add_all(user_workout_exercises)
     db.session.commit()
+
+    result_temp = get_user_current_exercises_formatted_list()
+    result["formatted_schedule"], _ = retrieve_output_from_endpoint(result_temp, "exercises")
+    
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Update user exercises if workout is completed.

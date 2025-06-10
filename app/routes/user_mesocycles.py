@@ -17,6 +17,7 @@ from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 from app.routes.utils import construct_phases_list
 from app.routes.utils import print_mesocycles_schedule
+from app.routes.utils import retrieve_output_from_endpoint
 
 bp = Blueprint('user_mesocycles', __name__)
 
@@ -55,6 +56,10 @@ def mesocycle_phase_adding(goal_id=None):
     user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
     db.session.add_all(user_phases)
     db.session.commit()
+
+    result_temp = get_user_current_mesocycles_formatted_list()
+    result["formatted_schedule"], _ = retrieve_output_from_endpoint(result_temp, "mesocycles")
+
     return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Method to perform phase selection on a goal of a specified id.
