@@ -9,20 +9,11 @@ from app import db
 from app.utils.sql import sql_app
 from app.utils.table_context_parser import context_retriever_app
 
+from app.routes.utils import retrieve_output_from_endpoint
+
 bp = Blueprint('dev_tests', __name__)
 
 # ----------------------------------------- Dev Tests -----------------------------------------
-
-def retrieve_output_from_endpoint(result, key):
-    success_check = (result[1] == 200)
-    output = result[0].get_json()
-    if success_check:
-        output_value = output[key]
-        if not isinstance(output_value, dict):
-            return output_value, success_check
-        return output_value.get("output", output_value), success_check
-    else:
-        return output, success_check
 
 def run_segment(result, segment_method, result_key, output_key, segment_name=None):
     if verbose and segment_name:
