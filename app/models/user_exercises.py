@@ -1,7 +1,7 @@
 from datetime import datetime, date
 import math
 from app import db
-from config import performance_decay_grace_period as grace_period
+from config import performance_decay_grace_period, one_rep_max_decay_grace_period
 from config import exponential_decay
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.models.base import BaseModel
@@ -20,7 +20,7 @@ def exponential_value_change(original_value, days_since):
     decayed_value = original_value * performance_change
     return decayed_value
 
-def decayed_value(original_value, days_since):
+def decayed_value(original_value, days_since, grace_period):
     # Wait for the grace period to end before altering the original value.
     if days_since <= grace_period:
         return original_value
@@ -61,14 +61,16 @@ class User_Exercises(db.Model, TableNameMixin):
     def one_rep_max_decayed(self):
         if not self.exercises.is_weighted: 
             return 0
-        one_rep_max = int(decayed_value(self.one_rep_max, self.days_since))
+        decayed_one_rep_max = decayed_value(self.one_rep_max, self.days_since, one_rep_max_decay_grace_period)
+        one_rep_max = int(decayed_one_rep_max)
         if one_rep_max < 10:
             return 10
         return one_rep_max
 
     @hybrid_property
     def performance_decayed(self):
-        return round(decayed_value(float(self.performance), self.days_since), 2)
+        decayed_performance = decayed_value(float(self.performance), self.days_since, performance_decay_grace_period)
+        return round(decayed_performance, 2)
 
     def has_equipment(self, required_equipment):
         if not required_equipment:
