@@ -7,14 +7,14 @@ class BaseSchedulePrinter:
         formatted = f"{prefix}{value}"
         return f"{formatted:<{header_length}}"
 
-    def formatted_header_line(self, headers):
+    def _formatted_header_line(self, headers):
         header_line = ""
         for label, (text, length) in headers.items():
             header_line += self._create_formatted_field(text, text, length)
         return header_line + "\n"
     
-    def formatted_entry_line(self, headers, line_fields):
+    def _formatted_entry_line(self, headers, _line_fields):
         line = ""
         for field, (_, length) in headers.items():
-            line += self._create_formatted_field(field, line_fields[field], length)
+            line += self._create_formatted_field(field, _line_fields[field], length)
         return line + "\n"

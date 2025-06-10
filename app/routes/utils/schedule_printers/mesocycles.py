@@ -13,7 +13,7 @@ class MesocycleSchedulePrinter(BaseSchedulePrinter):
             "goal_duration": ("Goal Duration", 20),
         }
 
-    def line_fields(self, phase):
+    def _line_fields(self, phase):
         return {
             "number": str(str(phase["order"])),
             "phase": f"{phase['phase_name']}",
@@ -23,12 +23,12 @@ class MesocycleSchedulePrinter(BaseSchedulePrinter):
             "goal_duration": f"+{str(phase["duration"]) if phase['is_goal_phase'] else 0}"
         }
 
-    def log_schedule(self, headers, header_line, schedule):
+    def _log_schedule(self, headers, header_line, schedule):
         schedule_string = ""
         schedule_string += header_line
         for phase in schedule:
-            line_fields = self.line_fields(phase)
-            schedule_string += self.formatted_entry_line(headers, line_fields)
+            _line_fields = self._line_fields(phase)
+            schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
     def run(self, schedule):
@@ -40,9 +40,9 @@ class MesocycleSchedulePrinter(BaseSchedulePrinter):
         # Create headers
         formatted += self.schedule_header
         headers = self._create_header_fields(longest_sizes)
-        header_line = self.formatted_header_line(headers)
+        header_line = self._formatted_header_line(headers)
 
-        formatted += self.log_schedule(headers, header_line, schedule)
+        formatted += self._log_schedule(headers, header_line, schedule)
 
         return formatted
 

@@ -11,7 +11,7 @@ class WorkoutDaySchedulePrinter(BaseSchedulePrinter):
             "duration": ("Duration", 35)
         }
 
-    def line_fields(self, component_count, pc):
+    def _line_fields(self, component_count, pc):
         return {
             "number": str(component_count + 1),
             "phase_component": f"{pc['phase_component_subcomponent']}",
@@ -19,7 +19,7 @@ class WorkoutDaySchedulePrinter(BaseSchedulePrinter):
             "duration": f"{pc["duration"]} sec"
         }
 
-    def log_day(self, current_day, header_line):
+    def _log_day(self, current_day, header_line):
         line = ""
         current_order = str(current_day["order"])
         current_date = str(current_day["date"])
@@ -28,15 +28,15 @@ class WorkoutDaySchedulePrinter(BaseSchedulePrinter):
         line += header_line + "\n"
         return line
 
-    def log_schedule(self, headers, header_line, schedule):
+    def _log_schedule(self, headers, header_line, schedule):
         schedule_string = ""
         for current_day in schedule:
             current_components = current_day["components"]
             if current_components:
-                schedule_string += self.log_day(current_day, header_line)
+                schedule_string += self._log_day(current_day, header_line)
                 for i, component in enumerate(current_components):
-                    line_fields = self.line_fields(i, component)
-                    schedule_string += self.formatted_entry_line(headers, line_fields)
+                    _line_fields = self._line_fields(i, component)
+                    schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
     def run(self, phase_components, bodyparts, schedule):
@@ -51,9 +51,9 @@ class WorkoutDaySchedulePrinter(BaseSchedulePrinter):
         # Create headers
         formatted += self.schedule_header
         headers = self._create_header_fields(longest_sizes)
-        header_line = self.formatted_header_line(headers)
+        header_line = self._formatted_header_line(headers)
 
-        formatted += self.log_schedule(headers, header_line, schedule)
+        formatted += self._log_schedule(headers, header_line, schedule)
 
         return formatted
 
