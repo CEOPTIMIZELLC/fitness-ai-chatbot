@@ -25,6 +25,9 @@ from app.routes.utils import retrieve_total_time_needed
 from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list
 
 from app.routes.utils import verify_pc_information
+from app.routes.utils import print_workout_exercises_schedule
+
+from app.routes.utils import retrieve_output_from_endpoint
 
 bp = Blueprint('user_workout_exercises', __name__)
 
@@ -115,7 +118,7 @@ def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
             workout_day_id = workout_day_id,
             phase_component_id = exercise["phase_component_id"],
             exercise_id = exercise["exercise_id"],
-            #bodypart_id = exercise["bodypart_id"],
+            bodypart_id = exercise["bodypart_id"],
             order = i,
             reps = exercise["reps_var"],
             sets = exercise["sets_var"],
@@ -158,6 +161,29 @@ def get_user_current_exercises_list():
               for user_workout_exercise in user_workout_exercises]
     return jsonify({"status": "success", "exercises": result}), 200
 
+# Retrieve user's current microcycle's workout exercises
+@bp.route('/current_formatted_list', methods=['GET'])
+@login_required
+def get_user_current_exercises_formatted_list():
+    user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+
+    user_workout_exercises = user_workout_day.exercises
+    if not user_workout_exercises:
+        return jsonify({"status": "error", "message": "No exercises for the day found."}), 404
+    
+    loading_system_id = user_workout_day.loading_system_id
+
+    user_workout_exercises_dict = [user_workout_exercise.to_dict() | 
+                                   {"component_id": user_workout_exercise.phase_components.components.id}
+                                   for user_workout_exercise in user_workout_exercises]
+    
+    formatted_schedule = print_workout_exercises_schedule(loading_system_id, user_workout_exercises_dict)
+    if verbose:
+        print(formatted_schedule)
+    return jsonify({"status": "success", "exercises": formatted_schedule}), 200
+
 # Assigns exercises to workouts.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
@@ -172,7 +198,7 @@ def exercise_initializer():
     parameters = retrieve_pc_parameters(user_workout_day)
     if isinstance(parameters, tuple):
         return parameters
-    constraints={}
+    constraints={"vertical_loading": user_workout_day.loading_systems.id == 1}
 
     result = exercises_main(parameters, constraints)
     if verbose:
@@ -182,6 +208,10 @@ def exercise_initializer():
 
     db.session.add_all(user_workout_exercises)
     db.session.commit()
+
+    result_temp = get_user_current_exercises_formatted_list()
+    result["formatted_schedule"], _ = retrieve_output_from_endpoint(result_temp, "exercises")
+    
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Update user exercises if workout is completed.
@@ -202,16 +232,17 @@ def complete_workout():
         new_one_rep_max = round((new_weight * (30 + exercise.reps)) / 30, 2)
 
         # Only replace if the new one rep max is larger.
-        user_exercise.one_rep_max = max(user_exercise.one_rep_max, new_one_rep_max)
+        user_exercise.one_rep_max = max(user_exercise.one_rep_max_decayed, new_one_rep_max)
         user_exercise.one_rep_load = new_one_rep_max
         user_exercise.volume = exercise.volume
         user_exercise.density = exercise.density
         user_exercise.intensity = exercise.intensity
         user_exercise.duration = exercise.duration
         user_exercise.working_duration = exercise.working_duration
+        user_exercise.last_performed = exercise.workout_days.date
 
         # Only replace if the new performance is larger.
-        user_exercise.performance = max(user_exercise.performance, exercise.performance)
+        user_exercise.performance = max(user_exercise.performance_decayed, exercise.performance)
 
         db.session.commit()
 
@@ -249,7 +280,7 @@ def exercise_phase_components_test():
     parameters = retrieve_pc_parameters(user_workout_day)
     if isinstance(parameters, tuple):
         return parameters
-    constraints={}
+    constraints={"vertical_loading": user_workout_day.loading_systems.id == 1}
 
     result = exercise_pc_main(parameters, constraints)
     if verbose:

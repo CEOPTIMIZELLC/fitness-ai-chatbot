@@ -2,6 +2,8 @@ from sqlalchemy import inspect
 
 import json
 
+from config import verbose
+
 def get_foreign_keys(inspector, table_name):
     foreign_keys_map = {}
     for fk in inspector.get_foreign_keys(table_name):
@@ -60,5 +62,6 @@ def get_database_schema(db):
 
             schema += f"- {col_name}: {col_type}\n"
         schema += "\n"
-    print("Retrieved database schema.")
+    if verbose:
+        print("Retrieved database schema.")
     return schema

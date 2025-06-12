@@ -153,6 +153,7 @@ class Phase_Component_Library(BaseModel, TableNameMixin, NameMixin):
             "subcomponent_id": self.subcomponent_id, 
             "subcomponent_name": self.subcomponents.name, 
             "name": self.name, 
+            "is_warmup": self.components.is_warmup, 
             "reps_min": self.reps_min, 
             "reps_max": self.reps_max, 
             "sets_min": self.sets_min, 

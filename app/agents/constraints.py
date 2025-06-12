@@ -130,11 +130,23 @@ def entries_within_min_max(model, items, minimum_key, maximum_key, number_of_ent
             )
     return None
 
+def _ensure_all_vars_equal_no_activator(model, vars):
+    for var, var_next in zip(vars, vars[1:]):
+        model.Add(var == var_next)
+    return None
+
+def _ensure_all_vars_equal_with_activator(model, vars, active_vars):
+    for var, active_var, var_next, active_var_next in zip(vars, active_vars, vars[1:], active_vars[1:]):
+        model.Add(var == var_next).OnlyEnforceIf(active_var, active_var_next)
+    return None
+
 # Forces all items in the list to be equal. 
-def ensure_all_vars_equal(model, vars):
+def ensure_all_vars_equal(model, vars, active_vars=None):
     if len(vars) > 1:
-        for var, var_next in zip(vars, vars[1:]):
-            model.Add(var == var_next)
+        if active_vars == None:
+            _ensure_all_vars_equal_no_activator(model, vars)
+        else:
+            _ensure_all_vars_equal_with_activator(model, vars, active_vars)
     return None
 
 # Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.

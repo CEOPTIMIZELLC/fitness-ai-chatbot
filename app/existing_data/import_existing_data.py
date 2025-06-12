@@ -19,6 +19,7 @@ from app.models import (
     Exercise_Other_Equipment,
     Goal_Library,
     Goal_Phase_Requirements,
+    Loading_System_Library,
     Muscle_Categories,
     Muscle_Group_Library,
     Muscle_Library,
@@ -71,6 +72,7 @@ class Data_Importer:
     body_region_ids = {}
     bodypart_ids = {}
     goal_ids = {}
+    loading_system_ids = {}
     phase_ids = {}
     subcomponent_ids = {}
     component_ids = {}
@@ -93,6 +95,7 @@ class Data_Importer:
         
         # Assign the sheets to variables.
         self.muscle_groups_df = sheets["Muscle Groups"]
+        self.loading_systems_df = sheets["loading_system"]
         self.phases_df = sheets["phases"]
         self.subcomponents_df = sheets["periodization_model"]
         self.phase_components_df = sheets["phases_components"]
@@ -112,6 +115,20 @@ class Data_Importer:
             db_entry = Weekday_Library(id=i, name=name)
             db.session.merge(db_entry)
         db.session.commit()
+        return None
+
+    def loading_systems(self):
+        # Loading Systems
+        # Create list of Loading Systems
+        for i, row in self.loading_systems_df.iterrows():
+            self.loading_system_ids[row["loading_system"]] = i+1
+            db_entry = Loading_System_Library(
+                id=i+1, 
+                name=row["loading_system"], 
+                description=row["Description"])
+            db.session.merge(db_entry)
+        db.session.commit()
+        
         return None
 
     def muscles(self):
@@ -205,7 +222,16 @@ class Data_Importer:
         # Retrieve Components from phase components sheet
         component_names = self.phase_components_df['component'].unique()
 
-        self.component_ids = create_list_of_table_entries(self.component_ids, component_names, Component_Library)
+        # Create list of Subcomponents
+        for i, name in enumerate(component_names):
+            self.component_ids[name] = i+1
+            db_entry = Component_Library(
+                id=i+1, 
+                name=name, 
+                is_warmup=True if (name.lower() == "flexibility") else False)
+            db.session.merge(db_entry)
+        db.session.commit()
+
         return None
 
     def subcomponents(self):
@@ -312,6 +338,7 @@ class Data_Importer:
                 sides=row["Sides"], 
                 body_position=row["Body Position"], 
                 option_for_added_weight=row["Option for added weight"], 
+                # is_weighted=pd.notna(row["Weighted Equipment"]),
                 proprioceptive_progressions=row["Proprioceptive Progressions"])
             db.session.merge(db_entry)
         db.session.commit()
@@ -557,6 +584,7 @@ def Main(excel_file):
     from pathlib import Path
     file_path = Path(__file__).parent / excel_file
     di = Data_Importer(file_path)
+    di.loading_systems()
     di.weekdays()
     di.muscles()
     di.muscle_groups()

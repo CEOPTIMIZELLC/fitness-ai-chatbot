@@ -418,24 +418,19 @@ class PhaseComponentAgent(BaseAgent):
             "duration_sec": ("Duration in Seconds", 30),
         }
 
-    def formatted_header_line(self, headers):
-        header_line = ""
-        for label, (text, length) in headers.items():
-            header_line += self._create_formatted_field(text, text, length)
-        return header_line
-
-    # def formatted_schedule(self, headers, header_line, component_count, phase_component, workday_index, weekday_availability, current_weekday, used_days, exercises_per_bodypart_var, partial_duration_var, duration_var):
-    def formatted_schedule(self, headers, header_line, component_count, pc, metrics, current_weekday_info, workday_index, used_days):
-        (active_phase_components, exercises_per_bodypart_var, partial_duration_var, duration_var) = metrics
+    def formatted_day(self, header_line, current_weekday_info, workday_index, used_days):
         line = ""
+        line += f"\n| Day {workday_index + 1} {current_weekday_info["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
+        used_days[workday_index]["used"] = True
+        line += header_line
+        
+        return line
 
-        if not used_days[workday_index]["used"]:
-            line += f"\n| Day {workday_index + 1} {current_weekday_info["name"]:<{10}} Availability of {self._format_duration(used_days[workday_index]["availability"])} | \n"
-            used_days[workday_index]["used"] = True
-            line += header_line + "\n"
+    def line_fields(self, component_count, pc, metrics):
+        (active_phase_components, exercises_per_bodypart_var, partial_duration_var, duration_var) = metrics
 
         # Format line
-        line_fields = {
+        return {
             "number": str(component_count + 1),
             "phase_component": f"{pc['name']}",
             "bodypart": pc["bodypart"],
@@ -445,10 +440,6 @@ class PhaseComponentAgent(BaseAgent):
             "duration": f"{self._format_duration(duration_var)} sec",
             "duration_sec": f"{self._format_range(str(duration_var) + " seconds", pc["duration_min"], pc["duration_max"] * pc["exercises_per_bodypart_workout_max"])}"
         }
-
-        for field, (_, length) in headers.items():
-            line += self._create_formatted_field(field, line_fields[field], length)
-        return line + "\n"
 
     def formatted_counts(self, pcs, pc_count, longest_sizes):
         schedule_counts = f"\nPhase Component Counts:\n"
@@ -481,7 +472,7 @@ class PhaseComponentAgent(BaseAgent):
         
         # Create header line
         if log_schedule: 
-            formatted += "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
+            formatted += self.schedule_title_line
             header_line = self.formatted_header_line(headers)
 
         for component_count, (phase_component_index, workday_index, *metrics) in enumerate(schedule):
@@ -505,7 +496,10 @@ class PhaseComponentAgent(BaseAgent):
                 phase_component_count[phase_component_index] += 1
 
                 if log_schedule:
-                    formatted += self.formatted_schedule(headers, header_line, component_count, pc, metrics, weekday_availability[current_weekday], workday_index, used_days)
+                    if not used_days[workday_index]["used"]:
+                        formatted += self.formatted_day(header_line, weekday_availability[current_weekday], workday_index, used_days)
+                    line_fields = self.line_fields(component_count, pc, metrics)
+                    formatted += self.formatted_schedule_line(headers, line_fields)
             else:
                 if log_schedule:
                     formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")

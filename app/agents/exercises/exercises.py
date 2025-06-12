@@ -254,6 +254,14 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                                         entry_vars = [exercise_vars["exercises"][i]])
             logs += "- Only use allowed exercises applied.\n"
 
+        # Constraint: All components must have the same number of sets.
+        if constraints["vertical_loading"]:
+            non_warmup_pc_indices = [i for i, pc in enumerate(phase_components) if not pc["is_warmup"]]
+            non_warmup_exercise_indices = [i for i, pc in enumerate(phase_component_ids) if pc in non_warmup_pc_indices]
+            non_warmup_sets = [pc_vars["sets"][i] for i in non_warmup_exercise_indices]
+            ensure_all_vars_equal(model, non_warmup_sets)
+            logs += "- All non warm-up exercises have the same number of sets applied.\n"
+
         # Constraint: The resistance components must have the same number of sets.
         if constraints["resistances_have_equal_sets"]:
             resistance_phase_components = {}
@@ -534,17 +542,18 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         """Create all header fields with consistent formatting"""
         return {
             "superset": ("Sub", 6),
-            "number": ("", 5),
+            "number": ("No", 5),
             "exercise": ("Exercise", longest_sizes["exercise"] + 4),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
+            "warmup": ("Warmup", 9),
             "duration": ("Duration", 12),
             "working_duration": ("WDuration", 12),
             "base_strain": ("BStrain", 10),
-            "seconds_per_exercise": ("(Sec/Exercise", 16),
+            "seconds_per_exercise": ("Sec/Exer", 11),
             "reps": ("Reps", 13),
             "sets": ("Sets", 10),
-            "rest": ("Rest)", 17),
+            "rest": ("Rest", 16),
             "one_rep_max": ("1RM", 17),
             "training_weight": ("Weight", 9),
             "intensity": ("Intensity", 14),
@@ -554,7 +563,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "end": ("", 2),
         }
 
-    def formatted_schedule(self, headers, i, pc, exercise, superset_var, metrics):
+    def line_fields(self, i, pc, exercise, superset_var, metrics):
         (base_strain, seconds_per_exercise, 
          reps_var, sets_var, rest_var, intensity_var, 
          one_rep_max_var, training_weight_var, is_weighted_var, 
@@ -570,19 +579,20 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         performance_max = round(volume_max * density_max * 100) / 100
 
         # Format line
-        line_fields = {
+        return {
             "superset": str(superset_var["superset_current"]) if superset_var["is_resistance"] else str(superset_var["not_a_superset"]),
             "number": str(i + 1),
             "exercise": exercise["name"],
             "phase_component": f"{pc['name']}",
             "bodypart": pc["bodypart_name"],
-            "duration": f"({duration} sec",
-            "working_duration": f"({working_duration} sec",
+            "warmup": f"{pc["is_warmup"]}",
+            "duration": f"{duration} sec",
+            "working_duration": f"{working_duration} sec",
             "base_strain": str(base_strain),
-            "seconds_per_exercise": f"({seconds_per_exercise} sec",
+            "seconds_per_exercise": f"{seconds_per_exercise} sec",
             "reps": self._format_range(reps_var, pc["reps_min"], pc["reps_max"]),
             "sets": self._format_range(sets_var, pc["sets_min"], pc["sets_max"]),
-            "rest": self._format_range(rest_var, pc["rest_min"] * 5, pc["rest_max"] * 5) + ")",
+            "rest": self._format_range(rest_var, pc["rest_min"] * 5, pc["rest_max"] * 5),
             "one_rep_max": f"{one_rep_max_var} -> {one_rep_max_new}" if intensity_var else "",
             "training_weight": str(training_weight_var) if intensity_var else "",
             "intensity": self._format_range(intensity_var, pc["intensity_min"] or 1, pc["intensity_max"]) if intensity_var else "",
@@ -591,11 +601,6 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "performance": f"{exercise["performance"] / 100} -> {performance_var} (>={performance_max})",
             "end": "",
         }
-
-        line = ""
-        for field, (_, length) in headers.items():
-            line += self._create_formatted_field(field, line_fields[field], length)
-        return line + "\n"
 
     def formatted_counts(self, pcs, pc_count, longest_sizes):
         schedule_counts = f"\nPhase Component Counts:\n"
@@ -628,6 +633,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         
         # Create header line
         if log_schedule: 
+            formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
         superset_var = {
@@ -690,7 +696,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 superset_var["is_resistance"] = False
 
             if log_schedule:
-                formatted += self.formatted_schedule(headers, component_count, pc, exercise, superset_var, metrics)
+                line_fields = self.line_fields(component_count, pc, exercise, superset_var, metrics)
+                formatted += self.formatted_schedule_line(headers, line_fields)
 
         if log_counts:
             formatted += self.formatted_counts(phase_components, phase_component_count, longest_sizes)

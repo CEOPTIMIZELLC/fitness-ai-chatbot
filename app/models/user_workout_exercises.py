@@ -13,13 +13,14 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     __table_args__ = {'comment': "Workout components for a workout day."}
     # Fields
     workout_day_id = db.Column(db.Integer, db.ForeignKey("user_workout_days.id", ondelete='CASCADE'), nullable=False)
-    phase_component_id = db.Column(db.Integer, db.ForeignKey("phase_component_library.id"), nullable=False)
-    exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_library.id"), nullable=False)
+    phase_component_id = db.Column(db.Integer, db.ForeignKey("phase_component_library.id", ondelete='CASCADE'), nullable=False)
+    bodypart_id = db.Column(db.Integer, db.ForeignKey("bodypart_library.id", ondelete='CASCADE'), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey("exercise_library.id", ondelete='CASCADE'), nullable=False)
     reps = db.Column(db.Integer, nullable=False, comment='')
     sets = db.Column(db.Integer, nullable=False, comment='')
     intensity = db.Column(db.Integer, comment='')
     rest = db.Column(db.Integer, nullable=False, comment='')
-    weight = db.Column(db.Numeric(10, 2), comment='')
+    weight = db.Column(db.Integer, comment='')
 
     # Seconds per exercise of the exercise.
     @hybrid_property
@@ -44,7 +45,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     # Volume of the exercise.
     @hybrid_property
     def volume(self):
-        return self.reps * self.sets * (float(self.weight) or 1)
+        return self.reps * self.sets * (self.weight or 1)
 
     # Density of the exercise.
     @hybrid_property
@@ -54,7 +55,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     # Performance of the exercise.
     @hybrid_property
     def performance(self):
-        return self.volume * self.density
+        return math.floor(self.volume * self.density * 100) / 100
 
     # Duration of the exercise based on the formula adjusted with strain.
     @hybrid_property
@@ -75,6 +76,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     workout_days = db.relationship("User_Workout_Days", back_populates="exercises")
     exercises = db.relationship("Exercise_Library", back_populates="user_workout_exercises")
     phase_components = db.relationship("Phase_Component_Library", back_populates="user_workout_exercises")
+    bodyparts = db.relationship("Bodypart_Library", back_populates="user_workout_exercises")
 
     def to_dict(self):
         return {
@@ -84,6 +86,9 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
             "phase_component_subcomponent": self.phase_components.name, 
             "exercise_id": self.exercise_id, 
             "exercise_name": self.exercises.name, 
+            "bodypart_id": self.bodypart_id, 
+            "bodypart_name": self.bodyparts.name, 
+            "is_warmup": self.phase_components.components.is_warmup, 
             "order": self.order, 
             "seconds_per_exercise": self.seconds_per_exercise, 
             "base_strain": self.base_strain, 

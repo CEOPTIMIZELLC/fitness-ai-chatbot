@@ -70,6 +70,11 @@ class Bodypart_Library(BaseModel, TableNameMixin, NameMixin):
         back_populates="bodyparts", 
         cascade="all, delete-orphan")
 
+    user_workout_exercises = db.relationship(
+        "User_Workout_Exercises", 
+        back_populates="bodyparts", 
+        cascade="all, delete-orphan")
+
     def to_dict(self):
         return {
             "id": self.id, 

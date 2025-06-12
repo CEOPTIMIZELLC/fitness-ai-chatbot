@@ -1,9 +1,34 @@
+from datetime import datetime, date
+import math
 from app import db
+from config import performance_decay_grace_period, performance_decay_rate
+from config import one_rep_max_decay_grace_period, one_rep_max_decay_rate
+from config import exponential_decay
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.models.base import BaseModel
 from app.models.mixins import TableNameMixin
 from collections import defaultdict, Counter
 
+def linear_value_change(original_value, days_since, decay_rate=-0.01):
+    performance_change = (decay_rate * days_since)
+    decayed_value = original_value + performance_change
+    return decayed_value
+
+def exponential_value_change(original_value, days_since, decay_rate=-0.01):
+    performance_change = math.exp(decay_rate * days_since)
+    decayed_value = original_value * performance_change
+    return decayed_value
+
+def decayed_value(original_value, days_since, grace_period, decay_rate=-0.01):
+    # Wait for the grace period to end before altering the original value.
+    if days_since <= grace_period:
+        return original_value
+
+    # Only use period of time after the grace period.
+    effective_days = days_since - grace_period
+    if exponential_decay:
+        return exponential_value_change(original_value, effective_days, decay_rate)
+    return linear_value_change(original_value, effective_days, decay_rate)
 
 class User_Exercises(db.Model, TableNameMixin):
     """Exercise available to a user during a training period."""
@@ -20,10 +45,42 @@ class User_Exercises(db.Model, TableNameMixin):
     performance = db.Column(db.Numeric(10, 2), nullable=False, default=0, comment='density * volume')
     duration = db.Column(db.Integer, nullable=False, default=0, comment='The duration of the exercise.')
     working_duration = db.Column(db.Integer, nullable=False, default=0, comment='The working duration of the exercise.')
+    last_performed = db.Column(db.Date, nullable=False, default=db.func.current_timestamp(), comment='Date that the exercise was last performed.')
 
     # Relationships
     users = db.relationship("Users", back_populates="exercises")
     exercises = db.relationship("Exercise_Library", back_populates="users")
+
+    @hybrid_property
+    def days_since(self):
+        days_since = (date.today() - self.last_performed).days
+        return days_since
+
+    @hybrid_property
+    def one_rep_max_decayed(self):
+        if not self.exercises.is_weighted: 
+            return 0
+        decayed_one_rep_max = decayed_value(
+            self.one_rep_max, 
+            self.days_since, 
+            one_rep_max_decay_grace_period, 
+            -abs(one_rep_max_decay_rate))
+
+        one_rep_max = int(decayed_one_rep_max)
+
+        if one_rep_max < 10:
+            return 10
+        return one_rep_max
+
+    @hybrid_property
+    def performance_decayed(self):
+        decayed_performance = decayed_value(
+            float(self.performance), 
+            self.days_since, 
+            performance_decay_grace_period,
+            -abs(performance_decay_rate))
+
+        return round(decayed_performance, 2)
 
     def has_equipment(self, required_equipment):
         if not required_equipment:
@@ -108,12 +165,16 @@ class User_Exercises(db.Model, TableNameMixin):
             "user_id": self.user_id, 
             "exercise_id": self.exercise_id, 
             "exercise_name": self.exercises.name,
+            "days_since": self.days_since,
+            "last_performed": self.last_performed,
             "one_rep_max": self.one_rep_max,
+            "one_rep_max_decayed": self.one_rep_max_decayed,
             "one_rep_load": self.one_rep_load,
             "volume": self.volume,
             "density": self.density,
             "intensity": self.intensity,
             "performance": self.performance,
+            "performance_decayed": self.performance_decayed, 
             "duration": self.duration,
             "working_duration": self.working_duration,
             "has_supportive_equipment": self.has_supportive_equipment,

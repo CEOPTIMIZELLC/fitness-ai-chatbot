@@ -11,6 +11,10 @@ class User_Mesocycles(BaseModel, TableNameMixin, DateRangeMixin, OrderedMixin):
     # Fields
     macrocycle_id = db.Column(db.Integer, db.ForeignKey("user_macrocycles.id", ondelete='CASCADE'), nullable=False)
     phase_id = db.Column(db.Integer, db.ForeignKey("phase_library.id"), nullable=False)
+    is_goal_phase = db.Column(
+        db.Boolean, 
+        nullable=False, 
+        comment='Whether or not the phase is the desired goal phase that should be maximized.')
 
     end_date = db.Column(
         db.Date, 
@@ -33,6 +37,7 @@ class User_Mesocycles(BaseModel, TableNameMixin, DateRangeMixin, OrderedMixin):
             "macrocycle_id": self.macrocycle_id, 
             "order": self.order, 
             "phase_id": self.phase_id, 
+            "is_goal_phase": self.is_goal_phase, 
             "phase_name": self.phases.name, 
             "start_date": self.start_date, 
             "end_date": self.end_date, 

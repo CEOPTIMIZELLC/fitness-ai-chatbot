@@ -141,6 +141,12 @@
 > > goal
 > > runs (optional, default=1)
 > > ```
+> > 
+> > ## Populate Current User's Exercises With Random Performances
+> > - For the current user's exercises, each is given a random: last day performed (relative to current date), density, volume, and performance. This allows for easier testing of the decayed performance and decayed 1RM.
+> > ```
+> > [POST] /dev_tests/populate_user_exercises
+> > ```
 
 <hr style="border:2px solid gray">
 
@@ -290,6 +296,11 @@
 > > [GET] /user_mesocycles/current_list
 > > ```
 > > 
+> > ### Print the formatted mesocycle schedule for the current user's currently active macrocycle
+> > ```
+> > [GET] /user_mesocycles/current_formatted_list
+> > ```
+> > 
 > > ### Retrieve current user's currently active mesocycle
 > > ```
 > > [GET] /user_mesocycles/current
@@ -345,6 +356,10 @@
 > > [GET] /user_workout_days/current_list
 > > ```
 > > 
+> > ### Print the formatted workout day schedule for the current user's currently active microcycle
+> > ```
+> > [GET] /user_workout_days/current_formatted_list
+> > ```
 > > ### Retrieve current user's currently active work day (and corresponding components)
 > > ```
 > > [GET] /user_workout_days/current
@@ -370,11 +385,15 @@
 > > [GET] /user_workout_exercises
 > > ```
 > > 
-> > ### List current user's workout exercises for the currently active work day
+> > ### List current user's workout exercises for the currently active workout day
 > > ```
 > > [GET] /user_workout_exercises/current_list
 > > ```
 > > 
+> > ### Print the formatted exercise schedule for the current user's currently active workout day
+> > ```
+> > [GET] /user_workout_exercises/current_formatted_list
+> > ```
 > > ### Perform exercise classification for the current user's currently active workout day
 > > ```
 > > [POST, PATCH] /user_workout_exercises

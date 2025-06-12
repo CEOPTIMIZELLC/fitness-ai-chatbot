@@ -29,8 +29,8 @@ dummy_phase_component = {
     "seconds_per_exercise": 0,
     "intensity_min": 0,
     "intensity_max": 0,
-    "rest_min": 0,                          # Adjusted so that rest is a multiple of 5.
-    "rest_max": 0,                          # Adjusted so that rest is a multiple of 5.
+    "rest_min": 0,                                              # Adjusted so that rest is a multiple of 5.
+    "rest_max": 0,                                              # Adjusted so that rest is a multiple of 5.
     "duration_min": 0,
     "duration_min_desired": 0,
     "duration_min_max": 0,
@@ -39,12 +39,13 @@ dummy_phase_component = {
     "working_duration_max": 0,
     "volume_min": 0,
     "volume_max": 0,
-    "density_min": 0,              # Scaled up to avoid floating point errors from model.
-    "density_max": 0,              # Scaled up to avoid floating point errors from model.
+    "density_min": 0,                                           # Scaled up to avoid floating point errors from model.
+    "density_max": 0,                                           # Scaled up to avoid floating point errors from model.
     "exercises_per_bodypart_workout_min": 0,
     "exercises_per_bodypart_workout_max": 0,
     "exercise_selection_note": 0,
-    'allowed_exercises': [0],
+    "allowed_exercises": [0],
+    "is_warmup": True,
 }
 
 def user_component_dict(workout, pc):
@@ -76,6 +77,7 @@ def user_component_dict(workout, pc):
         "pc_ids": [pc.component_id, pc.subcomponent_id],
         "required_every_workout": pc.required_every_workout,
         "required_within_microcycle": pc.required_within_microcycle,
+        "is_warmup": pc.components.is_warmup,
         "density_priority": pc.subcomponents.density,
         "volume_priority": pc.subcomponents.volume,
         "load_priority": pc.subcomponents.load,
@@ -88,8 +90,8 @@ def user_component_dict(workout, pc):
         "seconds_per_exercise": pc.seconds_per_exercise,
         "intensity_min": pc.intensity_min,
         "intensity_max": pc.intensity_max or 100,
-        "rest_min": pc.rest_min // 5,                          # Adjusted so that rest is a multiple of 5.
-        "rest_max": pc.rest_max // 5,                          # Adjusted so that rest is a multiple of 5.
+        "rest_min": pc.rest_min // 5,                           # Adjusted so that rest is a multiple of 5.
+        "rest_max": pc.rest_max // 5,                           # Adjusted so that rest is a multiple of 5.
         "duration_min": pc.duration_min,
         "duration_min_desired": pc.duration_min,
         "duration_min_max": pc.duration_min,
@@ -98,8 +100,8 @@ def user_component_dict(workout, pc):
         "working_duration_max": pc.working_duration_max,
         "volume_min": pc.volume_min,
         "volume_max": pc.volume_max,
-        "density_min": int(pc.density_min * 100),              # Scaled up to avoid floating point errors from model.
-        "density_max": int(pc.density_max * 100),              # Scaled up to avoid floating point errors from model.
+        "density_min": int(pc.density_min * 100),               # Scaled up to avoid floating point errors from model.
+        "density_max": int(pc.density_max * 100),               # Scaled up to avoid floating point errors from model.
         "exercises_per_bodypart_workout_min": pc.exercises_per_bodypart_workout_min if pc.exercises_per_bodypart_workout_min != None else 1,
         "exercises_per_bodypart_workout_max": pc.exercises_per_bodypart_workout_max,
         "exercise_selection_note": pc.exercise_selection_note,

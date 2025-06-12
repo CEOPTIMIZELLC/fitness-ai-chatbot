@@ -19,6 +19,7 @@ from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_volume_vars, 
     constrain_density_vars, 
     constrain_performance_vars,
+    constrain_non_warmup_vars,
     resistances_of_same_bodypart_have_equal_sets)
 
 from app.agents.exercises.exercise_model_specific_constraints import create_duration_var
@@ -32,6 +33,7 @@ available_constraints = """
 - base_strain_equals: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
 - use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
 - no_duplicate_exercises: Forces each exercise to only appear once in the schedule.
+- vertical_loading: Forces all non warm-up exercises to have the same number of sets.
 - secs_equals: Forces the number of seconds per exercise to be between the minimum and maximum values allowed for the phase component.
 - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
 - sets_within_min_max: Forces the number of sets to be between the minimum and maximum values allowed for the phase component.
@@ -107,6 +109,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "duration_within_availability": True,           # The time of a workout won't exceed the time allowed for that given day.
             "use_allowed_exercises": True,                  # Only use exercises that are allowed for the phase component and bodypart combination.
             "no_duplicate_exercises": True,                 # Ensure each exercise only appears once
+            "vertical_loading": True,                       # Non Warm-Up phases will have the same number of sets.
             "use_all_phase_components": True,               # At least one exercise should be given each phase component.
             "base_strain_equals": True,                     # The base strain of the exercise may only be a number equal to the base strain allowed for the exercise.
             "one_rep_max_equals": True,                     # The 1RM of the exercise may only be a number equal to the 1RM allowed for the exercise selected.
@@ -151,6 +154,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         volume_bounds, density_bounds, duration_bounds = pc_bounds["volume"], pc_bounds["density"], pc_bounds["duration"]
         performance_bounds = pc_bounds["performance"]
 
+        non_warmup_pc_indices = [i for i, pc in enumerate(phase_components) if not pc["is_warmup"]]
+
         # Define variables =====================================
         vars = {}
 
@@ -186,10 +191,16 @@ class ExercisePhaseComponentAgent(BaseAgent):
         vars["duration"] = declare_duration_vars(model, max_exercises, workout_availability, vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"], name="base")
         vars["working_duration"] = declare_duration_vars(model, max_exercises, workout_availability, vars["seconds_per_exercise"], vars["reps"], vars["sets"], name="working")
 
+        # Boolean variable representing whether exercise i is warmup.
+        vars["non_warmup"] = [
+            model.NewBoolVar(f'exercise_{i}_is_not_a_warmup') 
+            for i in range(max_exercises)]
+
         # Introduce dynamic selection variables
         num_exercises_used = model.NewIntVar(min_exercises, max_exercises, 'num_exercises_used')
         model.Add(num_exercises_used == sum(vars["active_exercises"]))
 
+        constrain_non_warmup_vars(model, vars["used_pcs"], vars["non_warmup"], non_warmup_pc_indices)
         constrain_volume_vars(model, vars["volume"], vars["reps"], vars["sets"], volume_bounds["max"])
         constrain_density_vars(model, vars["density"], vars["duration"], vars["working_duration"], duration_bounds["max"])
         constrain_performance_vars(model, vars["performance"], vars["volume"], vars["density"])
@@ -281,6 +292,11 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                    used_vars = vars["used_pcs"], 
                                    duration_vars = vars["rest"])
             logs += "- Rest count within min and max allowed rest applied.\n"
+
+        # Constraint: All non warmup components must have the same number of sets.
+        if constraints["vertical_loading"]:
+            ensure_all_vars_equal(model, vars["sets"], vars["non_warmup"])
+            logs += "- All non-warmup exercises have the same number of sets applied.\n"
 
         # Constraint: The resistance components must have the same number of sets.
         if constraints["resistances_have_equal_sets"]:
@@ -480,6 +496,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         model, model_with_divided_strain, vars = state["opt_model"]
         phase_component_vars, pc_count_vars, active_exercise_vars = vars["phase_components"], vars["pc_count"], vars["active_exercises"]
         seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars = vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"]
+        non_warmup_vars = vars["non_warmup"]
         volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
         duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
 
@@ -522,6 +539,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                         solver.Value(volume_vars[i]),                                       # Volume of the exercise chosen.
                         round(solver.Value(density_vars[i]) / 100, 2),                      # Density of the exercise chosen. Scaled down due to scaling up division.
                         round(solver.Value(performance_vars[i]) / 100, 2),                  # Performance of the exercise chosen. Scaled down due to scaling up of intensity AND training weight.
+                        not solver.Value(non_warmup_vars[i]),                               # Exercise chosen is a warmup.
                         duration_vars_current,                                              # Duration of the exercise chosen.
                         working_duration_vars_current,                                      # Working duration of the exercise chosen.
                     ))
@@ -594,50 +612,48 @@ class ExercisePhaseComponentAgent(BaseAgent):
     def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
-            "number": ("", 5),
+            "number": ("No", 5),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
+            "warmup": ("Warmup", 9),
             "duration": ("Duration", 12),
             "working_duration": ("WDuration", 12),
-            "seconds_per_exercise": ("(Sec/Exercise", 16),
+            "seconds_per_exercise": ("Sec/Exer", 11),
             "reps": ("Reps", 14),
             "sets": ("Sets", 10),
-            "rest": ("Rest)", 17),
+            "rest": ("Rest", 16),
             "volume": ("Volume", 24),
             "density": ("Density", 24),
             "performance": ("Performance", 30)
         }
 
-    def formatted_schedule(self, headers, i, pc, metrics):
+    def line_fields(self, i, pc, metrics):
         (active_exercises, seconds_per_exercise, 
          reps_var, sets_var, rest_var, 
          volume_var, density_var, 
-         performance_var, duration, working_duration) = metrics
+         performance_var, warmup_var, 
+         duration, working_duration) = metrics
 
         volume_max = pc["volume_max"]
         density_max = pc["density_max"] / 100
         performance_max = round(volume_max * density_max * 100) / 100
 
         # Format line
-        line_fields = {
+        return {
             "number": str(i + 1),
             "phase_component": f"{pc['name']}",
             "bodypart": pc["bodypart_name"],
-            "duration": f"({duration} sec",
-            "working_duration": f"({working_duration} sec",
-            "seconds_per_exercise": f"({seconds_per_exercise} sec",
+            "warmup": str(warmup_var),
+            "duration": f"{duration} sec",
+            "working_duration": f"{working_duration} sec",
+            "seconds_per_exercise": f"{seconds_per_exercise} sec",
             "reps": self._format_range(reps_var, pc["reps_min"], pc["reps_max"]),
             "sets": self._format_range(sets_var, pc["sets_min"], pc["sets_max"]),
-            "rest": self._format_range(rest_var, pc["rest_min"] * 5, pc["rest_max"] * 5) + ")",
+            "rest": self._format_range(rest_var, pc["rest_min"] * 5, pc["rest_max"] * 5),
             "volume": f"{volume_var} (>={volume_max})",
             "density": f"{density_var} (>={density_max})",
             "performance": f"{performance_var} (>={performance_max})",
         }
-
-        line = ""
-        for field, (_, length) in headers.items():
-            line += self._create_formatted_field(field, line_fields[field], length)
-        return line + "\n"
 
     def formatted_counts(self, pcs, solution, longest_sizes):
         schedule_counts = f"\nPhase Component Counts:\n"
@@ -669,6 +685,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         
         # Create header line
         if log_schedule: 
+            formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
         for component_count, (i, phase_component_index, _, _, _, *metrics) in enumerate(schedule):
@@ -677,7 +694,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
             (active_exercises, seconds_per_exercise, 
              reps_var, sets_var, rest_var, 
              volume_var, density_var, 
-             performance_var, duration, working_duration) = metrics
+             performance_var, warmup_var, 
+             duration, working_duration) = metrics
 
             if active_exercises:
                 final_output.append({
@@ -697,7 +715,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
                 if log_schedule:
-                    formatted += self.formatted_schedule(headers, component_count, pc, metrics)
+                    line_fields = line_fields(component_count, pc, metrics)
+                    formatted += self.formatted_schedule_line(headers, line_fields)
 
             else:
                 if log_schedule:

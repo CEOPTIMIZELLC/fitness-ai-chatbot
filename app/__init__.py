@@ -43,6 +43,7 @@ def register_blueprints(app):
         app.register_blueprint(library_routes.exercises_bp, url_prefix='/exercises')
         app.register_blueprint(library_routes.goals_bp, url_prefix='/goals')
         app.register_blueprint(library_routes.phases_bp, url_prefix='/phases')
+        app.register_blueprint(library_routes.loading_systems_bp, url_prefix='/loading_systems')
         app.register_blueprint(library_routes.phase_components_bp, url_prefix='/phase_components')
         app.register_blueprint(library_routes.components_bp, url_prefix='/components')
         app.register_blueprint(library_routes.subcomponents_bp, url_prefix='/subcomponents')

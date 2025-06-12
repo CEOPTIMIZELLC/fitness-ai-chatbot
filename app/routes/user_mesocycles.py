@@ -16,6 +16,8 @@ from app.agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 from app.routes.utils import construct_phases_list
+from app.routes.utils import print_mesocycles_schedule
+from app.routes.utils import retrieve_output_from_endpoint
 
 bp = Blueprint('user_mesocycles', __name__)
 
@@ -54,6 +56,10 @@ def mesocycle_phase_adding(goal_id=None):
     user_phases = agent_output_to_sqlalchemy_model(result["output"], user_macro.id, user_macro.start_date)
     db.session.add_all(user_phases)
     db.session.commit()
+
+    result_temp = get_user_current_mesocycles_formatted_list()
+    result["formatted_schedule"], _ = retrieve_output_from_endpoint(result_temp, "mesocycles")
+
     return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Method to perform phase selection on a goal of a specified id.
@@ -70,6 +76,7 @@ def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_sta
         new_phase = User_Mesocycles(
             macrocycle_id = macrocycle_id,
             phase_id = phase["id"],
+            is_goal_phase = phase["is_goal_phase"],
             order = order,
             start_date = mesocycle_start_date,
             end_date = mesocycle_start_date + timedelta(weeks=phase["duration"])
@@ -103,6 +110,25 @@ def get_user_current_mesocycles_list():
     for user_mesocycle in user_mesocycles:
         result.append(user_mesocycle.to_dict())
     return jsonify({"status": "success", "mesocycles": result}), 200
+
+# Retrieve user's current macrocycle's mesocycles
+@bp.route('/current_formatted_list', methods=['GET'])
+@login_required
+def get_user_current_mesocycles_formatted_list():
+    user_macrocycle = current_macrocycle(current_user.id)
+    if not user_macrocycle:
+        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
+
+    user_mesocycles = user_macrocycle.mesocycles
+    if not user_mesocycles:
+        return jsonify({"status": "error", "message": "No mesocycles found for the macrocycle."}), 404
+
+    user_mesocycles_dict = [user_mesocycle.to_dict() for user_mesocycle in user_mesocycles]
+
+    formatted_schedule = print_mesocycles_schedule(user_mesocycles_dict)
+    if verbose:
+        print(formatted_schedule)
+    return jsonify({"status": "success", "mesocycles": formatted_schedule}), 200
 
 # Retrieve user's current mesocycle
 @bp.route('/current', methods=['GET'])
