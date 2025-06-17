@@ -11,6 +11,7 @@ POSTRGRES_DATABASE="fitness_db"
 POSTRGRES_USER="postgres"
 POSTRGRES_PASSWORD="postgres"
 
+EMBEDDING_MODEL="text-embedding-3-small"
 LANGUAGE_MODEL="gpt-4o-mini"
 OPENAI_API_KEY=
 ```
