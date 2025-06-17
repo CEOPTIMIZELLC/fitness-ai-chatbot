@@ -16,6 +16,8 @@ from .exercise_equipment import (
     Exercise_Marking_Equipment, 
     Exercise_Other_Equipment)
 
+from .general_exercise_library import General_Exercise_Library
+
 from .goal_library import Goal_Library
 from .goal_phase_requirements import Goal_Phase_Requirements
 from .loading_system_library import Loading_System_Library
@@ -61,6 +63,7 @@ __all__ = [
     "Exercise_Weighted_Equipment", 
     "Exercise_Marking_Equipment", 
     "Exercise_Other_Equipment", 
+    "General_Exercise_Library", 
     "Goal_Library", 
     "Goal_Phase_Requirements", 
     "Loading_System_Library", 

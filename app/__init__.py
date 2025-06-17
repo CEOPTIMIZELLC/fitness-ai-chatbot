@@ -40,6 +40,7 @@ def register_blueprints(app):
 
         from .routes import libraries as library_routes
         app.register_blueprint(library_routes.equipment_bp, url_prefix='/equipment')
+        app.register_blueprint(library_routes.general_exercises_bp, url_prefix='/general_exercises')
         app.register_blueprint(library_routes.exercises_bp, url_prefix='/exercises')
         app.register_blueprint(library_routes.goals_bp, url_prefix='/goals')
         app.register_blueprint(library_routes.phases_bp, url_prefix='/phases')
