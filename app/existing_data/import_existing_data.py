@@ -1,6 +1,9 @@
-from app import db
 import pandas as pd
 import numpy as np
+from datetime import timedelta
+import re
+
+from app import db
 from app.models import (
     Body_Region_Library,
     Bodypart_Library,
@@ -17,6 +20,7 @@ from app.models import (
     Exercise_Weighted_Equipment,
     Exercise_Marking_Equipment,
     Exercise_Other_Equipment,
+    General_Exercise_Library,
     Goal_Library,
     Goal_Phase_Requirements,
     Loading_System_Library,
@@ -29,23 +33,19 @@ from app.models import (
     Subcomponent_Library,
     Weekday_Library
 )
+from .utils import create_list_of_table_entries
 
-from datetime import timedelta
-import re
+from .item_grouping import Data_Clustering
+
+from pydantic import BaseModel, Field
+
+class GeneralExercise(BaseModel):
+    """Information to extract."""
+    name: str = Field(description="The name of the general exercise that all of the other exercises are variations of.")
+    reasoning: str = Field(description="The reasoning behind the choice of name based on the exercises in the group.")
 
 def set_keys_to_lowercase(d):
     return {k.lower(): v for k, v in d.items()}
-
-def create_list_of_table_entries(ids, names, model_type):
-    # Create list of Components
-    for i, name in enumerate(names, start=1):
-        ids[name] = i
-        db_entry = model_type(id=i, name=name)
-
-        # Using merge to handle duplicates gracefully
-        db.session.merge(db_entry)
-    db.session.commit()
-    return ids
 
 # Function to determine the connector for new column value
 def determine_connector(text):
@@ -65,7 +65,7 @@ def extract_number(text):
     else:
         return 1  # Return 1 if no number is found
 
-class Data_Importer:
+class Data_Importer(Data_Clustering):
     sheets = {}
     muscle_ids = {}
     muscle_group_ids = {}
@@ -76,6 +76,7 @@ class Data_Importer:
     phase_ids = {}
     subcomponent_ids = {}
     component_ids = {}
+    general_exercise_ids = {}
     exercise_ids = {}
     equipment_ids = {}
     plane_of_motion_ids = {}
@@ -324,13 +325,45 @@ class Data_Importer:
         db.session.commit()
 
         return None
+    
+    def _general_exercises(self):
+        # Ensure that the ids neccessary have been initialized.
+        if not self.exercise_ids:
+            print("IDs not initialized.")
+            return None
 
-    def exercises(self):
+        system = """You are a helpful assistant trained in fitness and exercise terminology.
+
+    You have been provided a list of exercises that belong to a singular group and have been tasked with generating a name for the general exercise that all of these fall under.
+
+    """
+
+        self._cluster_main(
+            df=self.exercises_df, 
+            name_column="Exercise", 
+            structured_output_class=GeneralExercise, 
+            system_message=system)
+        
+        # Get all of the names of the general exercises and create entries for each.
+        general_exercise_names = self.exercises_df['General Exercise'].unique()
+        self.general_exercise_ids = create_list_of_table_entries(self.general_exercise_ids, general_exercise_names, General_Exercise_Library)
+
+        # Map the General Exercise ID to the Exercise
+        self.exercises_df['General Exercise ID'] = self.exercises_df['General Exercise'].map(self.general_exercise_ids)
+
+        return None
+
+    def _exercises(self):
+        # Ensure that the ids neccessary have been initialized.
+        if not (self.exercise_ids and self.general_exercise_ids):
+            print("IDs not initialized.")
+            return None
+
         # Create a list of entries for the exercises
         for i, row in self.exercises_df.iterrows():
-            self.exercise_ids[row["Exercise"]] = i+1
             db_entry = Exercise_Library(
-                id=i+1, 
+                id=row["Exercise ID"], 
+                general_exercise_id=row["General Exercise ID"], 
                 name=row["Exercise"], 
                 base_strain=row["Base Strain"], 
                 technical_difficulty=row["Technical Difficulty"], 
@@ -342,6 +375,16 @@ class Data_Importer:
                 proprioceptive_progressions=row["Proprioceptive Progressions"])
             db.session.merge(db_entry)
         db.session.commit()
+        return None
+
+    def general_exercises_and_exercises(self):
+        # Create the dictionary of ids.
+        for i, row in self.exercises_df.iterrows():
+            self.exercise_ids[row["Exercise"]] = i+1
+
+        self.exercises_df['Exercise ID'] = self.exercises_df['Exercise'].map(self.exercise_ids)
+        self._general_exercises()
+        self._exercises()
         return None
 
     def exercise_phase_component(self):
@@ -596,7 +639,7 @@ def Main(excel_file):
     di.subcomponents()
     di.phase_components()
     di.phase_component_bodyparts()
-    di.exercises()
+    di.general_exercises_and_exercises()
     di.exercise_phase_component()
     di.equipment()
     di.exercise_supportive_equipment()
