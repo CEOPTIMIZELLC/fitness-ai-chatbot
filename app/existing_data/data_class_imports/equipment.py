@@ -41,3 +41,7 @@ class Data_Importer:
 
         self.equipment_ids = create_list_of_table_entries(self.equipment_ids, equipment_names, Equipment_Library)
         return None
+    
+    def run(self):
+        self.equipment()
+        return None

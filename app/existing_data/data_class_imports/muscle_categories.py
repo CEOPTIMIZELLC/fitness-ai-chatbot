@@ -67,3 +67,11 @@ class Data_Importer:
         db.session.commit()
         
         return None
+
+    def run(self):
+        self.muscles()
+        self.muscle_groups()
+        self.body_regions()
+        self.bodyparts()
+        self.muscle_categories()
+        return None

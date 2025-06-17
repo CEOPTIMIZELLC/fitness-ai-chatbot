@@ -9,3 +9,7 @@ class Data_Importer:
             db.session.merge(db_entry)
         db.session.commit()
         return None
+
+    def run(self):
+        self.weekdays()
+        return None

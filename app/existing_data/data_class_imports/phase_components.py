@@ -153,3 +153,11 @@ class Data_Importer:
         db.session.commit()
 
         return None
+
+    def run(self):
+        self.goals()
+        self.phases()
+        self.components()
+        self.subcomponents()
+        self.phase_components()
+        return None

@@ -107,3 +107,10 @@ class Data_Importer:
             db.session.merge(db_entry)
         db.session.commit()
         return None
+
+    def run(self):
+        self.exercise_muscles()
+        self.exercise_muscle_groups()
+        self.exercise_body_regions()
+        self.exercise_bodyparts()
+        return None

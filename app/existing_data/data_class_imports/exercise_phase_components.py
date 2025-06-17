@@ -38,3 +38,7 @@ class Data_Importer:
             db.session.merge(db_entry)
         db.session.commit()
         return None
+
+    def run(self):
+        self.exercise_phase_component()
+        return None

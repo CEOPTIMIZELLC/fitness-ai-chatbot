@@ -89,3 +89,11 @@ class Data_Importer:
         exercise_other_equipment_df.rename(columns={"Other Equipment": "Equipment"}, inplace=True)
         exercise_other_equipment_df = self._parse_exercise_join_table(exercise_other_equipment_df, Exercise_Other_Equipment)
         return None
+
+    def run(self):
+        self.exercise_supportive_equipment()
+        self.exercise_assistive_equipment()
+        self.exercise_weighted_equipment()
+        self.exercise_marking_equipment()
+        self.exercise_other_equipment()
+        return None

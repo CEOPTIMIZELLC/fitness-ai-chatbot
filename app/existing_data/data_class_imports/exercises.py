@@ -83,3 +83,7 @@ class Data_Importer(Data_Clustering):
         self._general_exercises()
         self._exercises()
         return None
+
+    def run(self):
+        self.general_exercises_and_exercises()
+        return None

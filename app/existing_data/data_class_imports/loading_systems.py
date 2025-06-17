@@ -26,3 +26,7 @@ class Data_Importer:
         db.session.commit()
         
         return None
+
+    def run(self):
+        self.loading_systems()
+        return None

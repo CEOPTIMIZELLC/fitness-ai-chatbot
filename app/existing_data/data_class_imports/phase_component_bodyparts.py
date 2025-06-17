@@ -3,7 +3,6 @@ import numpy as np
 from app import db
 from app.models import Phase_Component_Bodyparts
 
-
 class Data_Importer:
     # Read in the sheets
     def __init__(self, xls):
@@ -37,4 +36,8 @@ class Data_Importer:
             db.session.merge(db_entry)
         db.session.commit()
 
+        return None
+
+    def run(self):
+        self.phase_component_bodyparts()
         return None
