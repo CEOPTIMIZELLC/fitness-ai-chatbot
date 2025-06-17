@@ -6,6 +6,8 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 from scipy.cluster.hierarchy import linkage, fcluster
 
+from config import distance_threshold
+
 class Data_Clustering:
     # Step 1: Get embeddings from OpenAI
     def _get_embeddings(self, df, name_column):
@@ -32,7 +34,6 @@ class Data_Clustering:
         Z = linkage(embedding_matrix, method="ward")  # 'ward' works well for embeddings
 
         # Example: cut dendrogram at distance threshold t
-        distance_threshold = 1.5  # try different values
         df["General Cluster"] = fcluster(Z, t=distance_threshold, criterion="distance")
         return df
 
