@@ -8,5 +8,3 @@ from .muscle_categories import Data_Importer as MC_Data
 from .phase_component_bodyparts import Data_Importer as PC_Bodyparts_Data
 from .phase_components import Data_Importer as PC_Data
 from .weekdays import Data_Importer as Weekday_Data
-
-from .combined import Data_Importer as Data_Importer
