@@ -13,7 +13,10 @@ class General_Exercise_Library(BaseModel, TableNameMixin, NameMixin):
         cascade="all, delete")
 
     def to_dict(self):
+        exs = self.exercises
+        ex_names = [ex.name for ex in exs]
         return {
             "id": self.id, 
-            "name": self.name
+            "name": self.name,
+            "variations": ex_names
         }
