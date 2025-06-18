@@ -7,6 +7,8 @@ from app.agents.constraints import (
     entries_within_min_max, 
     ensure_all_vars_equal, 
     link_entry_and_item, 
+    no_repeated_items, 
+    only_use_required_items, 
     constrain_active_entries_vars, 
     declare_model_vars, 
     use_all_required_items, 
@@ -33,6 +35,7 @@ available_constraints = """
 - base_strain_equals: Forces the amount of base strain to be between the minimum and maximum values allowed for the exercise.
 - use_allowed_exercises: Forces the exercise to be one of the exercises allowed for the phase component and bodypart combination.
 - no_duplicate_exercises: Forces each exercise to only appear once in the schedule.
+- no_duplicate_general_exercises: Forces each general exercise to only appear once in the schedule.
 - vertical_loading: Forces all non warm-up exercises to have the same number of sets.
 - secs_equals: Forces the number of seconds per exercise to be between the minimum and maximum values allowed for the phase component.
 - reps_within_min_max: Forces the number of reps to be between the minimum and maximum values allowed for the phase component.
@@ -101,7 +104,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "projected_duration": 0,
             "exercise_volume_improvement_percentage": 0,
             "phase_components": [],
-            "possible_exercises": []
+            "possible_exercises": [],
+            "possible_general_exercises": []
         }
 
         # Define all constraints with their active status
@@ -109,6 +113,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "duration_within_availability": True,           # The time of a workout won't exceed the time allowed for that given day.
             "use_allowed_exercises": True,                  # Only use exercises that are allowed for the phase component and bodypart combination.
             "no_duplicate_exercises": True,                 # Ensure each exercise only appears once
+            "no_duplicate_general_exercises": True,         # Ensure each general exercise only appears once
             "vertical_loading": True,                       # Non Warm-Up phases will have the same number of sets.
             "use_all_phase_components": True,               # At least one exercise should be given each phase component.
             "base_strain_equals": True,                     # The base strain of the exercise may only be a number equal to the base strain allowed for the exercise.
@@ -148,7 +153,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             }
         }
     
-    def create_model_vars(self, model, phase_components, workout_availability, phase_component_amount, pc_bounds, min_exercises, max_exercises):
+    def create_model_vars(self, model, phase_components, workout_availability, phase_component_amount, general_exercise_amount, pc_bounds, min_exercises, max_exercises):
         seconds_per_exercise_bounds = pc_bounds["seconds_per_exercise"]
         reps_bounds, sets_bounds, rest_bounds = pc_bounds["reps"], pc_bounds["sets"], pc_bounds["rest"]
         volume_bounds, density_bounds, duration_bounds = pc_bounds["volume"], pc_bounds["density"], pc_bounds["duration"]
@@ -167,10 +172,19 @@ class ExercisePhaseComponentAgent(BaseAgent):
         # Optional integer variable for the phase component chosen at exercise i.
         vars["phase_components"] = declare_model_vars(model, "phase_component", vars["active_exercises"], max_exercises, 1, (phase_component_amount - 1))
 
+        # Optional integer variable for the general exercise chosen at exercise i.
+        vars["general_exercises"] = declare_model_vars(model, "general_exercise", vars["active_exercises"], max_exercises, 1, general_exercise_amount)
+
         # Boolean variables indicating whether phase component j is used at exercise i.
         vars["used_pcs"] = [[
             model.NewBoolVar(f'exercise_{i}_is_phase_component_{j}')
             for j in range(phase_component_amount)]
+            for i in range(max_exercises)]
+
+        # Boolean variables indicating whether general exercise j is used at exercise i.
+        vars["used_general_exercises"] = [[
+            model.NewBoolVar(f'exercise_{i}_is_general_exercise_{j}')
+            for j in range(general_exercise_amount+1)]
             for i in range(max_exercises)]
 
         # Integer variable indicating the number of occurences of each phase component.
@@ -211,7 +225,13 @@ class ExercisePhaseComponentAgent(BaseAgent):
                             entry_vars = vars["phase_components"], 
                             number_of_entries = max_exercises, 
                             used_vars = vars["used_pcs"])
-        
+
+        # Links the general exercises variables and the general exercises via the used general exercises variables.
+        for general_exercise_var, used_general_exercises_var in zip(vars["general_exercises"], vars["used_general_exercises"]):
+            for i, used_general_exercise_var in enumerate(used_general_exercises_var):
+                model.Add(general_exercise_var == i).OnlyEnforceIf(used_general_exercise_var)
+                model.Add(general_exercise_var != i).OnlyEnforceIf(used_general_exercise_var.Not())
+
         # Sets the counts for the variables.
         for item_index in list(range(len(phase_components))):
             conditions = [row[item_index] for row in vars["used_pcs"]]
@@ -225,7 +245,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                                       active_entry_vars = vars["active_exercises"])
         return vars
     
-    def apply_model_constraints(self, constraints, model, vars, phase_components, workout_availability, max_exercises, projected_duration):
+    def apply_model_constraints(self, constraints, model, vars, phase_components, general_exercise_amount, workout_availability, max_exercises, projected_duration):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -249,6 +269,24 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 for i in phase_component_use_conditionals
             ]
             logs += "- Use every required phase at least once applied.\n"
+
+        # Constraint: Use only allowed exercises
+        if constraints["use_allowed_exercises"]:
+            for general_exercise_var, used_pcs_var in zip(vars["general_exercises"], vars["used_pcs"]):
+                for pc, used_pc_var in zip(phase_components[1:], used_pcs_var[1:]):
+                    only_use_required_items(model = model, 
+                                            required_items = pc["allowed_general_exercises"], 
+                                            entry_vars = [general_exercise_var], 
+                                            conditions = [used_pc_var])
+            logs += "- Only use allowed exercises applied.\n"
+
+        # Constraint: Ensure each exercise only appears once in the schedule
+        if constraints["no_duplicate_general_exercises"]:
+            required_phase_components = list(range(1, general_exercise_amount+1))
+            no_repeated_items(model = model, 
+                              required_items = required_phase_components, 
+                              used_vars = vars["used_general_exercises"])
+            logs += "- No duplicate general exercises constraint applied.\n"
 
         # Constraint: The seconds per exercise of a phase component may only be between the minimum and maximum seconds per exercise allowed.
         if constraints["secs_equals"]:
@@ -446,6 +484,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
         phase_components = parameters["phase_components"]
         phase_component_amount = len(phase_components)
 
+        general_exercises = parameters["possible_general_exercises"]
+        general_exercise_amount = max(list(general_exercises.keys()))
+
         projected_duration = parameters["projected_duration"]
 
         # Maximum amount of time that the workout may last
@@ -458,8 +499,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         pc_bounds["performance"] = {"min": pc_bounds["volume"]["min"] * pc_bounds["density"]["min"], 
                                     "max": pc_bounds["volume"]["max"] * pc_bounds["density"]["max"]}
 
-        vars = self.create_model_vars(model, phase_components, workout_availability, phase_component_amount, pc_bounds, min_exercises, max_exercises)
-        state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, workout_availability, max_exercises, projected_duration)
+        vars = self.create_model_vars(model, phase_components, workout_availability, phase_component_amount, general_exercise_amount, pc_bounds, min_exercises, max_exercises)
+        state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, general_exercise_amount, workout_availability, max_exercises, projected_duration)
 
         model_with_divided_strain = model.clone()
         state["logs"] += self.app_model_objective(constraints, model, model_with_divided_strain, vars, workout_availability, pc_bounds, min_exercises, max_exercises)
@@ -494,13 +535,15 @@ class ExercisePhaseComponentAgent(BaseAgent):
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
         model, model_with_divided_strain, vars = state["opt_model"]
-        phase_component_vars, pc_count_vars, active_exercise_vars = vars["phase_components"], vars["pc_count"], vars["active_exercises"]
+        phase_component_vars, general_exercise_vars = vars["phase_components"], vars["general_exercises"]
+        pc_count_vars, active_exercise_vars = vars["pc_count"], vars["active_exercises"]
         seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars = vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"]
         non_warmup_vars = vars["non_warmup"]
         volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
         duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
 
         phase_components = state["parameters"]["phase_components"]
+        general_exercises = state["parameters"]["possible_general_exercises"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 24
@@ -528,6 +571,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                     schedule.append((
                         i, 
                         phase_component_var, 
+                        solver.Value(general_exercise_vars[i]),                             # ID of the general exercise used.
                         phase_component["component_id"],                                    # ID of the component for the phase component chosen.
                         phase_component["subcomponent_id"],                                 # ID of the subcomponent for the phase component chosen.
                         phase_component["bodypart_id"],                                     # ID of the bodypart for the phase component chosen.
@@ -594,6 +638,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
     def get_model_formatting_parameters(self, parameters):
         return [
             parameters["phase_components"],
+            parameters["possible_general_exercises"],
             parameters["projected_duration"],
             parameters["availability"]
         ]
@@ -614,6 +659,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return {
             "number": ("No", 5),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
+            "general_exercise": ("General Exercise", longest_sizes["general_exercise"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
             "warmup": ("Warmup", 9),
             "duration": ("Duration", 12),
@@ -627,7 +673,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "performance": ("Performance", 30)
         }
 
-    def line_fields(self, i, pc, metrics):
+    def line_fields(self, i, pc, general_exercise, metrics):
         (active_exercises, seconds_per_exercise, 
          reps_var, sets_var, rest_var, 
          volume_var, density_var, 
@@ -642,6 +688,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return {
             "number": str(i + 1),
             "phase_component": f"{pc['name']}",
+            "general_exercise": f"{general_exercise}",
             "bodypart": pc["bodypart_name"],
             "warmup": str(warmup_var),
             "duration": f"{duration} sec",
@@ -669,7 +716,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 schedule_not_included += count_string
         return schedule_counts + schedule_not_included + "\n"
 
-    def format_agent_output(self, solution, formatted, schedule, phase_components, projected_duration, workout_availability):
+    def format_agent_output(self, solution, formatted, schedule, phase_components, general_exercises, projected_duration, workout_availability):
         final_output = []
 
         phase_component_count = [0] * len(phase_components)
@@ -677,7 +724,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         # Calculate longest string sizes
         longest_sizes = {
             "phase_component": longest_string_size_for_key(phase_components[1:], "name"),
-            "bodypart": longest_string_size_for_key(phase_components[1:], "bodypart_name")
+            "bodypart": longest_string_size_for_key(phase_components[1:], "bodypart_name"),
+            "general_exercise": len(max(general_exercises.values(), key=len))
         }
 
         # Create headers
@@ -688,8 +736,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
             formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
-        for component_count, (i, phase_component_index, _, _, _, *metrics) in enumerate(schedule):
+        for component_count, (i, phase_component_index, general_exercise_index, _, _, _, *metrics) in enumerate(schedule):
             pc = phase_components[phase_component_index]
+            general_exercise = general_exercises[general_exercise_index]
 
             (active_exercises, seconds_per_exercise, 
              reps_var, sets_var, rest_var, 
@@ -715,7 +764,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
                 if log_schedule:
-                    line_fields = self.line_fields(component_count, pc, metrics)
+                    line_fields = self.line_fields(component_count, pc, general_exercise, metrics)
                     formatted += self.formatted_schedule_line(headers, line_fields)
 
             else:
