@@ -22,11 +22,9 @@ from app.utils.common_table_queries import current_workout_day
 from app.utils.print_long_output import print_long_output
 
 from app.routes.utils import retrieve_total_time_needed
-from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list
-
+from app.routes.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
 from app.routes.utils import verify_pc_information
 from app.routes.utils import print_workout_exercises_schedule
-
 from app.routes.utils import retrieve_output_from_endpoint
 
 bp = Blueprint('user_workout_exercises', __name__)
@@ -102,6 +100,7 @@ def retrieve_pc_parameters(user_workout_day):
     parameters["availability"] = availability
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
     parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
+    parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
 
     pc_verification_message = verify_and_update_pc_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
     if pc_verification_message:

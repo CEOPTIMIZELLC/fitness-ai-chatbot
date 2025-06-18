@@ -19,6 +19,24 @@ def attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs):
             pc["performance"]=0
     return pcs
 
+# Attach allowed exercises to phase components.
+def attach_general_exercises_to_pcs(pcs, general_exercises_for_pcs):
+    # Attach allowed exercises to phase component.
+    for pc, general_exercises_for_pc in zip(pcs, general_exercises_for_pcs):
+        pc["allowed_general_exercises"] = general_exercises_for_pc
+    return pcs
+
+def get_general_exercises_for_all_pcs(exercises, exercises_for_pcs):
+    # Loop through the phase components
+    general_exercises_for_pcs = [
+        list(set(
+            exercises[exercise_for_pc-1]["general_id"]
+            for exercise_for_pc in exercises_for_pc
+        ))
+        for exercises_for_pc in exercises_for_pcs
+    ]
+    return general_exercises_for_pcs
+
 # Verifies and updates the phase component information.
 # Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
 # Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
@@ -55,7 +73,18 @@ def Main(parameters, pcs, exercises, total_availability, duration_key, count_key
     if not_enough_time_message:
         return not_enough_time_message
 
+    print_logging_message("FIND GENERAL EXERCISES FOR ALL PHASE COMPONENTS")
+    general_exercises_for_pcs = get_general_exercises_for_all_pcs(exercises, exercises_for_pcs)
+
+    # Check if there are enough exercises to complete the phase components.
+    print_logging_message("CHECK IF THERE ARE ENOUGH GENERAL EXERCISES")
+    pc_without_enough_ex_message = check_exercise_quantity(pcs, general_exercises_for_pcs, check_globally)
+    if pc_without_enough_ex_message:
+        return pc_without_enough_ex_message
+
     # Attach allowed exercises to phase component.
     pcs = attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs)
 
+    # Attach allowed exercises to phase component.
+    pcs = attach_general_exercises_to_pcs(pcs, general_exercises_for_pcs)
     return pcs, exercises

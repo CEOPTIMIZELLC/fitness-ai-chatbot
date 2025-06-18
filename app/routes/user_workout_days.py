@@ -25,11 +25,9 @@ from app.utils.db_helpers import get_all_items
 from app.utils.common_table_queries import current_microcycle, current_workout_day
 from app.utils.print_long_output import print_long_output
 
-from app.routes.utils import construct_available_exercises_list, construct_phase_component_list
-
+from app.routes.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
 from app.routes.utils import verify_pc_information
 from app.routes.utils import print_workout_days_schedule
-
 from app.routes.utils import retrieve_output_from_endpoint
 
 bp = Blueprint('user_workout_days', __name__)
@@ -114,6 +112,7 @@ def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, 
     parameters["weekday_availability"] = weekday_availability
     parameters["phase_components"] = construct_phase_component_list(phase_id)
     parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
+    parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
 
     pc_verification_message = verify_and_update_pc_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:], total_availability, number_of_available_weekdays)
     if pc_verification_message:
