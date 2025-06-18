@@ -285,3 +285,19 @@ def exercise_phase_components_test():
     if verbose:
         print_long_output(result["formatted"])
     return jsonify({"status": "success", "exercises": result}), 200
+
+# Assigns exercises to workouts.
+@bp.route('/test_pre_processing', methods=['POST', 'PATCH'])
+@login_required
+def exercise_agent_preprocessing_test():
+    user_workout_day = current_workout_day(current_user.id)
+    if not user_workout_day:
+        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+    # Retrieve parameters. If a tuple error message is returned, return 
+    parameters = retrieve_pc_parameters(user_workout_day)
+    if isinstance(parameters, tuple):
+        return parameters
+
+    return jsonify({"status": "success", "parameters": parameters}), 200
+
+
