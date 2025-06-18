@@ -715,7 +715,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
                 if log_schedule:
-                    line_fields = line_fields(component_count, pc, metrics)
+                    line_fields = self.line_fields(component_count, pc, metrics)
                     formatted += self.formatted_schedule_line(headers, line_fields)
 
             else:
