@@ -1,4 +1,4 @@
-from config import verbose
+from config import verbose, verbose_formatted_schedule
 import random
 import math
 
@@ -179,8 +179,8 @@ def get_user_current_exercises_formatted_list():
                                    for user_workout_exercise in user_workout_exercises]
     
     formatted_schedule = print_workout_exercises_schedule(loading_system_id, user_workout_exercises_dict)
-    if verbose:
-        print(formatted_schedule)
+    if verbose_formatted_schedule:
+        print_long_output(formatted_schedule)
     return jsonify({"status": "success", "exercises": formatted_schedule}), 200
 
 # Assigns exercises to workouts.

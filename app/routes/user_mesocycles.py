@@ -1,4 +1,4 @@
-from config import verbose
+from config import verbose, verbose_formatted_schedule
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 from datetime import timedelta
@@ -126,7 +126,7 @@ def get_user_current_mesocycles_formatted_list():
     user_mesocycles_dict = [user_mesocycle.to_dict() for user_mesocycle in user_mesocycles]
 
     formatted_schedule = print_mesocycles_schedule(user_mesocycles_dict)
-    if verbose:
+    if verbose_formatted_schedule:
         print(formatted_schedule)
     return jsonify({"status": "success", "mesocycles": formatted_schedule}), 200
 

@@ -22,6 +22,8 @@ verbose_agent_preprocessing = True
 verbose_exercises_for_pc_steps = False
 verbose_agent_time = True
 verbose_agent_steps = True
+verbose_agent_output = True
+verbose_formatted_schedule = True
 
 # Configurations for agent logging.
 log_schedule = True

@@ -1,5 +1,5 @@
 from config import vertical_loading
-from config import verbose
+from config import verbose, verbose_formatted_schedule
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 import math
@@ -188,7 +188,7 @@ def get_user_current_workout_days_formatted_list():
     bodypart_dict = get_all_items(Bodypart_Library)
 
     formatted_schedule = print_workout_days_schedule(pc_dict, bodypart_dict, user_workout_days_dict)
-    if verbose:
+    if verbose_formatted_schedule:
         print(formatted_schedule)
     return jsonify({"status": "success", "phase_components": formatted_schedule}), 200
 
