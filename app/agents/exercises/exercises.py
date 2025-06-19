@@ -31,6 +31,14 @@ from .get_pc_exercise_bounds import get_bounds
 
 _ = load_dotenv()
 
+# Correct exercises
+def correct_allowed_exercises(exercises, allowed_exercises, general_exercise_id):
+    return [
+        ex_index
+        for ex_index in allowed_exercises
+        if exercises[ex_index]["general_id"] == general_exercise_id
+    ]
+
 def declare_duration_vars(model, max_entries, phase_component_ids, phase_components, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars=None, name=""):
     return [
         constrain_duration_var(
@@ -73,7 +81,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         #return {"solution": "None"}
         # model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
         model, model_with_divided_strain, vars = state["opt_model"]
-        phase_component_vars, pc_count_vars, active_exercise_vars = vars["phase_components"], vars["pc_count"], vars["active_exercises"]
+        phase_component_vars, general_exercise_vars = vars["phase_components"], vars["general_exercises"]
+        pc_count_vars, active_exercise_vars = vars["pc_count"], vars["active_exercises"]
         seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars = vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"]
         volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
         duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
@@ -104,6 +113,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                     schedule.append((
                         i, 
                         phase_component_var, 
+                        solver.Value(general_exercise_vars[i]),                             # ID of the general exercise used.
                         phase_component["component_id"],                                    # ID of the component for the phase component chosen.
                         phase_component["subcomponent_id"],                                 # ID of the subcomponent for the phase component chosen.
                         phase_component["bodypart_id"],                                     # ID of the bodypart for the phase component chosen.
@@ -217,7 +227,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return exercise_vars
 
 
-    def apply_model_constraints_2(self, constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, ex_bounds, max_exercises, workout_availability, projected_duration):
+    def apply_model_constraints_2(self, constraints, model, phase_component_ids, general_exercise_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, ex_bounds, max_exercises, workout_availability, projected_duration):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -247,11 +257,17 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Constraint: Use only allowed exercises
         if constraints["use_allowed_exercises"]:
-            for i, phase_component_index in enumerate(phase_component_ids):
-                pc = phase_components[phase_component_index]
-                only_use_required_items(model = model, 
-                                        required_items = pc["allowed_exercises"], 
-                                        entry_vars = [exercise_vars["exercises"][i]])
+            for pc_index, ge_index, exercise_var in zip(phase_component_ids, general_exercise_ids, exercise_vars["exercises"]):
+                pc = phase_components[pc_index]
+                allowed_exercises = correct_allowed_exercises(
+                    exercises, 
+                    pc["allowed_exercises"], 
+                    ge_index)
+
+                only_use_required_items(
+                    model = model, 
+                    required_items = allowed_exercises, 
+                    entry_vars = [exercise_var])
             logs += "- Only use allowed exercises applied.\n"
 
         # Constraint: All components must have the same number of sets.
@@ -398,7 +414,12 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         projected_duration = parameters["projected_duration"]
         schedule_old = state["solution"]["schedule"]
 
-        phase_component_ids = [phase_component_index for (_, phase_component_index, _, _, _, _, _, _, _, _, _, _) in (schedule_old)]
+        phase_component_ids = []
+        general_exercise_ids = []
+
+        for (_, phase_component_index, general_exercise_index, _, _, _, _, _, _, _, _, _, _) in (schedule_old):
+            phase_component_ids.append(phase_component_index)
+            general_exercise_ids.append(general_exercise_index)
 
         # Upper bound on number of exercises (greedy estimation)
         max_exercises = len(phase_component_ids)
@@ -408,7 +429,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         pc_vars = self.create_model_pc_vars(model, phase_components, workout_availability, phase_component_ids, max_exercises)
         exercise_vars = self.create_model_exercise_vars(model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, exercise_bounds)
 
-        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, exercise_bounds, max_exercises, workout_availability, projected_duration)
+        state["logs"] += self.apply_model_constraints_2(constraints, model, phase_component_ids, general_exercise_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, exercise_bounds, max_exercises, workout_availability, projected_duration)
         model_with_divided_strain = model.clone()
         state["logs"] += self.apply_model_objective_2(constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_availability)
 
@@ -543,6 +564,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return {
             "superset": ("Sub", 6),
             "number": ("No", 5),
+            "general_exercise": ("Gen", 6),
             "exercise": ("Exercise", longest_sizes["exercise"] + 4),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
@@ -582,8 +604,9 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return {
             "superset": str(superset_var["superset_current"]) if superset_var["is_resistance"] else str(superset_var["not_a_superset"]),
             "number": str(i + 1),
+            "general_exercise": exercise["general_id"],
             "exercise": exercise["name"],
-            "phase_component": f"{pc['name']}",
+            "phase_component": f"{pc["name"]}",
             "bodypart": pc["bodypart_name"],
             "warmup": f"{pc["is_warmup"]}",
             "duration": f"{duration} sec",
