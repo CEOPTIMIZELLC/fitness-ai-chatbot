@@ -119,32 +119,32 @@ class PhaseComponentAgent(BaseAgent):
     
     def create_model_vars(self, model, phase_components, workout_availability, microcycle_weekdays):
         # Define variables =====================================
-        vars = {}
+        agent_vars = {}
 
         # Boolean variables indicating whether exercise i is active.
-        vars["active_workday"] = [
+        agent_vars["active_workday"] = [
             model.NewBoolVar(f'day_{index_for_day}_is_active') 
             for index_for_day in range(len(microcycle_weekdays))]
 
         # Ensure that the workday is considered inactive if it is 0 hours long.
-        for workout_availability_for_day, is_active_workday in zip(workout_availability, vars["active_workday"]):
+        for workout_availability_for_day, is_active_workday in zip(workout_availability, agent_vars["active_workday"]):
             if workout_availability_for_day > 0:
                 model.Add(is_active_workday == True)
             else:
                 model.Add(is_active_workday == False)
 
         # Boolean variables indicating whether phase component j is active on day i.
-        vars["active_phase_components"] = [[
+        agent_vars["active_phase_components"] = [[
             model.NewBoolVar(f'phase_component_{index_for_phase_component}_is_active_on_day_{index_for_day}')
             for index_for_phase_component in range(len(phase_components))]
             for index_for_day in range(len(microcycle_weekdays))]
 
         # Create the entry for phase component's count
         # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
-        vars["exercises_per_bodypart"] = [[
+        agent_vars["exercises_per_bodypart"] = [[
             create_optional_intvar(
                 model=model, 
-                activator = vars["active_phase_components"][index_for_day][index_for_phase_component],
+                activator = agent_vars["active_phase_components"][index_for_day][index_for_phase_component],
                 min_if_active = phase_components[index_for_phase_component]["exercises_per_bodypart_workout_min"],
                 max_if_active = phase_components[index_for_phase_component]["exercises_per_bodypart_workout_max"],
                 name_of_entry_var = f'phase_component_{index_for_phase_component}_number_of_exercises_on_day_{index_for_day}')
@@ -153,10 +153,10 @@ class PhaseComponentAgent(BaseAgent):
 
         # Create the entry for phase component's duration
         # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
-        vars["partial_duration"] = [[
+        agent_vars["partial_duration"] = [[
             create_optional_intvar(
                 model=model, 
-                activator = vars["active_phase_components"][index_for_day][index_for_phase_component],
+                activator = agent_vars["active_phase_components"][index_for_day][index_for_phase_component],
                 min_if_active = phase_components[index_for_phase_component]["duration_min"],
                 max_if_active = phase_components[index_for_phase_component]["duration_max"],
                 name_of_entry_var = f'phase_component_{index_for_phase_component}_partial_duration_on_day_{index_for_day}')
@@ -165,26 +165,26 @@ class PhaseComponentAgent(BaseAgent):
 
         # Create the entry for phase component's duration
         # phase duration = number_of_bodypart_exercises * (seconds_per_exercise * rep_count + rest_time) * set_count
-        vars["duration"] = [[
+        agent_vars["duration"] = [[
             model.NewIntVar(0, len(phase_components) * phase_components[index_for_phase_component]["duration_max"], f'phase_component_{index_for_phase_component}_duration_on_day_{index_for_day}') 
             for index_for_phase_component in range(len(phase_components))]
             for index_for_day in range(len(microcycle_weekdays))]
 
         # Add relationship between exercises per bodypart and the partial duration.
-        for exs_for_day, partial_durations_for_day, durations_for_day in zip(vars["exercises_per_bodypart"], vars["partial_duration"], vars["duration"]):
+        for exs_for_day, partial_durations_for_day, durations_for_day in zip(agent_vars["exercises_per_bodypart"], agent_vars["partial_duration"], agent_vars["duration"]):
             for ex_for_pc, partial_duration_for_pc, duration_for_pc in zip(exs_for_day, partial_durations_for_day, durations_for_day):
                 model.AddMultiplicationEquality(duration_for_pc, [ex_for_pc, partial_duration_for_pc])
-        return vars
+        return agent_vars
 
 
-    def apply_model_constraints(self, constraints, model, vars, phase_components, workout_availability):
+    def apply_model_constraints(self, constraints, model, agent_vars, phase_components, workout_availability):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
         # Constraint: The duration of a day may only be a number of hours between the allowed time for that day.
         if constraints["day_duration_within_availability"]:
             day_duration_within_availability(model=model, 
-                                             duration_vars=vars["duration"], 
+                                             duration_vars=agent_vars["duration"], 
                                              availability=workout_availability)
             logs += "- Sum of phase component duration within maximum allowed time for a day.\n"
 
@@ -194,8 +194,8 @@ class PhaseComponentAgent(BaseAgent):
             required_phase_components = [i for i, phase_component in enumerate(phase_components) if phase_component["required_every_workout"]]
             use_workout_required_components(model=model, 
                                             required_items=required_phase_components, 
-                                            used_vars=vars["active_phase_components"], 
-                                            active_entry_vars=vars["active_workday"])
+                                            used_vars=agent_vars["active_phase_components"], 
+                                            active_entry_vars=agent_vars["active_workday"])
             logs += "- All phase components required every workout will be included in every workout applied.\n"
 
         # Constraint: Only use required phase components
@@ -203,7 +203,7 @@ class PhaseComponentAgent(BaseAgent):
             # Retrieves the index of all required phases.
             not_required_phase_components = [i for i, phase_component in enumerate(phase_components) if phase_component["required_within_microcycle"] != "always"]
             for item_index in not_required_phase_components:
-                conditions = [row[item_index].Not() for row in vars["active_phase_components"]]
+                conditions = [row[item_index].Not() for row in agent_vars["active_phase_components"]]
                 model.AddBoolAnd(conditions)
             logs += "- Only use required phases components applied.\n"
 
@@ -213,14 +213,14 @@ class PhaseComponentAgent(BaseAgent):
             required_phase_components = [i for i, phase_component in enumerate(phase_components) if phase_component["required_within_microcycle"] == "always"]
             use_all_required_items(model=model, 
                                    required_items=required_phase_components, 
-                                   used_vars=vars["active_phase_components"])
+                                   used_vars=agent_vars["active_phase_components"])
             logs += "- All phase components required every microcycle will be included in every microcycle applied.\n"
 
         # Constraint: Every bodypart division must be done consecutively for a phase component.
         if constraints["consecutive_bodyparts_for_component"]:
             consecutive_bodyparts_for_component(model=model, 
                                                 phase_components=phase_components, 
-                                                active_phase_components=vars["active_phase_components"])
+                                                active_phase_components=agent_vars["active_phase_components"])
             logs += "- Bodypart division for components are done consecutively activated.\n"
 
 
@@ -230,7 +230,7 @@ class PhaseComponentAgent(BaseAgent):
             for i, phase_component in enumerate(phase_components):
                 if phase_component["component_name"].lower() == "resistance":
                     resistance_phase_components.setdefault(phase_component["bodypart_id"],[]).append(i)
-            for active_phase_components_for_day in vars["active_phase_components"]:
+            for active_phase_components_for_day in agent_vars["active_phase_components"]:
                 for _, value in resistance_phase_components.items():
                     ensure_all_vars_equal(model, [active_phase_components_for_day[i] for i in value])
             logs += "- All resistances of different subcomponents will have the same number activated.\n"
@@ -239,22 +239,22 @@ class PhaseComponentAgent(BaseAgent):
         if constraints["frequency_within_min_max"]:
             frequency_within_min_max(model=model, 
                                      phase_components=phase_components, 
-                                     active_phase_components=vars["active_phase_components"],
+                                     active_phase_components=agent_vars["active_phase_components"],
                                      minimum_key="frequency_per_microcycle_min",
                                      maximum_key="frequency_per_microcycle_max")
             logs += "- All phase components occuring within microcycle will occur the allowed number of times applied.\n"
 
         return logs
 
-    def apply_model_objective(self, constraints, model, vars, workout_availability):
+    def apply_model_objective(self, constraints, model, agent_vars, workout_availability):
         logs = ""
         duration_spread_var = None
         # Secondary Objective: Minimize the spread of duration.
         if constraints["minimize_duration_delta"]:
             duration_spread_var = create_spread_intvar(model=model, 
-                                                       entry_vars=vars["duration"], 
+                                                       entry_vars=agent_vars["duration"], 
                                                        entry_var_name="duration_var", 
-                                                       active_entry_vars=vars["active_phase_components"], 
+                                                       active_entry_vars=agent_vars["active_phase_components"], 
                                                        max_value_allowed=max(workout_availability))
             logs += "- Minimizing spread across duration applied.\n"
 
@@ -264,7 +264,7 @@ class PhaseComponentAgent(BaseAgent):
             total_set_duration_for_day = []
 
             # Each day
-            for duration_vars_for_day in vars["duration"]:
+            for duration_vars_for_day in agent_vars["duration"]:
                 # Each phase component
                 for duration_vars_for_phase_component in duration_vars_for_day:
                     total_set_duration_for_day.append(duration_vars_for_phase_component)
@@ -294,17 +294,17 @@ class PhaseComponentAgent(BaseAgent):
 
         workout_availability = [weekday_availability[day]["availability"] for day in microcycle_weekdays]
 
-        vars = self.create_model_vars(model, phase_components, workout_availability, microcycle_weekdays)
-        state["logs"] += self.apply_model_constraints(constraints, model, vars, phase_components, workout_availability)
-        logs, duration_spread_var, total_duration_to_maximize = self.apply_model_objective(constraints, model, vars, workout_availability)
+        agent_vars = self.create_model_vars(model, phase_components, workout_availability, microcycle_weekdays)
+        state["logs"] += self.apply_model_constraints(constraints, model, agent_vars, phase_components, workout_availability)
+        logs, duration_spread_var, total_duration_to_maximize = self.apply_model_objective(constraints, model, agent_vars, workout_availability)
         state["logs"] += logs
 
-        return {"opt_model": (model, workout_availability, vars, duration_spread_var, total_duration_to_maximize)}
+        return {"opt_model": (model, workout_availability, agent_vars, duration_spread_var, total_duration_to_maximize)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""
-        model, workout_availability, vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]
-        active_phase_components, exercises_per_bodypart_vars, partial_duration_vars, duration_vars = vars["active_phase_components"], vars["exercises_per_bodypart"], vars["partial_duration"], vars["duration"]
+        model, workout_availability, agent_vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]
+        active_phase_components, exercises_per_bodypart_vars, partial_duration_vars, duration_vars = agent_vars["active_phase_components"], agent_vars["exercises_per_bodypart"], agent_vars["partial_duration"], agent_vars["duration"]
 
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 12

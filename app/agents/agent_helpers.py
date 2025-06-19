@@ -1,15 +1,15 @@
 from langchain_openai import ChatOpenAI
 
-def find_constraints_on_variable(model_proto, var):
-    var_index = var.Index()
+def find_constraints_on_variable(model_proto, agent_var):
+    var_index = agent_var.Index()
     constraints_on_var = []
 
     for constraint_proto in model_proto.constraints:
         # print(constraint_proto)
         # print(constraint_proto.int_div)
         # print(constraint_proto.__dict__.keys())
-        # print(vars(constraint_proto.int_div).keys())
-        if ((constraint_proto.HasField("linear") and var_index in constraint_proto.linear.vars) or 
+        # print(agent_vars(constraint_proto.int_div).keys())
+        if ((constraint_proto.HasField("linear") and var_index in constraint_proto.linear.agent_vars) or 
             (constraint_proto.HasField("bool_or") and var_index in constraint_proto.bool_or.literals) or 
             (constraint_proto.HasField("interval") and (var_index == constraint_proto.interval.start or 
                                                         var_index == constraint_proto.interval.size or 
@@ -18,15 +18,15 @@ def find_constraints_on_variable(model_proto, var):
             (constraint_proto.HasField("at_most_one") and var_index in constraint_proto.at_most_one.literals) or 
             # (constraint_proto.HasField("at_least_one") and var_index in constraint_proto.at_least_one.literals) or 
             (constraint_proto.HasField("exactly_one") and var_index in constraint_proto.exactly_one.literals) or 
-            # (constraint_proto.HasField("int_max") and (var_index == constraint_proto.int_max.target or var_index in constraint_proto.int_max.vars)) or 
-            # (constraint_proto.HasField("int_min") and (var_index == constraint_proto.int_min.target or var_index in constraint_proto.int_min.vars)) or 
-            (constraint_proto.HasField("int_div") and (var_index in constraint_proto.int_div.target.vars or 
-                                                       any(var_index in exprs.vars for exprs in constraint_proto.int_div.exprs))) or 
+            # (constraint_proto.HasField("int_max") and (var_index == constraint_proto.int_max.target or var_index in constraint_proto.int_max.agent_vars)) or 
+            # (constraint_proto.HasField("int_min") and (var_index == constraint_proto.int_min.target or var_index in constraint_proto.int_min.agent_vars)) or 
+            (constraint_proto.HasField("int_div") and (var_index in constraint_proto.int_div.target.agent_vars or 
+                                                       any(var_index in exprs.agent_vars for exprs in constraint_proto.int_div.exprs))) or 
             (constraint_proto.HasField("int_mod") and (var_index == constraint_proto.int_mod.target or 
-                                                       var_index == constraint_proto.int_mod.var or 
+                                                       var_index == constraint_proto.int_mod.agent_var or 
                                                        var_index == constraint_proto.int_mod.modulus)) or 
-            (constraint_proto.HasField("int_prod") and (var_index in constraint_proto.int_prod.target.vars or 
-                                                       any(var_index in exprs.vars for exprs in constraint_proto.int_prod.exprs))) or 
+            (constraint_proto.HasField("int_prod") and (var_index in constraint_proto.int_prod.target.agent_vars or 
+                                                       any(var_index in exprs.agent_vars for exprs in constraint_proto.int_prod.exprs))) or 
             (constraint_proto.HasField("circuit") and (var_index in constraint_proto.circuit.tails or 
                                                        var_index in constraint_proto.circuit.heads or 
                                                        (constraint_proto.circuit.literals and var_index in constraint_proto.circuit.literals))) or 
@@ -34,20 +34,20 @@ def find_constraints_on_variable(model_proto, var):
                                                       var_index in constraint_proto.routes.heads or 
                                                       var_index in constraint_proto.routes.demands or 
                                                       var_index == constraint_proto.routes.cost)) or 
-            # (constraint_proto.HasField("diffn") and any(var_index in shape.vars for box in constraint_proto.diffn.boxes for shape in [box.x_size, box.y_size, box.z_size] if shape.vars)) or 
+            # (constraint_proto.HasField("diffn") and any(var_index in shape.agent_vars for box in constraint_proto.diffn.boxes for shape in [box.x_size, box.y_size, box.z_size] if shape.agent_vars)) or 
             (constraint_proto.HasField("cumulative") and (
                 (var_index in constraint_proto.cumulative.capacities) or 
-                any(var_index in interval.vars 
+                any(var_index in interval.agent_vars 
                     for interval in constraint_proto.cumulative.intervals 
                     for var_index in [interval.start, interval.size, interval.end]))) or 
-            (constraint_proto.HasField("table") and var_index in constraint_proto.table.vars) or 
-            (constraint_proto.HasField("automaton") and (var_index in constraint_proto.automaton.vars or 
+            (constraint_proto.HasField("table") and var_index in constraint_proto.table.agent_vars) or 
+            (constraint_proto.HasField("automaton") and (var_index in constraint_proto.automaton.agent_vars or 
                                                          var_index in constraint_proto.automaton.transition_vars)) or 
             (constraint_proto.HasField("inverse") and (var_index in constraint_proto.inverse.f_direct or 
                                                        var_index in constraint_proto.inverse.f_inverse)) or 
             (constraint_proto.HasField("element") and (var_index == constraint_proto.element.target or 
                                                        var_index == constraint_proto.element.index or 
-                                                       var_index in constraint_proto.element.vars))):
+                                                       var_index in constraint_proto.element.agent_vars))):
             constraints_on_var.append(constraint_proto)
     return constraints_on_var
 

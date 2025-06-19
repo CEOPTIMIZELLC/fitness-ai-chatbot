@@ -90,10 +90,10 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
     
     return None
 
-def entry_equals(model, var, item, key, condition=None):
+def entry_equals(model, agent_var, item, key, condition=None):
     """Generic function to add equals constraints with optional condition."""
     if (key in item) and (item[key] is not None):
-        constraint = model.Add(var == item[key])
+        constraint = model.Add(agent_var == item[key])
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
 
@@ -108,14 +108,14 @@ def entries_equal(model, items, key, number_of_entries, used_vars, duration_vars
             )
     return None
 
-def entry_within_min_max(model, var, item, min_key, max_key, condition=None):
+def entry_within_min_max(model, agent_var, item, min_key, max_key, condition=None):
     """Generic function to add min/max constraints with optional condition."""
     if (min_key in item) and (item[min_key] is not None):
-        constraint = model.Add(var >= item[min_key])
+        constraint = model.Add(agent_var >= item[min_key])
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
     if (max_key in item) and (item[max_key] is not None):
-        constraint = model.Add(var <= item[max_key])
+        constraint = model.Add(agent_var <= item[max_key])
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
 
@@ -130,23 +130,23 @@ def entries_within_min_max(model, items, minimum_key, maximum_key, number_of_ent
             )
     return None
 
-def _ensure_all_vars_equal_no_activator(model, vars):
-    for var, var_next in zip(vars, vars[1:]):
-        model.Add(var == var_next)
+def _ensure_all_vars_equal_no_activator(model, agent_vars):
+    for agent_var, var_next in zip(agent_vars, agent_vars[1:]):
+        model.Add(agent_var == var_next)
     return None
 
-def _ensure_all_vars_equal_with_activator(model, vars, active_vars):
-    for var, active_var, var_next, active_var_next in zip(vars, active_vars, vars[1:], active_vars[1:]):
-        model.Add(var == var_next).OnlyEnforceIf(active_var, active_var_next)
+def _ensure_all_vars_equal_with_activator(model, agent_vars, active_vars):
+    for agent_var, active_var, var_next, active_var_next in zip(agent_vars, active_vars, agent_vars[1:], active_vars[1:]):
+        model.Add(agent_var == var_next).OnlyEnforceIf(active_var, active_var_next)
     return None
 
 # Forces all items in the list to be equal. 
-def ensure_all_vars_equal(model, vars, active_vars=None):
-    if len(vars) > 1:
+def ensure_all_vars_equal(model, agent_vars, active_vars=None):
+    if len(agent_vars) > 1:
         if active_vars == None:
-            _ensure_all_vars_equal_no_activator(model, vars)
+            _ensure_all_vars_equal_no_activator(model, agent_vars)
         else:
-            _ensure_all_vars_equal_with_activator(model, vars, active_vars)
+            _ensure_all_vars_equal_with_activator(model, agent_vars, active_vars)
     return None
 
 # Constraint: # Force number of occurrences of a phase component within in a microcycle to be within number allowed.
@@ -237,8 +237,8 @@ def consecutive_bodyparts_for_component(model, phase_components, active_phase_co
             if required_phase_components_for_day:
                 # Ensure all variables in required_phase_components_for_day are equal (either all 1 or all 0)
                 first_var = required_phase_components_for_day[0]
-                for var in required_phase_components_for_day[1:]:
-                    model.Add(var == first_var)
+                for agent_var in required_phase_components_for_day[1:]:
+                    model.Add(agent_var == first_var)
     return None
 
 # Ensures that only required entrys will be used at any entry in the entry_set.

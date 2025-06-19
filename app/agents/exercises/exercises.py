@@ -80,10 +80,10 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
         # model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
-        model, model_with_divided_strain, vars = state["opt_model"]
-        phase_component_vars = vars["phase_components"]
-        general_exercise_vars = vars["general_exercises"]
-        active_exercise_vars = vars["active_exercises"]
+        model, model_with_divided_strain, agent_vars = state["opt_model"]
+        phase_component_vars = agent_vars["phase_components"]
+        general_exercise_vars = agent_vars["general_exercises"]
+        active_exercise_vars = agent_vars["active_exercises"]
 
         phase_components = state["parameters"]["phase_components"]
 

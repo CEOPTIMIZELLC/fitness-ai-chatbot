@@ -105,46 +105,46 @@ class PhaseAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, macrocycle_allowed_weeks, phases, phase_amount, min_mesocycles, max_mesocycles):
-        vars = {}
+        agent_vars = {}
 
         # Integer variable representing the phase chosen at mesocycle i.
-        vars["mesocycles"] = [
+        agent_vars["mesocycles"] = [
             model.NewIntVar(0, phase_amount - 1, f'mesocycle_{i}') 
             for i in range(max_mesocycles)]
 
         # Integer variable representing the duration of the phase in mesocycle i.
-        vars["duration"] = [
+        agent_vars["duration"] = [
             model.NewIntVar(0, macrocycle_allowed_weeks, f'duration_{i}') 
             for i in range(max_mesocycles)]
 
         # Boolean variables indicating whether phase j is used at mesocycle i.
-        vars["used"] = [[
+        agent_vars["used"] = [[
             model.NewBoolVar(f'mesocycle_{i}_is_phase_{j}') 
             for j in range(phase_amount)]
             for i in range(max_mesocycles)]
 
         # Boolean variables indicating whether mesocycle i is active.
-        vars["active_mesocycles"] = [
+        agent_vars["active_mesocycles"] = [
             model.NewBoolVar(f'mesocycle_{i}_is_active') 
             for i in range(max_mesocycles)]
 
         # Introduce dynamic selection variables
-        vars["num_mesocycles_used"] = model.NewIntVar(min_mesocycles, max_mesocycles, 'num_mesocycles_used')
+        agent_vars["num_mesocycles_used"] = model.NewIntVar(min_mesocycles, max_mesocycles, 'num_mesocycles_used')
 
         constrain_active_entries_vars(model = model, 
-                                      entry_vars = vars["mesocycles"], 
+                                      entry_vars = agent_vars["mesocycles"], 
                                       number_of_entries = max_mesocycles, 
-                                      duration_vars = vars["duration"], 
-                                      active_entry_vars = vars["active_mesocycles"])
+                                      duration_vars = agent_vars["duration"], 
+                                      active_entry_vars = agent_vars["active_mesocycles"])
 
         link_entry_and_item(model = model, 
                             items = phases, 
-                            entry_vars = vars["mesocycles"], 
+                            entry_vars = agent_vars["mesocycles"], 
                             number_of_entries = max_mesocycles, 
-                            used_vars = vars["used"])
-        return vars
+                            used_vars = agent_vars["used"])
+        return agent_vars
 
-    def apply_model_constraints(self, constraints, model, vars, phases, macrocycle_allowed_weeks, max_mesocycles):
+    def apply_model_constraints(self, constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles):
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -155,19 +155,19 @@ class PhaseAgent(BaseAgent):
                                    minimum_key="element_minimum", 
                                    maximum_key="element_maximum",
                                    number_of_entries = max_mesocycles, 
-                                   used_vars = vars["used"], 
-                                   duration_vars = vars["duration"])
+                                   used_vars = agent_vars["used"], 
+                                   duration_vars = agent_vars["duration"])
             logs += "- Phase duration within min and max allowed weeks applied.\n"
 
         # Ensure total time does not exceed the macrocycle_allowed_weeks
-        model.Add(vars["num_mesocycles_used"] == sum(vars["active_mesocycles"]))
-        model.Add(sum(vars["duration"]) <= macrocycle_allowed_weeks)
+        model.Add(agent_vars["num_mesocycles_used"] == sum(agent_vars["active_mesocycles"]))
+        model.Add(sum(agent_vars["duration"]) <= macrocycle_allowed_weeks)
 
         # Constraint: No consecutive phases
         if constraints["no_consecutive_same_phase"]:
             no_consecutive_identical_items(model = model, 
-                                           entry_vars = vars["mesocycles"], 
-                                           active_entry_vars = vars["active_mesocycles"])
+                                           entry_vars = agent_vars["mesocycles"], 
+                                           active_entry_vars = agent_vars["active_mesocycles"])
             logs += "- No consecutive phase of the same type applied.\n"
 
         # Constraint: No 6 phases without stabilization endurance
@@ -176,19 +176,19 @@ class PhaseAgent(BaseAgent):
             no_n_items_without_desired_item(model = model, 
                                             allowed_n = 6, 
                                             desired_item_index = stab_end_index, 
-                                            entry_vars = vars["mesocycles"], 
+                                            entry_vars = agent_vars["mesocycles"], 
                                             number_of_entries = max_mesocycles, 
-                                            active_entry_vars = vars["active_mesocycles"])
+                                            active_entry_vars = agent_vars["active_mesocycles"])
             logs += "- No 6 phases without stabilization endurance applied.\n"
 
         # Constraint: First phase is stabilization endurance
         if constraints["phase_1_is_stab_end"]:
-            model.Add(vars["mesocycles"][0] == 1)
+            model.Add(agent_vars["mesocycles"][0] == 1)
             logs += "- First phase is stabilization endurance applied.\n"
 
         # Constraint: First phase is strength endurance
         if constraints["phase_2_is_str_end"]:
-            model.Add(vars["mesocycles"][1] == 2)
+            model.Add(agent_vars["mesocycles"][1] == 2)
             logs += "- Second phase is strength endurance applied.\n"
 
         # Constraint: Only use required phases
@@ -199,7 +199,7 @@ class PhaseAgent(BaseAgent):
 
             only_use_required_items(model = model, 
                                     required_items = required_phases, 
-                                    entry_vars = vars["mesocycles"])
+                                    entry_vars = agent_vars["mesocycles"])
             logs += "- Only use required phases applied.\n"
 
         # Constraint: Use all required phases at least once
@@ -208,11 +208,11 @@ class PhaseAgent(BaseAgent):
 
             use_all_required_items(model = model, 
                                    required_items = required_phases, 
-                                   used_vars = vars["used"])
+                                   used_vars = agent_vars["used"])
             logs += "- Use every required phase at least once applied.\n"
         return logs
 
-    def apply_model_objective(self, constraints, model, vars, phases, macrocycle_allowed_weeks, max_mesocycles):
+    def apply_model_objective(self, constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles):
         logs = ""
 
         # Objective: Maximize time spent on goal phases
@@ -229,7 +229,7 @@ class PhaseAgent(BaseAgent):
                         goal_contrib = model.NewIntVar(0, macrocycle_allowed_weeks, f'goal_contrib_{i}_{j}')
 
                         # If a goal state is used, its duration contributes to goal_time.
-                        model.AddMultiplicationEquality(goal_contrib, [vars["duration"][i], vars["used"][i][j], vars["active_mesocycles"][i]])
+                        model.AddMultiplicationEquality(goal_contrib, [agent_vars["duration"][i], agent_vars["used"][i][j], agent_vars["active_mesocycles"][i]])
                         goal_time_terms.append(goal_contrib)
 
             model.Add(goal_time == sum(goal_time_terms))
@@ -238,7 +238,7 @@ class PhaseAgent(BaseAgent):
             if constraints["maximize_phases"]:
                 # Define total time used in all phases
                 total_time = model.NewIntVar(0, macrocycle_allowed_weeks, 'total_time')
-                model.Add(total_time == sum(vars["duration"]))
+                model.Add(total_time == sum(agent_vars["duration"]))
 
                 # Define weighted objective
                 model.Maximize(1000 * goal_time + total_time)  # Prioritize goal_time first, then total_time
@@ -266,11 +266,11 @@ class PhaseAgent(BaseAgent):
         min_mesocycles = macrocycle_allowed_weeks // max(phase["element_maximum"] for phase in phases[1:])
         max_mesocycles = macrocycle_allowed_weeks // min(phase["element_minimum"] for phase in phases[1:])
 
-        vars = self.create_model_vars(model, macrocycle_allowed_weeks, phases, phase_amount, min_mesocycles, max_mesocycles)
-        state["logs"] += self.apply_model_constraints(constraints, model, vars, phases, macrocycle_allowed_weeks, max_mesocycles)
-        state["logs"] += self.apply_model_objective(constraints, model, vars, phases, macrocycle_allowed_weeks, max_mesocycles)
+        agent_vars = self.create_model_vars(model, macrocycle_allowed_weeks, phases, phase_amount, min_mesocycles, max_mesocycles)
+        state["logs"] += self.apply_model_constraints(constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles)
+        state["logs"] += self.apply_model_objective(constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles)
 
-        return {"opt_model": (model, vars["mesocycles"], vars["duration"], vars["used"], vars["active_mesocycles"])}
+        return {"opt_model": (model, agent_vars["mesocycles"], agent_vars["duration"], agent_vars["used"], agent_vars["active_mesocycles"])}
 
     def solve_model_node(self, state: State, config=None) -> dict:
         """Solve model and record relaxation attempt results."""
