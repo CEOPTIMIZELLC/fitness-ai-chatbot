@@ -224,7 +224,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         # Ensure total time is within two minutes of the originally calculated duration.
         model.Add(sum(pc_vars["duration"]) <= workout_availability)
-        model.Add(sum(pc_vars["duration"]) >= (projected_duration - (2 * 60)))
+        pc_vars["duration_difference_penalty"] = - (sum(pc_vars["duration"]) - projected_duration)
 
         # Constraint: The base strain of an exercise may only be equal to the base strain allowed for the exercise.
         if constraints["base_strain_equals"]:
@@ -304,7 +304,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             logs += "- Exercise metric increase constraint applied.\n"
         return logs
 
-    def effort_strain_as_sum(self, model, exercise_vars, exercise_bounds, max_exercises, workout_availability):
+    def effort_strain_as_sum(self, model, pc_vars, exercise_vars, exercise_bounds, max_exercises, workout_availability):
         # Get the bounds for the phase components
         min_effort_scaled = exercise_bounds["effort"]["min"]
         max_effort_scaled = exercise_bounds["effort"]["max"]
@@ -333,6 +333,9 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         model.AddDivisionEquality(strain_time, 100 * total_working_effort, non_zero_total_effort)
         total_strain_to_minimize = strain_time
 
+        # Penalize the duration being less than the projected one.
+        total_strain_to_minimize += pc_vars["duration_difference_penalty"]
+
         # Use Penalty.
         if exercise_vars["performance_increase_penalty"] != None:
             total_strain_to_minimize += sum(exercise_vars["performance_increase_penalty"])
@@ -341,7 +344,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         exercise_vars["strain_time"] = strain_time
         return None
 
-    def effort_strain_divided(self, model, exercise_vars, exercise_bounds, max_exercises):
+    def effort_strain_divided(self, model, pc_vars, exercise_vars, exercise_bounds, max_exercises):
         # Get the bounds for the phase components
         max_effort_scaled = exercise_bounds["effort"]["max"]
         max_strain_scaled = exercise_bounds["max_strain"]
@@ -371,6 +374,9 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         model.Add(strain_time == sum(strain_terms))
         total_strain_to_minimize = strain_time
 
+        # Penalize the duration being less than the projected one.
+        total_strain_to_minimize += pc_vars["duration_difference_penalty"]
+
         # Use Penalty.
         if exercise_vars["performance_increase_penalty"] != None:
             total_strain_to_minimize += sum(exercise_vars["performance_increase_penalty"])
@@ -383,8 +389,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         logs = ""
         # Objective: Maximize total strain of microcycle
         if constraints["minimize_strain"]:
-            self.effort_strain_divided(model_with_divided_strain, exercise_vars, exercise_bounds, max_exercises)
-            self.effort_strain_as_sum(model, exercise_vars, exercise_bounds, max_exercises, workout_availability)
+            self.effort_strain_divided(model_with_divided_strain, pc_vars, exercise_vars, exercise_bounds, max_exercises)
+            self.effort_strain_as_sum(model, pc_vars, exercise_vars, exercise_bounds, max_exercises, workout_availability)
             logs += "- Minimizing the strain time used in workout.\n"
         return logs
 

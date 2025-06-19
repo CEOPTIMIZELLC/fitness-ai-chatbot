@@ -251,7 +251,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         # Ensure total time is within two minutes of the originally calculated duration.
         model.Add(sum(vars["duration"]) <= workout_availability)
-        model.Add(sum(vars["duration"]) >= (projected_duration - (2 * 60)))
+        vars["duration_difference_penalty"] = - (sum(vars["duration"]) - projected_duration)
 
         vars["phase_component_use_penalty"] = None
         pc_use_penalty_scale = 2
@@ -419,6 +419,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
         model.AddDivisionEquality(strain, 100 * total_working_duration_time, non_zero_total_duration_time)
         total_strain_to_minimize = strain
 
+        # Penalize the duration being less than the projected one.
+        total_strain_to_minimize += vars["duration_difference_penalty"]
+
         # Use Penalty.
         if vars["phase_component_use_penalty"] != None:
             total_strain_to_minimize += sum(vars["phase_component_use_penalty"])
@@ -455,6 +458,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         model.Add(strain_time == sum(strain_terms))
         total_strain_to_minimize = strain_time
+
+        # Penalize the duration being less than the projected one.
+        total_strain_to_minimize += vars["duration_difference_penalty"]
 
         # Use Penalty.
         if vars["phase_component_use_penalty"] != None:
