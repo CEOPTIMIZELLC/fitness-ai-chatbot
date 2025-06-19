@@ -201,7 +201,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         vars["density"] = declare_model_vars(model, "density", vars["active_exercises"], max_exercises, density_bounds["min"], density_bounds["max"])
         vars["performance"] = declare_model_vars(model, "performance", vars["active_exercises"], max_exercises, performance_bounds["min"], performance_bounds["max"])
 
-        # duration_vars = declare_duration_vars(model, max_exercises, workout_availability, vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"])
+        # Declare duration and working duration variables using the variables used to calculate it.
         vars["duration"] = declare_duration_vars(model, max_exercises, workout_availability, vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"], name="base")
         vars["working_duration"] = declare_duration_vars(model, max_exercises, workout_availability, vars["seconds_per_exercise"], vars["reps"], vars["sets"], name="working")
 
@@ -251,7 +251,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         # Ensure total time is within two minutes of the originally calculated duration.
         model.Add(sum(vars["duration"]) <= workout_availability)
-        vars["duration_difference_penalty"] = - (sum(vars["duration"]) - projected_duration)
+        vars["duration_difference_penalty"] = (sum(vars["duration"]) - projected_duration)
 
         vars["phase_component_use_penalty"] = None
         pc_use_penalty_scale = 2
