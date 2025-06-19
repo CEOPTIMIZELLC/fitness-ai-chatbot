@@ -81,11 +81,9 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         #return {"solution": "None"}
         # model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
         model, model_with_divided_strain, vars = state["opt_model"]
-        phase_component_vars, general_exercise_vars = vars["phase_components"], vars["general_exercises"]
-        pc_count_vars, active_exercise_vars = vars["pc_count"], vars["active_exercises"]
-        seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars = vars["seconds_per_exercise"], vars["reps"], vars["sets"], vars["rest"]
-        volume_vars, density_vars, performance_vars = vars["volume"], vars["density"], vars["performance"]
-        duration_vars, working_duration_vars = vars["duration"], vars["working_duration"]
+        phase_component_vars = vars["phase_components"]
+        general_exercise_vars = vars["general_exercises"]
+        active_exercise_vars = vars["active_exercises"]
 
         phase_components = state["parameters"]["phase_components"]
 
@@ -104,7 +102,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         if status in (cp_model.FEASIBLE, cp_model.OPTIMAL):
             schedule = []
             # Each day in the microcycle
-            for i in range(len(duration_vars)):
+            for i in range(len(active_exercise_vars)):
                 phase_component_var = solver.Value(phase_component_vars[i])
                 phase_component = phase_components[phase_component_var]
 
@@ -116,14 +114,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                         solver.Value(general_exercise_vars[i]),                             # ID of the general exercise used.
                         phase_component["component_id"],                                    # ID of the component for the phase component chosen.
                         phase_component["subcomponent_id"],                                 # ID of the subcomponent for the phase component chosen.
-                        phase_component["bodypart_id"],                                     # ID of the bodypart for the phase component chosen.
-                        solver.Value(active_exercise_vars[i]), 
-                        solver.Value(seconds_per_exercise_vars[i]), 
-                        solver.Value(reps_vars[i]), 
-                        solver.Value(sets_vars[i]), 
-                        solver.Value(rest_vars[i]) * 5, 
-                        solver.Value(duration_vars[i]), 
-                        solver.Value(working_duration_vars[i])
+                        phase_component["bodypart_id"]
                     ))
             schedule = self.sort_schedule(phase_components, schedule, 2, 3, 4)
             solution = {
@@ -417,7 +408,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         phase_component_ids = []
         general_exercise_ids = []
 
-        for (_, phase_component_index, general_exercise_index, _, _, _, _, _, _, _, _, _, _) in (schedule_old):
+        for (_, phase_component_index, general_exercise_index, _, _, _) in (schedule_old):
             phase_component_ids.append(phase_component_index)
             general_exercise_ids.append(general_exercise_index)
 
