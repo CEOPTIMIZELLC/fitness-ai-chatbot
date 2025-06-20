@@ -18,12 +18,13 @@ from app.utils.longest_string import longest_string_size_for_key
 _ = load_dotenv()
 
 available_constraints = """
+- no_consecutive_same_phase: Prevents consecutive identical phases
+- phase_within_min_max: Forces the duration of a phase to be between the minimum and maximum values allowed.
+- phase_1_is_stab_end: Forces first phase to be stabilization endurance
 - phase_2_is_str_end: Forces second phase to be strength endurance
+- no_6_phases_without_stab_end: Prevents n phases without including the goal phase
 - only_use_required_phases: Only use phases that are required
 - use_all_required_phases: Use every required phase at least once
-- phase_duration_within_min_max: Forces the duration of a phase to be between the minimum and maximum values allowed.
-- no_consecutive_identical_phases: Prevents consecutive identical phases
-- no_n_phases_without_goal: Prevents n phases without including the goal phase
 - maximize_phases: Secondary objective to maximize the amount of time spent in phases in general.
 - maximize_goal_phase: Objective to maximize the amount of time spent in the goal phase.
 """
