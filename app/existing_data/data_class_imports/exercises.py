@@ -3,7 +3,7 @@ import numpy as np
 
 from app import db
 from app.models import Exercise_Library, General_Exercise_Library
-from .utils import create_list_of_table_entries, Data_Clustering
+from .utils import create_list_of_table_entries, cluster_main
 
 from pydantic import BaseModel, Field
 
@@ -12,7 +12,7 @@ class GeneralExercise(BaseModel):
     name: str = Field(description="The name of the general exercise that all of the other exercises are variations of.")
     reasoning: str = Field(description="The reasoning behind the choice of name based on the exercises in the group.")
 
-class Data_Importer(Data_Clustering):
+class Data_Importer:
     general_exercise_ids = {}
     exercise_ids = {}
 
@@ -35,7 +35,7 @@ class Data_Importer(Data_Clustering):
 
     """
 
-        self._cluster_main(
+        self.exercises_df = cluster_main(
             df=self.exercises_df, 
             name_column="Exercise", 
             structured_output_class=GeneralExercise, 
