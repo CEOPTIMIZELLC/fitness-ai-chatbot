@@ -67,9 +67,9 @@ def login():
         
         # Validate user existence and that password matches
         if user is None: 
-            abort(400, description="Account with this email doesn't exist.")
+            abort(404, description="Account with this email doesn't exist.")
         elif not user.check_password(password):
-            abort(400, description="Password is incorrect.")
+            abort(401, description="Password is incorrect.")
         else:
             login_user(user)
             return jsonify({"status": "success", "message": "Welcome back!"}), 200
@@ -98,5 +98,5 @@ def delete_user():
             db.session.commit()
             logout_user
             return jsonify({"status": "success", "message": "Account deleted."}), 200
-        abort(400, description="An account with this id has not been found.")
+        abort(404, description="An account with this id has not been found.")
     abort(400, description="Please fill out the form!")

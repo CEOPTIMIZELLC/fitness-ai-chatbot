@@ -61,7 +61,7 @@ def change_email():
     # Retreive and validate new email
     new_email = data.get("new_email")
     if Users.query.filter_by(email=new_email).first():
-        abort(400, description="Account with the email address of " + new_email + " already exists.")
+        abort(409, description="Account with the email address of " + new_email + " already exists.")
     
     email_flag = current_user.set_email(new_email)
     if email_flag: 

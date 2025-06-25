@@ -44,7 +44,7 @@ def change_weekday_availability():
     # Input is a json.
     data = request.get_json()
     if not data:
-        abort(400, description="Invalid request")
+        abort(404, description="Invalid request")
     
     if ('availability' not in data):
         abort(400, description="Please fill out the form!")

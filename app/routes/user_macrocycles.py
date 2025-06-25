@@ -74,7 +74,7 @@ def change_macrocycle():
     # Input is a json.
     data = request.get_json()
     if not data:
-        abort(400, description="Invalid request")
+        abort(404, description="Invalid request")
     
     if ('goal' not in data):
         abort(400, description="Please fill out the form!")

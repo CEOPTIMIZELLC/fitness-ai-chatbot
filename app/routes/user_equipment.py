@@ -35,7 +35,7 @@ def add_user_equipment(equipment_id):
     # Input is a json.
     data = request.get_json()
     if not data:
-        abort(400, description="Invalid request")
+        abort(404, description="Invalid request")
     
     if ('measurement' not in data):
         abort(400, description="Please fill out the form!")
