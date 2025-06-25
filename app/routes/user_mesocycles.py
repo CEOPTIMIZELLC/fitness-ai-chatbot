@@ -65,7 +65,7 @@ def mesocycle_phase_adding(goal_id=None):
 # Method to perform phase selection on a goal of a specified id.
 def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
     if not db.session.get(Goal_Library, goal_id):
-        return None
+        abort(404, description=f"Goal {goal_id} not found.")
     return perform_phase_selection(goal_id, macrocycle_allowed_weeks)
 
 def agent_output_to_sqlalchemy_model(phases_output, macrocycle_id, mesocycle_start_date):
@@ -156,8 +156,6 @@ def add_mesocycle_phases_by_id(goal_id):
 @login_required
 def test_mesocycle_phases_by_id(goal_id):
     result = mesocycle_phases_by_id(goal_id, 26)
-    if not result:
-        abort(404, description=f"Goal {goal_id} not found.")
     return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Testing for the parameter programming for mesocycle labeling.
