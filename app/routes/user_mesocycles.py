@@ -1,5 +1,5 @@
 from config import verbose, verbose_formatted_schedule
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 from datetime import timedelta
 
@@ -46,7 +46,7 @@ def perform_phase_selection(goal_id, macrocycle_allowed_weeks):
 def mesocycle_phase_adding(goal_id=None):
     user_macro = current_macrocycle(current_user.id)
     if not user_macro:
-        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
+        abort(404, description="No active macrocycle found.")
     
     if not goal_id:
         goal_id = user_macro.goal_id
@@ -105,7 +105,7 @@ def get_user_current_mesocycles_list():
     result = []
     user_macrocycle = current_macrocycle(current_user.id)
     if not user_macrocycle:
-        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
+        abort(404, description="No active macrocycle found.")
     user_mesocycles = user_macrocycle.mesocycles
     for user_mesocycle in user_mesocycles:
         result.append(user_mesocycle.to_dict())
@@ -117,11 +117,11 @@ def get_user_current_mesocycles_list():
 def get_user_current_mesocycles_formatted_list():
     user_macrocycle = current_macrocycle(current_user.id)
     if not user_macrocycle:
-        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
+        abort(404, description="No active macrocycle found.")
 
     user_mesocycles = user_macrocycle.mesocycles
     if not user_mesocycles:
-        return jsonify({"status": "error", "message": "No mesocycles found for the macrocycle."}), 404
+        abort(404, description="No mesocycles found for the macrocycle.")
 
     user_mesocycles_dict = [user_mesocycle.to_dict() for user_mesocycle in user_mesocycles]
 
@@ -136,7 +136,7 @@ def get_user_current_mesocycles_formatted_list():
 def read_user_current_mesocycle():
     user_mesocycle = current_mesocycle(current_user.id)
     if not user_mesocycle:
-        return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
+        abort(404, description="No active mesocycle found.")
     return jsonify({"status": "success", "mesocycles": user_mesocycle.to_dict()}), 200
 
 # Perform parameter programming for mesocycle labeling.
@@ -157,7 +157,7 @@ def add_mesocycle_phases_by_id(goal_id):
 def test_mesocycle_phases_by_id(goal_id):
     result = mesocycle_phases_by_id(goal_id, 26)
     if not result:
-        return jsonify({"status": "error", "message": f"Goal {goal_id} not found."}), 404
+        abort(404, description=f"Goal {goal_id} not found.")
     return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Testing for the parameter programming for mesocycle labeling.

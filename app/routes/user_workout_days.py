@@ -1,6 +1,6 @@
 from config import vertical_loading
 from config import verbose, verbose_formatted_schedule
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 import math
 from datetime import timedelta
@@ -94,13 +94,8 @@ def retrieve_weekday_availability_information_from_availability(availability):
 # Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
 def verify_and_update_pc_information(parameters, pcs, exercises, total_availability, number_of_available_weekdays):
-    # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
-    verification_message = verify_pc_information(parameters, pcs, exercises, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", check_globally=False, default_count_if_none=number_of_available_weekdays)
-    if isinstance(verification_message, tuple):
-        pcs = verification_message[0]
-    else:
-        return verification_message    # Replace the list of phase components with the corrected version. 
-
+    pc_info = verify_pc_information(parameters, pcs, exercises, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", check_globally=False, default_count_if_none=number_of_available_weekdays)
+    pcs = pc_info[0]
     parameters["phase_components"] = pcs
     return None
 
@@ -114,18 +109,12 @@ def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, 
     parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
     parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
 
-    pc_verification_message = verify_and_update_pc_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:], total_availability, number_of_available_weekdays)
-    if pc_verification_message:
-        return jsonify({"status": "error", "message": pc_verification_message}), 400
+    verify_and_update_pc_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:], total_availability, number_of_available_weekdays)
 
     return parameters
 
 def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose=False):
     parameters=retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability)
-
-    # If a tuple error message is returned, return 
-    if isinstance(parameters, tuple):
-        return parameters
     constraints={}
 
     result = phase_component_main(parameters, constraints)
@@ -163,7 +152,7 @@ def get_user_current_workout_days_list():
     result = []
     user_microcycle = current_microcycle(current_user.id)
     if not user_microcycle:
-        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
+        abort(404, description="No active microcycle found.")
     user_workout_days = user_microcycle.workout_days
     for user_workout_day in user_workout_days:
         result.append(user_workout_day.to_dict())
@@ -176,11 +165,11 @@ def get_user_current_workout_days_list():
 def get_user_current_workout_days_formatted_list():
     user_microcycle = current_microcycle(current_user.id)
     if not user_microcycle:
-        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
+        abort(404, description="No active microcycle found.")
 
     user_workout_days = user_microcycle.workout_days
     if not user_workout_days:
-        return jsonify({"status": "error", "message": "No workout days for the microcycle found."}), 404
+        abort(404, description="No workout days for the microcycle found.")
 
     user_workout_days_dict = [user_workout_day.to_dict() for user_workout_day in user_workout_days]
 
@@ -198,14 +187,14 @@ def get_user_current_workout_days_formatted_list():
 def read_user_current_workout_day():
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active phase component found."}), 404
+        abort(404, description="No active phase component found.")
     return jsonify({"status": "success", "phase_components": user_workout_day.to_dict()}), 200
 
 
 def workout_day_executor(phase_id=None):
     user_microcycle = current_microcycle(current_user.id)
     if not user_microcycle:
-        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
+        abort(404, description="No active microcycle found.")
     
     # If no phase id given, retrieve the currently active one. 
     if not phase_id:
@@ -218,7 +207,7 @@ def workout_day_executor(phase_id=None):
         .order_by(User_Weekday_Availability.user_id.asc())
         .all())
     if not availability:
-        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
+        abort(404, description="No active weekday availability found.")
 
     delete_old_user_workout_days(user_microcycle.id)
     microcycle_weekdays, user_workdays = duration_to_weekdays(user_microcycle.duration.days, user_microcycle.start_date, user_microcycle.id)
@@ -226,12 +215,9 @@ def workout_day_executor(phase_id=None):
     weekday_availability, number_of_available_weekdays, total_availability = retrieve_weekday_availability_information_from_availability(availability)
 
     result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
-    # If a tuple error message is returned, return 
-    if isinstance(result, tuple):
-        return result
 
     if result["output"] == "error":
-        return jsonify({"status": "error", "message": result["message"]}), 404
+        abort(404, description=result["message"])
 
     user_workdays = agent_output_to_sqlalchemy_model(result["output"], user_workdays)
     db.session.add_all(user_workdays)
@@ -247,20 +233,16 @@ def workout_day_executor(phase_id=None):
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def workout_day_initializer():
-    # Retrieve results. If a tuple error message is returned, return the error message.
+    # Retrieve results.
     result = workout_day_executor()
-    if isinstance(result, tuple):
-        return result
     return jsonify({"status": "success", "workdays": result}), 200
 
 # Assigns phase components to days along with projected length.
 @bp.route('/<phase_id>', methods=['POST', 'PATCH'])
 @login_required
 def workout_day_initializer_by_id(phase_id):
-    # Retrieve results. If a tuple error message is returned, return the error message.
+    # Retrieve results.
     result = workout_day_executor(phase_id)
-    if isinstance(result, tuple):
-        return result
     return jsonify({"status": "success", "workdays": result}), 200
 
 
@@ -296,11 +278,6 @@ def retrieve_availability_for_test():
 def test_workout_day_by_id(phase_id):
     microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability = retrieve_availability_for_test()
     result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
-
-    # If a tuple error message is returned, return 
-    if isinstance(result, tuple):
-        return result
-
     return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Testing for the parameter programming for phase component assignment.
@@ -320,10 +297,6 @@ def phase_component_classification_test():
 
     for phase in phases:
         result = perform_workout_day_selection(phase.id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays)
-        # If a tuple error message is returned, return 
-        if isinstance(result, tuple):
-            return result
-
         if verbose:
             print(str(phase.id))
             print_long_output(result["formatted"])

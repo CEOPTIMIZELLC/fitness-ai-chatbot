@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 
 from app import db
@@ -44,10 +44,10 @@ def change_weekday_availability():
     # Input is a json.
     data = request.get_json()
     if not data:
-        return jsonify({"status": "error", "message": "Invalid request"}), 400
+        abort(400, description="Invalid request")
     
     if ('availability' not in data):
-        return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
+        abort(400, description="Please fill out the form!")
 
     # There are only so many types a weekday can be classified as, with all of them being stored.
     weekday_types = retrieve_weekday_types()

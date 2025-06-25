@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 
 from app import db
@@ -28,7 +28,7 @@ def get_user_exercise_list():
 def read_user_exercise(exercise_id):
     user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise_id})
     if not user_exercise:
-        return jsonify({"status": "error", "message": f"No active exercise of {exercise_id} found for current user."}), 404
+        abort(404, description=f"No active exercise of {exercise_id} found for current user.")
     return jsonify({"status": "success", "user_exercises": user_exercise.to_dict()}), 200
 
 # Retrieve current user's exercises for current workout.

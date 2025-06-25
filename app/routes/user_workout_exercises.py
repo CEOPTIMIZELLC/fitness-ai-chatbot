@@ -2,7 +2,7 @@ from config import verbose, verbose_formatted_schedule
 import random
 import math
 
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 
 from app import db
@@ -51,12 +51,8 @@ def retrieve_availability_for_day(user_workout_day):
 # Verifies and updates the phase component information.
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
 def verify_and_update_pc_information(parameters, pcs, exercises):
-    # Retrieve parameters. If a tuple is returned, that means they are the phase components, exercises, and exercises for phase components.
-    verification_message = verify_pc_information(parameters, pcs, exercises, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min", check_globally=True)
-    if isinstance(verification_message, tuple):
-        pcs, exercises = verification_message
-    else:
-        return verification_message
+    # Retrieve parameters. Returned information includes the phase components, exercises, and exercises for phase components.
+    pcs, exercises = verify_pc_information(parameters, pcs, exercises, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min", check_globally=True)
     
     pcs_new = [pc for pc in pcs if pc.get("allowed_exercises")]
 
@@ -89,12 +85,12 @@ def retrieve_pc_parameters(user_workout_day):
     # Retrieve user components
     user_workout_components = user_workout_day.workout_components
     if not user_workout_components:
-        return jsonify({"status": "error", "exercises": "This phase component is inactive. No exercises for today."}), 400
+        abort(400, description="This phase component is inactive. No exercises for today.")
 
     # Retrieve availability for day.
     availability = retrieve_availability_for_day(user_workout_day)
     if not availability:
-        return jsonify({"status": "error", "message": "No active weekday availability found."}), 404
+        abort(404, description="No active weekday availability found.")
 
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = availability
@@ -102,9 +98,7 @@ def retrieve_pc_parameters(user_workout_day):
     parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
     parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
 
-    pc_verification_message = verify_and_update_pc_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
-    if pc_verification_message:
-        return jsonify({"status": "error", "message": pc_verification_message}), 400
+    verify_and_update_pc_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
 
     parameters["projected_duration"] = retrieve_projected_duration(parameters["phase_components"][1:], parameters["phase_components"][1:])
     return parameters
@@ -153,7 +147,7 @@ def get_user_workout_exercises_list():
 def get_user_current_exercises_list():
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+        abort(404, description="No active workout day found.")
 
     user_workout_exercises = user_workout_day.exercises
     result = [user_workout_exercise.to_dict() 
@@ -166,11 +160,11 @@ def get_user_current_exercises_list():
 def get_user_current_exercises_formatted_list():
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+        abort(404, description="No active workout day found.")
 
     user_workout_exercises = user_workout_day.exercises
     if not user_workout_exercises:
-        return jsonify({"status": "error", "message": "No exercises for the day found."}), 404
+        abort(404, description="No exercises for the day found.")
     
     loading_system_id = user_workout_day.loading_system_id
 
@@ -189,14 +183,12 @@ def get_user_current_exercises_formatted_list():
 def exercise_initializer():
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+        abort(404, description="No active workout day found.")
 
     delete_old_user_workout_exercises(user_workout_day.id)
 
-    # Retrieve parameters. If a tuple error message is returned, return 
+    # Retrieve parameters.
     parameters = retrieve_pc_parameters(user_workout_day)
-    if isinstance(parameters, tuple):
-        return parameters
     constraints={"vertical_loading": user_workout_day.loading_systems.id == 1}
 
     result = exercises_main(parameters, constraints)
@@ -220,7 +212,7 @@ def complete_workout():
     result = []
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+        abort(404, description="No active workout day found.")
     workout_exercises = user_workout_day.exercises
 
     for exercise in workout_exercises:
@@ -273,12 +265,9 @@ def initialize_and_complete():
 def exercise_phase_components_test():
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active workout day found."}), 404
+        abort(404, description="No active workout day found.")
 
-    # Retrieve parameters. If a tuple error message is returned, return 
     parameters = retrieve_pc_parameters(user_workout_day)
-    if isinstance(parameters, tuple):
-        return parameters
     constraints={"vertical_loading": user_workout_day.loading_systems.id == 1}
 
     result = exercise_pc_main(parameters, constraints)
@@ -292,12 +281,8 @@ def exercise_phase_components_test():
 def exercise_agent_preprocessing_test():
     user_workout_day = current_workout_day(current_user.id)
     if not user_workout_day:
-        return jsonify({"status": "error", "message": "No active workout day found."}), 404
-    # Retrieve parameters. If a tuple error message is returned, return 
+        abort(404, description="No active workout day found.")
     parameters = retrieve_pc_parameters(user_workout_day)
-    if isinstance(parameters, tuple):
-        return parameters
-
     return jsonify({"status": "success", "parameters": parameters}), 200
 
 

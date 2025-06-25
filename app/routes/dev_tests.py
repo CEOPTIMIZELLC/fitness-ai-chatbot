@@ -1,6 +1,6 @@
 from random import randint
 from datetime import timedelta, date
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, abort
 
 from flask_login import current_user, login_required
 
@@ -73,7 +73,7 @@ def run_pipeline():
     # Input is a json.
     data = request.get_json()
     if not data:
-        return jsonify({"status": "error", "message": "Invalid request"}), 400
+        abort(400, description="Invalid request")
 
     runs = data.get("runs", 1)
     results = []

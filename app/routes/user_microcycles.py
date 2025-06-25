@@ -1,5 +1,5 @@
 from config import verbose
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 from datetime import timedelta
 
@@ -34,7 +34,7 @@ def get_user_current_microcycles_list():
     result = []
     user_mesocycle = current_mesocycle(current_user.id)
     if not user_mesocycle:
-        return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
+        abort(404, description="No active mesocycle found.")
     user_microcycles = user_mesocycle.microcycles
     for user_microcycle in user_microcycles:
         result.append(user_microcycle.to_dict())
@@ -46,7 +46,7 @@ def get_user_current_microcycles_list():
 def read_user_current_microcycle():
     user_microcycle = current_microcycle(current_user.id)
     if not user_microcycle:
-        return jsonify({"status": "error", "message": "No active microcycle found."}), 404
+        abort(404, description="No active microcycle found.")
     return jsonify({"status": "success", "microcycles": user_microcycle.to_dict()}), 200
 
 
@@ -57,7 +57,7 @@ def microcycle_initializer():
 
     user_mesocycle = current_mesocycle(current_user.id)
     if not user_mesocycle:
-        return jsonify({"status": "error", "message": "No active mesocycle found."}), 404
+        abort(404, description="No active mesocycle found.")
 
     delete_old_user_microcycles(user_mesocycle.id)
 

@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 
 from app import db
@@ -64,7 +64,7 @@ def get_user_macrocycle_list():
 def read_user_current_macrocycle():
     user_macro = current_macrocycle(current_user.id)
     if not user_macro:
-        return jsonify({"status": "error", "message": "No active macrocycle found."}), 404
+        abort(404, description="No active macrocycle found.")
     return jsonify({"status": "success", "macrocycles": user_macro.to_dict()}), 200
 
 # Change the current user's macrocycle.
@@ -74,10 +74,10 @@ def change_macrocycle():
     # Input is a json.
     data = request.get_json()
     if not data:
-        return jsonify({"status": "error", "message": "Invalid request"}), 400
+        abort(400, description="Invalid request")
     
     if ('goal' not in data):
-        return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
+        abort(400, description="Please fill out the form!")
     
     # There are only so many goal types a macrocycle can be classified as, with all of them being stored.
     goal_types = retrieve_goal_types()
@@ -114,7 +114,7 @@ def change_macrocycle_by_id(goal_id):
     # Ensure that id is possible.
     goal = db.session.get(Goal_Library, goal_id)
     if not goal:
-        return jsonify({"status": "error", "message": f"Goal {goal_id} not found."}), 404
+        abort(404, description=f"Goal {goal_id} not found.")
 
     # Change the current user's macrocycle and the goal type if a new one can be assigned.
     if (request.method == 'POST'):

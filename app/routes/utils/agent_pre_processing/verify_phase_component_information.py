@@ -3,6 +3,8 @@ from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 from .check_exercise_quantity import Main as check_exercise_quantity
 from .check_for_enough_time import Main as check_for_enough_time
 from .correct_parameters import correct_available_exercises_with_possible_weights, correct_minimum_duration_for_phase_component, correct_min_max_allowed_exercises_for_phase_component
+from flask import abort
+
 
 def print_logging_message(message):
     if verbose_agent_preprocessing:
@@ -48,7 +50,7 @@ def Main(parameters, pcs, exercises, total_availability, duration_key, count_key
     print_logging_message("CORRECT POSSIBLE WEIGHTS")
     no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
     if no_weighted_exercises:
-        return no_weighted_exercises
+        abort(400, description=no_weighted_exercises)
 
     # Change the minimum allowed duration if the exercises possible don't allow for it.
     print_logging_message("CORRECT MINIMUM POSSIBLE DURATION")
@@ -65,13 +67,13 @@ def Main(parameters, pcs, exercises, total_availability, duration_key, count_key
     print_logging_message("CHECK IF THERE ARE ENOUGH EXERCISES")
     pc_without_enough_ex_message = check_exercise_quantity(pcs, exercises_for_pcs, check_globally)
     if pc_without_enough_ex_message:
-        return pc_without_enough_ex_message
+        abort(400, description=pc_without_enough_ex_message)
 
     # Check if there is enough time to complete the phase components.
     print_logging_message("CHECK IF THERE IS ENOUGH TIME")
     not_enough_time_message = check_for_enough_time(pcs, total_availability, duration_key, count_key, default_count_if_none)
     if not_enough_time_message:
-        return not_enough_time_message
+        abort(400, description=not_enough_time_message)
 
     print_logging_message("FIND GENERAL EXERCISES FOR ALL PHASE COMPONENTS")
     general_exercises_for_pcs = get_general_exercises_for_all_pcs(exercises, exercises_for_pcs)
@@ -80,7 +82,7 @@ def Main(parameters, pcs, exercises, total_availability, duration_key, count_key
     print_logging_message("CHECK IF THERE ARE ENOUGH GENERAL EXERCISES")
     pc_without_enough_ex_message = check_exercise_quantity(pcs, general_exercises_for_pcs, check_globally)
     if pc_without_enough_ex_message:
-        return pc_without_enough_ex_message
+        abort(400, description=pc_without_enough_ex_message)
 
     # Attach allowed exercises to phase component.
     pcs = attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs)
