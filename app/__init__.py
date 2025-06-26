@@ -74,6 +74,10 @@ def register_blueprints(app):
         from .routes import user_equipment
         app.register_blueprint(user_equipment.bp, url_prefix='/user_equipment')
 
+        from .routes import main_agent
+        app.register_blueprint(main_agent.bp, url_prefix='/main_agent')
+
+
 def initialize_database(app, db):
     with app.app_context():
         db.create_all()
