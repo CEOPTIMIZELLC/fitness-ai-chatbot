@@ -6,6 +6,14 @@ from flask import current_app
 
 from .prompts import goal_extraction_system_prompt
 
+from app.main_agent_steps import (
+    MacrocycleActions, 
+    MesocycleActions, 
+    MicrocycleActions, 
+    MicrocycleSchedulerActions, 
+    WorkoutActions, 
+    WeekdayAvailabilitySchedulerActions)
+
 class AgentState(TypedDict):
     user_input: str
     check: bool
@@ -83,6 +91,7 @@ def availability_node(state: AgentState):
     print(f"Changing User Availability")
     availability_message = state["availability_message"]
     print(f"{availability_message}")
+    new_availability = WeekdayAvailabilitySchedulerActions.scheduler(availability_message)
     return state
 
 def check_macrocycle_node(state: AgentState):
@@ -94,6 +103,7 @@ def macrocycle_node(state: AgentState):
     print(f"Changing User Macrocycle")
     macrocycle_message = state["macrocycle_message"]
     print(f"{macrocycle_message}")
+    macrocycles = MacrocycleActions.scheduler(macrocycle_message)
     return state
 
 def check_mesocycle_node(state: AgentState):
@@ -105,6 +115,8 @@ def mesocycle_node(state: AgentState):
     print(f"Changing User Mesocycle")
     mesocycle_message = state["mesocycle_message"]
     print(f"{mesocycle_message}")
+    result = MesocycleActions.scheduler()
+    result["formatted_schedule"] = MesocycleActions.get_formatted_list()
     return state
 
 def check_microcycle_node(state: AgentState):
@@ -116,6 +128,7 @@ def microcycle_node(state: AgentState):
     print(f"Changing User Microcycle")
     microcycle_message = state["microcycle_message"]
     print(f"{microcycle_message}")
+    result = MicrocycleActions.scheduler()
     return state
 
 def check_phase_component_node(state: AgentState):
@@ -127,6 +140,8 @@ def phase_component_node(state: AgentState):
     print(f"Changing User Phase Component")
     phase_component_message = state["phase_component_message"]
     print(f"{phase_component_message}")
+    result = MicrocycleSchedulerActions.scheduler()
+    result["formatted_schedule"] = MicrocycleSchedulerActions.get_formatted_list()
     return state
 
 def check_workout_schedule_node(state: AgentState):
@@ -138,6 +153,8 @@ def workout_schedule_node(state: AgentState):
     print(f"Changing User Workout Schedule")
     workout_schedule_message = state["workout_schedule_message"]
     print(f"{workout_schedule_message}")
+    result = WorkoutActions.scheduler()
+    result["formatted_schedule"] = WorkoutActions.get_formatted_list()
     return state
 
 def print_schedule_node(state: AgentState):
