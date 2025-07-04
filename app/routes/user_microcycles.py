@@ -4,7 +4,7 @@ from flask_login import login_required
 
 from app import db
 from app.models import User_Microcycles
-from app.main_agent_steps import MicrocycleActions
+from app.main_agent.user_microcycles import MicrocycleActions
 
 bp = Blueprint('user_microcycles', __name__)
 

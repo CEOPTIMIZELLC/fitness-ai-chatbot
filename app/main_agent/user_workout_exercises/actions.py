@@ -19,10 +19,10 @@ from app.agents.exercises import exercises_main
 from app.utils.common_table_queries import current_workout_day
 from app.utils.print_long_output import print_long_output
 
-from app.main_agent_steps.utils import retrieve_total_time_needed
-from app.main_agent_steps.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
-from app.main_agent_steps.utils import verify_pc_information
-from app.main_agent_steps.utils import print_workout_exercises_schedule
+from app.main_agent.utils import retrieve_total_time_needed
+from app.main_agent.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
+from app.main_agent.utils import verify_pc_information
+from app.main_agent.utils import print_workout_exercises_schedule
 
 
 # ----------------------------------------- Workout Exercises -----------------------------------------

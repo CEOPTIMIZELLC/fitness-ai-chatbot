@@ -6,8 +6,8 @@ from app import db
 from app.models import Goal_Library, Goal_Phase_Requirements
 
 from app.agents.phases import Main as phase_main
-from app.main_agent_steps.utils import construct_phases_list
-from app.main_agent_steps import MesocycleActions
+from app.main_agent.utils import construct_phases_list
+from app.main_agent.user_mesocycles import MesocycleActions
 
 bp = Blueprint('user_mesocycles', __name__)
 

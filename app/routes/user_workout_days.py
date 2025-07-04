@@ -6,9 +6,9 @@ from app import db
 from app.models import Phase_Library
 from app.agents.phase_components import Main as phase_component_main
 from app.utils.print_long_output import print_long_output
-from app.main_agent_steps.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
-from app.main_agent_steps.utils import verify_pc_information
-from app.main_agent_steps import MicrocycleSchedulerActions
+from app.main_agent.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
+from app.main_agent.utils import verify_pc_information
+from app.main_agent.user_workout_days import MicrocycleSchedulerActions
 
 bp = Blueprint('user_workout_days', __name__)
 

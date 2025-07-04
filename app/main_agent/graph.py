@@ -6,13 +6,12 @@ from flask import current_app
 
 from .prompts import goal_extraction_system_prompt
 
-from app.main_agent_steps import (
-    MacrocycleActions, 
-    MesocycleActions, 
-    MicrocycleActions, 
-    MicrocycleSchedulerActions, 
-    WorkoutActions, 
-    WeekdayAvailabilitySchedulerActions)
+from .user_macrocycles import MacrocycleActions
+from .user_mesocycles import MesocycleActions
+from .user_microcycles import MicrocycleActions
+from .user_workout_days import MicrocycleSchedulerActions
+from .user_workout_exercises import WorkoutActions
+from .user_weekdays_availability import WeekdayAvailabilitySchedulerActions
 
 class AgentState(TypedDict):
     user_input: str

@@ -9,14 +9,12 @@ from app import db
 from app.utils.sql import sql_app
 from app.utils.table_context_parser import context_retriever_app
 
-from app.main_agent_steps import (
-    MacrocycleActions, 
-    MesocycleActions, 
-    MicrocycleActions, 
-    MicrocycleSchedulerActions, 
-    WorkoutActions, 
-    WeekdayAvailabilitySchedulerActions)
-
+from app.main_agent.user_macrocycles import MacrocycleActions
+from app.main_agent.user_mesocycles import MesocycleActions
+from app.main_agent.user_microcycles import MicrocycleActions
+from app.main_agent.user_workout_days import MicrocycleSchedulerActions
+from app.main_agent.user_workout_exercises import WorkoutActions
+from app.main_agent.user_weekdays_availability import WeekdayAvailabilitySchedulerActions
 
 bp = Blueprint('dev_tests', __name__)
 

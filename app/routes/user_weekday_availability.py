@@ -5,7 +5,7 @@ from app import db
 from app.models import Weekday_Library, User_Weekday_Availability
 
 from app.agents.weekday_availability import create_weekday_availability_extraction_graph
-from app.main_agent_steps import WeekdayAvailabilitySchedulerActions
+from app.main_agent.user_weekdays_availability import WeekdayAvailabilitySchedulerActions
 
 bp = Blueprint('user_weekday_availability', __name__)
 

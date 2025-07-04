@@ -9,8 +9,8 @@ from app.models import User_Mesocycles, User_Macrocycles
 from app.agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
-from app.main_agent_steps.utils import construct_phases_list
-from app.main_agent_steps.utils import print_mesocycles_schedule
+from app.main_agent.utils import construct_phases_list
+from app.main_agent.utils import print_mesocycles_schedule
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 

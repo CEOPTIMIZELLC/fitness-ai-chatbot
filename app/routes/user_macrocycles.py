@@ -5,7 +5,7 @@ from app import db
 from app.models import Goal_Library
 
 from app.agents.goals import create_goal_classification_graph
-from app.main_agent_steps import MacrocycleActions
+from app.main_agent.user_macrocycles import MacrocycleActions
 
 bp = Blueprint('user_macrocycles', __name__)
 
