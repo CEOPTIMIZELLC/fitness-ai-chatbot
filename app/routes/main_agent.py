@@ -7,7 +7,9 @@ from app.main_agent.graph import create_main_agent_graph
 
 # ----------------------------------------- Main Agent -----------------------------------------
 test_cases = [
-    "I want to train four times a week instead of three, and can we swap squats for leg press on leg day? I should have 30 minutes every day now.",
+    "I want to train four times a week instead of three, and can we swap squats for leg press on leg day? I should have 30 minutes every day now. My goal is to lose 20 pounds. I would like you to schedule the mesoscycles, microcycles, the phase components, and the workouts as well.",
+    # "I want to train four times a week instead of three, and can we swap squats for leg press on leg day? I should have 30 minutes every day now.",
+    "I want to train four times a week instead of three, and can we swap squats for leg press on leg day? I should have 30 minutes every day now. I would like you to schedule my mesocycles too.",
     "I'm switching jobs and won't be able to train on weekdays anymore. Let's shift to a strength phase this month.",
     "Over the next few months, I want to focus on cutting fat while maintaining muscle.",
     "I just moved and can now work out only on Monday, Wednesday, and Friday. My new goal is to build power over the next 12 weeks. Start with a strength block for 4 weeks, then move into a power phase. I want 3 full-body sessions a week. Let's include more explosive movements in each session.", 

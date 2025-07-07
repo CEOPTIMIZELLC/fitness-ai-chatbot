@@ -33,5 +33,6 @@ Return the result in the structured schema corresponding to the following Pydant
 
 Be precise and extract only what the user explicitly or strongly implies.
 
+If a user explicitly states they want to have a certain goal scheduled, the goal should be said to be requested.
 
 """
