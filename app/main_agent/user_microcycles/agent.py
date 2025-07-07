@@ -1,0 +1,170 @@
+from config import verbose, verbose_formatted_schedule
+from flask import abort
+from flask_login import current_user
+from datetime import timedelta
+from typing_extensions import TypedDict
+from langgraph.graph import StateGraph, END
+
+
+from app import db
+from app.models import User_Microcycles, User_Mesocycles
+
+from app.utils.common_table_queries import current_mesocycle, current_microcycle
+
+# ----------------------------------------- User Microcycles -----------------------------------------
+
+mesocycle_weeks = 26
+
+class AgentState(TypedDict):
+    user_id: int
+    user_input: str
+    check: bool
+    attempts: int
+    user_mesocycle: any
+    mesocycle_id: int
+    microcycle_count: int
+    microcycle_duration: any
+    start_date: any
+    formatted_schedule: any
+
+def retrieve_parent(state: AgentState):
+    print(f"---------Retrieving Current Mesocycle---------")
+    user_id = state["user_id"]
+    user_mesocycle = current_mesocycle(user_id)
+    return {"user_mesocycle": user_mesocycle}
+
+def confirm_parent(state: AgentState):
+    print(f"---------Confirm there is an active Mesocycle---------")
+    if not state["user_mesocycle"]:
+        return "no_parent"
+    return "parent"
+
+def ask_for_permission(state: AgentState):
+    print(f"---------Ask user if a new Mesocycle can be made---------")
+    abort(404, description="No active mesocycle found.")
+    return {}
+
+def retrieve_information(state: AgentState):
+    print(f"---------Retrieving Information for Microcycle Scheduling---------")
+    user_mesocycle = state["user_mesocycle"]
+
+    # Each microcycle must last 1 week.
+    microcycle_duration = timedelta(weeks=1)
+
+    # Find how many one week microcycles will be present in the mesocycle
+    microcycle_count = user_mesocycle.duration.days // microcycle_duration.days
+    microcycle_start = user_mesocycle.start_date
+
+    return {
+        "mesocycle_id": user_mesocycle.id,
+        "microcycle_duration": microcycle_duration,
+        "microcycle_count": microcycle_count,
+        "start_date": microcycle_start
+    }
+
+def delete_old_children(state: AgentState):
+    print(f"---------Delete old Microcycles---------")
+    mesocycle_id = state["mesocycle_id"]
+    db.session.query(User_Microcycles).filter_by(mesocycle_id=mesocycle_id).delete()
+    if verbose:
+        print("Successfully deleted")
+    return {}
+
+def perform_microcycle_initialization(state: AgentState):
+    print(f"---------Perform Microcycle Scheduling---------")
+    mesocycle_id = state["mesocycle_id"]
+    microcycle_duration = state["microcycle_duration"]
+    microcycle_count = state["microcycle_count"]
+    microcycle_start = state["start_date"]
+
+    # Create a microcycle for each week in the mesocycle.
+    microcycles = []
+    for i in range(microcycle_count):
+        microcycle_end = microcycle_start + microcycle_duration
+        new_microcycle = User_Microcycles(
+            mesocycle_id = mesocycle_id,
+            order = i+1,
+            start_date = microcycle_start,
+            end_date = microcycle_end,
+        )
+
+        microcycles.append(new_microcycle)
+
+        # Shift the start of the next microcycle to be the end of the current.
+        microcycle_start = microcycle_end
+
+    db.session.add_all(microcycles)
+    db.session.commit()
+
+    return {}
+
+def get_formatted_list(state: AgentState):
+    print(f"---------Retrieving Formatted Schedule for user---------")
+    user_mesocycle = state["user_mesocycle"]
+
+    user_microcycles = user_mesocycle.microcycles
+    if not user_microcycles:
+        abort(404, description="No microcycles found for the mesocycle.")
+
+    user_microcycles_dict = [user_microcycle.to_dict() for user_microcycle in user_microcycles]
+
+    formatted_schedule = str(user_microcycles_dict)
+    if verbose_formatted_schedule:
+        print(formatted_schedule)
+    return {"formatted_schedule": formatted_schedule}
+
+# Retrieve current user's microcycles
+def get_user_list(state: AgentState):
+    print(f"---------Retrieving All Microcycles for User---------")
+    user_id = state["user_id"]
+    user_microcycles = User_Microcycles.query.join(User_Mesocycles).filter_by(user_id=user_id).all()
+    return [user_microcycle.to_dict() 
+            for user_microcycle in user_microcycles]
+
+# Retrieve user's current mesocycles's microcycles
+def get_user_current_list(state: AgentState):
+    print(f"---------Retrieving Current Microcycles for User---------")
+    user_mesocycle = state["user_mesocycle"]
+    user_microcycles = user_mesocycle.microcycles
+    return [user_microcycle.to_dict() 
+            for user_microcycle in user_microcycles]
+
+
+# Retrieve user's current microcycle
+def read_user_current_element(state: AgentState):
+    print(f"---------Retrieving Current Microcycle for User---------")
+    user_id = state["user_id"]
+    user_microcycle = current_microcycle(user_id)
+    if not user_microcycle:
+        abort(404, description="No active microcycle found.")
+    return user_microcycle.to_dict()
+
+
+def create_main_agent_graph():
+    workflow = StateGraph(AgentState)
+
+    workflow.add_node("retrieve_parent", retrieve_parent)
+    workflow.add_node("ask_for_permission", ask_for_permission)
+    workflow.add_node("retrieve_information", retrieve_information)
+    workflow.add_node("delete_old_children", delete_old_children)
+    workflow.add_node("perform_microcycle_initialization", perform_microcycle_initialization)
+    workflow.add_node("get_formatted_list", get_formatted_list)
+
+    workflow.add_conditional_edges(
+        "retrieve_parent",
+        confirm_parent,
+        {
+            "no_parent": "ask_for_permission",
+            "parent": "retrieve_information"
+        }
+    )
+
+    workflow.add_edge("retrieve_information", "delete_old_children")
+    workflow.add_edge("delete_old_children", "perform_microcycle_initialization")
+    workflow.add_edge("perform_microcycle_initialization", "get_formatted_list")
+    workflow.add_edge("ask_for_permission", END)
+    workflow.add_edge("get_formatted_list", END)
+
+    workflow.set_entry_point("retrieve_parent")
+
+    return workflow.compile()

@@ -3,13 +3,15 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, END
 from flask import current_app
+from flask_login import current_user
+
 
 from .prompts import goal_extraction_system_prompt
 
-from .user_macrocycles import MacrocycleActions
-from .user_mesocycles import MesocycleActions
-from .user_microcycles import MicrocycleActions
-from .user_workout_days import MicrocycleSchedulerActions
+from .user_macrocycles import MacrocycleActions, create_goal_agent
+from .user_mesocycles import MesocycleActions, create_mesocycle_agent
+from .user_microcycles import MicrocycleActions, create_microcycle_agent
+from .user_workout_days import MicrocycleSchedulerActions, create_microcycle_scheduler_agent
 from .user_workout_exercises import WorkoutActions
 from .user_weekdays_availability import WeekdayAvailabilitySchedulerActions
 
@@ -93,7 +95,7 @@ def user_input_information_extraction(state: AgentState):
     return state
 
 def availability_node(state: AgentState):
-    print(f"Changing User Availability")
+    print(f"\n=========Changing User Availability=========")
     if state["availability_impacted"]:
         availability_message = state["availability_message"]
         new_availability = WeekdayAvailabilitySchedulerActions.scheduler(availability_message)
@@ -103,49 +105,58 @@ def availability_node(state: AgentState):
     return {"availability_formatted": availability_message}
 
 def macrocycle_node(state: AgentState):
-    print(f"Changing User Macrocycle")
+    print(f"\n=========Changing User Macrocycle=========")
     if state["macrocycle_impacted"]:
         macrocycle_message = state["macrocycle_message"]
-        macrocycles = MacrocycleActions.scheduler(macrocycle_message)
+        # macrocycles = MacrocycleActions.scheduler(macrocycle_message)
+        goal_agent = create_goal_agent()
+        goal_agent.invoke({"user_id": current_user.id, "new_goal": macrocycle_message})
+
     else:
         macrocycle_message = None
     print(f"{macrocycle_message}")
     return {"macrocycle_formatted": macrocycle_message}
 
 def mesocycle_node(state: AgentState):
-    print(f"Changing User Mesocycle")
+    print(f"\n=========Changing User Mesocycle=========")
     if state["mesocycle_impacted"]:
         mesocycle_message = state["mesocycle_message"]
-        result = MesocycleActions.scheduler()
-        result["formatted_schedule"] = MesocycleActions.get_formatted_list()
+        # result = MesocycleActions.scheduler()
+        # result["formatted_schedule"] = MesocycleActions.get_formatted_list()
+        mesocycle_agent = create_mesocycle_agent()
+        mesocycle_agent.invoke({"user_id": current_user.id})
     else:
         mesocycle_message = None
     print(f"{mesocycle_message}")
     return {"mesocycle_formatted": mesocycle_message}
 
 def microcycle_node(state: AgentState):
-    print(f"Changing User Microcycle")
+    print(f"\n=========Changing User Microcycle=========")
     if state["microcycle_impacted"]:
         microcycle_message = state["microcycle_message"]
-        result = MicrocycleActions.scheduler()
+        # result = MicrocycleActions.scheduler()
+        microcycle_agent = create_microcycle_agent()
+        microcycle_agent.invoke({"user_id": current_user.id})
     else:
         microcycle_message = None
     print(f"{microcycle_message}")
     return {"microcycle_formatted": microcycle_message}
 
 def phase_component_node(state: AgentState):
-    print(f"Changing User Phase Component")
+    print(f"\n=========Changing User Phase Component=========")
     if state["phase_component_impacted"]:
         phase_component_message = state["phase_component_message"]
-        result = MicrocycleSchedulerActions.scheduler()
-        result["formatted_schedule"] = MicrocycleSchedulerActions.get_formatted_list()
+        # result = MicrocycleSchedulerActions.scheduler()
+        # result["formatted_schedule"] = MicrocycleSchedulerActions.get_formatted_list()
+        microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+        microcycle_scheduler_agent.invoke({"user_id": current_user.id})
     else:
         phase_component_message = None
     print(f"{phase_component_message}")
     return {"phase_component_formatted": phase_component_message}
 
 def workout_schedule_node(state: AgentState):
-    print(f"Changing User Workout Schedule")
+    print(f"\n=========Changing User Workout Schedule=========")
     if state["workout_schedule_impacted"]:
         workout_schedule_message = state["workout_schedule_message"]
         result = WorkoutActions.scheduler()
@@ -156,7 +167,7 @@ def workout_schedule_node(state: AgentState):
     return {"workout_schedule_formatted": workout_schedule_message}
 
 def print_schedule_node(state: AgentState):
-    print(f"Printing Schedule")
+    print(f"\n=========Printing Schedule=========")
     print(f"Goals extracted.")
     if state["availability_impacted"]:
         print(f"availability: {state["availability_formatted"]}")
