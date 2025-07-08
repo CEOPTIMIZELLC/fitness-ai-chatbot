@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, START, END
 
 
 from app import db
-from app.models import User_Macrocycles
+from app.models import User_Macrocycles, User_Mesocycles
 
 from app.agents.goals import create_goal_classification_graph
 from app.utils.common_table_queries import current_macrocycle
@@ -19,6 +19,7 @@ from app.main_agent.main_agent_state import MainAgentState
 macrocycle_weeks = 26
 
 class AgentState(MainAgentState):
+    user_macrocycle: any
     goal_id: int
     alter_old: bool
 
@@ -28,6 +29,7 @@ def confirm_impact(state: AgentState):
         print(f"\n=========Changing User Macrocycle=========")
     print(f"---------Confirm that the User Macrocycle is Impacted---------")
     if not state["macrocycle_impacted"]:
+        print(f"---------No Impact---------")
         return "no_impact"
     return "impact"
 
@@ -64,42 +66,56 @@ def perform_goal_classifier(state: AgentState):
     goal_types = retrieve_goal_types()
     goal_app = create_goal_classification_graph()
 
+    user_id = state["user_id"]
+    user_macrocycle = current_macrocycle(user_id)
+
     # Invoke with new macrocycle and possible goal types.
     goal = goal_app.invoke({
         "new_goal": new_goal, 
         "goal_types": goal_types, 
         "attempts": 0})
     
-    return {"goal_id": goal["goal_id"],
-            "alter_old": True}
+    return {
+        "user_macrocycle": user_macrocycle,
+        "goal_id": goal["goal_id"],
+        "alter_old": True
+    }
 
 # Determine whether the current macrocycle should be edited or if a new one should be created.
 def which_operation(state: AgentState):
     print(f"---------Determine whether goal should be new---------")
-    if state["alter_old"]:
+    if state["alter_old"] and state["user_macrocycle"]:
         return "alter_macrocycle"
-    return "new_macrocycle"
+    return "create_new_macrocycle"
 
 # Creates the new macrocycle of the determined type.
-def new_macrocycle(state: AgentState):
+def create_new_macrocycle(state: AgentState):
     user_id = state["user_id"]
     goal_id = state["goal_id"]
     new_goal = state["macrocycle_message"]
     new_macrocycle = User_Macrocycles(user_id=user_id, goal_id=goal_id, goal=new_goal)
     db.session.add(new_macrocycle)
     db.session.commit()
+    return {"user_macrocycle": new_macrocycle}
+
+# Delete the old items belonging to the parent.
+def delete_old_children(state: AgentState):
+    print(f"---------Delete old items of current Macrocycle---------")
+    macrocycle_id = state["user_macrocycle"].id
+    db.session.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
+    if verbose:
+        print("Successfully deleted")
     return {}
 
 # Alters the current macrocycle to be the determined type.
 def alter_macrocycle(state: AgentState):
-    user_id = state["user_id"]
     goal_id = state["goal_id"]
     new_goal = state["macrocycle_message"]
-    user_macrocycle = current_macrocycle(user_id)
+    user_macrocycle = state["user_macrocycle"]
     user_macrocycle.goal = new_goal
     user_macrocycle.goal_id = goal_id
     db.session.commit()
-    return {}
+    return {"user_macrocycle": user_macrocycle}
 
 # Print output.
 def get_formatted_list(state: AgentState):
@@ -116,7 +132,8 @@ def create_main_agent_graph():
     workflow.add_node("impact_confirmed", impact_confirmed)
     workflow.add_node("ask_for_new_goal", ask_for_new_goal)
     workflow.add_node("perform_goal_classifier", perform_goal_classifier)
-    workflow.add_node("new_macrocycle", new_macrocycle)
+    workflow.add_node("create_new_macrocycle", create_new_macrocycle)
+    workflow.add_node("delete_old_children", delete_old_children)
     workflow.add_node("alter_macrocycle", alter_macrocycle)
     workflow.add_node("get_formatted_list", get_formatted_list)
     workflow.add_node("no_goal_requested", no_goal_requested)
@@ -152,13 +169,14 @@ def create_main_agent_graph():
         "perform_goal_classifier",
         which_operation,
         {
-            "alter_macrocycle": "alter_macrocycle",
-            "new_macrocycle": "new_macrocycle"
+            "alter_macrocycle": "delete_old_children",
+            "create_new_macrocycle": "create_new_macrocycle"
         }
     )
 
+    workflow.add_edge("delete_old_children", "alter_macrocycle")
     workflow.add_edge("alter_macrocycle", "get_formatted_list")
-    workflow.add_edge("new_macrocycle", "get_formatted_list")
+    workflow.add_edge("create_new_macrocycle", "get_formatted_list")
     workflow.add_edge("no_goal_requested", END)
     workflow.add_edge("get_formatted_list", END)
 
