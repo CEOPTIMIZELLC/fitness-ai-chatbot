@@ -1,4 +1,4 @@
-from config import verbose, verbose_formatted_schedule, verbose_agent_introductions
+from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 from flask import abort
 from datetime import timedelta
 from typing_extensions import TypedDict
@@ -27,9 +27,11 @@ class AgentState(MainAgentState):
 def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
         print(f"\n=========Changing User Macrocycle=========")
-    print(f"---------Confirm that the User Macrocycle is Impacted---------")
+    if verbose_subagent_steps:
+        print(f"---------Confirm that the User Macrocycle is Impacted---------")
     if not state["macrocycle_impacted"]:
-        print(f"---------No Impact---------")
+        if verbose_subagent_steps:
+            print(f"---------No Impact---------")
         return "no_impact"
     return "impact"
 
@@ -39,14 +41,16 @@ def impact_confirmed(state: AgentState):
 
 # Check if a new goal exists to be classified.
 def confirm_new_goal(state: AgentState):
-    print(f"---------Confirm there is a goal to be classified---------")
+    if verbose_subagent_steps:
+        print(f"---------Confirm there is a goal to be classified---------")
     if not state["macrocycle_message"]:
         return "no_goal"
     return "present_goal"
 
 # Ask user for a new goal if one isn't in the initial request.
 def ask_for_new_goal(state: AgentState):
-    print(f"---------Ask user for a new goal---------")
+    if verbose_subagent_steps:
+        print(f"---------Ask user for a new goal---------")
     return {
         "macrocycle_impacted": True,
         "macrocycle_message": "I would like to lose 20 pounds."
@@ -54,13 +58,15 @@ def ask_for_new_goal(state: AgentState):
 
 # State if the goal isn't requested.
 def no_goal_requested(state: AgentState):
-    print(f"---------Abort Goal Classifier---------")
+    if verbose_subagent_steps:
+        print(f"---------Abort Goal Classifier---------")
     abort(404, description="No goal requested.")
     return {}
 
 # Classify the new goal in one of the possible goal types.
 def perform_goal_classifier(state: AgentState):
-    print(f"---------Perform Goal Classifier---------")
+    if verbose_subagent_steps:
+        print(f"---------Perform Goal Classifier---------")
     new_goal = state["macrocycle_message"]
     # There are only so many goal types a macrocycle can be classified as, with all of them being stored.
     goal_types = retrieve_goal_types()
@@ -83,7 +89,8 @@ def perform_goal_classifier(state: AgentState):
 
 # Determine whether the current macrocycle should be edited or if a new one should be created.
 def which_operation(state: AgentState):
-    print(f"---------Determine whether goal should be new---------")
+    if verbose_subagent_steps:
+        print(f"---------Determine whether goal should be new---------")
     if state["alter_old"] and state["user_macrocycle"]:
         return "alter_macrocycle"
     return "create_new_macrocycle"
@@ -100,7 +107,8 @@ def create_new_macrocycle(state: AgentState):
 
 # Delete the old items belonging to the parent.
 def delete_old_children(state: AgentState):
-    print(f"---------Delete old items of current Macrocycle---------")
+    if verbose_subagent_steps:
+        print(f"---------Delete old items of current Macrocycle---------")
     macrocycle_id = state["user_macrocycle"].id
     db.session.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
     if verbose:
@@ -119,7 +127,8 @@ def alter_macrocycle(state: AgentState):
 
 # Print output.
 def get_formatted_list(state: AgentState):
-    print(f"---------Retrieving Formatted Schedule for user---------")
+    if verbose_subagent_steps:
+        print(f"---------Retrieving Formatted Schedule for user---------")
     macrocycle_message = state["macrocycle_message"]
     if verbose_formatted_schedule:
         print(macrocycle_message)
