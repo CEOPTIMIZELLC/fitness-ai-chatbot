@@ -37,6 +37,7 @@ def confirm_impact(state: AgentState):
         print(f"\n=========Changing User Mesocycle=========")
     print(f"---------Confirm that the User Mesocycle is Impacted---------")
     if not state["mesocycle_impacted"]:
+        print(f"---------No Impact---------")
         return "no_impact"
     return "impact"
 

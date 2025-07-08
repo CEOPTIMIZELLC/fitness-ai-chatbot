@@ -30,6 +30,7 @@ def confirm_impact(state: AgentState):
         print(f"\n=========Changing User Microcycle=========")
     print(f"---------Confirm that the User Microcycle is Impacted---------")
     if not state["microcycle_impacted"]:
+        print(f"---------No Impact---------")
         return "no_impact"
     return "impact"
 

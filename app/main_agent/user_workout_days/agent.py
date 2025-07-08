@@ -49,6 +49,7 @@ def confirm_impact(state: AgentState):
         print(f"\n=========Changing User Phase Component=========")
     print(f"---------Confirm that the User Phase Component is Impacted---------")
     if not state["phase_component_impacted"]:
+        print(f"---------No Impact---------")
         return "no_impact"
     return "impact"
 
