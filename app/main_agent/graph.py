@@ -11,7 +11,7 @@ from .user_macrocycles import MacrocycleActions, create_goal_agent
 from .user_mesocycles import MesocycleActions, create_mesocycle_agent
 from .user_microcycles import MicrocycleActions, create_microcycle_agent
 from .user_workout_days import MicrocycleSchedulerActions, create_microcycle_scheduler_agent
-from .user_workout_exercises import WorkoutActions
+from .user_workout_exercises import WorkoutActions, create_workout_agent
 from .user_weekdays_availability import WeekdayAvailabilitySchedulerActions
 
 from .impact_goal_models import RoutineImpactGoals
@@ -75,17 +75,6 @@ def availability_node(state: AgentState):
     print(f"{availability_message}")
     return {"availability_formatted": availability_message}
 
-def workout_schedule_node(state: AgentState):
-    print(f"\n=========Changing User Workout Schedule=========")
-    if state["workout_schedule_impacted"]:
-        workout_schedule_message = state["workout_schedule_message"]
-        result = WorkoutActions.scheduler()
-        result["formatted_schedule"] = WorkoutActions.get_formatted_list()
-    else:
-        workout_schedule_message = None
-    print(f"{workout_schedule_message}")
-    return {"workout_schedule_formatted": workout_schedule_message}
-
 def print_schedule_node(state: AgentState):
     print(f"\n=========Printing Schedule=========")
     print(f"Goals extracted.")
@@ -111,6 +100,7 @@ def create_main_agent_graph():
     mesocycle_agent = create_mesocycle_agent()
     microcycle_agent = create_microcycle_agent()
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+    workout_agent = create_workout_agent()
 
     workflow = StateGraph(AgentState)
 
@@ -121,7 +111,7 @@ def create_main_agent_graph():
     workflow.add_node("mesocycle", mesocycle_agent)
     workflow.add_node("microcycle", microcycle_agent)
     workflow.add_node("phase_component", microcycle_scheduler_agent)
-    workflow.add_node("workout_schedule", workout_schedule_node)
+    workflow.add_node("workout_schedule", workout_agent)
     workflow.add_node("print_schedule", print_schedule_node)
 
     # User Input to Availability and Macrocycles

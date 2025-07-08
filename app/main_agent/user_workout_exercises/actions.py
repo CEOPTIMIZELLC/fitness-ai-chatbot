@@ -40,9 +40,9 @@ def retrieve_availability_for_day(user_workout_day):
         User_Weekday_Availability.query
         .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
         .first())
-    if availability: 
-        return int(availability.availability.total_seconds())
-    return None
+    if not availability:
+        abort(404, description="No active weekday availability found.")
+    return int(availability.availability.total_seconds())
 
 # Verifies and updates the phase component information.
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
@@ -83,13 +83,8 @@ def retrieve_pc_parameters(user_workout_day):
     if not user_workout_components:
         abort(400, description="This phase component is inactive. No exercises for today.")
 
-    # Retrieve availability for day.
-    availability = retrieve_availability_for_day(user_workout_day)
-    if not availability:
-        abort(404, description="No active weekday availability found.")
-
     parameters["one_rep_max_improvement_percentage"] = 25
-    parameters["availability"] = availability
+    parameters["availability"] = retrieve_availability_for_day(user_workout_day)
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
     parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
     parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
