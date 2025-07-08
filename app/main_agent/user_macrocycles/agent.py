@@ -35,13 +35,15 @@ def confirm_impact(state: AgentState):
 def impact_confirmed(state: AgentState):
     return {}
 
+# Check if a new goal exists to be classified.
 def confirm_new_goal(state: AgentState):
     print(f"---------Confirm there is a goal to be classified---------")
     if not state["macrocycle_message"]:
         return "no_goal"
     return "present_goal"
 
-def ask_for_permission(state: AgentState):
+# Ask user for a new goal if one isn't in the initial request.
+def ask_for_new_goal(state: AgentState):
     print(f"---------Ask user for a new goal---------")
     return {
         "macrocycle_impacted": True,
@@ -54,6 +56,7 @@ def no_goal_requested(state: AgentState):
     abort(404, description="No goal requested.")
     return {}
 
+# Classify the new goal in one of the possible goal types.
 def perform_goal_classifier(state: AgentState):
     print(f"---------Perform Goal Classifier---------")
     new_goal = state["macrocycle_message"]
@@ -68,14 +71,16 @@ def perform_goal_classifier(state: AgentState):
         "attempts": 0})
     
     return {"goal_id": goal["goal_id"],
-            "alter_old": False}
+            "alter_old": True}
 
+# Determine whether the current macrocycle should be edited or if a new one should be created.
 def which_operation(state: AgentState):
     print(f"---------Determine whether goal should be new---------")
     if state["alter_old"]:
         return "alter_macrocycle"
     return "new_macrocycle"
 
+# Creates the new macrocycle of the determined type.
 def new_macrocycle(state: AgentState):
     user_id = state["user_id"]
     goal_id = state["goal_id"]
@@ -85,6 +90,7 @@ def new_macrocycle(state: AgentState):
     db.session.commit()
     return {}
 
+# Alters the current macrocycle to be the determined type.
 def alter_macrocycle(state: AgentState):
     user_id = state["user_id"]
     goal_id = state["goal_id"]
@@ -95,6 +101,7 @@ def alter_macrocycle(state: AgentState):
     db.session.commit()
     return {}
 
+# Print output.
 def get_formatted_list(state: AgentState):
     print(f"---------Retrieving Formatted Schedule for user---------")
     macrocycle_message = state["macrocycle_message"]
@@ -102,11 +109,12 @@ def get_formatted_list(state: AgentState):
         print(macrocycle_message)
     return {"macrocycle_formatted": macrocycle_message}
 
+# Create main agent.
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
 
     workflow.add_node("impact_confirmed", impact_confirmed)
-    workflow.add_node("ask_for_permission", ask_for_permission)
+    workflow.add_node("ask_for_new_goal", ask_for_new_goal)
     workflow.add_node("perform_goal_classifier", perform_goal_classifier)
     workflow.add_node("new_macrocycle", new_macrocycle)
     workflow.add_node("alter_macrocycle", alter_macrocycle)
@@ -126,13 +134,13 @@ def create_main_agent_graph():
         "impact_confirmed",
         confirm_new_goal,
         {
-            "no_goal": "ask_for_permission",
+            "no_goal": "ask_for_new_goal",
             "present_goal": "perform_goal_classifier"
         }
     )
 
     workflow.add_conditional_edges(
-        "ask_for_permission",
+        "ask_for_new_goal",
         confirm_new_goal,
         {
             "no_goal": "no_goal_requested",

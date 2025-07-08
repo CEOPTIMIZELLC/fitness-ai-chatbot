@@ -40,18 +40,21 @@ def confirm_impact(state: AgentState):
         return "no_impact"
     return "impact"
 
+# Retrieve parent item that will be used for the current schedule.
 def retrieve_parent(state: AgentState):
     print(f"---------Retrieving Current Macrocycle---------")
     user_id = state["user_id"]
     user_macrocycle = current_macrocycle(user_id)
     return {"user_macrocycle": user_macrocycle}
 
+# Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
     print(f"---------Confirm there is an active Macrocycle---------")
     if not state["user_macrocycle"]:
         return "no_parent"
     return "parent"
 
+# Request permission from user to execute the parent initialization.
 def ask_for_permission(state: AgentState):
     print(f"---------Ask user if a new Macrocycle can be made---------")
     return {
@@ -59,6 +62,7 @@ def ask_for_permission(state: AgentState):
         "macrocycle_message": "I would like to lose 20 pounds."
     }
 
+# Router for if permission was granted.
 def confirm_permission(state: AgentState):
     print(f"---------Confirm the agent can create a new Macrocycle---------")
     if not state["macrocycle_impacted"]:
@@ -71,6 +75,7 @@ def permission_denied(state: AgentState):
     abort(404, description="No active macrocycle found.")
     return {}
 
+# Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
     print(f"---------Retrieving Information for Mesocycle Scheduling---------")
     user_macrocycle = state["user_macrocycle"]
@@ -87,6 +92,7 @@ def retrieve_information(state: AgentState):
         "possible_phases": possible_phases
     }
 
+# Delete the old items belonging to the parent.
 def delete_old_children(state: AgentState):
     print(f"---------Delete old Mesocycles---------")
     macrocycle_id = state["macrocycle_id"]
@@ -95,6 +101,7 @@ def delete_old_children(state: AgentState):
         print("Successfully deleted")
     return {}
 
+# Executes the agent to create the mesocycle/phase schedule for the current macrocycle.
 def perform_phase_selection(state: AgentState):
     print(f"---------Perform Mesocycle Scheduling---------")
     goal_id = state["goal_id"]
@@ -115,6 +122,7 @@ def perform_phase_selection(state: AgentState):
         "agent_output": result["output"]
     }
 
+# Convert output from the agent to SQL models.
 def agent_output_to_sqlalchemy_model(state: AgentState):
     print(f"---------Convert schedule to SQLAlchemy models.---------")
     phases_output = state["agent_output"]
@@ -143,6 +151,7 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
     db.session.commit()
     return {"sql_models": user_phases}
 
+# Print output.
 def get_formatted_list(state: AgentState):
     print(f"---------Retrieving Formatted Schedule for user---------")
     user_macrocycle = state["user_macrocycle"]
@@ -184,7 +193,7 @@ def read_user_current_element(state: AgentState):
         abort(404, description="No active mesocycle found.")
     return user_mesocycle.to_dict()
 
-
+# Create main agent.
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
     goal_agent = create_goal_agent()

@@ -52,18 +52,21 @@ def confirm_impact(state: AgentState):
         return "no_impact"
     return "impact"
 
+# Retrieve parent item that will be used for the current schedule.
 def retrieve_parent(state: AgentState):
     print(f"---------Retrieving Current Microcycle---------")
     user_id = state["user_id"]
     user_microcycle = current_microcycle(user_id)
     return {"user_microcycle": user_microcycle}
 
+# Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
     print(f"---------Confirm there is an active Microcycle---------")
     if not state["user_microcycle"]:
         return "no_parent"
     return "parent"
 
+# Request permission from user to execute the parent initialization.
 def ask_for_permission(state: AgentState):
     print(f"---------Ask user if a new Microcycle can be made---------")
     return {
@@ -71,6 +74,7 @@ def ask_for_permission(state: AgentState):
         "microcycle_message": "I would like to lose 20 pounds."
     }
 
+# Router for if permission was granted.
 def confirm_permission(state: AgentState):
     print(f"---------Confirm the agent can create a new Microcycle---------")
     if not state["microcycle_impacted"]:
@@ -83,6 +87,7 @@ def permission_denied(state: AgentState):
     abort(404, description="No active microcycle found.")
     return {}
 
+# Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
     print(f"---------Retrieving Information for Workout Day Scheduling---------")
     user_microcycle = state["user_microcycle"]
@@ -107,6 +112,7 @@ def retrieve_information(state: AgentState):
         "total_availability": total_availability
     }
 
+# Delete the old items belonging to the parent.
 def delete_old_children(state: AgentState):
     print(f"---------Delete old Workout Days---------")
     microcycle_id = state["microcycle_id"]
@@ -115,6 +121,7 @@ def delete_old_children(state: AgentState):
         print("Successfully deleted")
     return {}
 
+# Executes the agent to create the phase component schedule for each workout in the current microcycle.
 def perform_workout_day_selection(state: AgentState):
     print(f"---------Perform Workout Day Scheduling---------")
     phase_id = state["phase_id"]
@@ -134,6 +141,7 @@ def perform_workout_day_selection(state: AgentState):
         "agent_output": result["output"]
     }
 
+# Convert output from the agent to SQL models.
 def agent_output_to_sqlalchemy_model(state: AgentState):
     print(f"---------Convert schedule to SQLAlchemy models.---------")
     phase_components_output = state["agent_output"]
@@ -154,6 +162,7 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
     db.session.commit()
     return {"sql_models": user_workdays}
 
+# Print output.
 def get_formatted_list(state: AgentState):
     print(f"---------Retrieving Formatted Schedule for user---------")
     user_microcycle = state["user_microcycle"]
@@ -172,6 +181,7 @@ def get_formatted_list(state: AgentState):
         print(formatted_schedule)
     return {"phase_component_formatted": formatted_schedule}
 
+# Create main agent.
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
     microcycle_agent = create_microcycle_agent()

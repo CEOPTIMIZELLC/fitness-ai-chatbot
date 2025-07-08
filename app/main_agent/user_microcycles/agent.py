@@ -33,18 +33,21 @@ def confirm_impact(state: AgentState):
         return "no_impact"
     return "impact"
 
+# Retrieve parent item that will be used for the current schedule.
 def retrieve_parent(state: AgentState):
     print(f"---------Retrieving Current Mesocycle---------")
     user_id = state["user_id"]
     user_mesocycle = current_mesocycle(user_id)
     return {"user_mesocycle": user_mesocycle}
 
+# Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
     print(f"---------Confirm there is an active Mesocycle---------")
     if not state["user_mesocycle"]:
         return "no_parent"
     return "parent"
 
+# Request permission from user to execute the parent initialization.
 def ask_for_permission(state: AgentState):
     print(f"---------Ask user if a new Mesocycle can be made---------")
     return {
@@ -52,6 +55,7 @@ def ask_for_permission(state: AgentState):
         "mesocycle_message": "I would like to lose 20 pounds."
     }
 
+# Router for if permission was granted.
 def confirm_permission(state: AgentState):
     print(f"---------Confirm the agent can create a new Mesocycle---------")
     if not state["mesocycle_impacted"]:
@@ -64,6 +68,7 @@ def permission_denied(state: AgentState):
     abort(404, description="No active mesocycle found.")
     return {}
 
+# Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
     print(f"---------Retrieving Information for Microcycle Scheduling---------")
     user_mesocycle = state["user_mesocycle"]
@@ -82,6 +87,7 @@ def retrieve_information(state: AgentState):
         "start_date": microcycle_start
     }
 
+# Delete the old items belonging to the parent.
 def delete_old_children(state: AgentState):
     print(f"---------Delete old Microcycles---------")
     mesocycle_id = state["mesocycle_id"]
@@ -90,6 +96,7 @@ def delete_old_children(state: AgentState):
         print("Successfully deleted")
     return {}
 
+# Initializes the microcycle schedule for the current mesocycle.
 def perform_microcycle_initialization(state: AgentState):
     print(f"---------Perform Microcycle Scheduling---------")
     mesocycle_id = state["mesocycle_id"]
@@ -118,6 +125,7 @@ def perform_microcycle_initialization(state: AgentState):
 
     return {}
 
+# Print output.
 def get_formatted_list(state: AgentState):
     print(f"---------Retrieving Formatted Schedule for user---------")
     user_mesocycle = state["user_mesocycle"]
@@ -149,7 +157,6 @@ def get_user_current_list(state: AgentState):
     return [user_microcycle.to_dict() 
             for user_microcycle in user_microcycles]
 
-
 # Retrieve user's current microcycle
 def read_user_current_element(state: AgentState):
     print(f"---------Retrieving Current Microcycle for User---------")
@@ -159,7 +166,7 @@ def read_user_current_element(state: AgentState):
         abort(404, description="No active microcycle found.")
     return user_microcycle.to_dict()
 
-
+# Create main agent.
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
     mesocycle_agent = create_mesocycle_agent()
