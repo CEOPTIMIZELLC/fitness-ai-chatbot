@@ -1,21 +1,17 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 from flask import abort
-from flask_login import current_user
-from datetime import timedelta
-from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from app.main_agent.user_microcycles import create_microcycle_agent
 
 
 from app import db
-from app.models import User_Workout_Components, User_Workout_Days, User_Microcycles, Bodypart_Library, Phase_Component_Library
+from app.models import User_Workout_Components, User_Workout_Days, Bodypart_Library, Phase_Component_Library
 
 from app.agents.phase_components import Main as phase_component_main
-from app.utils.common_table_queries import current_microcycle, current_workout_day
+from app.utils.common_table_queries import current_microcycle
 
 from .actions import duration_to_weekdays, retrieve_availability, retrieve_weekday_availability_information_from_availability, retrieve_pc_parameters
 
-from app.main_agent.utils import construct_phases_list
 from app.main_agent.utils import print_workout_days_schedule
 
 from app.utils.print_long_output import print_long_output

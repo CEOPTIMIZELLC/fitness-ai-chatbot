@@ -7,11 +7,11 @@ from flask_login import current_user
 
 from .prompts import goal_extraction_system_prompt
 
-from .user_macrocycles import MacrocycleActions, create_goal_agent
-from .user_mesocycles import MesocycleActions, create_mesocycle_agent
-from .user_microcycles import MicrocycleActions, create_microcycle_agent
-from .user_workout_days import MicrocycleSchedulerActions, create_microcycle_scheduler_agent
-from .user_workout_exercises import WorkoutActions, create_workout_agent
+from .user_macrocycles import create_goal_agent
+from .user_mesocycles import create_mesocycle_agent
+from .user_microcycles import create_microcycle_agent
+from .user_workout_days import create_microcycle_scheduler_agent
+from .user_workout_exercises import create_workout_agent
 from .user_weekdays_availability import WeekdayAvailabilitySchedulerActions
 
 from .impact_goal_models import RoutineImpactGoals
