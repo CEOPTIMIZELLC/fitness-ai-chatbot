@@ -13,8 +13,6 @@ from app.main_agent.main_agent_state import MainAgentState
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 
-mesocycle_weeks = 26
-
 class AgentState(MainAgentState):
     user_mesocycle: any
     mesocycle_id: int

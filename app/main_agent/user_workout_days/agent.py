@@ -20,8 +20,6 @@ from app.main_agent.main_agent_state import MainAgentState
 
 # ----------------------------------------- User Workout_Days -----------------------------------------
 
-microcycle_weeks = 26
-
 class AgentState(MainAgentState):
     user_microcycle: any
     microcycle_id: int

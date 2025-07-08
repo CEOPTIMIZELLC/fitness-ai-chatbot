@@ -14,8 +14,6 @@ from app.main_agent.main_agent_state import MainAgentState
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
-macrocycle_weeks = 26
-
 class AgentState(MainAgentState):
     user_macrocycle: any
     goal_id: int
