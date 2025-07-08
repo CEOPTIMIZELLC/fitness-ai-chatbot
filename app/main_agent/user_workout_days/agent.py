@@ -1,4 +1,4 @@
-from config import verbose, verbose_formatted_schedule
+from config import verbose, verbose_formatted_schedule, verbose_agent_introductions
 from flask import abort
 from flask_login import current_user
 from datetime import timedelta
@@ -19,16 +19,13 @@ from app.main_agent.utils import print_workout_days_schedule
 
 from app.utils.print_long_output import print_long_output
 from app.utils.db_helpers import get_all_items
+from app.main_agent.main_agent_state import MainAgentState
 
 # ----------------------------------------- User Workout_Days -----------------------------------------
 
 microcycle_weeks = 26
 
-class AgentState(TypedDict):
-    user_id: int
-    user_input: str
-    check: bool
-    attempts: int
+class AgentState(MainAgentState):
     user_microcycle: any
     microcycle_id: int
     phase_id: int
@@ -44,9 +41,10 @@ class AgentState(TypedDict):
     start_date: any
     agent_output: list
     sql_models: any
-    formatted_schedule: any
 
 def retrieve_parent(state: AgentState):
+    if verbose_agent_introductions:
+        print(f"\n=========Changing User Phase Component=========")
     print(f"---------Retrieving Current Microcycle---------")
     user_id = state["user_id"]
     user_microcycle = current_microcycle(user_id)
@@ -154,7 +152,7 @@ def get_formatted_list(state: AgentState):
     formatted_schedule = print_workout_days_schedule(pc_dict, bodypart_dict, user_workout_days_dict)
     if verbose_formatted_schedule:
         print(formatted_schedule)
-    return {"formatted_schedule": formatted_schedule}
+    return {"phase_component_formatted": formatted_schedule}
 
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)

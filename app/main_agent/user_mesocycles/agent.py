@@ -1,4 +1,4 @@
-from config import verbose, verbose_formatted_schedule
+from config import verbose, verbose_formatted_schedule, verbose_agent_introductions
 from flask import abort
 from flask_login import current_user
 from datetime import timedelta
@@ -14,16 +14,13 @@ from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 from app.main_agent.utils import construct_phases_list
 from app.main_agent.utils import print_mesocycles_schedule
+from app.main_agent.main_agent_state import MainAgentState
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
 macrocycle_weeks = 26
 
-class AgentState(TypedDict):
-    user_id: int
-    user_input: str
-    check: bool
-    attempts: int
+class AgentState(MainAgentState):
     user_macrocycle: any
     macrocycle_id: int
     goal_id: int
@@ -31,11 +28,11 @@ class AgentState(TypedDict):
     macrocycle_allowed_weeks: int
     possible_phases: list
     agent_output: list
-    result: dict
     sql_models: any
-    formatted_schedule: any
 
 def retrieve_parent(state: AgentState):
+    if verbose_agent_introductions:
+        print(f"\n=========Changing User Mesocycle=========")
     print(f"---------Retrieving Current Macrocycle---------")
     user_id = state["user_id"]
     user_macrocycle = current_macrocycle(user_id)
@@ -141,7 +138,7 @@ def get_formatted_list(state: AgentState):
     formatted_schedule = print_mesocycles_schedule(user_mesocycles_dict)
     if verbose_formatted_schedule:
         print(formatted_schedule)
-    return {"formatted_schedule": formatted_schedule}
+    return {"mesocycle_formatted": formatted_schedule}
 
 # Retrieve current user's mesocycles
 def get_user_list(state: AgentState):

@@ -18,6 +18,7 @@ exponential_decay = True
 
 # Configurations for verbose options.
 verbose = True
+verbose_agent_introductions = True
 verbose_agent_preprocessing = True
 verbose_exercises_for_pc_steps = False
 verbose_agent_time = True

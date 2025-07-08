@@ -1,4 +1,4 @@
-from config import verbose, verbose_formatted_schedule
+from config import verbose, verbose_formatted_schedule, verbose_agent_introductions
 from flask import abort
 from flask_login import current_user
 from datetime import timedelta
@@ -10,24 +10,22 @@ from app import db
 from app.models import User_Microcycles, User_Mesocycles
 
 from app.utils.common_table_queries import current_mesocycle, current_microcycle
+from app.main_agent.main_agent_state import MainAgentState
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 
 mesocycle_weeks = 26
 
-class AgentState(TypedDict):
-    user_id: int
-    user_input: str
-    check: bool
-    attempts: int
+class AgentState(MainAgentState):
     user_mesocycle: any
     mesocycle_id: int
     microcycle_count: int
     microcycle_duration: any
     start_date: any
-    formatted_schedule: any
 
 def retrieve_parent(state: AgentState):
+    if verbose_agent_introductions:
+        print(f"\n=========Changing User Microcycle=========")
     print(f"---------Retrieving Current Mesocycle---------")
     user_id = state["user_id"]
     user_mesocycle = current_mesocycle(user_id)
@@ -111,7 +109,7 @@ def get_formatted_list(state: AgentState):
     formatted_schedule = str(user_microcycles_dict)
     if verbose_formatted_schedule:
         print(formatted_schedule)
-    return {"formatted_schedule": formatted_schedule}
+    return {"microcycle_formatted": formatted_schedule}
 
 # Retrieve current user's microcycles
 def get_user_list(state: AgentState):

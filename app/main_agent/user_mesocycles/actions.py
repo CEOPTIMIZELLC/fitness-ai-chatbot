@@ -1,4 +1,4 @@
-from config import verbose, verbose_formatted_schedule
+from config import verbose, verbose_formatted_schedule, verbose_agent_introductions
 from flask import abort
 from flask_login import current_user
 from datetime import timedelta
