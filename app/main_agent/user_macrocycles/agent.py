@@ -22,9 +22,20 @@ class AgentState(MainAgentState):
     goal_id: int
     alter_old: bool
 
-def confirm_new_goal(state: AgentState):
+# Confirm that the desired section should be impacted.
+def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
         print(f"\n=========Changing User Macrocycle=========")
+    print(f"---------Confirm that the User Macrocycle is Impacted---------")
+    if not state["macrocycle_impacted"]:
+        return "no_impact"
+    return "impact"
+
+# In between node for chained conditional edges.
+def impact_confirmed(state: AgentState):
+    return {}
+
+def confirm_new_goal(state: AgentState):
     print(f"---------Confirm there is a goal to be classified---------")
     if not state["macrocycle_message"]:
         return "no_goal"
@@ -32,6 +43,14 @@ def confirm_new_goal(state: AgentState):
 
 def ask_for_permission(state: AgentState):
     print(f"---------Ask user for a new goal---------")
+    return {
+        "macrocycle_impacted": True,
+        "macrocycle_message": "I would like to lose 20 pounds."
+    }
+
+# State if the goal isn't requested.
+def no_goal_requested(state: AgentState):
+    print(f"---------Abort Goal Classifier---------")
     abort(404, description="No goal requested.")
     return {}
 
@@ -86,17 +105,37 @@ def get_formatted_list(state: AgentState):
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
 
+    workflow.add_node("impact_confirmed", impact_confirmed)
     workflow.add_node("ask_for_permission", ask_for_permission)
     workflow.add_node("perform_goal_classifier", perform_goal_classifier)
     workflow.add_node("new_macrocycle", new_macrocycle)
     workflow.add_node("alter_macrocycle", alter_macrocycle)
     workflow.add_node("get_formatted_list", get_formatted_list)
+    workflow.add_node("no_goal_requested", no_goal_requested)
 
     workflow.add_conditional_edges(
         START,
+        confirm_impact,
+        {
+            "no_impact": END,
+            "impact": "impact_confirmed"
+        }
+    )
+
+    workflow.add_conditional_edges(
+        "impact_confirmed",
         confirm_new_goal,
         {
             "no_goal": "ask_for_permission",
+            "present_goal": "perform_goal_classifier"
+        }
+    )
+
+    workflow.add_conditional_edges(
+        "ask_for_permission",
+        confirm_new_goal,
+        {
+            "no_goal": "no_goal_requested",
             "present_goal": "perform_goal_classifier"
         }
     )
@@ -110,9 +149,9 @@ def create_main_agent_graph():
         }
     )
 
-    workflow.add_edge("ask_for_permission", END)
     workflow.add_edge("alter_macrocycle", "get_formatted_list")
     workflow.add_edge("new_macrocycle", "get_formatted_list")
+    workflow.add_edge("no_goal_requested", END)
     workflow.add_edge("get_formatted_list", END)
 
     return workflow.compile()

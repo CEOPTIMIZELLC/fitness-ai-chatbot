@@ -3,7 +3,8 @@ from flask import abort
 from flask_login import current_user
 from datetime import timedelta
 from typing_extensions import TypedDict
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, START, END
+from app.main_agent.user_macrocycles import create_goal_agent
 
 
 from app import db
@@ -30,16 +31,19 @@ class AgentState(MainAgentState):
     agent_output: list
     sql_models: any
 
-def retrieve_parent(state: AgentState):
+# Confirm that the desired section should be impacted.
+def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
         print(f"\n=========Changing User Mesocycle=========")
+    print(f"---------Confirm that the User Mesocycle is Impacted---------")
+    if not state["mesocycle_impacted"]:
+        return "no_impact"
+    return "impact"
+
+def retrieve_parent(state: AgentState):
     print(f"---------Retrieving Current Macrocycle---------")
     user_id = state["user_id"]
     user_macrocycle = current_macrocycle(user_id)
-
-    # if not user_macrocycle:
-    #     abort(404, description="No active macrocycle found.")
-
     return {"user_macrocycle": user_macrocycle}
 
 def confirm_parent(state: AgentState):
@@ -50,6 +54,20 @@ def confirm_parent(state: AgentState):
 
 def ask_for_permission(state: AgentState):
     print(f"---------Ask user if a new Macrocycle can be made---------")
+    return {
+        "macrocycle_impacted": True,
+        "macrocycle_message": "I would like to lose 20 pounds."
+    }
+
+def confirm_permission(state: AgentState):
+    print(f"---------Confirm the agent can create a new Macrocycle---------")
+    if not state["macrocycle_impacted"]:
+        return "permission_denied"
+    return "permission_granted"
+
+# State if the Macrocycle isn't allowed to be requested.
+def permission_denied(state: AgentState):
+    print(f"---------Abort Mesocycle Scheduling---------")
     abort(404, description="No active macrocycle found.")
     return {}
 
@@ -169,14 +187,26 @@ def read_user_current_element(state: AgentState):
 
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
+    goal_agent = create_goal_agent()
 
     workflow.add_node("retrieve_parent", retrieve_parent)
     workflow.add_node("ask_for_permission", ask_for_permission)
+    workflow.add_node("permission_denied", permission_denied)
+    workflow.add_node("macrocycle", goal_agent)
     workflow.add_node("retrieve_information", retrieve_information)
     workflow.add_node("delete_old_children", delete_old_children)
     workflow.add_node("perform_phase_selection", perform_phase_selection)
     workflow.add_node("agent_output_to_sqlalchemy_model", agent_output_to_sqlalchemy_model)
     workflow.add_node("get_formatted_list", get_formatted_list)
+
+    workflow.add_conditional_edges(
+        START,
+        confirm_impact,
+        {
+            "no_impact": END,
+            "impact": "retrieve_parent"
+        }
+    )
 
     workflow.add_conditional_edges(
         "retrieve_parent",
@@ -187,13 +217,21 @@ def create_main_agent_graph():
         }
     )
 
+    workflow.add_conditional_edges(
+        "ask_for_permission",
+        confirm_permission,
+        {
+            "permission_denied": "permission_denied",
+            "permission_granted": "macrocycle"
+        }
+    )
+    workflow.add_edge("macrocycle", "retrieve_parent")
+
     workflow.add_edge("retrieve_information", "delete_old_children")
     workflow.add_edge("delete_old_children", "perform_phase_selection")
     workflow.add_edge("perform_phase_selection", "agent_output_to_sqlalchemy_model")
     workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
-    workflow.add_edge("ask_for_permission", END)
+    workflow.add_edge("permission_denied", END)
     workflow.add_edge("get_formatted_list", END)
-
-    workflow.set_entry_point("retrieve_parent")
 
     return workflow.compile()
