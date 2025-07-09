@@ -3,8 +3,9 @@ from flask_login import current_user, login_required
 
 bp = Blueprint('main_agent', __name__)
 
+from config import agent_recursion_limit
 from app import db
-from app.models import User_Macrocycles
+from app.models import User_Macrocycles, User_Weekday_Availability
 
 from app.main_agent.graph import create_main_agent_graph
 
@@ -38,7 +39,11 @@ def test_main_agent():
     # Invoke with new macrocycle and possible goal types.
     results = []
     for i, user_input in enumerate(user_inputs, start=1):
-        state = main_agent_app.invoke({"user_input": user_input})
+        state = main_agent_app.invoke(
+            {"user_input": user_input}, 
+            config={
+                "recursion_limit": agent_recursion_limit
+            })
         state["iteration"] = i
         results.append(state)
 
@@ -50,6 +55,8 @@ def test_main_agent():
 def delete_schedules():
     user_id = current_user.id
     db.session.query(User_Macrocycles).filter_by(user_id=user_id).delete()
+    db.session.commit()
+    db.session.query(User_Weekday_Availability).filter_by(user_id=user_id).delete()
     db.session.commit()
     results = f"Successfully deleted all schedules for user {user_id}."
     return jsonify({"status": "success", "states": results}), 200
