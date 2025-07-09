@@ -2,7 +2,7 @@ from config import verbose, verbose_formatted_schedule, verbose_agent_introducti
 from flask import abort
 from langgraph.graph import StateGraph, START, END
 from app.main_agent.user_microcycles import create_microcycle_agent
-
+from app.main_agent.user_weekdays_availability import create_availability_agent
 
 from app import db
 from app.models import User_Workout_Components, User_Workout_Days, Bodypart_Library, Phase_Component_Library
@@ -10,7 +10,7 @@ from app.models import User_Workout_Components, User_Workout_Days, Bodypart_Libr
 from app.agents.phase_components import Main as phase_component_main
 from app.utils.common_table_queries import current_microcycle
 
-from .actions import duration_to_weekdays, retrieve_availability, retrieve_weekday_availability_information_from_availability, retrieve_pc_parameters
+from .actions import duration_to_weekdays, retrieve_availability_for_week, retrieve_weekday_availability_information_from_availability, retrieve_pc_parameters
 
 from app.main_agent.utils import print_workout_days_schedule
 
@@ -29,6 +29,7 @@ class AgentState(MainAgentState):
     microcycle_weekdays: list
     user_workdays: list
 
+    user_availability: any
     weekday_availability: list
     number_of_available_weekdays: int
     total_availability: int
@@ -36,6 +37,44 @@ class AgentState(MainAgentState):
     start_date: any
     agent_output: list
     sql_models: any
+
+
+# Confirm that a currently active prerequisite exists to attach the a schedule to.
+def confirm_prerequisites(state, key_to_check, log_title):
+    if verbose_subagent_steps:
+        print(f"---------Confirm there is an active {log_title}---------")
+    if not state[key_to_check]:
+        return "no_parent"
+    return "parent"
+
+# Request permission from user to execute the prerequisite initialization.
+def ask_for_permission(state, checked_item, log_title):
+    if verbose_subagent_steps:
+        print(f"---------Ask user if a new {log_title} can be made---------")
+    if checked_item == "availability":
+        new_message = "I should have 30 minutes every day now."
+    else:
+        new_message = "I would like to lose 20 pounds."
+    return {
+        f"{checked_item}_impacted": True,
+        f"{checked_item}_message": new_message
+    }
+
+# Router for if permission was granted.
+def confirm_permission(state, checked_item, log_title):
+    if verbose_subagent_steps:
+        print(f"---------Confirm the agent can create a new {log_title}---------")
+    if not state[f"{checked_item}_impacted"]:
+        return "permission_denied"
+    return "permission_granted"
+
+# State if the prerequisite isn't allowed to be requested.
+def permission_denied(state, abort_message):
+    if verbose_subagent_steps:
+        print(f"---------Abort Workout Day Scheduling---------")
+    abort(404, description=abort_message)
+    return {}
+
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
@@ -49,6 +88,51 @@ def confirm_impact(state: AgentState):
         return "no_impact"
     return "impact"
 
+# Retrieve User's Availability.
+def retrieve_availability(state: AgentState):
+    if verbose_subagent_steps:
+        print(f"---------Retrieving Availability for Workout Day Scheduling---------")
+    return {"user_availability": retrieve_availability_for_week()}
+
+# Confirm that a currently active availability exists to attach the a schedule to.
+def confirm_availability(state: AgentState):
+    return confirm_prerequisites(state=state, key_to_check="user_availability", log_title="Availability")
+
+# Request permission from user to execute the availability initialization.
+def ask_for_availability_permission(state: AgentState):
+    return ask_for_permission(state=state, checked_item="availability", log_title="Availability")
+
+# Router for if permission was granted.
+def confirm_availability_permission(state: AgentState):
+    return confirm_permission(state=state, checked_item="availability", log_title="Availability")
+
+# State if the Availability isn't allowed to be requested.
+def availability_permission_denied(state: AgentState):
+    return permission_denied(state=state, abort_message="No active weekday availability found.")
+
+def availability_node(state: AgentState):
+    print(f"\n=========Changing User Availability=========")
+    if state["availability_impacted"]:
+        availability_agent = create_availability_agent()
+        result = availability_agent.invoke({
+            "user_id": state["user_id"], 
+            "user_input": state["user_input"], 
+            "attempts": state["attempts"], 
+            "availability_impacted": state["availability_impacted"], 
+            "availability_message": state["availability_message"]
+        })
+    else:
+        result = {
+            "availability_impacted": False, 
+            "availability_message": None, 
+            "availability_formatted": None
+        }
+    return {
+        "availability_impacted": result["availability_impacted"], 
+        "availability_message": result["availability_message"], 
+        "availability_formatted": result["availability_formatted"]
+    }
+
 # Retrieve parent item that will be used for the current schedule.
 def retrieve_parent(state: AgentState):
     if verbose_subagent_steps:
@@ -59,49 +143,33 @@ def retrieve_parent(state: AgentState):
 
 # Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"---------Confirm there is an active Microcycle---------")
-    if not state["user_microcycle"]:
-        return "no_parent"
-    return "parent"
+    return confirm_prerequisites(state=state, key_to_check="user_microcycle", log_title="Microcycle")
 
 # Request permission from user to execute the parent initialization.
-def ask_for_permission(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"---------Ask user if a new Microcycle can be made---------")
-    return {
-        "microcycle_impacted": True,
-        "microcycle_message": "I would like to lose 20 pounds."
-    }
+def ask_for_parent_permission(state: AgentState):
+    return ask_for_permission(state=state, checked_item="microcycle", log_title="Microcycle")
 
 # Router for if permission was granted.
-def confirm_permission(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"---------Confirm the agent can create a new Microcycle---------")
-    if not state["microcycle_impacted"]:
-        return "permission_denied"
-    return "permission_granted"
+def confirm_parent_permission(state: AgentState):
+    return confirm_permission(state=state, checked_item="microcycle", log_title="Microcycle")
 
 # State if the Macrocycle isn't allowed to be requested.
-def permission_denied(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"---------Abort Workout Day Scheduling---------")
-    abort(404, description="No active microcycle found.")
-    return {}
+def parent_permission_denied(state: AgentState):
+    return permission_denied(state=state, abort_message="No active microcycle found.")
 
 # Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
     if verbose_subagent_steps:
         print(f"---------Retrieving Information for Workout Day Scheduling---------")
     user_microcycle = state["user_microcycle"]
+    user_availability = state["user_availability"]
     microcycle_id = user_microcycle.id
     phase_id = user_microcycle.mesocycles.phase_id
     duration = user_microcycle.duration.days
     start_date = user_microcycle.start_date
 
-    availability = retrieve_availability()
     microcycle_weekdays, user_workdays = duration_to_weekdays(duration, start_date, microcycle_id)
-    weekday_availability, number_of_available_weekdays, total_availability = retrieve_weekday_availability_information_from_availability(availability)
+    weekday_availability, number_of_available_weekdays, total_availability = retrieve_weekday_availability_information_from_availability(user_availability)
 
     return {
         "microcycle_id": microcycle_id,
@@ -199,9 +267,13 @@ def create_main_agent_graph():
     workflow = StateGraph(AgentState)
     microcycle_agent = create_microcycle_agent()
 
+    workflow.add_node("retrieve_availability", retrieve_availability)
+    workflow.add_node("ask_for_availability_permission", ask_for_availability_permission)
+    workflow.add_node("availability_permission_denied", availability_permission_denied)
+    workflow.add_node("availability", availability_node)
     workflow.add_node("retrieve_parent", retrieve_parent)
-    workflow.add_node("ask_for_permission", ask_for_permission)
-    workflow.add_node("permission_denied", permission_denied)
+    workflow.add_node("ask_for_parent_permission", ask_for_parent_permission)
+    workflow.add_node("parent_permission_denied", parent_permission_denied)
     workflow.add_node("microcycle", microcycle_agent)
     workflow.add_node("retrieve_information", retrieve_information)
     workflow.add_node("delete_old_children", delete_old_children)
@@ -215,24 +287,43 @@ def create_main_agent_graph():
         confirm_impact,
         {
             "no_impact": "end_node",
-            "impact": "retrieve_parent"
+            "impact": "retrieve_availability"
         }
     )
+
+    workflow.add_conditional_edges(
+        "retrieve_availability",
+        confirm_availability,
+        {
+            "no_parent": "ask_for_availability_permission",
+            "parent": "retrieve_parent"
+        }
+    )
+
+    workflow.add_conditional_edges(
+        "ask_for_availability_permission",
+        confirm_availability_permission,
+        {
+            "permission_denied": "availability_permission_denied",
+            "permission_granted": "availability"
+        }
+    )
+    workflow.add_edge("availability", "retrieve_availability")
 
     workflow.add_conditional_edges(
         "retrieve_parent",
         confirm_parent,
         {
-            "no_parent": "ask_for_permission",
+            "no_parent": "ask_for_parent_permission",
             "parent": "retrieve_information"
         }
     )
 
     workflow.add_conditional_edges(
-        "ask_for_permission",
-        confirm_permission,
+        "ask_for_parent_permission",
+        confirm_parent_permission,
         {
-            "permission_denied": "permission_denied",
+            "permission_denied": "parent_permission_denied",
             "permission_granted": "microcycle"
         }
     )
@@ -242,7 +333,8 @@ def create_main_agent_graph():
     workflow.add_edge("delete_old_children", "perform_workout_day_selection")
     workflow.add_edge("perform_workout_day_selection", "agent_output_to_sqlalchemy_model")
     workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
-    workflow.add_edge("permission_denied", "end_node")
+    workflow.add_edge("parent_permission_denied", "end_node")
+    workflow.add_edge("availability_permission_denied", "end_node")
     workflow.add_edge("get_formatted_list", "end_node")
     workflow.add_edge("end_node", END)
 

@@ -40,9 +40,9 @@ def retrieve_availability_for_day(user_workout_day):
         User_Weekday_Availability.query
         .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
         .first())
-    if not availability:
-        abort(404, description="No active weekday availability found.")
-    return int(availability.availability.total_seconds())
+    if availability:
+        return int(availability.availability.total_seconds())
+    return None
 
 # Verifies and updates the phase component information.
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
@@ -75,7 +75,7 @@ def retrieve_projected_duration(user_workout_components, pcs):
 #   The projected duration of the workout.
 #   The phase component information relevant for the workout.
 #   The exercises that can be assigned in the workout.
-def retrieve_pc_parameters(user_workout_day):
+def retrieve_pc_parameters(user_workout_day, availability):
     parameters = {"valid": True, "status": None}
 
     # Retrieve user components
@@ -84,7 +84,7 @@ def retrieve_pc_parameters(user_workout_day):
         abort(400, description="This phase component is inactive. No exercises for today.")
 
     parameters["one_rep_max_improvement_percentage"] = 25
-    parameters["availability"] = retrieve_availability_for_day(user_workout_day)
+    parameters["availability"] = availability
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
     parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
     parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
@@ -171,8 +171,12 @@ class WorkoutActions:
 
         delete_old_children(user_workout_day.id)
 
+        availability = retrieve_availability_for_day(user_workout_day)
+        if not availability:
+            abort(404, description="No active weekday availability found.")
+
         # Retrieve parameters.
-        parameters = retrieve_pc_parameters(user_workout_day)
+        parameters = retrieve_pc_parameters(user_workout_day, availability)
         constraints={"vertical_loading": user_workout_day.loading_systems.id == 1}
 
         result = exercises_main(parameters, constraints)
