@@ -10,11 +10,20 @@ from app.agents.goals import create_goal_classification_graph
 from app.utils.common_table_queries import current_macrocycle
 
 from .actions import retrieve_goal_types
-from app.main_agent.main_agent_state import MainAgentState
+from typing_extensions import TypedDict
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 
-class AgentState(MainAgentState):
+class AgentState(TypedDict):
+    user_id: int
+
+    user_input: str
+    attempts: int
+
+    macrocycle_impacted: bool
+    macrocycle_message: str
+    macrocycle_formatted: str
+
     user_macrocycle: any
     goal_id: int
     alter_old: bool

@@ -81,6 +81,28 @@ def permission_denied(state: AgentState):
     abort(404, description="No active macrocycle found.")
     return {}
 
+def macrocycle_node(state: AgentState):
+    print(f"\n---------Changing User Macrocycle---------")
+    if state["macrocycle_impacted"]:
+        goal_agent = create_goal_agent()
+        result = goal_agent.invoke({
+            "user_id": state["user_id"], 
+            "user_input": state["user_input"], 
+            "attempts": state["attempts"], 
+            "macrocycle_impacted": state["macrocycle_impacted"], 
+            "macrocycle_message": state["macrocycle_message"], 
+            "macrocycle_formatted": state["macrocycle_formatted"]
+        })
+    else:
+        result = {
+            "macrocycle_message": None, 
+            "macrocycle_formatted": None
+        }
+    return {
+        "macrocycle_message": result["macrocycle_message"], 
+        "macrocycle_formatted": result["macrocycle_formatted"]
+    }
+
 # Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
     if verbose_subagent_steps:
@@ -210,12 +232,10 @@ def read_user_current_element(state: AgentState):
 # Create main agent.
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
-    goal_agent = create_goal_agent()
-
     workflow.add_node("retrieve_parent", retrieve_parent)
     workflow.add_node("ask_for_permission", ask_for_permission)
     workflow.add_node("permission_denied", permission_denied)
-    workflow.add_node("macrocycle", goal_agent)
+    workflow.add_node("macrocycle", macrocycle_node)
     workflow.add_node("retrieve_information", retrieve_information)
     workflow.add_node("delete_old_children", delete_old_children)
     workflow.add_node("perform_phase_selection", perform_phase_selection)

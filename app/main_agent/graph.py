@@ -35,6 +35,7 @@ def user_input_information_extraction(state: AgentState):
     goal_class = goal_classifier.invoke({})
 
     state["user_id"] = current_user.id
+    state["attempts"] = 1
     state["availability_impacted"] = goal_class.availability.is_requested
     state["availability_message"] = goal_class.availability.detail
     state["macrocycle_impacted"] = goal_class.macrocycle.is_requested
@@ -75,6 +76,28 @@ def availability_node(state: AgentState):
     print(f"{availability_message}")
     return {"availability_formatted": availability_message}
 
+def macrocycle_node(state: AgentState):
+    print(f"\n=========Changing User Macrocycle=========")
+    if state["macrocycle_impacted"]:
+        goal_agent = create_goal_agent()
+        result = goal_agent.invoke({
+            "user_id": state["user_id"], 
+            "user_input": state["user_input"], 
+            "attempts": state["attempts"], 
+            "macrocycle_impacted": state["macrocycle_impacted"], 
+            "macrocycle_message": state["macrocycle_message"], 
+            "macrocycle_formatted": state["macrocycle_formatted"]
+        })
+    else:
+        result = {
+            "macrocycle_message": None, 
+            "macrocycle_formatted": None
+        }
+    return {
+        "macrocycle_message": result["macrocycle_message"], 
+        "macrocycle_formatted": result["macrocycle_formatted"]
+    }
+
 def print_schedule_node(state: AgentState):
     print(f"\n=========Printing Schedule=========")
     print(f"Goals extracted.")
@@ -96,7 +119,6 @@ def print_schedule_node(state: AgentState):
 
 # Create main agent.
 def create_main_agent_graph():
-    goal_agent = create_goal_agent()
     mesocycle_agent = create_mesocycle_agent()
     microcycle_agent = create_microcycle_agent()
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
@@ -107,7 +129,7 @@ def create_main_agent_graph():
     workflow.add_node("user_input_extraction", user_input_information_extraction)
 
     workflow.add_node("availability", availability_node)
-    workflow.add_node("macrocycle", goal_agent)
+    workflow.add_node("macrocycle", macrocycle_node)
     workflow.add_node("mesocycle", mesocycle_agent)
     workflow.add_node("microcycle", microcycle_agent)
     workflow.add_node("phase_component", microcycle_scheduler_agent)
