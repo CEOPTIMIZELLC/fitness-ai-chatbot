@@ -42,7 +42,7 @@ class AgentState(MainAgentState):
 # Confirm that a currently active prerequisite exists to attach the a schedule to.
 def confirm_prerequisites(state, key_to_check, log_title):
     if verbose_subagent_steps:
-        print(f"---------Confirm there is an active {log_title}---------")
+        print(f"\t---------Confirm there is an active {log_title}---------")
     if not state[key_to_check]:
         return "no_parent"
     return "parent"
@@ -50,7 +50,7 @@ def confirm_prerequisites(state, key_to_check, log_title):
 # Request permission from user to execute the prerequisite initialization.
 def ask_for_permission(state, checked_item, log_title):
     if verbose_subagent_steps:
-        print(f"---------Ask user if a new {log_title} can be made---------")
+        print(f"\t---------Ask user if a new {log_title} can be made---------")
     if checked_item == "availability":
         new_message = "I should have 30 minutes every day now."
     else:
@@ -63,7 +63,7 @@ def ask_for_permission(state, checked_item, log_title):
 # Router for if permission was granted.
 def confirm_permission(state, checked_item, log_title):
     if verbose_subagent_steps:
-        print(f"---------Confirm the agent can create a new {log_title}---------")
+        print(f"\t---------Confirm the agent can create a new {log_title}---------")
     if not state[f"{checked_item}_impacted"]:
         return "permission_denied"
     return "permission_granted"
@@ -71,7 +71,7 @@ def confirm_permission(state, checked_item, log_title):
 # State if the prerequisite isn't allowed to be requested.
 def permission_denied(state, abort_message):
     if verbose_subagent_steps:
-        print(f"---------Abort Workout Day Scheduling---------")
+        print(f"\t---------Abort Workout Day Scheduling---------")
     abort(404, description=abort_message)
     return {}
 
@@ -81,17 +81,17 @@ def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
         print(f"\n=========Changing User Phase Component=========")
     if verbose_subagent_steps:
-        print(f"---------Confirm that the User Phase Component is Impacted---------")
+        print(f"\t---------Confirm that the User Phase Component is Impacted---------")
     if not state["phase_component_impacted"]:
         if verbose_subagent_steps:
-            print(f"---------No Impact---------")
+            print(f"\t---------No Impact---------")
         return "no_impact"
     return "impact"
 
 # Retrieve User's Availability.
 def retrieve_availability(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Availability for Workout Day Scheduling---------")
+        print(f"\t---------Retrieving Availability for Workout Day Scheduling---------")
     return {"user_availability": retrieve_availability_for_week()}
 
 # Confirm that a currently active availability exists to attach the a schedule to.
@@ -136,7 +136,7 @@ def availability_node(state: AgentState):
 # Retrieve parent item that will be used for the current schedule.
 def retrieve_parent(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Current Microcycle---------")
+        print(f"\t---------Retrieving Current Microcycle---------")
     user_id = state["user_id"]
     user_microcycle = current_microcycle(user_id)
     return {"user_microcycle": user_microcycle}
@@ -160,7 +160,7 @@ def parent_permission_denied(state: AgentState):
 # Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Information for Workout Day Scheduling---------")
+        print(f"\t---------Retrieving Information for Workout Day Scheduling---------")
     user_microcycle = state["user_microcycle"]
     user_availability = state["user_availability"]
     microcycle_id = user_microcycle.id
@@ -186,7 +186,7 @@ def retrieve_information(state: AgentState):
 # Delete the old items belonging to the parent.
 def delete_old_children(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Delete old Workout Days---------")
+        print(f"\t---------Delete old Workout Days---------")
     microcycle_id = state["microcycle_id"]
     db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
     if verbose:
@@ -196,7 +196,7 @@ def delete_old_children(state: AgentState):
 # Executes the agent to create the phase component schedule for each workout in the current microcycle.
 def perform_workout_day_selection(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Perform Workout Day Scheduling---------")
+        print(f"\t---------Perform Workout Day Scheduling---------")
     phase_id = state["phase_id"]
     microcycle_weekdays = state["microcycle_weekdays"]
     weekday_availability = state["weekday_availability"]
@@ -217,7 +217,7 @@ def perform_workout_day_selection(state: AgentState):
 # Convert output from the agent to SQL models.
 def agent_output_to_sqlalchemy_model(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Convert schedule to SQLAlchemy models.---------")
+        print(f"\t---------Convert schedule to SQLAlchemy models.---------")
     phase_components_output = state["agent_output"]
     user_workdays = state["user_workdays"]
 
@@ -239,7 +239,7 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
 # Print output.
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Formatted Schedule for user---------")
+        print(f"\t---------Retrieving Formatted Schedule for user---------")
     user_microcycle = state["user_microcycle"]
 
     user_workout_days = user_microcycle.workout_days

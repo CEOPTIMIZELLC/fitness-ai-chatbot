@@ -34,17 +34,17 @@ def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
         print(f"\n=========Changing User Mesocycle=========")
     if verbose_subagent_steps:
-        print(f"---------Confirm that the User Mesocycle is Impacted---------")
+        print(f"\t---------Confirm that the User Mesocycle is Impacted---------")
     if not state["mesocycle_impacted"]:
         if verbose_subagent_steps:
-            print(f"---------No Impact---------")
+            print(f"\t---------No Impact---------")
         return "no_impact"
     return "impact"
 
 # Retrieve parent item that will be used for the current schedule.
 def retrieve_parent(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Current Macrocycle---------")
+        print(f"\t---------Retrieving Current Macrocycle---------")
     user_id = state["user_id"]
     user_macrocycle = current_macrocycle(user_id)
     return {"user_macrocycle": user_macrocycle}
@@ -52,7 +52,7 @@ def retrieve_parent(state: AgentState):
 # Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Confirm there is an active Macrocycle---------")
+        print(f"\t---------Confirm there is an active Macrocycle---------")
     if not state["user_macrocycle"]:
         return "no_parent"
     return "parent"
@@ -60,7 +60,7 @@ def confirm_parent(state: AgentState):
 # Request permission from user to execute the parent initialization.
 def ask_for_permission(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Ask user if a new Macrocycle can be made---------")
+        print(f"\t---------Ask user if a new Macrocycle can be made---------")
     return {
         "macrocycle_impacted": True,
         "macrocycle_message": "I would like to lose 20 pounds."
@@ -69,7 +69,7 @@ def ask_for_permission(state: AgentState):
 # Router for if permission was granted.
 def confirm_permission(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Confirm the agent can create a new Macrocycle---------")
+        print(f"\t---------Confirm the agent can create a new Macrocycle---------")
     if not state["macrocycle_impacted"]:
         return "permission_denied"
     return "permission_granted"
@@ -77,7 +77,7 @@ def confirm_permission(state: AgentState):
 # State if the Macrocycle isn't allowed to be requested.
 def permission_denied(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Abort Mesocycle Scheduling---------")
+        print(f"\t---------Abort Mesocycle Scheduling---------")
     abort(404, description="No active macrocycle found.")
     return {}
 
@@ -106,7 +106,7 @@ def macrocycle_node(state: AgentState):
 # Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Information for Mesocycle Scheduling---------")
+        print(f"\t---------Retrieving Information for Mesocycle Scheduling---------")
     user_macrocycle = state["user_macrocycle"]
     macrocycle_id = user_macrocycle.id
     goal_id = user_macrocycle.goal_id
@@ -124,7 +124,7 @@ def retrieve_information(state: AgentState):
 # Delete the old items belonging to the parent.
 def delete_old_children(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Delete old Mesocycles---------")
+        print(f"\t---------Delete old Mesocycles---------")
     macrocycle_id = state["macrocycle_id"]
     db.session.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
     if verbose:
@@ -134,7 +134,7 @@ def delete_old_children(state: AgentState):
 # Executes the agent to create the mesocycle/phase schedule for the current macrocycle.
 def perform_phase_selection(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Perform Mesocycle Scheduling---------")
+        print(f"\t---------Perform Mesocycle Scheduling---------")
     goal_id = state["goal_id"]
     macrocycle_allowed_weeks = state["macrocycle_allowed_weeks"]
     parameters={
@@ -156,7 +156,7 @@ def perform_phase_selection(state: AgentState):
 # Convert output from the agent to SQL models.
 def agent_output_to_sqlalchemy_model(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Convert schedule to SQLAlchemy models.---------")
+        print(f"\t---------Convert schedule to SQLAlchemy models.---------")
     phases_output = state["agent_output"]
     macrocycle_id = state["macrocycle_id"]
     mesocycle_start_date = state["start_date"]
@@ -186,7 +186,7 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
 # Print output.
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Formatted Schedule for user---------")
+        print(f"\t---------Retrieving Formatted Schedule for user---------")
     user_macrocycle = state["user_macrocycle"]
 
     user_mesocycles = user_macrocycle.mesocycles
@@ -203,7 +203,7 @@ def get_formatted_list(state: AgentState):
 # Retrieve current user's mesocycles
 def get_user_list(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving All Mesocycles for User---------")
+        print(f"\t---------Retrieving All Mesocycles for User---------")
     user_id = state["user_id"]
     user_mesocycles = User_Mesocycles.query.join(User_Macrocycles).filter_by(user_id=user_id).all()
     return [user_mesocycle.to_dict() 
@@ -212,7 +212,7 @@ def get_user_list(state: AgentState):
 # Retrieve user's current macrocycles's mesocycles
 def get_user_current_list(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Current Mesocycles for User---------")
+        print(f"\t---------Retrieving Current Mesocycles for User---------")
     user_macrocycle = state["user_macrocycle"]
     user_mesocycles = user_macrocycle.mesocycles
     return [user_mesocycle.to_dict() 
@@ -222,7 +222,7 @@ def get_user_current_list(state: AgentState):
 # Retrieve user's current mesocycle
 def read_user_current_element(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Current Mesocycle for User---------")
+        print(f"\t---------Retrieving Current Mesocycle for User---------")
     user_id = state["user_id"]
     user_mesocycle = current_mesocycle(user_id)
     if not user_mesocycle:

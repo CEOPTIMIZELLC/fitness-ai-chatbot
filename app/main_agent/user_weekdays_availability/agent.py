@@ -33,10 +33,10 @@ def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
         print(f"\n=========Changing User Weekday Availability=========")
     if verbose_subagent_steps:
-        print(f"---------Confirm that the User Weekday Availability is Impacted---------")
+        print(f"\t---------Confirm that the User Weekday Availability is Impacted---------")
     if not state["availability_impacted"]:
         if verbose_subagent_steps:
-            print(f"---------No Impact---------")
+            print(f"\t---------No Impact---------")
         return "no_impact"
     return "impact"
 
@@ -47,7 +47,7 @@ def impact_confirmed(state: AgentState):
 # Check if a new goal exists to be classified.
 def confirm_new_availability(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Confirm there is an availability input to be parsed---------")
+        print(f"\t---------Confirm there is an availability input to be parsed---------")
     if not state["availability_message"]:
         return "no_availability_input"
     return "present_availability_input"
@@ -55,7 +55,7 @@ def confirm_new_availability(state: AgentState):
 # Ask user for a new goal if one isn't in the initial request.
 def ask_for_new_availability(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Ask user for a new availability---------")
+        print(f"\t---------Ask user for a new availability---------")
     return {
         "availability_impacted": True,
         "availability_message": "I should have 30 minutes every day now."
@@ -64,14 +64,14 @@ def ask_for_new_availability(state: AgentState):
 # State if the goal isn't requested.
 def no_availability_requested(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Abort Availability Parser---------")
+        print(f"\t---------Abort Availability Parser---------")
     abort(404, description="No availability requested.")
     return {}
 
 # Classify the new goal in one of the possible goal types.
 def perform_availability_parsing(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Perform Availability Parsing---------")
+        print(f"\t---------Perform Availability Parsing---------")
     new_availability = state["availability_message"]
 
     # There are only so many types a weekday can be classified as, with all of them being stored.
@@ -91,7 +91,7 @@ def perform_availability_parsing(state: AgentState):
 # Convert output from the agent to SQL models.
 def agent_output_to_sqlalchemy_model(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Convert schedule to SQLAlchemy models.---------")
+        print(f"\t---------Convert schedule to SQLAlchemy models.---------")
     user_id = state["user_id"]
     weekday_availability = state["agent_output"]
     # Update each availability entry to the database.
@@ -106,7 +106,7 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
 # Delete the old items belonging to the parent.
 def delete_old_children(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Delete old items of current Weekday Availability---------")
+        print(f"\t---------Delete old items of current Weekday Availability---------")
     user_id = state["user_id"]
     user_microcycle = current_microcycle(user_id)
     if user_microcycle:
@@ -120,7 +120,7 @@ def delete_old_children(state: AgentState):
 # Print output.
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Formatted Schedule for user---------")
+        print(f"\t---------Retrieving Formatted Schedule for user---------")
     availability_message = state["availability_message"]
     if verbose_formatted_schedule:
         print(availability_message)

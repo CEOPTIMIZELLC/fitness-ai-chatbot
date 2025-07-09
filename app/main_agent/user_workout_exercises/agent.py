@@ -33,7 +33,7 @@ class AgentState(MainAgentState):
 # Confirm that a currently active prerequisite exists to attach the a schedule to.
 def confirm_prerequisites(state, key_to_check, log_title):
     if verbose_subagent_steps:
-        print(f"---------Confirm there is an active {log_title}---------")
+        print(f"\t---------Confirm there is an active {log_title}---------")
     if not state[key_to_check]:
         return "no_parent"
     return "parent"
@@ -41,7 +41,7 @@ def confirm_prerequisites(state, key_to_check, log_title):
 # Request permission from user to execute the prerequisite initialization.
 def ask_for_permission(state, checked_item, log_title):
     if verbose_subagent_steps:
-        print(f"---------Ask user if a new {log_title} can be made---------")
+        print(f"\t---------Ask user if a new {log_title} can be made---------")
     if checked_item == "availability":
         new_message = "I should have 30 minutes every day now."
     else:
@@ -54,7 +54,7 @@ def ask_for_permission(state, checked_item, log_title):
 # Router for if permission was granted.
 def confirm_permission(state, checked_item, log_title):
     if verbose_subagent_steps:
-        print(f"---------Confirm the agent can create a new {log_title}---------")
+        print(f"\t---------Confirm the agent can create a new {log_title}---------")
     if not state[f"{checked_item}_impacted"]:
         return "permission_denied"
     return "permission_granted"
@@ -62,7 +62,7 @@ def confirm_permission(state, checked_item, log_title):
 # State if the prerequisite isn't allowed to be requested.
 def permission_denied(state, abort_message):
     if verbose_subagent_steps:
-        print(f"---------Abort Workout Exercise Scheduling---------")
+        print(f"\t---------Abort Workout Exercise Scheduling---------")
     abort(404, description=abort_message)
     return {}
 
@@ -72,17 +72,17 @@ def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
         print(f"\n=========Changing User Workout=========")
     if verbose_subagent_steps:
-        print(f"---------Confirm that the User Workout is Impacted---------")
+        print(f"\t---------Confirm that the User Workout is Impacted---------")
     if not state["workout_schedule_impacted"]:
         if verbose_subagent_steps:
-            print(f"---------No Impact---------")
+            print(f"\t---------No Impact---------")
         return "no_impact"
     return "impact"
 
 # Retrieve parent item that will be used for the current schedule.
 def retrieve_parent(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Current Workout Day---------")
+        print(f"\t---------Retrieving Current Workout Day---------")
     user_id = state["user_id"]
     user_workout_day = current_workout_day(user_id)
     return {"user_workout_day": user_workout_day}
@@ -107,7 +107,7 @@ def parent_permission_denied(state: AgentState):
 # Retrieve User's Availability.
 def retrieve_availability(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Availability for Workout Scheduling---------")
+        print(f"\t---------Retrieving Availability for Workout Scheduling---------")
     user_workout_day = state["user_workout_day"]
     return {"user_availability": retrieve_availability_for_day(user_workout_day)}
 
@@ -153,7 +153,7 @@ def availability_node(state: AgentState):
 # Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Information for Workout Exercise Scheduling---------")
+        print(f"\t---------Retrieving Information for Workout Exercise Scheduling---------")
     user_workout_day = state["user_workout_day"]
 
     return {
@@ -164,7 +164,7 @@ def retrieve_information(state: AgentState):
 # Delete the old items belonging to the parent.
 def delete_old_children(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Delete old Workout Exercises---------")
+        print(f"\t---------Delete old Workout Exercises---------")
     workout_day_id = state["workout_day_id"]
     db.session.query(User_Workout_Exercises).filter_by(workout_day_id=workout_day_id).delete()
     if verbose:
@@ -174,7 +174,7 @@ def delete_old_children(state: AgentState):
 # Executes the agent to create the phase component schedule for each workout in the current workout_day.
 def perform_workout_exercise_selection(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Perform Workout Exercise Scheduling---------")
+        print(f"\t---------Perform Workout Exercise Scheduling---------")
     user_workout_day = state["user_workout_day"]
     loading_system_id = state["loading_system_id"]
 
@@ -195,7 +195,7 @@ def perform_workout_exercise_selection(state: AgentState):
 # Convert output from the agent to SQL models.
 def agent_output_to_sqlalchemy_model(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Convert schedule to SQLAlchemy models.---------")
+        print(f"\t---------Convert schedule to SQLAlchemy models.---------")
     workout_day_id = state["workout_day_id"]
     exercises_output = state["agent_output"]
 
@@ -224,7 +224,7 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
 # Print output.
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
-        print(f"---------Retrieving Formatted Schedule for user---------")
+        print(f"\t---------Retrieving Formatted Schedule for user---------")
     user_workout_day = state["user_workout_day"]
 
     user_workout_exercises = user_workout_day.exercises
