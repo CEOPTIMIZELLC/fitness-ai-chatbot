@@ -177,6 +177,12 @@ def read_user_current_element(state: AgentState):
         abort(404, description="No active microcycle found.")
     return user_microcycle.to_dict()
 
+# Node to declare that the sub agent has ended.
+def end_node(state: AgentState):
+    if verbose_agent_introductions:
+        print(f"=========Ending User Microcycle=========")
+    return {}
+
 # Create main agent.
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
@@ -190,12 +196,13 @@ def create_main_agent_graph():
     workflow.add_node("delete_old_children", delete_old_children)
     workflow.add_node("perform_microcycle_initialization", perform_microcycle_initialization)
     workflow.add_node("get_formatted_list", get_formatted_list)
+    workflow.add_node("end_node", end_node)
 
     workflow.add_conditional_edges(
         START,
         confirm_impact,
         {
-            "no_impact": END,
+            "no_impact": "end_node",
             "impact": "retrieve_parent"
         }
     )
@@ -222,7 +229,8 @@ def create_main_agent_graph():
     workflow.add_edge("retrieve_information", "delete_old_children")
     workflow.add_edge("delete_old_children", "perform_microcycle_initialization")
     workflow.add_edge("perform_microcycle_initialization", "get_formatted_list")
-    workflow.add_edge("permission_denied", END)
-    workflow.add_edge("get_formatted_list", END)
+    workflow.add_edge("permission_denied", "end_node")
+    workflow.add_edge("get_formatted_list", "end_node")
+    workflow.add_edge("end_node", END)
 
     return workflow.compile()

@@ -126,6 +126,12 @@ def get_formatted_list(state: AgentState):
         print(availability_message)
     return {"availability_formatted": availability_message}
 
+# Node to declare that the sub agent has ended.
+def end_node(state: AgentState):
+    if verbose_agent_introductions:
+        print(f"=========Ending User Availability=========")
+    return {}
+
 # Create main agent.
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
@@ -137,12 +143,13 @@ def create_main_agent_graph():
     workflow.add_node("agent_output_to_sqlalchemy_model", agent_output_to_sqlalchemy_model)
     workflow.add_node("get_formatted_list", get_formatted_list)
     workflow.add_node("no_availability_requested", no_availability_requested)
+    workflow.add_node("end_node", end_node)
 
     workflow.add_conditional_edges(
         START,
         confirm_impact,
         {
-            "no_impact": END,
+            "no_impact": "end_node",
             "impact": "impact_confirmed"
         }
     )
@@ -168,7 +175,8 @@ def create_main_agent_graph():
     workflow.add_edge("delete_old_children", "perform_availability_parsing")
     workflow.add_edge("perform_availability_parsing", "agent_output_to_sqlalchemy_model")
     workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
-    workflow.add_edge("no_availability_requested", END)
-    workflow.add_edge("get_formatted_list", END)
+    workflow.add_edge("no_availability_requested", "end_node")
+    workflow.add_edge("get_formatted_list", "end_node")
+    workflow.add_edge("end_node", END)
 
     return workflow.compile()

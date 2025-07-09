@@ -229,6 +229,12 @@ def read_user_current_element(state: AgentState):
         abort(404, description="No active mesocycle found.")
     return user_mesocycle.to_dict()
 
+# Node to declare that the sub agent has ended.
+def end_node(state: AgentState):
+    if verbose_agent_introductions:
+        print(f"=========Ending User Mesocycle=========")
+    return {}
+
 # Create main agent.
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
@@ -241,12 +247,13 @@ def create_main_agent_graph():
     workflow.add_node("perform_phase_selection", perform_phase_selection)
     workflow.add_node("agent_output_to_sqlalchemy_model", agent_output_to_sqlalchemy_model)
     workflow.add_node("get_formatted_list", get_formatted_list)
+    workflow.add_node("end_node", end_node)
 
     workflow.add_conditional_edges(
         START,
         confirm_impact,
         {
-            "no_impact": END,
+            "no_impact": "end_node",
             "impact": "retrieve_parent"
         }
     )
@@ -274,7 +281,8 @@ def create_main_agent_graph():
     workflow.add_edge("delete_old_children", "perform_phase_selection")
     workflow.add_edge("perform_phase_selection", "agent_output_to_sqlalchemy_model")
     workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
-    workflow.add_edge("permission_denied", END)
-    workflow.add_edge("get_formatted_list", END)
+    workflow.add_edge("permission_denied", "end_node")
+    workflow.add_edge("get_formatted_list", "end_node")
+    workflow.add_edge("end_node", END)
 
     return workflow.compile()

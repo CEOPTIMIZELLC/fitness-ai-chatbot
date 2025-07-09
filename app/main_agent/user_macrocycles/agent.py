@@ -139,6 +139,12 @@ def get_formatted_list(state: AgentState):
         print(macrocycle_message)
     return {"macrocycle_formatted": macrocycle_message}
 
+# Node to declare that the sub agent has ended.
+def end_node(state: AgentState):
+    if verbose_agent_introductions:
+        print(f"=========Ending User Macrocycle=========")
+    return {}
+
 # Create main agent.
 def create_main_agent_graph():
     workflow = StateGraph(AgentState)
@@ -151,12 +157,13 @@ def create_main_agent_graph():
     workflow.add_node("alter_macrocycle", alter_macrocycle)
     workflow.add_node("get_formatted_list", get_formatted_list)
     workflow.add_node("no_goal_requested", no_goal_requested)
+    workflow.add_node("end_node", end_node)
 
     workflow.add_conditional_edges(
         START,
         confirm_impact,
         {
-            "no_impact": END,
+            "no_impact": "end_node",
             "impact": "impact_confirmed"
         }
     )
@@ -191,7 +198,8 @@ def create_main_agent_graph():
     workflow.add_edge("delete_old_children", "alter_macrocycle")
     workflow.add_edge("alter_macrocycle", "get_formatted_list")
     workflow.add_edge("create_new_macrocycle", "get_formatted_list")
-    workflow.add_edge("no_goal_requested", END)
-    workflow.add_edge("get_formatted_list", END)
+    workflow.add_edge("no_goal_requested", "end_node")
+    workflow.add_edge("get_formatted_list", "end_node")
+    workflow.add_edge("end_node", END)
 
     return workflow.compile()
