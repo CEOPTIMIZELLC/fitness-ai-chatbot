@@ -21,12 +21,7 @@ test_cases = [
     "Can we drop one hypertrophy session and add in some mobility work instead? Also, swap out overhead press for incline dumbbell press."
 ]
 
-# Test the main agent with a user input.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def test_main_agent():
-    # Input is a json.
-    data = request.get_json()
+def run_main_agent(data):
     if not data:
         user_inputs = test_cases
     elif 'user_input' not in data:
@@ -46,17 +41,39 @@ def test_main_agent():
             })
         state["iteration"] = i
         results.append(state)
+    return results
 
+def run_delete_schedules(user_id):
+    db.session.query(User_Macrocycles).filter_by(user_id=user_id).delete()
+    db.session.commit()
+    db.session.query(User_Weekday_Availability).filter_by(user_id=user_id).delete()
+    db.session.commit()
+    results = f"Successfully deleted all schedules for user {user_id}."
+    return results
+
+
+# Test the main agent with a user input.
+@bp.route('/', methods=['POST', 'PATCH'])
+@login_required
+def test_main_agent():
+    # Input is a json.
+    data = request.get_json()
+    results = run_main_agent(data)
     return jsonify({"status": "success", "states": results}), 200
 
 # Delete all schedules belonging to the user.
 @bp.route('/', methods=['DELETE'])
 @login_required
 def delete_schedules():
-    user_id = current_user.id
-    db.session.query(User_Macrocycles).filter_by(user_id=user_id).delete()
-    db.session.commit()
-    db.session.query(User_Weekday_Availability).filter_by(user_id=user_id).delete()
-    db.session.commit()
-    results = f"Successfully deleted all schedules for user {user_id}."
+    results = run_delete_schedules(current_user.id)
+    return jsonify({"status": "success", "states": results}), 200
+
+# Test the main agent with a user input and no pre-existing data.
+@bp.route('/clean', methods=['POST', 'PATCH'])
+@login_required
+def test_clean_main_agent():
+    # Input is a json.
+    data = request.get_json()
+    run_delete_schedules(current_user.id)
+    results = run_main_agent(data)
     return jsonify({"status": "success", "states": results}), 200
