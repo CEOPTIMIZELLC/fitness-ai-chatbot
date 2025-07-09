@@ -90,8 +90,7 @@ def macrocycle_node(state: AgentState):
             "user_input": state["user_input"], 
             "attempts": state["attempts"], 
             "macrocycle_impacted": state["macrocycle_impacted"], 
-            "macrocycle_message": state["macrocycle_message"], 
-            "macrocycle_formatted": state["macrocycle_formatted"]
+            "macrocycle_message": state["macrocycle_message"]
         })
     else:
         result = {
@@ -99,6 +98,7 @@ def macrocycle_node(state: AgentState):
             "macrocycle_formatted": None
         }
     return {
+        "macrocycle_impacted": result["macrocycle_impacted"], 
         "macrocycle_message": result["macrocycle_message"], 
         "macrocycle_formatted": result["macrocycle_formatted"]
     }

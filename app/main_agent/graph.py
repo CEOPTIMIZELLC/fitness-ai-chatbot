@@ -12,7 +12,7 @@ from .user_mesocycles import create_mesocycle_agent
 from .user_microcycles import create_microcycle_agent
 from .user_workout_days import create_microcycle_scheduler_agent
 from .user_workout_exercises import create_workout_agent
-from .user_weekdays_availability import WeekdayAvailabilitySchedulerActions
+from .user_weekdays_availability import create_availability_agent
 
 from .impact_goal_models import RoutineImpactGoals
 from .main_agent_state import MainAgentState as AgentState
@@ -69,12 +69,25 @@ def user_input_information_extraction(state: AgentState):
 def availability_node(state: AgentState):
     print(f"\n=========Changing User Availability=========")
     if state["availability_impacted"]:
-        availability_message = state["availability_message"]
-        new_availability = WeekdayAvailabilitySchedulerActions.scheduler(availability_message)
+        availability_agent = create_availability_agent()
+        result = availability_agent.invoke({
+            "user_id": state["user_id"], 
+            "user_input": state["user_input"], 
+            "attempts": state["attempts"], 
+            "availability_impacted": state["availability_impacted"], 
+            "availability_message": state["availability_message"]
+        })
     else:
-        availability_message = None
-    print(f"{availability_message}")
-    return {"availability_formatted": availability_message}
+        result = {
+            "availability_impacted": False, 
+            "availability_message": None, 
+            "availability_formatted": None
+        }
+    return {
+        "availability_impacted": result["availability_impacted"], 
+        "availability_message": result["availability_message"], 
+        "availability_formatted": result["availability_formatted"]
+    }
 
 def macrocycle_node(state: AgentState):
     print(f"\n=========Changing User Macrocycle=========")
@@ -85,15 +98,16 @@ def macrocycle_node(state: AgentState):
             "user_input": state["user_input"], 
             "attempts": state["attempts"], 
             "macrocycle_impacted": state["macrocycle_impacted"], 
-            "macrocycle_message": state["macrocycle_message"], 
-            "macrocycle_formatted": state["macrocycle_formatted"]
+            "macrocycle_message": state["macrocycle_message"]
         })
     else:
         result = {
+            "macrocycle_impacted": False, 
             "macrocycle_message": None, 
             "macrocycle_formatted": None
         }
     return {
+        "macrocycle_impacted": result["macrocycle_impacted"], 
         "macrocycle_message": result["macrocycle_message"], 
         "macrocycle_formatted": result["macrocycle_formatted"]
     }
