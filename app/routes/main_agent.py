@@ -50,5 +50,6 @@ def test_main_agent():
 def delete_schedules():
     user_id = current_user.id
     db.session.query(User_Macrocycles).filter_by(user_id=user_id).delete()
+    db.session.commit()
     results = f"Successfully deleted all schedules for user {user_id}."
     return jsonify({"status": "success", "states": results}), 200
