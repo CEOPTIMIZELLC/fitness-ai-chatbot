@@ -116,17 +116,17 @@ def print_schedule_node(state: AgentState):
     print(f"\n=========Printing Schedule=========")
     print(f"Goals extracted.")
     if state["availability_impacted"]:
-        print(f"availability: {state["availability_formatted"]}")
+        print(f"availability: \n{state["availability_formatted"]}")
     if state["macrocycle_impacted"]:
-        print(f"macrocycle: {state["macrocycle_formatted"]}")
+        print(f"macrocycle: \n{state["macrocycle_formatted"]}")
     if state["mesocycle_impacted"]:
-        print(f"mesocycle: {state["mesocycle_formatted"]}")
+        print(f"mesocycle: \n{state["mesocycle_formatted"]}")
     if state["microcycle_impacted"]:
-        print(f"microcycle: {state["microcycle_formatted"]}")
+        print(f"microcycle: \n{state["microcycle_formatted"]}")
     if state["phase_component_impacted"]:
-        print(f"phase_component: {state["phase_component_formatted"]}")
+        print(f"phase_component: \n{state["phase_component_formatted"]}")
     if state["workout_schedule_impacted"]:
-        print(f"workout_schedule: {state["workout_schedule_formatted"]}")
+        print(f"workout_schedule: \n{state["workout_schedule_formatted"]}")
     print("")
 
     return state
