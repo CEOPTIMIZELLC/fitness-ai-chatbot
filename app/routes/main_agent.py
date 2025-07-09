@@ -1,7 +1,10 @@
 from flask import request, jsonify, Blueprint, abort
-from flask_login import login_required
+from flask_login import current_user, login_required
 
 bp = Blueprint('main_agent', __name__)
+
+from app import db
+from app.models import User_Macrocycles
 
 from app.main_agent.graph import create_main_agent_graph
 
@@ -17,12 +20,10 @@ test_cases = [
     "Can we drop one hypertrophy session and add in some mobility work instead? Also, swap out overhead press for incline dumbbell press."
 ]
 
-
-
-# Retrieve current user's main goal
+# Test the main agent with a user input.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
-def change_macrocycle():
+def test_main_agent():
     # Input is a json.
     data = request.get_json()
     if not data:
@@ -41,4 +42,13 @@ def change_macrocycle():
         state["iteration"] = i
         results.append(state)
 
+    return jsonify({"status": "success", "states": results}), 200
+
+# Delete all schedules belonging to the user.
+@bp.route('/', methods=['DELETE'])
+@login_required
+def delete_schedules():
+    user_id = current_user.id
+    db.session.query(User_Macrocycles).filter_by(user_id=user_id).delete()
+    results = f"Successfully deleted all schedules for user {user_id}."
     return jsonify({"status": "success", "states": results}), 200
