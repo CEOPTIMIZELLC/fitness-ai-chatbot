@@ -12,7 +12,7 @@ from app.utils.common_table_queries import current_macrocycle
 from .actions import retrieve_goal_types
 from app.main_agent.main_agent_state import MainAgentState
 
-# ----------------------------------------- User Mesocycles -----------------------------------------
+# ----------------------------------------- User Macrocycles -----------------------------------------
 
 class AgentState(MainAgentState):
     user_macrocycle: any

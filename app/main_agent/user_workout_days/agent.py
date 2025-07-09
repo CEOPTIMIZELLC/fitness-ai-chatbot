@@ -18,7 +18,7 @@ from app.utils.print_long_output import print_long_output
 from app.utils.db_helpers import get_all_items
 from app.main_agent.main_agent_state import MainAgentState
 
-# ----------------------------------------- User Workout_Days -----------------------------------------
+# ----------------------------------------- User Workout Days -----------------------------------------
 
 class AgentState(MainAgentState):
     user_microcycle: any
