@@ -180,7 +180,7 @@ def read_user_current_element(state: AgentState):
 # Node to declare that the sub agent has ended.
 def end_node(state: AgentState):
     if verbose_agent_introductions:
-        print(f"=========Ending User Microcycle=========")
+        print(f"=========Ending User Microcycle=========\n")
     return {}
 
 # Create main agent.

@@ -142,7 +142,7 @@ def get_formatted_list(state: AgentState):
 # Node to declare that the sub agent has ended.
 def end_node(state: AgentState):
     if verbose_agent_introductions:
-        print(f"=========Ending User Macrocycle=========")
+        print(f"=========Ending User Macrocycle=========\n")
     return {}
 
 # Create main agent.
