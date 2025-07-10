@@ -150,6 +150,34 @@
 
 <hr style="border:2px solid gray">
 
+# Main Agent
+> The tests for the main agent application. 
+> > ## Run Agent
+> > - Executes the agent for a user input. 
+> > - Body type: `raw`
+> > - Optional inputs: `user_input` (default=[multiple test cases])
+> > ```
+> > [POST, PATCH] /main_agent
+> > user_input (optional, default=[multiple test cases])
+> > ```
+> > 
+> > ## Retrieve Pipeline's Current State
+> > - Deletes the current schedules for the current user. 
+> > ```
+> > [DELETE] /main_agent
+> > ```
+> > 
+> > ## Clean Run
+> > - Removes the current schedules and executes the agent for a user input. 
+> > - Body type: `raw`
+> > - Optional inputs: `user_input` (default=[multiple test cases])
+> > ```
+> > [POST, PATCH] /main_agent/clean
+> > user_input (optional, default=[multiple test cases])
+> > ```
+
+<hr style="border:2px solid gray">
+
 # User Info
 > Multiple sets of endpoints exist to handle the changing of the user's information. 
 > 

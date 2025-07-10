@@ -71,6 +71,31 @@ poetry run python reinitialize_db_script.py
 poetry run python run.py
 ```
 
+# Test Main Agent
+**Test Main Agent (If logged in)**
+```
+[POST, PATCH]
+localhost:5000/main_agent
+
+BODY (form-data):
+user_input: [string; OPTIONAL; If not included, will run multiple test cases.]
+```
+
+**Delete Old Schedules (If logged in)**
+```
+[DELETE]
+localhost:5000/main_agent
+```
+
+**Delete Old Schedules and Test Main Agent (If logged in)**
+```
+[POST, PATCH]
+localhost:5000/main_agent/clean
+
+BODY (form-data):
+user_input: [string; OPTIONAL; If not included, will run multiple test cases.]
+```
+
 # Routes To Run
 ## Run Steps
 **Logout User (If logged in)**

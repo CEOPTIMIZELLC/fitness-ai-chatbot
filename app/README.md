@@ -32,6 +32,13 @@ Routes related to the creation and deletion of accounts and users, as well as lo
 | **[POST]** | `/logout` | | Logout current user |
 | **[DELETE]** | `/delete_account` | **(form-data)**: `password` | Delete current user |
 
+### [Main Agent](routes/main_agent.py)
+| Method | Route | Body | Description |
+| --- | --- | --- | --- |
+| **[POST, PATCH]** | `/main_agent` | **(raw)**: `user_input` | Executes agent with user input. |
+| **[DELETE]** | `/main_agent` | | Remove all current schedules and availabilities. |
+| **[POST, PATCH]** | `/main_agent/clean` | **(raw)**: `user_input` | Remove all current schedules and availabilities before executing agent with user input. |
+
 ### [User Info](routes/users.py)
 | Method | Route | Body | Description |
 | --- | --- | --- | --- |
