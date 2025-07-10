@@ -21,7 +21,7 @@ test_cases = [
     "Can we drop one hypertrophy session and add in some mobility work instead? Also, swap out overhead press for incline dumbbell press."
 ]
 
-def run_main_agent(data):
+def run_main_agent(data, delete_old_schedules=False):
     if not data:
         user_inputs = test_cases
     elif 'user_input' not in data:
@@ -34,6 +34,8 @@ def run_main_agent(data):
     # Invoke with new macrocycle and possible goal types.
     results = []
     for i, user_input in enumerate(user_inputs, start=1):
+        if delete_old_schedules:
+            run_delete_schedules(current_user.id)
         state = main_agent_app.invoke(
             {"user_input": user_input}, 
             config={
@@ -74,6 +76,5 @@ def delete_schedules():
 def test_clean_main_agent():
     # Input is a json.
     data = request.get_json()
-    run_delete_schedules(current_user.id)
-    results = run_main_agent(data)
+    results = run_main_agent(data, delete_old_schedules=True)
     return jsonify({"status": "success", "states": results}), 200
