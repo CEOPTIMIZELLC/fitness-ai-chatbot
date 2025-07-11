@@ -21,6 +21,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     intensity = db.Column(db.Integer, comment='')
     rest = db.Column(db.Integer, nullable=False, comment='')
     weight = db.Column(db.Integer, comment='')
+    true_exercise_flag = db.Column(db.String(255), nullable=False, comment='Whether the exercise truly belongs to the phase component and why it was allowed if it is not.')
 
     # Seconds per exercise of the exercise.
     @hybrid_property
@@ -86,6 +87,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
             "phase_component_subcomponent": self.phase_components.name, 
             "exercise_id": self.exercise_id, 
             "exercise_name": self.exercises.name, 
+            "true_exercise_flag": self.true_exercise_flag, 
             "bodypart_id": self.bodypart_id, 
             "bodypart_name": self.bodyparts.name, 
             "is_warmup": self.phase_components.components.is_warmup, 

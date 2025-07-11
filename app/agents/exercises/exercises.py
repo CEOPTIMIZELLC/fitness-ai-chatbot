@@ -583,7 +583,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "end": ("", 2),
         }
 
-    def line_fields(self, i, pc, exercise, superset_var, true_exercise_indicator, metrics):
+    def line_fields(self, i, pc, exercise, superset_var, true_exercise_flag, metrics):
         (base_strain, seconds_per_exercise, 
          reps_var, sets_var, rest_var, intensity_var, 
          one_rep_max_var, training_weight_var, is_weighted_var, 
@@ -603,7 +603,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             "superset": str(superset_var["superset_current"]) if superset_var["is_resistance"] else str(superset_var["not_a_superset"]),
             "number": str(i + 1),
             "general_exercise": exercise["general_id"],
-            "true_exercise_flag": true_exercise_indicator == "True Exercise",
+            "true_exercise_flag": true_exercise_flag == "True Exercise",
             "exercise": exercise["name"],
             "phase_component": f"{pc["name"]}",
             "bodypart": pc["bodypart_name"],
@@ -668,7 +668,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         for component_count, (i, exercise_index, phase_component_index, component_id, subcomponent_id, bodypart_id, *metrics) in enumerate(schedule):
             exercise = exercises[exercise_index]
             pc = phase_components[phase_component_index]
-            true_exercise_indicator = pc["true_exercise_indicators"][exercise_index]
+            true_exercise_flag = pc["true_exercise_indicators"][exercise_index]
 
             (base_strain, seconds_per_exercise, 
              reps_var, sets_var, rest_var, intensity_var, 
@@ -697,6 +697,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 "volume": volume_var,
                 "density": density_var,
                 "performance": performance_var,
+                "true_exercise_flag": true_exercise_flag,
                 "duration": duration,
                 "working_duration": working_duration
             })
@@ -719,7 +720,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 superset_var["is_resistance"] = False
 
             if log_schedule:
-                line_fields = self.line_fields(component_count, pc, exercise, superset_var, true_exercise_indicator, metrics)
+                line_fields = self.line_fields(component_count, pc, exercise, superset_var, true_exercise_flag, metrics)
                 formatted += self.formatted_schedule_line(headers, line_fields)
 
         if log_counts:

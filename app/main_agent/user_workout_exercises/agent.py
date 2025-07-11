@@ -213,6 +213,7 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
             intensity = exercise["intensity_var"],
             rest = exercise["rest_var"],
             weight = exercise["training_weight"],
+            true_exercise_flag = exercise["true_exercise_flag"]
         )
 
         user_workout_exercises.append(new_exercise)
