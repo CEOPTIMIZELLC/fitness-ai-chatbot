@@ -12,6 +12,7 @@ from .user_mesocycles import create_mesocycle_agent
 from .user_microcycles import create_microcycle_agent
 from .user_workout_days import create_microcycle_scheduler_agent
 from .user_workout_exercises import create_workout_agent
+from .user_workout_completion import create_workout_completion_agent
 from .user_weekdays_availability import create_availability_agent
 
 from .impact_goal_models import RoutineImpactGoals
@@ -141,6 +142,7 @@ def create_main_agent_graph():
     microcycle_agent = create_microcycle_agent()
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
     workout_agent = create_workout_agent()
+    workout_completion_agent = create_workout_completion_agent()
 
     workflow = StateGraph(AgentState)
 
@@ -152,11 +154,15 @@ def create_main_agent_graph():
     workflow.add_node("microcycle", microcycle_agent)
     workflow.add_node("phase_component", microcycle_scheduler_agent)
     workflow.add_node("workout_schedule", workout_agent)
+    workflow.add_node("workout_completion", workout_completion_agent)
     workflow.add_node("print_schedule", print_schedule_node)
 
-    # User Input to Availability and Macrocycles
-    workflow.add_edge("user_input_extraction", "availability")
-    workflow.add_edge("user_input_extraction", "macrocycle")
+    # User Input to Workout Completion
+    workflow.add_edge("user_input_extraction", "workout_completion")
+
+    # Workout Completion to Availability and Macrocycles
+    workflow.add_edge("workout_completion", "availability")
+    workflow.add_edge("workout_completion", "macrocycle")
 
     # Availability and Macrocycles to Mesocycles
     workflow.add_edge("macrocycle", "mesocycle")
