@@ -175,4 +175,4 @@ def get_exercises_for_all_pcs(exercises, phase_components):
         if exercises_for_pc:
             exercises_for_pcs[i] = exercises_for_pc
 
-    return exercises_for_pcs
+    return exercises_for_pcs, true_exercise_indicators_for_pcs

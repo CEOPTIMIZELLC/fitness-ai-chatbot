@@ -11,10 +11,11 @@ def print_logging_message(message):
         print(f"\n{"-" * 40}\n{message}")
 
 # Attach allowed exercises to phase components.
-def attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs):
+def attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs, true_exercise_indicators_for_pcs):
     # Attach allowed exercises to phase component.
-    for pc, exercises_for_pc in zip(pcs, exercises_for_pcs):
+    for pc, exercises_for_pc, true_exercise_indicators_for_pc in zip(pcs, exercises_for_pcs, true_exercise_indicators_for_pcs):
         pc["allowed_exercises"] = exercises_for_pc
+        pc["true_exercise_indicators"] = true_exercise_indicators_for_pc
         if exercises_for_pc:
             pc["performance"]=min(exercises[exercise_for_pc-1]["performance"] for exercise_for_pc in exercises_for_pc)
         else:
@@ -45,7 +46,7 @@ def get_general_exercises_for_all_pcs(exercises, exercises_for_pcs):
 # Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
 def Main(parameters, pcs, exercises, total_availability, duration_key, count_key, check_globally=False, default_count_if_none=1):
     print_logging_message("FIND EXERCISES FOR ALL PHASE COMPONENTS")
-    exercises_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
+    exercises_for_pcs, true_exercise_indicators_for_pcs = get_exercises_for_all_pcs(exercises, pcs)
 
     print_logging_message("CORRECT POSSIBLE WEIGHTS")
     no_weighted_exercises = correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises)
@@ -85,7 +86,7 @@ def Main(parameters, pcs, exercises, total_availability, duration_key, count_key
         abort(400, description=pc_without_enough_ex_message)
 
     # Attach allowed exercises to phase component.
-    pcs = attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs)
+    pcs = attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs, true_exercise_indicators_for_pcs)
 
     # Attach allowed exercises to phase component.
     pcs = attach_general_exercises_to_pcs(pcs, general_exercises_for_pcs)
