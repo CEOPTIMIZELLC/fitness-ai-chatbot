@@ -4,6 +4,8 @@ from langgraph.graph import StateGraph, START, END
 from app import db
 from app.models import User_Exercises
 
+from app.main_agent.utils import print_workout_exercises_completion
+
 from app.utils.common_table_queries import current_workout_day
 from app.utils.print_long_output import print_long_output
 from app.main_agent.main_agent_state import MainAgentState
@@ -14,6 +16,7 @@ class AgentState(MainAgentState):
     user_workout_day: any
     workout_exercises: any
     user_exercises: any
+    old_user_exercises: any
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
@@ -77,7 +80,10 @@ def perform_workout_completion(state: AgentState):
     workout_exercises = state["workout_exercises"]
     user_exercises = state["user_exercises"]
 
+    old_user_exercises = []
     for exercise, user_exercise in zip(workout_exercises, user_exercises):
+        # Append old exercise performance for formatted schedule later.
+        old_user_exercises.append(user_exercise.to_dict())
         new_weight = exercise.weight or 0
 
         new_one_rep_max = round((new_weight * (30 + exercise.reps)) / 30, 2)
@@ -96,20 +102,18 @@ def perform_workout_completion(state: AgentState):
         user_exercise.performance = max(user_exercise.performance_decayed, exercise.performance)
 
         db.session.commit()
-    return {}
+    return {"old_user_exercises": old_user_exercises}
 
 # Print output.
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Formatted Schedule for user---------")
     user_exercises = state["user_exercises"]
+    old_user_exercises_dict = state["old_user_exercises"]
 
-    result = []
-    for user_exercise in user_exercises:
-        result.append(user_exercise.to_dict())
-
-    formatted_schedule = result
-
+    user_exercises_dict = [user_exercise.to_dict() for user_exercise in user_exercises]
+    
+    formatted_schedule = print_workout_exercises_completion(user_exercises_dict, old_user_exercises_dict)
     if verbose_formatted_schedule:
         print_long_output(formatted_schedule)
 
