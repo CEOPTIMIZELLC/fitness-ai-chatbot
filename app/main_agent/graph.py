@@ -53,6 +53,8 @@ def user_input_information_extraction(state: AgentState):
     state["workout_completion_message"] = goal_class.workout_completion.detail
 
     print(f"Goals extracted.")
+    if state["workout_completion_impacted"]:
+        print(f"workout_completion: {state["workout_completion_message"]}")
     if state["availability_impacted"]:
         print(f"availability: {state["availability_message"]}")
     if state["macrocycle_impacted"]:
@@ -65,8 +67,6 @@ def user_input_information_extraction(state: AgentState):
         print(f"phase_component: {state["phase_component_message"]}")
     if state["workout_schedule_impacted"]:
         print(f"workout_schedule: {state["workout_schedule_message"]}")
-    if state["workout_completion_impacted"]:
-        print(f"workout_completion: {state["workout_completion_message"]}")
     print("")
 
     return state
@@ -120,17 +120,19 @@ def macrocycle_node(state: AgentState):
 def print_schedule_node(state: AgentState):
     print(f"\n=========Printing Schedule=========")
     print(f"Goals extracted.")
-    if state["availability_impacted"]:
+    if "workout_completion_formatted" in state:
+        print(f"workout_completion: \n{state["workout_completion_formatted"]}")
+    if "availability_formatted" in state:
         print(f"availability: \n{state["availability_formatted"]}")
-    if state["macrocycle_impacted"]:
+    if "macrocycle_formatted" in state:
         print(f"macrocycle: \n{state["macrocycle_formatted"]}")
-    if state["mesocycle_impacted"]:
+    if "mesocycle_formatted" in state:
         print(f"mesocycle: \n{state["mesocycle_formatted"]}")
-    if state["microcycle_impacted"]:
+    if "microcycle_formatted" in state:
         print(f"microcycle: \n{state["microcycle_formatted"]}")
-    if state["phase_component_impacted"]:
+    if "phase_component_formatted" in state:
         print(f"phase_component: \n{state["phase_component_formatted"]}")
-    if state["workout_schedule_impacted"]:
+    if "workout_schedule_formatted" in state:
         print(f"workout_schedule: \n{state["workout_schedule_formatted"]}")
     print("")
 
