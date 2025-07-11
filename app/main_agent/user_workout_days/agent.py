@@ -12,7 +12,7 @@ from app.utils.common_table_queries import current_microcycle
 
 from .actions import duration_to_weekdays, retrieve_availability_for_week, retrieve_weekday_availability_information_from_availability, retrieve_pc_parameters
 
-from app.main_agent.utils import print_workout_days_schedule
+from .schedule_printer import Main as print_schedule
 
 from app.utils.print_long_output import print_long_output
 from app.utils.db_helpers import get_all_items
@@ -251,7 +251,7 @@ def get_formatted_list(state: AgentState):
     pc_dict = get_all_items(Phase_Component_Library)
     bodypart_dict = get_all_items(Bodypart_Library)
 
-    formatted_schedule = print_workout_days_schedule(pc_dict, bodypart_dict, user_workout_days_dict)
+    formatted_schedule = print_schedule(pc_dict, bodypart_dict, user_workout_days_dict)
     if verbose_formatted_schedule:
         print(formatted_schedule)
     return {"phase_component_formatted": formatted_schedule}

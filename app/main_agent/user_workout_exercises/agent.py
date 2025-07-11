@@ -12,7 +12,7 @@ from app.utils.common_table_queries import current_workout_day
 
 from .actions import retrieve_availability_for_day, retrieve_pc_parameters
 
-from app.main_agent.utils import print_workout_exercises_schedule
+from .schedule_printer import Main as print_schedule
 
 from app.utils.print_long_output import print_long_output
 from app.main_agent.main_agent_state import MainAgentState
@@ -238,7 +238,7 @@ def get_formatted_list(state: AgentState):
                                 {"component_id": user_workout_exercise.phase_components.components.id}
                                 for user_workout_exercise in user_workout_exercises]
     
-    formatted_schedule = print_workout_exercises_schedule(loading_system_id, user_workout_exercises_dict)
+    formatted_schedule = print_schedule(loading_system_id, user_workout_exercises_dict)
     if verbose_formatted_schedule:
         print_long_output(formatted_schedule)
 

@@ -4,7 +4,7 @@ from langgraph.graph import StateGraph, START, END
 from app import db
 from app.models import User_Exercises
 
-from app.main_agent.utils import print_workout_exercises_completion
+from .schedule_printer import Main as print_schedule
 
 from app.utils.common_table_queries import current_workout_day
 from app.utils.print_long_output import print_long_output
@@ -113,7 +113,7 @@ def get_formatted_list(state: AgentState):
 
     user_exercises_dict = [user_exercise.to_dict() for user_exercise in user_exercises]
     
-    formatted_schedule = print_workout_exercises_completion(user_exercises_dict, old_user_exercises_dict)
+    formatted_schedule = print_schedule(user_exercises_dict, old_user_exercises_dict)
     if verbose_formatted_schedule:
         print_long_output(formatted_schedule)
 
