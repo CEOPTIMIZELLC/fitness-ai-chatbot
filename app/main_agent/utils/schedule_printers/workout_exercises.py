@@ -8,6 +8,7 @@ class ExerciseSchedulePrinter(BaseSchedulePrinter):
             "superset": ("Sub", 6),
             "set": ("Set", 6),
             "number": ("No", 5),
+            "true_exercise_flag": ("True Flag", longest_sizes["true_exercise_flag"] + 4),
             "exercise": ("Exercise", longest_sizes["exercise"] + 4),
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
@@ -39,6 +40,7 @@ class ExerciseSchedulePrinter(BaseSchedulePrinter):
             "superset": str(superset_var["superset_current"]) if superset_var["is_resistance"] else str(superset_var["not_a_superset"]),
             "number": str(i + 1),
             "exercise": exercise["exercise_name"],
+            "true_exercise_flag": exercise["true_exercise_flag"],
             "phase_component": f"{exercise['phase_component_subcomponent']}",
             "bodypart": exercise["bodypart_name"],
             "warmup": f"{exercise["is_warmup"]}",
@@ -129,7 +131,8 @@ class ExerciseSchedulePrinter(BaseSchedulePrinter):
         longest_sizes = {
             "phase_component": longest_string_size_for_key(schedule, "phase_component_subcomponent"),
             "bodypart": longest_string_size_for_key(schedule, "bodypart_name"),
-            "exercise": longest_string_size_for_key(schedule, "exercise_name")
+            "exercise": longest_string_size_for_key(schedule, "exercise_name"),
+            "true_exercise_flag": longest_string_size_for_key(schedule, "true_exercise_flag")
         }
 
         # Create headers
