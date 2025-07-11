@@ -48,6 +48,8 @@ def user_input_information_extraction(state: AgentState):
     state["phase_component_message"] = goal_class.phase_component.detail
     state["workout_schedule_impacted"] = goal_class.workout_schedule.is_requested
     state["workout_schedule_message"] = goal_class.workout_schedule.detail
+    state["workout_completion_impacted"] = goal_class.workout_completion.is_requested
+    state["workout_completion_message"] = goal_class.workout_completion.detail
 
     print(f"Goals extracted.")
     if state["availability_impacted"]:
@@ -62,6 +64,8 @@ def user_input_information_extraction(state: AgentState):
         print(f"phase_component: {state["phase_component_message"]}")
     if state["workout_schedule_impacted"]:
         print(f"workout_schedule: {state["workout_schedule_message"]}")
+    if state["workout_completion_impacted"]:
+        print(f"workout_completion: {state["workout_completion_message"]}")
     print("")
 
     return state

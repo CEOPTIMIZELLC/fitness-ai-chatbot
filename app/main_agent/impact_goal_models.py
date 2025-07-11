@@ -55,6 +55,15 @@ class WorkoutScheduleGoal(BaseModel):
     )
 
 
+class WorkoutCompletionGoal(BaseModel):
+    is_requested: bool = Field(
+        ..., description="True if the has completed their workout."
+    )
+    detail: Optional[str] = Field(
+        None, description="Details like if the user only completed part of their workout."
+    )
+
+
 class RoutineImpactGoals(BaseModel):
     """Hierarchical goal extraction from user input regarding exercise routine."""
     availability: AvailabilityGoal
@@ -63,3 +72,4 @@ class RoutineImpactGoals(BaseModel):
     microcycle: MicrocycleGoal
     phase_component: PhaseComponentGoal
     workout_schedule: WorkoutScheduleGoal
+    workout_completion: WorkoutCompletionGoal

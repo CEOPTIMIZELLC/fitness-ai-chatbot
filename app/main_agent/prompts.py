@@ -11,6 +11,7 @@ Please examine the user input and determine whether the user is requesting chang
 4. **Microcycle** — Weekly routine structure (e.g., changing number of training days, spacing of workouts).
 5. **Phase Components** — Specific requests about which types of workouts should be included in a single microcycle (e.g., more endurance, less strength).
 6. **Workout Schedule** — Specific exercise-level requests within a workout (e.g., changing exercises, sets, reps, or focus).
+7. **Workout Complete** — Specifically indicates whether the user has completed their current workout. This should only be true if the user has SPECIFICALLY mentioned that they have completed their workout.
 
 For each level, extract:
 - A boolean field (`is_requested`) indicating whether the user's message expresses a desire to change that level.
@@ -28,11 +29,14 @@ If no change is mentioned for a level, mark `is_requested` as `false` and leave 
 - `microcycle`: is_requested = true, detail = "User wants to train 5 days per week."
 - `phase_component`: is_requested = false, detail = null
 - `workout_schedule`: is_requested = true, detail = "Add core work to the upper body workout."
+- `workout_completion`: is_requested = false, detail = null
 
 Return the result in the structured schema corresponding to the following Pydantic model: `RoutineImpactGoals`.
 
 Be precise and extract only what the user explicitly or strongly implies.
 
 If a user explicitly states they want to have a certain goal scheduled, the goal should be said to be requested.
+
+The workout completion should only be said to be requested if it has EXPLICITLY been mentioned (e.g., 'I have completed my workout.')
 
 """

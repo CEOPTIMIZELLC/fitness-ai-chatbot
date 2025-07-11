@@ -30,3 +30,7 @@ class MainAgentState(TypedDict):
     workout_schedule_impacted: bool
     workout_schedule_message: str
     workout_schedule_formatted: str
+
+    workout_completion: bool
+    workout_completion_message: str
+    workout_completion_formatted: str
