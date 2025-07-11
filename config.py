@@ -18,15 +18,15 @@ one_rep_max_decay_rate = -0.05
 exponential_decay = True
 
 # Configurations for verbose options.
-verbose = True
+verbose = False
 verbose_agent_introductions = True
-verbose_subagent_steps = True
-verbose_agent_preprocessing = True
+verbose_subagent_steps = False
+verbose_agent_preprocessing = False
 verbose_exercises_for_pc_steps = False
-verbose_agent_time = True
-verbose_agent_steps = True
-verbose_agent_output = True
-verbose_formatted_schedule = True
+verbose_agent_time = False
+verbose_agent_steps = False
+verbose_agent_output = False
+verbose_formatted_schedule = False
 
 # Configurations for agent logging.
 log_schedule = True
