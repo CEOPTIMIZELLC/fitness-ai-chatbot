@@ -45,6 +45,7 @@ dummy_phase_component = {
     "exercises_per_bodypart_workout_max": 0,
     "exercise_selection_note": 0,
     "allowed_exercises": [0],
+    "true_exercise_indicators": ["Non-Applicable"],
     "is_warmup": True,
 }
 

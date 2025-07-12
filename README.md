@@ -11,12 +11,14 @@ POSTRGRES_DATABASE="fitness_db"
 POSTRGRES_USER="postgres"
 POSTRGRES_PASSWORD="postgres"
 
+EMBEDDING_MODEL="text-embedding-3-small"
 LANGUAGE_MODEL="gpt-4o-mini"
 OPENAI_API_KEY=
 ```
 
 ## Configuration Variables
 ```bash
+distance_threshold = 1.5                                    # Distance threshold for if semantic clustering of exercises (smaller number means more precise).
 user_equipment_population_default = [1-3]                   # If a dummy user is created in the database initialization, there are three presets for equipment to be included, each including more equipment and more varieties of measurements.
 ortools_solver_time_in_seconds = 5                          # The maximum number of seconds that the solver is allowed to take on default.
 vertical_loading = True                                     # Whether the workout schedule will use vertical loading.
@@ -67,6 +69,31 @@ poetry run python reinitialize_db_script.py
 # How to Run
 ```bash
 poetry run python run.py
+```
+
+# Test Main Agent
+**Test Main Agent (If logged in)**
+```
+[POST, PATCH]
+localhost:5000/main_agent
+
+BODY (form-data):
+user_input: [string; OPTIONAL; If not included, will run multiple test cases.]
+```
+
+**Delete Old Schedules (If logged in)**
+```
+[DELETE]
+localhost:5000/main_agent
+```
+
+**Delete Old Schedules and Test Main Agent (If logged in)**
+```
+[POST, PATCH]
+localhost:5000/main_agent/clean
+
+BODY (form-data):
+user_input: [string; OPTIONAL; If not included, will run multiple test cases.]
 ```
 
 # Routes To Run

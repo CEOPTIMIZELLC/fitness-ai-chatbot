@@ -3,6 +3,8 @@ from app.utils.common_table_queries import user_possible_exercises_with_user_exe
 dummy_exercise = {
     "id": 0,
     "name": "Inactive",
+    "general_id": 0,
+    "general_name": "Inactive",
     "base_strain": 0,
     "technical_difficulty": 0,
     "component_ids": 0,
@@ -43,6 +45,8 @@ def exercise_dict(exercise, user_exercise):
     return {
         "id": exercise.id,
         "name": exercise.name.lower(),
+        "general_id": exercise.general_exercise_id,
+        "general_name": exercise.general_exercises.name.lower(),
         "base_strain": exercise.base_strain,
         "technical_difficulty": exercise.technical_difficulty,
         "component_ids": [component_phase.component_id for component_phase in exercise.component_phases],

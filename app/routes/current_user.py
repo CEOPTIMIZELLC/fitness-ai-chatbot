@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 from flask_cors import CORS
 
@@ -17,7 +17,7 @@ bp = Blueprint('current_user', __name__)
 def get_current_user():
     if current_user.is_authenticated:
         return jsonify(current_user.to_dict()), 200
-    return jsonify({"status": "error", "message": "User not authenticated"}), 401
+    abort(401, description="User not authenticated")
 
 @bp.route('/', methods=['PATCH'])
 @login_required
@@ -25,7 +25,7 @@ def patch_current_user():
     # Input is a json.
     data = request.get_json()
     if not data:
-        return jsonify({"status": "error", "message": "Invalid request"}), 400
+        abort(400, description="Invalid request")
 
     if 'first_name' in data:
         first_name = data.get("first_name")
@@ -46,26 +46,26 @@ def change_email():
     # Input is a json.
     data = request.get_json()
     if not data:
-        return jsonify({"status": "error", "message": "Invalid request"}), 400
+        abort(400, description="Invalid request")
     
     if ('new_email' not in data) or ('password' not in data):
-        return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
+        abort(400, description="Please fill out the form!")
 
     # Retreive and verify password
     password = data.get("password")
     if not password: 
-        return jsonify({"status": "error", "message": "Please enter current password to confirm change."}), 400
+        abort(400, description="Please enter current password to confirm change.")
     if not current_user.check_password(password):
-        return jsonify({"status": "error", "message": "Password is incorrect. Please try again."}), 401
+        abort(401, description="Password is incorrect. Please try again.")
 
     # Retreive and validate new email
     new_email = data.get("new_email")
     if Users.query.filter_by(email=new_email).first():
-        return jsonify({"status": "error", "message": "Account with the email address of " + new_email + " already exists."}), 400
+        abort(409, description="Account with the email address of " + new_email + " already exists.")
     
     email_flag = current_user.set_email(new_email)
     if email_flag: 
-        return jsonify({"status": "error", "message": email_flag}), 400
+        abort(400, description=email_flag)
     
     # Change email
     current_user.email = new_email
@@ -79,16 +79,16 @@ def change_password():
     # Input is a json.
     data = request.get_json()
     if not data:
-        return jsonify({"status": "error", "message": "Invalid request"}), 400
+        abort(400, description="Invalid request")
     
     if ('new_password' not in data) or ('new_password_confirm' not in data) or ('password' not in data):
-        return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
+        abort(400, description="Please fill out the form!")
     # Retreive and verify old password
     password = data.get("password")
     if not password: 
-        return jsonify({"status": "error", "message": "Please enter current password to confirm change."}), 400
+        abort(400, description="Please enter current password to confirm change.")
     if not current_user.check_password(password):
-        return jsonify({"status": "error", "message": "Password is incorrect. Please try again."}), 401
+        abort(401, description="Password is incorrect. Please try again.")
     
     # Retrieve and validate new password
     new_password = data.get("new_password")
@@ -96,7 +96,7 @@ def change_password():
 
     password_flag = current_user.set_password(new_password, new_password_confirm)
     if password_flag: 
-        return jsonify({"status": "error", "message": password_flag}), 400
+        abort(400, description=password_flag)
     
     db.session.commit()
     return jsonify({"status": "success", "message": "Password successfully changed."}), 200

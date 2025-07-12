@@ -1,6 +1,6 @@
 from random import randint
 from datetime import timedelta, date
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, abort
 
 from flask_login import current_user, login_required
 
@@ -9,90 +9,80 @@ from app import db
 from app.utils.sql import sql_app
 from app.utils.table_context_parser import context_retriever_app
 
-from app.routes.utils import retrieve_output_from_endpoint
+from app.main_agent.user_macrocycles import MacrocycleActions
+from app.main_agent.user_mesocycles import MesocycleActions
+from app.main_agent.user_microcycles import MicrocycleActions
+from app.main_agent.user_workout_days import MicrocycleSchedulerActions
+from app.main_agent.user_workout_exercises import WorkoutActions
+from app.main_agent.user_weekdays_availability import WeekdayAvailabilitySchedulerActions
 
 bp = Blueprint('dev_tests', __name__)
 
 # ----------------------------------------- Dev Tests -----------------------------------------
 
-def run_segment(result, segment_method, result_key, output_key, segment_name=None):
+def run_segment(segment_class, segment_name=None):
     if verbose and segment_name:
         print(f"\n========================== {segment_name} ==========================")
-    result_temp = segment_method()
-    result[result_key], success_check = retrieve_output_from_endpoint(result_temp, output_key)
-    return success_check
+    result = segment_class.scheduler()
+    return result
+
+def run_ai_segment(segment_class, input, segment_name=None):
+    if verbose and segment_name:
+        print(f"\n========================== {segment_name} ==========================")
+    result = segment_class.scheduler(input)
+    return result
+
+def run_schedule_segment(segment_class, segment_name=None):
+    if verbose and segment_name:
+        print(f"\n========================== {segment_name} ==========================")
+    result = segment_class.scheduler()
+    result["formatted_schedule"] = segment_class.get_formatted_list()
+    return result
 
 # Quick check of the entire pipeline
 @bp.route('/pipeline', methods=['GET'])
 @login_required
 def check_pipeline():
-    from app.routes.user_weekday_availability import get_user_weekday_list
-    from app.routes.user_macrocycles import read_user_current_macrocycle
-    from app.routes.user_mesocycles import get_user_current_mesocycles_list
-    from app.routes.user_microcycles import get_user_current_microcycles_list
-    from app.routes.user_workout_days import get_user_current_workout_days_list
-    from app.routes.user_workout_exercises import get_user_current_exercises_list
-    from app.routes.user_exercises import get_user_current_exercise_list
-
     result = {}
-    run_segment(result, get_user_weekday_list, "user_availability", "weekdays")
-    run_segment(result, read_user_current_macrocycle, "user_macrocycles", "macrocycles")
-    run_segment(result, get_user_current_mesocycles_list, "user_mesocycles", "mesocycles")
-    run_segment(result, get_user_current_microcycles_list, "user_microcycles", "microcycles")
-    run_segment(result, get_user_current_workout_days_list, "user_workout_days", "phase_components")
-    run_segment(result, get_user_current_exercises_list, "user_workout_exercises", "exercises")
-    run_segment(result, get_user_current_exercise_list, "user_exercises", "user_exercises")
+    result["user_availability"] = WeekdayAvailabilitySchedulerActions.get_user_list()
+    result["user_macrocycles"] = MacrocycleActions.read_user_current_element()
+    result["user_mesocycles"] = MesocycleActions.get_formatted_list()
+    result["user_microcycles"] = MicrocycleActions.get_user_current_list()
+    result["user_planned_microcycle"] = MicrocycleSchedulerActions.get_formatted_list()
+    result["user_workout"] = WorkoutActions.get_formatted_list()
     return result
-
-
-def failed_run(result, results, i=0):
-    results.append(result)
-    if verbose:
-        print(f"\n========================== FAILED RUN {i} ==========================\n\n")
-    return results
-
-def run_availability_segment(result, segment_method, segment_method_2, result_key, output_key, segment_name):
-    if verbose:
-        print(f"\n========================== {segment_name} ==========================")
-    segment_method()
-    return run_segment(result, segment_method_2, result_key, output_key)
-
-
 
 # Quick test of the entire pipeline
 @bp.route('/pipeline', methods=['POST'])
 @login_required
 def run_pipeline():
-    from app.routes.user_weekday_availability import change_weekday_availability, get_user_weekday_list
-    from app.routes.user_macrocycles import change_macrocycle
-    from app.routes.user_mesocycles import mesocycle_phases
-    from app.routes.user_microcycles import microcycle_initializer
-    from app.routes.user_workout_days import workout_day_initializer
-    from app.routes.user_workout_exercises import exercise_initializer, complete_workout
-
     # Input is a json.
     data = request.get_json()
     if not data:
-        return jsonify({"status": "error", "message": "Invalid request"}), 400
+        abort(400, description="Invalid request")
+
+    if ('goal' not in data):
+        abort(400, description="Please fill out the form!")
+
+    if ('availability' not in data):
+        abort(400, description="Please fill out the form!")
 
     runs = data.get("runs", 1)
+    availability = data.get("availability", "")
+    goal = data.get("goal", "")
     results = []
     for i in range(1, runs+1):
         result = {}
-        if not run_availability_segment(result, change_weekday_availability, get_user_weekday_list, "user_availability", "weekdays", f"USER AVAILABILITY RUN {i}"):
-            return failed_run(result, results, i)
-        if not run_segment(result, change_macrocycle, "user_macrocycles", "macrocycles", f"MACROCYCLES RUN {i}"):
-            return failed_run(result, results, i)
-        if not run_segment(result, mesocycle_phases, "user_mesocycles", "mesocycles", f"MESOCYCLES RUN {i}"):
-            return failed_run(result, results, i)
-        if not run_segment(result, microcycle_initializer, "user_microcycles", "microcycles", f"MICROCYCLES RUN {i}"):
-            return failed_run(result, results, i)
-        if not run_segment(result, workout_day_initializer, "user_workout_days", "workdays", f"WORKOUT DAYS RUN {i}"):
-            return failed_run(result, results, i)
-        if not run_segment(result, exercise_initializer, "user_workout_exercises", "exercises", f"EXERCISES RUN {i}"):
-            return failed_run(result, results, i)
-        if not run_segment(result, complete_workout, "user_exercises", "user_exercises", f"WORKOUT COMPLETED RUN {i}"):
-            return failed_run(result, results, i)
+        run_ai_segment(WeekdayAvailabilitySchedulerActions, availability, segment_name=f"USER AVAILABILITY RUN {i}")
+        result["user_availability"] = WeekdayAvailabilitySchedulerActions.get_user_list()
+        result["user_macrocycles"] = run_ai_segment(MacrocycleActions, goal, segment_name=f"MACROCYCLES RUN {i}")
+        result["user_mesocycles"] = run_schedule_segment(MesocycleActions, segment_name=f"MESOCYCLES RUN {i}")
+        result["user_microcycles"] = run_segment(MicrocycleActions, segment_name=f"MICROCYCLES RUN {i}")
+        result["user_planned_microcycle"] = run_schedule_segment(MicrocycleSchedulerActions, segment_name=f"MICROCYCLE PLAN RUN {i}")
+        result["user_workout"] = run_schedule_segment(WorkoutActions, segment_name=f"WORKOUT EXERCISES RUN {i}")
+        if verbose:
+            print(f"\n========================== WORKOUT COMPLETED RUN {i} ==========================")
+        result["user_workout"]["completed"] = WorkoutActions.complete_workout()
         results.append(result)
         if verbose:
             print(f"\n========================== FINISHED RUN {i} ==========================\n\n")

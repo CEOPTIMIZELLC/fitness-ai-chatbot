@@ -26,6 +26,7 @@ langchain-openai = "^0.3.2"
 ortools = "^9.11.4210"
 pulp = "^2.9.0"
 openpyxl = "^3.1.5"
+scikit-learn = "^1.7.0"
 
 
 [build-system]

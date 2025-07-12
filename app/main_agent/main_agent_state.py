@@ -1,0 +1,32 @@
+
+from typing_extensions import TypedDict
+class MainAgentState(TypedDict):
+    user_id: int
+
+    user_input: str
+    check: bool
+    attempts: int
+
+    availability_impacted: bool
+    availability_message: str
+    availability_formatted: str
+
+    macrocycle_impacted: bool
+    macrocycle_message: str
+    macrocycle_formatted: str
+
+    mesocycle_impacted: bool
+    mesocycle_message: str
+    mesocycle_formatted: str
+
+    microcycle_impacted: bool
+    microcycle_message: str
+    microcycle_formatted: str
+
+    phase_component_impacted: bool
+    phase_component_message: str
+    phase_component_formatted: str
+
+    workout_schedule_impacted: bool
+    workout_schedule_message: str
+    workout_schedule_formatted: str

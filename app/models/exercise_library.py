@@ -7,6 +7,8 @@ from app.models.mixins import TableNameMixin, NameMixin
 class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
     __table_args__ = {'comment': "The library of exercises that exists."}
     # Fields
+    general_exercise_id = db.Column(db.Integer, db.ForeignKey("general_exercise_library.id", ondelete='CASCADE'), nullable=False)
+
     base_strain = db.Column(
         db.Integer, 
         nullable=False, 
@@ -24,6 +26,8 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
     proprioceptive_progressions = db.Column(db.String(50))
     
     # Relationships
+    general_exercises = db.relationship("General_Exercise_Library", back_populates="exercises")
+
     component_phases = db.relationship(
         "Exercise_Component_Phases", 
         back_populates="exercises", 
@@ -198,6 +202,8 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
         return {
             "id": self.id, 
             "name": self.name, 
+            "general_exercise_id": self.general_exercise_id, 
+            "general_exercise_name": self.general_exercises.name, 
             "base_strain": self.base_strain, 
             "technical_difficulty": self.technical_difficulty, 
             "tags": self.tags, 

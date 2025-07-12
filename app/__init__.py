@@ -20,6 +20,7 @@ def create_app():
     login_manager.init_app(app)
 
     register_blueprints(app)
+    register_error_handlers(app)
     initialize_database(app, db)
 
     return app
@@ -40,6 +41,7 @@ def register_blueprints(app):
 
         from .routes import libraries as library_routes
         app.register_blueprint(library_routes.equipment_bp, url_prefix='/equipment')
+        app.register_blueprint(library_routes.general_exercises_bp, url_prefix='/general_exercises')
         app.register_blueprint(library_routes.exercises_bp, url_prefix='/exercises')
         app.register_blueprint(library_routes.goals_bp, url_prefix='/goals')
         app.register_blueprint(library_routes.phases_bp, url_prefix='/phases')
@@ -72,6 +74,10 @@ def register_blueprints(app):
         from .routes import user_equipment
         app.register_blueprint(user_equipment.bp, url_prefix='/user_equipment')
 
+        from .routes import main_agent
+        app.register_blueprint(main_agent.bp, url_prefix='/main_agent')
+
+
 def initialize_database(app, db):
     with app.app_context():
         db.create_all()
@@ -83,6 +89,7 @@ def initialize_database(app, db):
 
 def register_error_handlers(app):
     with app.app_context():
-        @app.errorhandler(404)
-        def page_not_found(error):
-            return "Oops! Page not found.", 404
+        from .error_handling import error_handler
+        app.register_error_handler(404, error_handler.not_found_error)
+        app.register_error_handler(400, error_handler.empty_form_error)
+        app.register_error_handler(401, error_handler.unauthorized_error)

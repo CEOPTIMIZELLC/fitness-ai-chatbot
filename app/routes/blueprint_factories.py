@@ -9,6 +9,13 @@ def create_library_crud_blueprint(name, url_prefix, model, response_key):
         result = get_all_items(model)
         return jsonify({"status": "success", response_key: result}), 200
 
+    @bp.route('/print', methods=['GET'])
+    def print_items():
+        result_dict = get_all_items(model)
+        result = [item["name"] for item in result_dict]
+        print(result)
+        return jsonify({"status": "success", response_key: result}), 200
+
     @bp.route('/<item_id>', methods=['GET'])
     def read_item(item_id):
         result = get_item_by_id(model, item_id)

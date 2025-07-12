@@ -1,4 +1,4 @@
-from flask import request, jsonify, current_app, Blueprint
+from flask import request, jsonify, current_app, Blueprint, abort
 
 from app import db
 from app.models import table_object
@@ -109,12 +109,12 @@ def read_all_tables():
 @bp.route('/read_table', methods=['GET'])
 def read_table():
     if 'table_name' not in request.form:
-        return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
+        abort(400, description="Please fill out the form!")
     table_name = request.form.get("table_name")
 
     # Make sure that table with the desired name exists.
     if table_name not in get_table_names():
-        return jsonify({"status": "error", "message": f"Table with name '{table_name}' does not exist."}), 400
+        abort(400, description=f"Table with name '{table_name}' does not exist.")
 
     '''
     state = {"sql_query": f"SELECT * FROM {table_name}"}

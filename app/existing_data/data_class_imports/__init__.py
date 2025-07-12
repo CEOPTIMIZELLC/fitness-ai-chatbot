@@ -1,0 +1,10 @@
+from .equipment import Data_Importer as Equipment_Data
+from .exercise_equipment import Data_Importer as Exercise_Equipment_Data
+from .exercise_muscle_categories import Data_Importer as Exercise_MC_Data
+from .exercise_phase_components import Data_Importer as Exercise_PC_Data
+from .exercises import Data_Importer as Exercise_Data
+from .loading_systems import Data_Importer as Loading_Systems_Data
+from .muscle_categories import Data_Importer as MC_Data
+from .phase_component_bodyparts import Data_Importer as PC_Bodyparts_Data
+from .phase_components import Data_Importer as PC_Data
+from .weekdays import Data_Importer as Weekday_Data

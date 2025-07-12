@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 
 from app import db
@@ -25,7 +25,7 @@ def get_user_equipment_list():
 def read_user_equipment(user_equipment_id):
     user_equipment = db.session.get(User_Equipment, user_equipment_id)
     if not user_equipment:
-        return jsonify({"status": "error", "message": f"No active equipment of {user_equipment_id} found for current user."}), 404
+        abort(404, description=f"No active equipment of {user_equipment_id} found for current user.")
     return jsonify({"status": "success", "user_equipment": user_equipment.to_dict()}), 200
 
 # Add current user's equipment
@@ -35,10 +35,10 @@ def add_user_equipment(equipment_id):
     # Input is a json.
     data = request.get_json()
     if not data:
-        return jsonify({"status": "error", "message": "Invalid request"}), 400
+        abort(404, description="Invalid request")
     
     if ('measurement' not in data):
-        return jsonify({"status": "error", "message": "Please fill out the form!"}), 400
+        abort(400, description="Please fill out the form!")
 
     user_equipment = User_Equipment(user_id=current_user.id, equipment_id=equipment_id, measurement=data["measurement"])
     db.session.add(user_equipment)
@@ -51,7 +51,7 @@ def add_user_equipment(equipment_id):
 def read_user_equipment_by_type(equipment_id):
     user_equipment = User_Equipment.query.filter_by(user_id=current_user.id, equipment_id=equipment_id).all()
     if not user_equipment:
-        return jsonify({"status": "error", "message": f"No active equipment of {equipment_id} found for current user."}), 404
+        abort(404, description=f"No active equipment of {equipment_id} found for current user.")
     result = []
     for equipment in user_equipment:
         result.append(equipment.to_dict())

@@ -2,6 +2,8 @@ import os
 import load_env_var
 from datetime import timedelta
 
+agent_recursion_limit = 30
+distance_threshold = 1.1
 user_equipment_population_default = 2
 ortools_solver_time_in_seconds = 5
 vertical_loading = True
@@ -16,11 +18,15 @@ one_rep_max_decay_rate = -0.05
 exponential_decay = True
 
 # Configurations for verbose options.
-verbose = True
-verbose_agent_preprocessing = True
+verbose = False
+verbose_agent_introductions = True
+verbose_subagent_steps = False
+verbose_agent_preprocessing = False
 verbose_exercises_for_pc_steps = False
-verbose_agent_time = True
-verbose_agent_steps = True
+verbose_agent_time = False
+verbose_agent_steps = False
+verbose_agent_output = False
+verbose_formatted_schedule = False
 
 # Configurations for agent logging.
 log_schedule = True
@@ -43,4 +49,5 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://'+os.environ["POSTRGRES_USER"]+':'+os.environ["POSTRGRES_PASSWORD"]+'@'+os.environ["POSTRGRES_HOST"]+'/'+os.environ["POSTRGRES_DATABASE"]
     LANGUAGE_MODEL = os.environ.get("LANGUAGE_MODEL")
+    EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL")
     #PERMANENT_SESSION_LIFETIME = timedelta(minutes=1)

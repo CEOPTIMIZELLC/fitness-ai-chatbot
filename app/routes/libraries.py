@@ -3,6 +3,7 @@ from app.routes.blueprint_factories import create_library_crud_blueprint
 from app.models import (
     Component_Library, 
     Equipment_Library, 
+    General_Exercise_Library, 
     Exercise_Library, 
     Goal_Library, 
     Loading_System_Library, 
@@ -13,6 +14,7 @@ from app.models import (
 
 components_bp = create_library_crud_blueprint('components', '/components', Component_Library, 'components')
 equipment_bp = create_library_crud_blueprint('equipment', '/equipment', Equipment_Library, 'equipment')
+general_exercises_bp = create_library_crud_blueprint('general_exercises', '/general_exercises', General_Exercise_Library, 'general_exercises')
 exercises_bp = create_library_crud_blueprint('exercises', '/exercises', Exercise_Library, 'exercises')
 goals_bp = create_library_crud_blueprint('goals', '/goals', Goal_Library, 'goals')
 loading_systems_bp = create_library_crud_blueprint('loading_systems', '/loading_systems', Loading_System_Library, 'loading_systems')
