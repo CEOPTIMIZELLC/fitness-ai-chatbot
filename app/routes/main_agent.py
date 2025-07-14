@@ -36,13 +36,13 @@ def run_main_agent(data, delete_old_schedules=False):
     for i, user_input in enumerate(user_inputs, start=1):
         if delete_old_schedules:
             run_delete_schedules(current_user.id)
-        state = main_agent_app.invoke(
+        result = main_agent_app.invoke(
             {"user_input": user_input}, 
             config={
                 "recursion_limit": agent_recursion_limit
             })
-        state["iteration"] = i
-        results.append(state)
+        result["iteration"] = i
+        results.append(result)
     return results
 
 def run_delete_schedules(user_id):
