@@ -44,6 +44,7 @@ def Main(excel_file):
     di = Data_Importer(xls)
     di.run()
     db.session.commit()
+    setup_checkpointer()
     return None
 
 if __name__ == "__main__":
