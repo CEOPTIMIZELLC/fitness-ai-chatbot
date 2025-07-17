@@ -35,8 +35,10 @@ class User_Workout_Days(BaseModel, TableNameMixin, OrderedMixin):
         components = []
         for workout_component in self.workout_components:
             components.append(workout_component.to_dict())
+        
+        attached_exercises = self.exercises
         exercises = []
-        for exercise in self.exercises:
+        for exercise in attached_exercises:
             exercises.append(exercise.to_dict())
         return {
             "id": self.id, 

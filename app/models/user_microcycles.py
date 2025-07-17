@@ -29,8 +29,10 @@ class User_Microcycles(BaseModel, TableNameMixin, DateRangeMixin, OrderedMixin):
         return {
             "id": self.id, 
             "mesocycle_id": self.mesocycle_id, 
+            "phase_id": self.mesocycles.phase_id, 
             "order": self.order, 
             "start_date": self.start_date, 
             "end_date": self.end_date, 
+            "duration_days": total_duration.days, 
             "duration": f"{total_duration.days // 7} weeks {total_duration.days % 7} days"
         }
