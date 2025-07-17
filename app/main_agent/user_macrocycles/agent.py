@@ -9,15 +9,14 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt, Command
 
 from app import db
-from app.models import User_Macrocycles, User_Mesocycles
-
 from app.agents.goals import create_goal_classification_graph
-from app.main_agent.impact_goal_models import MacrocycleGoal
+from app.models import User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
-from .actions import retrieve_goal_types
-from .prompts import goal_extraction_system_prompt
+from app.main_agent.impact_goal_models import MacrocycleGoal
+from app.main_agent.prompts import macrocycle_system_prompt
 
+from .actions import retrieve_goal_types
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 
@@ -64,16 +63,14 @@ def confirm_new_goal(state: AgentState):
 def ask_for_new_goal(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Ask user for a new goal---------")
-    result = interrupt({
-        "task": "No current Macrocycle exists. Would you like for me to generate a macrocycle for you?"
-    })
+    result = interrupt({"task": "No current Macrocycle exists. Would you like for me to generate a macrocycle for you?"})
     user_input = result["user_input"]
 
     print(f"Extract the Macrocycle Goal the following message: {user_input}")
     human = f"Extract the goals from the following message: {user_input}"
     check_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", goal_extraction_system_prompt),
+            ("system", macrocycle_system_prompt),
             ("human", human),
         ]
     )

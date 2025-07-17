@@ -17,9 +17,9 @@ from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.user_macrocycles import create_goal_agent
 from app.main_agent.utils import construct_phases_list
+from app.main_agent.prompts import macrocycle_system_prompt
 
 from .schedule_printer import Main as print_schedule
-from .prompts import goal_extraction_system_prompt
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
@@ -77,7 +77,7 @@ def ask_for_permission(state: AgentState):
     human = f"Extract the goals from the following message: {user_input}"
     check_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", goal_extraction_system_prompt),
+            ("system", macrocycle_system_prompt),
             ("human", human),
         ]
     )
