@@ -73,11 +73,6 @@ def resume_main_agent(data):
         thread = {"configurable": {"thread_id": f"user-{current_user.id}"}}
         snapshot_of_agent = main_agent_app.get_state(thread)
 
-        snapshot_config = snapshot_of_agent.config
-        snapshot_values = snapshot_of_agent.values
-        print(snapshot_values)
-        print(snapshot_config)
-
         result = main_agent_app.invoke(
             Command(resume={"user_input": user_input}),
             config=snapshot_of_agent.config
