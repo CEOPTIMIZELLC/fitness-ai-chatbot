@@ -88,7 +88,7 @@ def user_input_information_extraction(state: AgentState):
     return state
 
 def availability_node(state: AgentState):
-    print(f"\n=========Changing User Availability=========")
+    print(f"\n=========Starting User Availability=========")
     if state["availability_impacted"]:
         availability_agent = create_availability_agent()
         result = availability_agent.invoke({
@@ -111,7 +111,7 @@ def availability_node(state: AgentState):
     }
 
 def macrocycle_node(state: AgentState):
-    print(f"\n=========Changing User Macrocycle=========")
+    print(f"\n=========Starting User Macrocycle=========")
     if state["macrocycle_impacted"]:
         goal_agent = create_goal_agent()
         result = goal_agent.invoke({
