@@ -23,7 +23,7 @@ class AgentState(MainAgentState):
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
-        print(f"\n=========Changing User Microcycle=========")
+        print(f"\n=========Starting User Microcycle=========")
     if verbose_subagent_steps:
         print(f"\t---------Confirm that the User Microcycle is Impacted---------")
     if not state["microcycle_impacted"]:

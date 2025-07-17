@@ -32,7 +32,7 @@ class AgentState(TypedDict):
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
-        print(f"\n=========Changing User Macrocycle=========")
+        print(f"\n=========Starting User Macrocycle=========")
     if verbose_subagent_steps:
         print(f"\t---------Confirm that the User Macrocycle is Impacted---------")
     if not state["macrocycle_impacted"]:

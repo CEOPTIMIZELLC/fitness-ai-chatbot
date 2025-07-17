@@ -31,7 +31,7 @@ class AgentState(MainAgentState):
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
-        print(f"\n=========Changing User Mesocycle=========")
+        print(f"\n=========Starting User Mesocycle=========")
     if verbose_subagent_steps:
         print(f"\t---------Confirm that the User Mesocycle is Impacted---------")
     if not state["mesocycle_impacted"]:

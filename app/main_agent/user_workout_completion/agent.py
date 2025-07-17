@@ -21,7 +21,7 @@ class AgentState(MainAgentState):
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
-        print(f"\n=========Changing User Workout Completion=========")
+        print(f"\n=========Starting User Workout Completion=========")
     if verbose_subagent_steps:
         print(f"\t---------Confirm that the User Microcycle is Impacted---------")
     if not state["workout_completion_impacted"]:

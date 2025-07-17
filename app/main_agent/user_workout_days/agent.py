@@ -79,7 +79,7 @@ def permission_denied(state, abort_message):
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
-        print(f"\n=========Changing User Phase Component=========")
+        print(f"\n=========Starting User Phase Component=========")
     if verbose_subagent_steps:
         print(f"\t---------Confirm that the User Phase Component is Impacted---------")
     if not state["phase_component_impacted"]:
