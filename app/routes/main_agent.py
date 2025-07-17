@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint, abort
+from flask import request, jsonify, Blueprint, current_app
 from flask_login import current_user, login_required
 
 bp = Blueprint('main_agent', __name__)
@@ -8,6 +8,7 @@ from app import db
 from app.models import User_Macrocycles, User_Weekday_Availability
 
 from app.main_agent.graph import create_main_agent_graph
+from langgraph.checkpoint.postgres import PostgresSaver
 
 # ----------------------------------------- Main Agent -----------------------------------------
 test_cases = [
@@ -29,20 +30,27 @@ def run_main_agent(data, delete_old_schedules=False):
     else:
         user_inputs = [data.get("user_input", "")]
 
-    main_agent_app = create_main_agent_graph()
+    db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
 
-    # Invoke with new macrocycle and possible goal types.
-    results = []
-    for i, user_input in enumerate(user_inputs, start=1):
-        if delete_old_schedules:
-            run_delete_schedules(current_user.id)
-        result = main_agent_app.invoke(
-            {"user_input": user_input}, 
-            config={
-                "recursion_limit": agent_recursion_limit
-            })
-        result["iteration"] = i
-        results.append(result)
+    # 👇 keep checkpointer alive during invocation
+    with PostgresSaver.from_conn_string(db_uri) as checkpointer:
+        main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
+
+        # Invoke with new macrocycle and possible goal types.
+        results = []
+        for i, user_input in enumerate(user_inputs, start=1):
+            if delete_old_schedules:
+                run_delete_schedules(current_user.id)
+            result = main_agent_app.invoke(
+                {"user_input": user_input}, 
+                config={
+                    "recursion_limit": agent_recursion_limit,
+                    "configurable": {
+                        "thread_id": f"user-{current_user.id}",
+                    }
+                })
+            result["iteration"] = i
+            results.append(result)
     return results
 
 def run_delete_schedules(user_id):

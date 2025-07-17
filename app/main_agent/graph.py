@@ -139,7 +139,7 @@ def print_schedule_node(state: AgentState):
     return state
 
 # Create main agent.
-def create_main_agent_graph():
+def create_main_agent_graph(checkpointer=None):
     mesocycle_agent = create_mesocycle_agent()
     microcycle_agent = create_microcycle_agent()
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
@@ -185,4 +185,4 @@ def create_main_agent_graph():
 
     workflow.set_entry_point("user_input_extraction")
 
-    return workflow.compile()
+    return workflow.compile(checkpointer=checkpointer)
