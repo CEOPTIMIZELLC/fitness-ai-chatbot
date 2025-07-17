@@ -24,7 +24,8 @@ class AgentState(TypedDict):
     macrocycle_message: str
     macrocycle_formatted: str
 
-    user_macrocycle: any
+    user_macrocycle: dict
+    macrocycle_id: int
     goal_id: int
     alter_old: bool
 
@@ -87,7 +88,7 @@ def perform_goal_classifier(state: AgentState):
         "attempts": 0})
     
     return {
-        "user_macrocycle": user_macrocycle,
+        "user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None,
         "goal_id": goal["goal_id"],
         "alter_old": True
     }
@@ -108,13 +109,21 @@ def create_new_macrocycle(state: AgentState):
     new_macrocycle = User_Macrocycles(user_id=user_id, goal_id=goal_id, goal=new_goal)
     db.session.add(new_macrocycle)
     db.session.commit()
-    return {"user_macrocycle": new_macrocycle}
+    return {"user_macrocycle": new_macrocycle.to_dict()}
+
+# Retrieve necessary information for the schedule creation.
+def retrieve_information(state: AgentState):
+    if verbose_subagent_steps:
+        print(f"\t---------Retrieving Information for Macrocycle Changing---------")
+    user_macrocycle = state["user_macrocycle"]
+    macrocycle_id = user_macrocycle["id"]
+    return {"macrocycle_id": macrocycle_id}
 
 # Delete the old items belonging to the parent.
 def delete_old_children(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Delete old items of current Macrocycle---------")
-    macrocycle_id = state["user_macrocycle"].id
+    macrocycle_id = state["macrocycle_id"]
     db.session.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
     if verbose:
         print("Successfully deleted")
@@ -124,11 +133,12 @@ def delete_old_children(state: AgentState):
 def alter_macrocycle(state: AgentState):
     goal_id = state["goal_id"]
     new_goal = state["macrocycle_message"]
-    user_macrocycle = state["user_macrocycle"]
+    macrocycle_id = state["macrocycle_id"]
+    user_macrocycle = db.session.get(User_Macrocycles, macrocycle_id)
     user_macrocycle.goal = new_goal
     user_macrocycle.goal_id = goal_id
     db.session.commit()
-    return {"user_macrocycle": user_macrocycle}
+    return {"user_macrocycle": user_macrocycle.to_dict()}
 
 # Print output.
 def get_formatted_list(state: AgentState):
@@ -153,6 +163,7 @@ def create_main_agent_graph():
     workflow.add_node("ask_for_new_goal", ask_for_new_goal)
     workflow.add_node("perform_goal_classifier", perform_goal_classifier)
     workflow.add_node("create_new_macrocycle", create_new_macrocycle)
+    workflow.add_node("retrieve_information", retrieve_information)
     workflow.add_node("delete_old_children", delete_old_children)
     workflow.add_node("alter_macrocycle", alter_macrocycle)
     workflow.add_node("get_formatted_list", get_formatted_list)
@@ -190,11 +201,12 @@ def create_main_agent_graph():
         "perform_goal_classifier",
         which_operation,
         {
-            "alter_macrocycle": "delete_old_children",
+            "alter_macrocycle": "retrieve_information",
             "create_new_macrocycle": "create_new_macrocycle"
         }
     )
 
+    workflow.add_edge("retrieve_information", "delete_old_children")
     workflow.add_edge("delete_old_children", "alter_macrocycle")
     workflow.add_edge("alter_macrocycle", "get_formatted_list")
     workflow.add_edge("create_new_macrocycle", "get_formatted_list")

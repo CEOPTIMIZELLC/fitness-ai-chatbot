@@ -26,7 +26,6 @@ class AgentState(TypedDict):
     availability_formatted: str
 
     agent_output: list
-    sql_models: any
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):

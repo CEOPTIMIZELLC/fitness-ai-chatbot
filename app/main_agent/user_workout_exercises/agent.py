@@ -5,12 +5,12 @@ from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 from app.main_agent.user_weekdays_availability import create_availability_agent
 
 from app import db
-from app.models import User_Workout_Exercises
+from app.models import User_Workout_Exercises, User_Weekday_Availability, User_Workout_Days
 
 from app.agents.exercises import exercises_main
 from app.utils.common_table_queries import current_workout_day
 
-from .actions import retrieve_availability_for_day, retrieve_pc_parameters
+from .actions import retrieve_pc_parameters
 
 from .schedule_printer import Main as print_schedule
 
@@ -20,14 +20,13 @@ from app.main_agent.main_agent_state import MainAgentState
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
 class AgentState(MainAgentState):
-    user_workout_day: any
+    user_workout_day: dict
     workout_day_id: int
     loading_system_id: int
 
-    user_availability: any
+    user_availability: int
     start_date: any
     agent_output: list
-    sql_models: any
 
 
 # Confirm that a currently active prerequisite exists to attach the a schedule to.
@@ -85,7 +84,9 @@ def retrieve_parent(state: AgentState):
         print(f"\t---------Retrieving Current Workout Day---------")
     user_id = state["user_id"]
     user_workout_day = current_workout_day(user_id)
-    return {"user_workout_day": user_workout_day}
+
+    # Return parent.
+    return {"user_workout_day": user_workout_day.to_dict() if user_workout_day else None}
 
 # Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
@@ -104,12 +105,23 @@ def parent_permission_denied(state: AgentState):
     return permission_denied(state=state, abort_message="No active workout_day found.")
 
 
+def retrieve_availability_for_day(user_id, weekday_id):
+    # Retrieve availability for day.
+    availability = (
+        User_Weekday_Availability.query
+        .filter_by(user_id=user_id, weekday_id=weekday_id)
+        .first())
+    if availability:
+        return int(availability.availability.total_seconds())
+    return None
+
 # Retrieve User's Availability.
 def retrieve_availability(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Availability for Workout Scheduling---------")
+    user_id = state["user_id"]
     user_workout_day = state["user_workout_day"]
-    return {"user_availability": retrieve_availability_for_day(user_workout_day)}
+    return {"user_availability": retrieve_availability_for_day(user_id, user_workout_day["weekday_id"])}
 
 # Confirm that a currently active availability exists to attach the a schedule to.
 def confirm_availability(state: AgentState):
@@ -157,8 +169,8 @@ def retrieve_information(state: AgentState):
     user_workout_day = state["user_workout_day"]
 
     return {
-        "workout_day_id": user_workout_day.id,
-        "loading_system_id": user_workout_day.loading_systems.id
+        "workout_day_id": user_workout_day["id"],
+        "loading_system_id": user_workout_day["loading_system_id"]
     }
 
 # Delete the old items belonging to the parent.
@@ -175,7 +187,8 @@ def delete_old_children(state: AgentState):
 def perform_workout_exercise_selection(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Perform Workout Exercise Scheduling---------")
-    user_workout_day = state["user_workout_day"]
+    workout_day_id = state["workout_day_id"]
+    user_workout_day = db.session.get(User_Workout_Days, workout_day_id)
     loading_system_id = state["loading_system_id"]
 
     availability = state["user_availability"]
@@ -220,13 +233,14 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
 
     db.session.add_all(user_workout_exercises)
     db.session.commit()
-    return {"sql_models": user_workout_exercises}
+    return {}
 
 # Print output.
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Formatted Schedule for user---------")
-    user_workout_day = state["user_workout_day"]
+    workout_day_id = state["workout_day_id"]
+    user_workout_day = db.session.get(User_Workout_Days, workout_day_id)
 
     user_workout_exercises = user_workout_day.exercises
     if not user_workout_exercises:

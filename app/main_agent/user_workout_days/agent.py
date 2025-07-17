@@ -1,5 +1,7 @@
+from config import vertical_loading
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 from flask import abort
+from datetime import timedelta
 from langgraph.graph import StateGraph, START, END
 from app.main_agent.user_microcycles import create_microcycle_agent
 from app.main_agent.user_weekdays_availability import create_availability_agent
@@ -10,7 +12,7 @@ from app.models import User_Workout_Components, User_Workout_Days, Bodypart_Libr
 from app.agents.phase_components import Main as phase_component_main
 from app.utils.common_table_queries import current_microcycle
 
-from .actions import duration_to_weekdays, retrieve_availability_for_week, retrieve_weekday_availability_information_from_availability, retrieve_pc_parameters
+from .actions import retrieve_availability_for_week, retrieve_pc_parameters
 
 from .schedule_printer import Main as print_schedule
 
@@ -21,22 +23,20 @@ from app.main_agent.main_agent_state import MainAgentState
 # ----------------------------------------- User Workout Days -----------------------------------------
 
 class AgentState(MainAgentState):
-    user_microcycle: any
+    user_microcycle: dict
     microcycle_id: int
     phase_id: int
     duration: any
 
     microcycle_weekdays: list
-    user_workdays: list
 
-    user_availability: any
+    user_availability: list
     weekday_availability: list
     number_of_available_weekdays: int
     total_availability: int
 
     start_date: any
     agent_output: list
-    sql_models: any
 
 
 # Confirm that a currently active prerequisite exists to attach the a schedule to.
@@ -92,7 +92,10 @@ def confirm_impact(state: AgentState):
 def retrieve_availability(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Availability for Workout Day Scheduling---------")
-    return {"user_availability": retrieve_availability_for_week()}
+    user_availability = retrieve_availability_for_week()
+
+    # Convert to list of dictionaries.
+    return {"user_availability": [availability.to_dict() for availability in user_availability]}
 
 # Confirm that a currently active availability exists to attach the a schedule to.
 def confirm_availability(state: AgentState):
@@ -138,8 +141,11 @@ def retrieve_parent(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Current Microcycle---------")
     user_id = state["user_id"]
+
     user_microcycle = current_microcycle(user_id)
-    return {"user_microcycle": user_microcycle}
+
+    # Return parent.
+    return {"user_microcycle": user_microcycle.to_dict() if user_microcycle else None}
 
 # Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
@@ -157,18 +163,51 @@ def confirm_parent_permission(state: AgentState):
 def parent_permission_denied(state: AgentState):
     return permission_denied(state=state, abort_message="No active microcycle found.")
 
+# Given a start date and a duration, convert into a list of weekdays.
+def duration_to_weekdays(dur, start_date):
+    microcycle_weekdays = []
+    start_date_number = start_date.weekday()
+
+    # Loop through the number of iterations
+    for i in range(dur):
+        # Calculate the current number using modulo to handle the circular nature
+        weekday_number = (start_date_number + i) % 7
+        microcycle_weekdays.append(weekday_number)
+    return microcycle_weekdays
+
+# Retrieves various availability information from the availability query.
+# The availability for each weekday, as well as its name.
+# The total number of available weekdays.
+# The total availability over all. 
+def retrieve_weekday_availability_information_from_availability(availability):
+    weekday_availability = []
+    number_of_available_weekdays = 0
+    total_availability = 0
+
+    for day in availability:
+        weekday_availability.append({
+            "id": day["weekday_id"], 
+            "name": day["weekday_name"].title(), 
+            "availability": int(day["availability"])
+        })
+        total_availability += day["availability"]
+        if day["availability"] > 0:
+            number_of_available_weekdays += 1
+    return weekday_availability, number_of_available_weekdays, total_availability
+
+
 # Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Information for Workout Day Scheduling---------")
     user_microcycle = state["user_microcycle"]
     user_availability = state["user_availability"]
-    microcycle_id = user_microcycle.id
-    phase_id = user_microcycle.mesocycles.phase_id
-    duration = user_microcycle.duration.days
-    start_date = user_microcycle.start_date
+    microcycle_id = user_microcycle["id"]
+    phase_id = user_microcycle["phase_id"]
+    duration = user_microcycle["duration_days"]
+    start_date = user_microcycle["start_date"]
 
-    microcycle_weekdays, user_workdays = duration_to_weekdays(duration, start_date, microcycle_id)
+    microcycle_weekdays = duration_to_weekdays(duration, start_date)
     weekday_availability, number_of_available_weekdays, total_availability = retrieve_weekday_availability_information_from_availability(user_availability)
 
     return {
@@ -177,7 +216,6 @@ def retrieve_information(state: AgentState):
         "duration": duration,
         "start_date": start_date,
         "microcycle_weekdays": microcycle_weekdays,
-        "user_workdays": user_workdays,
         "weekday_availability": weekday_availability,
         "number_of_available_weekdays": number_of_available_weekdays,
         "total_availability": total_availability
@@ -214,12 +252,41 @@ def perform_workout_day_selection(state: AgentState):
         "agent_output": result["output"]
     }
 
+
+# Create a corresponding workout day entry.
+def workout_day_entry_construction(microcycle_weekdays, start_date, microcycle_id):
+    user_workdays = []
+
+    # Loop through the number of iterations
+    for i, weekday_number in enumerate(microcycle_weekdays):
+        if vertical_loading:
+            loading_system_id = 1
+        else:
+            loading_system_id = 2
+
+        new_workday = User_Workout_Days(
+            microcycle_id = microcycle_id,
+            weekday_id = weekday_number,
+            loading_system_id = loading_system_id,
+            order = i+1,
+            date = (start_date + timedelta(days=i))
+        )
+        user_workdays.append(new_workday)
+    
+    return user_workdays
+
 # Convert output from the agent to SQL models.
 def agent_output_to_sqlalchemy_model(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Convert schedule to SQLAlchemy models.---------")
     phase_components_output = state["agent_output"]
-    user_workdays = state["user_workdays"]
+    user_microcycle = state["user_microcycle"]
+    microcycle_id = user_microcycle["id"]
+    start_date = user_microcycle["start_date"]
+
+
+    microcycle_weekdays = state["microcycle_weekdays"]
+    user_workdays = workout_day_entry_construction(microcycle_weekdays, start_date, microcycle_id)
 
     for phase_component in phase_components_output:
         # Create a new component entry.
@@ -234,13 +301,14 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
 
     db.session.add_all(user_workdays)
     db.session.commit()
-    return {"sql_models": user_workdays}
+    return {}
 
 # Print output.
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Formatted Schedule for user---------")
-    user_microcycle = state["user_microcycle"]
+    user_id = state["user_id"]
+    user_microcycle = current_microcycle(user_id)
 
     user_workout_days = user_microcycle.workout_days
     if not user_workout_days:

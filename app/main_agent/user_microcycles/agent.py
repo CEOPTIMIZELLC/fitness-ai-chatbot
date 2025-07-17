@@ -38,7 +38,9 @@ def retrieve_parent(state: AgentState):
         print(f"\t---------Retrieving Current Mesocycle---------")
     user_id = state["user_id"]
     user_mesocycle = current_mesocycle(user_id)
-    return {"user_mesocycle": user_mesocycle}
+
+    # Return parent.
+    return {"user_mesocycle": user_mesocycle.to_dict() if user_mesocycle else None}
 
 # Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
@@ -82,11 +84,11 @@ def retrieve_information(state: AgentState):
     microcycle_duration = timedelta(weeks=1)
 
     # Find how many one week microcycles will be present in the mesocycle
-    microcycle_count = user_mesocycle.duration.days // microcycle_duration.days
-    microcycle_start = user_mesocycle.start_date
+    microcycle_count = user_mesocycle["duration_days"] // microcycle_duration.days
+    microcycle_start = user_mesocycle["start_date"]
 
     return {
-        "mesocycle_id": user_mesocycle.id,
+        "mesocycle_id": user_mesocycle["id"],
         "microcycle_duration": microcycle_duration,
         "microcycle_count": microcycle_count,
         "start_date": microcycle_start
@@ -136,7 +138,8 @@ def perform_microcycle_initialization(state: AgentState):
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Formatted Schedule for user---------")
-    user_mesocycle = state["user_mesocycle"]
+    user_id = state["user_id"]
+    user_mesocycle = current_mesocycle(user_id)
 
     user_microcycles = user_mesocycle.microcycles
     if not user_microcycles:
@@ -166,7 +169,8 @@ def get_user_list(state: AgentState):
 def get_user_current_list(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Current Microcycles for User---------")
-    user_mesocycle = state["user_mesocycle"]
+    user_id = state["user_id"]
+    user_mesocycle = current_mesocycle(user_id)
     user_microcycles = user_mesocycle.microcycles
     return [user_microcycle.to_dict() 
             for user_microcycle in user_microcycles]

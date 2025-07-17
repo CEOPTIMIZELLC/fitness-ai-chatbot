@@ -20,14 +20,13 @@ from app.main_agent.main_agent_state import MainAgentState
 macrocycle_weeks = 26
 
 class AgentState(MainAgentState):
-    user_macrocycle: any
+    user_macrocycle: dict
     macrocycle_id: int
     goal_id: int
     start_date: any
     macrocycle_allowed_weeks: int
     possible_phases: list
     agent_output: list
-    sql_models: any
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
@@ -47,7 +46,9 @@ def retrieve_parent(state: AgentState):
         print(f"\t---------Retrieving Current Macrocycle---------")
     user_id = state["user_id"]
     user_macrocycle = current_macrocycle(user_id)
-    return {"user_macrocycle": user_macrocycle}
+
+    # Return parent.
+    return {"user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None}
 
 # Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
@@ -108,9 +109,9 @@ def retrieve_information(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Information for Mesocycle Scheduling---------")
     user_macrocycle = state["user_macrocycle"]
-    macrocycle_id = user_macrocycle.id
-    goal_id = user_macrocycle.goal_id
-    start_date = user_macrocycle.start_date
+    macrocycle_id = user_macrocycle["id"]
+    goal_id = user_macrocycle["goal_id"]
+    start_date = user_macrocycle["start_date"]
     macrocycle_allowed_weeks = macrocycle_weeks
     possible_phases = construct_phases_list(int(goal_id))
     return {
@@ -181,13 +182,14 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
 
     db.session.add_all(user_phases)
     db.session.commit()
-    return {"sql_models": user_phases}
+    return {}
 
 # Print output.
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Formatted Schedule for user---------")
-    user_macrocycle = state["user_macrocycle"]
+    user_id = state["user_id"]
+    user_macrocycle = current_macrocycle(user_id)
 
     user_mesocycles = user_macrocycle.mesocycles
     if not user_mesocycles:
@@ -213,7 +215,8 @@ def get_user_list(state: AgentState):
 def get_user_current_list(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Current Mesocycles for User---------")
-    user_macrocycle = state["user_macrocycle"]
+    user_id = state["user_id"]
+    user_macrocycle = current_macrocycle(user_id)
     user_mesocycles = user_macrocycle.mesocycles
     return [user_mesocycle.to_dict() 
             for user_mesocycle in user_mesocycles]
