@@ -1,7 +1,11 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
-from flask import abort
+from flask import current_app, abort
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
 from datetime import timedelta
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt, Command
 from app.main_agent.user_macrocycles import create_goal_agent
 
 
@@ -13,7 +17,10 @@ from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 from app.main_agent.utils import construct_phases_list
 from .schedule_printer import Main as print_schedule
+
 from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent.impact_goal_models import MacrocycleGoal
+from .prompts import goal_extraction_system_prompt
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
@@ -62,9 +69,27 @@ def confirm_parent(state: AgentState):
 def ask_for_permission(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Ask user if a new Macrocycle can be made---------")
+    result = interrupt({
+        "task": "No current Macrocycle exists. Would you like for me to generate a macrocycle for you?"
+    })
+    user_input = result["user_input"]
+
+    print(f"Extract the Macrocycle Goal the following message: {user_input}")
+    human = f"Extract the goals from the following message: {user_input}"
+    check_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", goal_extraction_system_prompt),
+            ("human", human),
+        ]
+    )
+    llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
+    structured_llm = llm.with_structured_output(MacrocycleGoal)
+    goal_classifier = check_prompt | structured_llm
+    goal_class = goal_classifier.invoke({})
+
     return {
-        "macrocycle_impacted": True,
-        "macrocycle_message": "I would like to lose 20 pounds."
+        "macrocycle_impacted": goal_class.is_requested,
+        "macrocycle_message": goal_class.detail
     }
 
 # Router for if permission was granted.
