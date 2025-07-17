@@ -1,24 +1,22 @@
-from config import vertical_loading
-from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
+from config import vertical_loading, verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 from flask import abort
 from datetime import timedelta
+
 from langgraph.graph import StateGraph, START, END
+
+from app import db
+from app.agents.phase_components import Main as phase_component_main
+from app.models import User_Workout_Components, User_Workout_Days, Bodypart_Library, Phase_Component_Library
+from app.utils.common_table_queries import current_microcycle
+from app.utils.db_helpers import get_all_items
+from app.utils.print_long_output import print_long_output
+
+from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.user_microcycles import create_microcycle_agent
 from app.main_agent.user_weekdays_availability import create_availability_agent
 
-from app import db
-from app.models import User_Workout_Components, User_Workout_Days, Bodypart_Library, Phase_Component_Library
-
-from app.agents.phase_components import Main as phase_component_main
-from app.utils.common_table_queries import current_microcycle
-
 from .actions import retrieve_availability_for_week, retrieve_pc_parameters
-
 from .schedule_printer import Main as print_schedule
-
-from app.utils.print_long_output import print_long_output
-from app.utils.db_helpers import get_all_items
-from app.main_agent.main_agent_state import MainAgentState
 
 # ----------------------------------------- User Workout Days -----------------------------------------
 

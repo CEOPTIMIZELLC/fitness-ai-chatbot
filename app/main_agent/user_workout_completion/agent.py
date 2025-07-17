@@ -1,14 +1,15 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
+
 from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.models import User_Exercises
-
-from .schedule_printer import Main as print_schedule
-
 from app.utils.common_table_queries import current_workout_day
 from app.utils.print_long_output import print_long_output
+
 from app.main_agent.main_agent_state import MainAgentState
+
+from .schedule_printer import Main as print_schedule
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
 

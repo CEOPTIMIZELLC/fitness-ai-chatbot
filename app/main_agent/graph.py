@@ -4,7 +4,6 @@ from langgraph.graph import StateGraph, END
 from flask import current_app
 from flask_login import current_user
 
-
 from .prompts import goal_extraction_system_prompt
 
 from .user_macrocycles import create_goal_agent

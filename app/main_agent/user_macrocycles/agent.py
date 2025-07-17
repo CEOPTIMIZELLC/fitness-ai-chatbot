@@ -1,5 +1,7 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 from flask import current_app, abort
+from typing_extensions import TypedDict
+
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -10,12 +12,10 @@ from app import db
 from app.models import User_Macrocycles, User_Mesocycles
 
 from app.agents.goals import create_goal_classification_graph
+from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.utils.common_table_queries import current_macrocycle
 
 from .actions import retrieve_goal_types
-from typing_extensions import TypedDict
-
-from app.main_agent.impact_goal_models import MacrocycleGoal
 from .prompts import goal_extraction_system_prompt
 
 

@@ -1,17 +1,15 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 from flask import abort
+from typing_extensions import TypedDict
+
 from langgraph.graph import StateGraph, START, END
 
-
 from app import db
+from app.agents.weekday_availability import create_weekday_availability_extraction_graph
 from app.models import User_Weekday_Availability, User_Workout_Days
-
 from app.utils.common_table_queries import current_microcycle
 
 from .actions import retrieve_weekday_types
-from typing_extensions import TypedDict
-
-from app.agents.weekday_availability import create_weekday_availability_extraction_graph
 
 # ----------------------------------------- User Availability -----------------------------------------
 

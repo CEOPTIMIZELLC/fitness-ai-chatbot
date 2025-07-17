@@ -1,25 +1,24 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 from flask import current_app, abort
+from datetime import timedelta
+
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
-from datetime import timedelta
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt, Command
-from app.main_agent.user_macrocycles import create_goal_agent
-
 
 from app import db
 from app.models import User_Mesocycles, User_Macrocycles
-
 from app.agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
-from app.main_agent.utils import construct_phases_list
-from .schedule_printer import Main as print_schedule
-
-from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.impact_goal_models import MacrocycleGoal
+from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent.user_macrocycles import create_goal_agent
+from app.main_agent.utils import construct_phases_list
+
+from .schedule_printer import Main as print_schedule
 from .prompts import goal_extraction_system_prompt
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
