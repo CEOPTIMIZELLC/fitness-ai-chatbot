@@ -1,13 +1,20 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
-from flask import abort
+from flask import current_app, abort
 from typing_extensions import TypedDict
 
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt, Command
 
 from app import db
 from app.agents.weekday_availability import create_weekday_availability_extraction_graph
 from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_microcycle
+
+from app.main_agent.impact_goal_models import AvailabilityGoal
+from app.main_agent.prompts import availability_system_prompt
 
 from .actions import retrieve_weekday_types
 
@@ -53,9 +60,26 @@ def confirm_new_availability(state: AgentState):
 def ask_for_new_availability(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Ask user for a new availability---------")
+
+    result = interrupt({"task": "No current Availability exists. Would you like for me to generate your availability for you?"})
+    user_input = result["user_input"]
+
+    print(f"Extract the Availability Goal the following message: {user_input}")
+    human = f"Extract the goals from the following message: {user_input}"
+    check_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", availability_system_prompt),
+            ("human", human),
+        ]
+    )
+    llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
+    structured_llm = llm.with_structured_output(AvailabilityGoal)
+    goal_classifier = check_prompt | structured_llm
+    goal_class = goal_classifier.invoke({})
+
     return {
-        "availability_impacted": True,
-        "availability_message": "I should have 30 minutes every day now."
+        "availability_impacted": goal_class.is_requested,
+        "availability_message": goal_class.detail
     }
 
 # State if the goal isn't requested.

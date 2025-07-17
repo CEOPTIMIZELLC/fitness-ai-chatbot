@@ -1,8 +1,12 @@
 from config import vertical_loading, verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
-from flask import abort
+from flask import current_app, abort
 from datetime import timedelta
 
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt, Command
 
 from app import db
 from app.agents.phase_components import Main as phase_component_main
@@ -14,6 +18,8 @@ from app.utils.print_long_output import print_long_output
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.user_microcycles import create_microcycle_agent
 from app.main_agent.user_weekdays_availability import create_availability_agent
+from app.main_agent.impact_goal_models import AvailabilityGoal, MicrocycleGoal
+from app.main_agent.prompts import availability_system_prompt, microcycle_system_prompt
 
 from .actions import retrieve_availability_for_week, retrieve_pc_parameters
 from .schedule_printer import Main as print_schedule
@@ -46,16 +52,31 @@ def confirm_prerequisites(state, key_to_check, log_title):
     return "parent"
 
 # Request permission from user to execute the prerequisite initialization.
-def ask_for_permission(state, checked_item, log_title):
+def ask_for_permission(state, checked_item, log_title, pydantic_goal_item, request_system_prompt):
     if verbose_subagent_steps:
         print(f"\t---------Ask user if a new {log_title} can be made---------")
-    if checked_item == "availability":
-        new_message = "I should have 30 minutes every day now."
-    else:
-        new_message = "I would like to lose 20 pounds."
+
+    result = interrupt({
+        "task": f"No current {log_title} exists. Would you like for me to generate a {log_title} for you?"
+    })
+    user_input = result["user_input"]
+
+    print(f"Extract the {log_title} Goal the following message: {user_input}")
+    human = f"Extract the goals from the following message: {user_input}"
+    check_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", request_system_prompt),
+            ("human", human),
+        ]
+    )
+    llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
+    structured_llm = llm.with_structured_output(pydantic_goal_item)
+    goal_classifier = check_prompt | structured_llm
+    goal_class = goal_classifier.invoke({})
+
     return {
-        f"{checked_item}_impacted": True,
-        f"{checked_item}_message": new_message
+        f"{checked_item}_impacted": goal_class.is_requested,
+        f"{checked_item}_message": goal_class.detail
     }
 
 # Router for if permission was granted.
@@ -101,7 +122,12 @@ def confirm_availability(state: AgentState):
 
 # Request permission from user to execute the availability initialization.
 def ask_for_availability_permission(state: AgentState):
-    return ask_for_permission(state=state, checked_item="availability", log_title="Availability")
+    return ask_for_permission(
+        state=state, 
+        checked_item="availability", 
+        log_title="Availability", 
+        pydantic_goal_item=AvailabilityGoal, 
+        request_system_prompt=availability_system_prompt)
 
 # Router for if permission was granted.
 def confirm_availability_permission(state: AgentState):
@@ -151,7 +177,12 @@ def confirm_parent(state: AgentState):
 
 # Request permission from user to execute the parent initialization.
 def ask_for_parent_permission(state: AgentState):
-    return ask_for_permission(state=state, checked_item="microcycle", log_title="Microcycle")
+    return ask_for_permission(
+        state=state, 
+        checked_item="microcycle", 
+        log_title="Microcycle", 
+        pydantic_goal_item=MicrocycleGoal, 
+        request_system_prompt=microcycle_system_prompt)
 
 # Router for if permission was granted.
 def confirm_parent_permission(state: AgentState):

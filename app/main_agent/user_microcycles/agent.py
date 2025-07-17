@@ -1,14 +1,20 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
-from flask import abort
+from flask import current_app, abort
 from datetime import timedelta
 
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt, Command
 
 from app import db
 from app.models import User_Microcycles, User_Mesocycles
 from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent.impact_goal_models import MesocycleGoal
+from app.main_agent.prompts import mesocycle_system_prompt
 from app.main_agent.user_mesocycles import create_mesocycle_agent
 
 # ----------------------------------------- User Microcycles -----------------------------------------
@@ -54,9 +60,28 @@ def confirm_parent(state: AgentState):
 def ask_for_permission(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Ask user if a new Mesocycle can be made---------")
+
+    result = interrupt({
+        "task": "No current Mesocycle exists. Would you like for me to generate a mesocycle for you?"
+    })
+    user_input = result["user_input"]
+
+    print(f"Extract the Macrocycle Goal the following message: {user_input}")
+    human = f"Extract the goals from the following message: {user_input}"
+    check_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", mesocycle_system_prompt),
+            ("human", human),
+        ]
+    )
+    llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
+    structured_llm = llm.with_structured_output(MesocycleGoal)
+    goal_classifier = check_prompt | structured_llm
+    goal_class = goal_classifier.invoke({})
+
     return {
-        "mesocycle_impacted": True,
-        "mesocycle_message": "I would like to lose 20 pounds."
+        "mesocycle_impacted": goal_class.is_requested,
+        "mesocycle_message": goal_class.detail
     }
 
 # Router for if permission was granted.
