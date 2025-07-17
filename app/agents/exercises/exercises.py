@@ -779,7 +779,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
         builder.add_edge("format", END)
 
-        return builder.compile()
+        return builder.compile(checkpointer=False)
 
 def Main(parameters=None, constraints=None):
     agent = ExerciseAgent(parameters, constraints)

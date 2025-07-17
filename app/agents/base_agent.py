@@ -206,7 +206,7 @@ class BaseAgent:
         builder.add_edge("analyze", "build")
         builder.add_edge("format", END)
 
-        return builder.compile()
+        return builder.compile(checkpointer=False)
 
     def solution_router(self, state: TState, config=None):
         if state["solution"] is None and any(state["constraints"].values()):
