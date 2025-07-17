@@ -52,6 +52,22 @@ def user_input_information_extraction(state: AgentState):
     state["workout_completion_impacted"] = goal_class.workout_completion.is_requested
     state["workout_completion_message"] = goal_class.workout_completion.detail
 
+    # # Reset to None for testing
+    # if "workout_completion_formatted" in state:
+    #     state["workout_completion_formatted"] = None
+    # if "availability_formatted" in state:
+    #     state["availability_formatted"] = None
+    # if "macrocycle_formatted" in state:
+    #     state["macrocycle_formatted"] = None
+    # if "mesocycle_formatted" in state:
+    #     state["mesocycle_formatted"] = None
+    # if "microcycle_formatted" in state:
+    #     state["microcycle_formatted"] = None
+    # if "phase_component_formatted" in state:
+    #     state["phase_component_formatted"] = None
+    # if "workout_schedule_formatted" in state:
+    #     state["workout_schedule_formatted"] = None
+
     print(f"Goals extracted.")
     if state["workout_completion_impacted"]:
         print(f"workout_completion: {state["workout_completion_message"]}")
@@ -120,19 +136,19 @@ def macrocycle_node(state: AgentState):
 def print_schedule_node(state: AgentState):
     print(f"\n=========Printing Schedule=========")
     print(f"Goals extracted.")
-    if "workout_completion_formatted" in state:
+    if ("workout_completion_formatted" in state) and (state["workout_completion_impacted"]):
         print(f"workout_completion: \n{state["workout_completion_formatted"]}")
-    if "availability_formatted" in state:
+    if ("availability_formatted" in state) and (state["availability_impacted"]):
         print(f"availability: \n{state["availability_formatted"]}")
-    if "macrocycle_formatted" in state:
+    if ("macrocycle_formatted" in state) and (state["macrocycle_impacted"]):
         print(f"macrocycle: \n{state["macrocycle_formatted"]}")
-    if "mesocycle_formatted" in state:
+    if ("mesocycle_formatted" in state) and (state["mesocycle_impacted"]):
         print(f"mesocycle: \n{state["mesocycle_formatted"]}")
-    if "microcycle_formatted" in state:
+    if ("microcycle_formatted" in state) and (state["microcycle_impacted"]):
         print(f"microcycle: \n{state["microcycle_formatted"]}")
-    if "phase_component_formatted" in state:
+    if ("phase_component_formatted" in state) and (state["phase_component_impacted"]):
         print(f"phase_component: \n{state["phase_component_formatted"]}")
-    if "workout_schedule_formatted" in state:
+    if ("workout_schedule_formatted" in state) and (state["workout_schedule_impacted"]):
         print(f"workout_schedule: \n{state["workout_schedule_formatted"]}")
     print("")
 
