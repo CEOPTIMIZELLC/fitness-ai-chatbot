@@ -117,9 +117,10 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
     weekday_availability = state["agent_output"]
     # Update each availability entry to the database.
     for i in weekday_availability:
-        db_entry = User_Weekday_Availability(user_id=user_id, 
-                                            weekday_id=i["weekday_id"], 
-                                            availability=i["availability"])
+        db_entry = User_Weekday_Availability(
+            user_id=user_id, 
+            weekday_id=i["weekday_id"], 
+            availability=i["availability"])
         db.session.merge(db_entry)
     db.session.commit()
     return {}
