@@ -1,18 +1,15 @@
-from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
-from flask import current_app, abort
+from config import verbose, verbose_subagent_steps
 from typing_extensions import TypedDict
 
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-
 from langgraph.graph import StateGraph, START, END
-from langgraph.types import interrupt, Command
 
 from app import db
 from app.agents.weekday_availability import create_weekday_availability_extraction_graph
 from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_microcycle
 
+from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent.base_sub_agent_without_parents import BaseAgent
 from app.main_agent.impact_goal_models import AvailabilityGoal
 from app.main_agent.prompts import availability_system_prompt
 
@@ -32,173 +29,115 @@ class AgentState(TypedDict):
 
     agent_output: list
 
-# Confirm that the desired section should be impacted.
-def confirm_impact(state: AgentState):
-    if verbose_agent_introductions:
-        print(f"\n=========Starting User Weekday Availability=========")
-    if verbose_subagent_steps:
-        print(f"\t---------Confirm that the User Weekday Availability is Impacted---------")
-    if not state["availability_impacted"]:
+class SubAgent(BaseAgent):
+    focus = "availability"
+    sub_agent_title = "Weekday Availability"
+    focus_system_prompt = availability_system_prompt
+    focus_goal = AvailabilityGoal
+
+    def user_list_query(user_id):
+        return User_Weekday_Availability.query.filter_by(user_id=user_id).all()
+
+    # Classify the new goal in one of the possible goal types.
+    def perform_input_parser(self, state: AgentState):
         if verbose_subagent_steps:
-            print(f"\t---------No Impact---------")
-        return "no_impact"
-    return "impact"
+            print(f"\t---------Perform {self.sub_agent_title} Parsing---------")
+        new_availability = state["availability_message"]
 
-# In between node for chained conditional edges.
-def impact_confirmed(state: AgentState):
-    return {}
+        # There are only so many types a weekday can be classified as, with all of them being stored.
+        weekday_types = retrieve_weekday_types()
+        weekday_app = create_weekday_availability_extraction_graph()
 
-# Check if a new goal exists to be classified.
-def confirm_new_availability(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Confirm there is an availability input to be parsed---------")
-    if not state["availability_message"]:
-        return "no_availability_input"
-    return "present_availability_input"
+        # Invoke with new weekday and possible weekday types.
+        result = weekday_app.invoke(
+            {
+                "new_availability": new_availability, 
+                "weekday_types": weekday_types, 
+                "attempts": 0
+            })
+        
+        return {"agent_output": result["weekday_availability"]}
 
-# Ask user for a new goal if one isn't in the initial request.
-def ask_for_new_availability(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Ask user for a new availability---------")
+    # Convert output from the agent to SQL models.
+    def agent_output_to_sqlalchemy_model(self, state: AgentState):
+        if verbose_subagent_steps:
+            print(f"\t---------Convert schedule to SQLAlchemy models.---------")
+        user_id = state["user_id"]
+        weekday_availability = state["agent_output"]
+        # Update each availability entry to the database.
+        for i in weekday_availability:
+            db_entry = User_Weekday_Availability(
+                user_id=user_id, 
+                weekday_id=i["weekday_id"], 
+                availability=i["availability"])
+            db.session.merge(db_entry)
+        db.session.commit()
+        return {}
 
-    result = interrupt({"task": "No current Availability exists. Would you like for me to generate your availability for you?"})
-    user_input = result["user_input"]
+    # Delete the old children belonging to the current item.
+    def delete_old_children(self, state: AgentState):
+        if verbose_subagent_steps:
+            print(f"\t---------Delete old items of current Weekday Availability---------")
+        user_id = state["user_id"]
+        user_microcycle = current_microcycle(user_id)
+        if user_microcycle:
+            microcycle_id = user_microcycle.id
 
-    print(f"Extract the Availability Goal the following message: {user_input}")
-    human = f"Extract the goals from the following message: {user_input}"
-    check_prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", availability_system_prompt),
-            ("human", human),
-        ]
-    )
-    llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
-    structured_llm = llm.with_structured_output(AvailabilityGoal)
-    goal_classifier = check_prompt | structured_llm
-    goal_class = goal_classifier.invoke({})
+            db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
+            if verbose:
+                print("Successfully deleted")
+        return {}
 
-    return {
-        "availability_impacted": goal_class.is_requested,
-        "availability_message": goal_class.detail
-    }
+    # Create main agent.
+    def create_main_agent_graph(self, state_class):
+        workflow = StateGraph(state_class)
 
-# State if the goal isn't requested.
-def no_availability_requested(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Abort Availability Parser---------")
-    abort(404, description="No availability requested.")
-    return {}
+        workflow.add_node("impact_confirmed", self.impact_confirmed)
+        workflow.add_node("ask_for_new_input", self.ask_for_new_input)
+        workflow.add_node("perform_input_parser", self.perform_input_parser)
+        workflow.add_node("delete_old_children", self.delete_old_children)
+        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
+        workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("no_new_input_requested", self.no_new_input_requested)
+        workflow.add_node("end_node", self.end_node)
 
-# Classify the new goal in one of the possible goal types.
-def perform_availability_parsing(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Perform Availability Parsing---------")
-    new_availability = state["availability_message"]
+        workflow.add_conditional_edges(
+            START,
+            self.confirm_impact,
+            {
+                "no_impact": "end_node",
+                "impact": "impact_confirmed"
+            }
+        )
 
-    # There are only so many types a weekday can be classified as, with all of them being stored.
-    weekday_types = retrieve_weekday_types()
-    weekday_app = create_weekday_availability_extraction_graph()
+        workflow.add_conditional_edges(
+            "impact_confirmed",
+            self.confirm_new_input,
+            {
+                "no_new_input": "ask_for_new_input",
+                "present_new_input": "delete_old_children"
+            }
+        )
 
-    # Invoke with new weekday and possible weekday types.
-    result = weekday_app.invoke(
-        {
-            "new_availability": new_availability, 
-            "weekday_types": weekday_types, 
-            "attempts": 0
-        })
-    
-    return {"agent_output": result["weekday_availability"]}
+        workflow.add_conditional_edges(
+            "ask_for_new_input",
+            self.confirm_new_input,
+            {
+                "no_new_input": "no_new_input_requested",
+                "present_new_input": "delete_old_children"
+            }
+        )
 
-# Convert output from the agent to SQL models.
-def agent_output_to_sqlalchemy_model(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Convert schedule to SQLAlchemy models.---------")
-    user_id = state["user_id"]
-    weekday_availability = state["agent_output"]
-    # Update each availability entry to the database.
-    for i in weekday_availability:
-        db_entry = User_Weekday_Availability(
-            user_id=user_id, 
-            weekday_id=i["weekday_id"], 
-            availability=i["availability"])
-        db.session.merge(db_entry)
-    db.session.commit()
-    return {}
+        workflow.add_edge("delete_old_children", "perform_input_parser")
+        workflow.add_edge("perform_input_parser", "agent_output_to_sqlalchemy_model")
+        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
+        workflow.add_edge("no_new_input_requested", "end_node")
+        workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("end_node", END)
 
-# Delete the old items belonging to the parent.
-def delete_old_children(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Delete old items of current Weekday Availability---------")
-    user_id = state["user_id"]
-    user_microcycle = current_microcycle(user_id)
-    if user_microcycle:
-        microcycle_id = user_microcycle.id
-
-        db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
-        if verbose:
-            print("Successfully deleted")
-    return {}
-
-# Print output.
-def get_formatted_list(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Retrieving Formatted Schedule for user---------")
-    availability_message = state["availability_message"]
-    if verbose_formatted_schedule:
-        print(availability_message)
-    return {"availability_formatted": availability_message}
-
-# Node to declare that the sub agent has ended.
-def end_node(state: AgentState):
-    if verbose_agent_introductions:
-        print(f"=========Ending User Availability=========\n")
-    return {}
+        return workflow.compile()
 
 # Create main agent.
 def create_main_agent_graph():
-    workflow = StateGraph(AgentState)
-
-    workflow.add_node("impact_confirmed", impact_confirmed)
-    workflow.add_node("ask_for_new_availability", ask_for_new_availability)
-    workflow.add_node("perform_availability_parsing", perform_availability_parsing)
-    workflow.add_node("delete_old_children", delete_old_children)
-    workflow.add_node("agent_output_to_sqlalchemy_model", agent_output_to_sqlalchemy_model)
-    workflow.add_node("get_formatted_list", get_formatted_list)
-    workflow.add_node("no_availability_requested", no_availability_requested)
-    workflow.add_node("end_node", end_node)
-
-    workflow.add_conditional_edges(
-        START,
-        confirm_impact,
-        {
-            "no_impact": "end_node",
-            "impact": "impact_confirmed"
-        }
-    )
-
-    workflow.add_conditional_edges(
-        "impact_confirmed",
-        confirm_new_availability,
-        {
-            "no_availability_input": "ask_for_new_availability",
-            "present_availability_input": "delete_old_children"
-        }
-    )
-
-    workflow.add_conditional_edges(
-        "ask_for_new_availability",
-        confirm_new_availability,
-        {
-            "no_availability_input": "no_availability_requested",
-            "present_availability_input": "delete_old_children"
-        }
-    )
-
-    workflow.add_edge("delete_old_children", "perform_availability_parsing")
-    workflow.add_edge("perform_availability_parsing", "agent_output_to_sqlalchemy_model")
-    workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
-    workflow.add_edge("no_availability_requested", "end_node")
-    workflow.add_edge("get_formatted_list", "end_node")
-    workflow.add_edge("end_node", END)
-
-    return workflow.compile()
+    agent = SubAgent()
+    return agent.create_main_agent_graph(AgentState)
