@@ -9,7 +9,7 @@ from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_microcycle
 
 from app.main_agent.main_agent_state import MainAgentState
-from app.main_agent.base_sub_agent_without_parents import BaseAgent
+from app.main_agent.base_sub_agents.without_parents import BaseAgent
 from app.main_agent.impact_goal_models import AvailabilityGoal
 from app.main_agent.prompts import availability_system_prompt
 

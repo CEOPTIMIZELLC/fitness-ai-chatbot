@@ -12,7 +12,7 @@ from app.utils.common_table_queries import current_workout_day
 from app.utils.print_long_output import print_long_output
 
 from app.main_agent.main_agent_state import MainAgentState
-from app.main_agent.base_sub_agent_with_availability import BaseAgentWithAvailability
+from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 from app.main_agent.impact_goal_models import PhaseComponentGoal
 from app.main_agent.prompts import phase_component_system_prompt

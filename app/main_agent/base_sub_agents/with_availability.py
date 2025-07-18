@@ -7,15 +7,15 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from langgraph.types import interrupt, Command
 
-from .base_sub_agent_with_parents import BaseAgent, TState, sub_agent_focused_items
+from .with_parents import BaseAgent, TState, sub_agent_focused_items
 
-from .user_weekdays_availability import WeekdayAvailabilityAgentNode
-
-# ----------------------------------------- Base Sub Agent With Availability -----------------------------------------
+from app.main_agent.user_weekdays_availability import WeekdayAvailabilityAgentNode
 
 from app.main_agent.prompts import availability_system_prompt
 from app.main_agent.impact_goal_models import AvailabilityGoal
 from app.main_agent.user_weekdays_availability import create_availability_agent
+
+# ----------------------------------------- Base Sub Agent With Availability -----------------------------------------
 
 class BaseAgentWithAvailability(WeekdayAvailabilityAgentNode, BaseAgent):
     availability_focus = "availability"

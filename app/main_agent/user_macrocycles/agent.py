@@ -9,7 +9,7 @@ from app.models import User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
 from app.main_agent.main_agent_state import MainAgentState
-from app.main_agent.base_sub_agent_without_parents import BaseAgent
+from app.main_agent.base_sub_agents.without_parents import BaseAgent
 from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.main_agent.prompts import macrocycle_system_prompt
 
