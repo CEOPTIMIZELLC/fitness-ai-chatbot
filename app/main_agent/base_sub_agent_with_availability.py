@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from langgraph.types import interrupt, Command
 
-from .base_sub_agent import BaseAgent, TState, sub_agent_focused_items
+from .base_sub_agent_with_parents import BaseAgent, TState, sub_agent_focused_items
 
 from .user_weekdays_availability import WeekdayAvailabilityAgentNode
 
