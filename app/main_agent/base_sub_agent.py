@@ -86,6 +86,12 @@ class BaseAgent():
             return "no_parent"
         return "parent"
 
+    # Default items extracted from the goal classifier
+    def goal_classifier_parser(self, parent_names, goal_class):
+        return {
+            parent_names["impact"]: goal_class.is_requested,
+            parent_names["message"]: goal_class.detail
+        }
 
     # Request permission from user to execute the parent initialization.
     def ask_for_permission(self, state: TState):
@@ -109,10 +115,7 @@ class BaseAgent():
         goal_classifier = check_prompt | structured_llm
         goal_class = goal_classifier.invoke({})
 
-        return {
-            self.parent_names["impact"]: goal_class.is_requested,
-            self.parent_names["message"]: goal_class.detail
-        }
+        return self.goal_classifier_parser(self.parent_names, goal_class)
 
     # Router for if permission was granted.
     def confirm_permission(self, state: TState):

@@ -57,31 +57,11 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
     def parent_retriever_agent(self, user_id):
         return current_macrocycle(user_id)
 
-    # Request permission from user to execute the parent initialization.
-    def ask_for_parent_permission(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Ask user if a new Macrocycle can be made---------")
-        result = interrupt({
-            "task": "No current Macrocycle exists. Would you like for me to generate a macrocycle for you?"
-        })
-        user_input = result["user_input"]
-
-        print(f"Extract the Macrocycle Goal the following message: {user_input}")
-        human = f"Extract the goals from the following message: {user_input}"
-        check_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", macrocycle_system_prompt),
-                ("human", human),
-            ]
-        )
-        llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
-        structured_llm = llm.with_structured_output(MacrocycleGoal)
-        goal_classifier = check_prompt | structured_llm
-        goal_class = goal_classifier.invoke({})
-
+    # Items extracted from the goal classifier
+    def goal_classifier_parser(self, parent_names, goal_class):
         return {
-            "macrocycle_impacted": goal_class.is_requested,
-            "macrocycle_message": goal_class.detail, 
+            parent_names["impact"]: goal_class.is_requested,
+            parent_names["message"]: goal_class.detail, 
             "macrocycle_alter_old": goal_class.alter_old
         }
 
@@ -140,21 +120,20 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
 
         # Convert output to form that may be stored.
         user_phases = []
-        order = 1
-        for phase in phases_output:
+        for i, phase in enumerate(phases_output, start=1):
             new_phase = User_Mesocycles(
                 macrocycle_id = macrocycle_id,
                 phase_id = phase["id"],
                 is_goal_phase = phase["is_goal_phase"],
-                order = order,
+                order = i,
                 start_date = mesocycle_start_date,
                 end_date = mesocycle_start_date + timedelta(weeks=phase["duration"])
             )
+
             user_phases.append(new_phase)
 
             # Set startdate of next phase to be at the end of the current one.
             mesocycle_start_date +=timedelta(weeks=phase["duration"])
-            order += 1
 
         db.session.add_all(user_phases)
         db.session.commit()
