@@ -17,6 +17,8 @@ from app.main_agent.impact_goal_models import MesocycleGoal
 from app.main_agent.prompts import mesocycle_system_prompt
 from app.main_agent.user_mesocycles import create_mesocycle_agent
 
+from .schedule_printer import Main as print_schedule
+
 # ----------------------------------------- User Microcycles -----------------------------------------
 
 class AgentState(MainAgentState):
@@ -171,12 +173,8 @@ def get_formatted_list(state: AgentState):
         abort(404, description="No microcycles found for the mesocycle.")
 
     user_microcycles_dict = [user_microcycle.to_dict() for user_microcycle in user_microcycles]
-    
-    # Create a stringified version of the schedule.
-    formatted_schedule = "\n"
-    for user_microcycle in user_microcycles_dict:
-        formatted_schedule += f"Microcycle {user_microcycle["order"]}: {user_microcycle["start_date"]} - {user_microcycle["end_date"]} ({user_microcycle["duration"]})\n"
 
+    formatted_schedule = print_schedule(user_microcycles_dict)
     if verbose_formatted_schedule:
         print(formatted_schedule)
     return {"microcycle_formatted": formatted_schedule}
