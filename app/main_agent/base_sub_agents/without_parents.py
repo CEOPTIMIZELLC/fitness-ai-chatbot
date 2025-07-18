@@ -1,10 +1,10 @@
-from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
+from config import verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 from flask import current_app, abort
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
-from langgraph.types import interrupt, Command
+from langgraph.types import interrupt
 
 
 # ----------------------------------------- Base Sub Agent -----------------------------------------

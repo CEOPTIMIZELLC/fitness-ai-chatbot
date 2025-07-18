@@ -1,11 +1,10 @@
 from config import verbose_subagent_steps
 from flask import current_app, abort
-from datetime import timedelta
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
-from langgraph.types import interrupt, Command
+from langgraph.types import interrupt
 
 from .with_parents import BaseAgent, TState, sub_agent_focused_items
 
@@ -13,7 +12,6 @@ from app.main_agent.user_weekdays_availability import WeekdayAvailabilityAgentNo
 
 from app.main_agent.prompts import availability_system_prompt
 from app.main_agent.impact_goal_models import AvailabilityGoal
-from app.main_agent.user_weekdays_availability import create_availability_agent
 
 # ----------------------------------------- Base Sub Agent With Availability -----------------------------------------
 
