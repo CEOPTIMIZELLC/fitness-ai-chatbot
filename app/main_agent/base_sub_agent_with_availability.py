@@ -9,42 +9,20 @@ from langgraph.types import interrupt, Command
 
 from .base_sub_agent import BaseAgent, TState, sub_agent_focused_items
 
+from .user_weekdays_availability import WeekdayAvailabilityAgentNode
+
 # ----------------------------------------- Base Sub Agent With Availability -----------------------------------------
 
 from app.main_agent.prompts import availability_system_prompt
 from app.main_agent.impact_goal_models import AvailabilityGoal
 from app.main_agent.user_weekdays_availability import create_availability_agent
 
-class BaseAgentWithAvailability(BaseAgent):
+class BaseAgentWithAvailability(WeekdayAvailabilityAgentNode, BaseAgent):
     availability_focus = "availability"
     sub_agent_title = ""
     availability_title = "Availability"
     availability_system_prompt = availability_system_prompt
     availability_goal = AvailabilityGoal
-
-    def availability_node(self, state: TState):
-        print(f"\n=========Changing User Availability=========")
-        if state["availability_impacted"]:
-            availability_agent = create_availability_agent()
-            result = availability_agent.invoke({
-                "user_id": state["user_id"], 
-                "user_input": state["user_input"], 
-                "attempts": state["attempts"], 
-                "availability_impacted": state["availability_impacted"], 
-                "availability_message": state["availability_message"]
-            })
-        else:
-            result = {
-                "availability_impacted": False, 
-                "availability_message": None, 
-                "availability_formatted": None
-            }
-        return {
-            "availability_impacted": result["availability_impacted"], 
-            "availability_message": result["availability_message"], 
-            "availability_formatted": result["availability_formatted"]
-        }
-
 
     def __init__(self):
         super().__init__()

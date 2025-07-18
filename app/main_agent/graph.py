@@ -6,19 +6,19 @@ from flask_login import current_user
 
 from .prompts import goal_extraction_system_prompt
 
-from .user_macrocycles import create_goal_agent
+from .user_macrocycles import MacrocycleAgentNode
 from .user_mesocycles import create_mesocycle_agent
 from .user_microcycles import create_microcycle_agent
 from .user_workout_days import create_microcycle_scheduler_agent
 from .user_workout_exercises import create_workout_agent
 from .user_workout_completion import create_workout_completion_agent
-from .user_weekdays_availability import create_availability_agent
+from .user_weekdays_availability import WeekdayAvailabilityAgentNode
 
 from .impact_goal_models import RoutineImpactGoals
 from .main_agent_state import MainAgentState as AgentState
 
 
-class MainAgent():
+class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     def user_input_information_extraction(self, state: AgentState):
         user_input = state["user_input"]
 
@@ -88,55 +88,6 @@ class MainAgent():
         print("")
 
         return state
-
-    def availability_node(self, state: AgentState):
-        print(f"\n=========Starting User Availability=========")
-        if state["availability_impacted"]:
-            availability_agent = create_availability_agent()
-            result = availability_agent.invoke({
-                "user_id": state["user_id"], 
-                "user_input": state["user_input"], 
-                "attempts": state["attempts"], 
-                "availability_impacted": state["availability_impacted"], 
-                "availability_message": state["availability_message"]
-            })
-        else:
-            result = {
-                "availability_impacted": False, 
-                "availability_message": None, 
-                "availability_formatted": None
-            }
-        return {
-            "availability_impacted": result["availability_impacted"], 
-            "availability_message": result["availability_message"], 
-            "availability_formatted": result["availability_formatted"]
-        }
-
-    def macrocycle_node(self, state: AgentState):
-        print(f"\n=========Starting User Macrocycle=========")
-        if state["macrocycle_impacted"]:
-            goal_agent = create_goal_agent()
-            result = goal_agent.invoke({
-                "user_id": state["user_id"], 
-                "user_input": state["user_input"], 
-                "attempts": state["attempts"], 
-                "macrocycle_impacted": state["macrocycle_impacted"], 
-                "macrocycle_message": state["macrocycle_message"],
-                "macrocycle_alter_old": state["macrocycle_alter_old"]
-            })
-        else:
-            result = {
-                "macrocycle_impacted": False, 
-                "macrocycle_message": None, 
-                "macrocycle_formatted": None, 
-                "macrocycle_alter_old": False
-            }
-        return {
-            "macrocycle_impacted": result["macrocycle_impacted"], 
-            "macrocycle_message": result["macrocycle_message"], 
-            "macrocycle_formatted": result["macrocycle_formatted"], 
-            "macrocycle_alter_old": result["macrocycle_alter_old"]
-        }
 
     def print_schedule_node(self, state: AgentState):
         print(f"\n=========Printing Schedule=========")

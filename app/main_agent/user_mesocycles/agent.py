@@ -12,7 +12,7 @@ from app.models import User_Mesocycles, User_Macrocycles
 from app.agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
-from app.main_agent.user_macrocycles import create_goal_agent
+from app.main_agent.user_macrocycles import MacrocycleAgentNode
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agent import BaseAgent
 from app.main_agent.impact_goal_models import MacrocycleGoal
@@ -34,38 +34,14 @@ class AgentState(MainAgentState):
     possible_phases: list
     agent_output: list
 
-class SubAgent(BaseAgent):
-    def parent_scheduler_agent(self, state: AgentState):
-        print(f"\n---------Changing User Macrocycle---------")
-        if state["macrocycle_impacted"]:
-            goal_agent = create_goal_agent()
-            result = goal_agent.invoke({
-                "user_id": state["user_id"], 
-                "user_input": state["user_input"], 
-                "attempts": state["attempts"], 
-                "macrocycle_impacted": state["macrocycle_impacted"], 
-                "macrocycle_message": state["macrocycle_message"],
-                "macrocycle_alter_old": state["macrocycle_alter_old"]
-            })
-        else:
-            result = {
-                "macrocycle_message": None, 
-                "macrocycle_formatted": None, 
-                "macrocycle_alter_old": False
-            }
-        return {
-            "macrocycle_impacted": result["macrocycle_impacted"], 
-            "macrocycle_message": result["macrocycle_message"], 
-            "macrocycle_formatted": result["macrocycle_formatted"], 
-            "macrocycle_alter_old": result["macrocycle_alter_old"]
-        }
-
+class SubAgent(MacrocycleAgentNode, BaseAgent):
     focus = "mesocycle"
     parent = "macrocycle"
     sub_agent_title = "Mesocycle"
     parent_title = "Macrocycle"
     parent_system_prompt = macrocycle_system_prompt
     parent_goal = MacrocycleGoal
+    parent_scheduler_agent = MacrocycleAgentNode.macrocycle_node
     schedule_printer_class = MesocycleSchedulePrinter
 
     # Retrieve the Mesocycles belonging to the Macrocycle.
