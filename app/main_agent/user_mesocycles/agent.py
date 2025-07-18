@@ -88,7 +88,8 @@ def ask_for_permission(state: AgentState):
 
     return {
         "macrocycle_impacted": goal_class.is_requested,
-        "macrocycle_message": goal_class.detail
+        "macrocycle_message": goal_class.detail, 
+        "macrocycle_alter_old": goal_class.alter_old
     }
 
 # Router for if permission was granted.
@@ -115,17 +116,20 @@ def macrocycle_node(state: AgentState):
             "user_input": state["user_input"], 
             "attempts": state["attempts"], 
             "macrocycle_impacted": state["macrocycle_impacted"], 
-            "macrocycle_message": state["macrocycle_message"]
+            "macrocycle_message": state["macrocycle_message"],
+            "macrocycle_alter_old": state["macrocycle_alter_old"]
         })
     else:
         result = {
             "macrocycle_message": None, 
-            "macrocycle_formatted": None
+            "macrocycle_formatted": None, 
+            "macrocycle_alter_old": False
         }
     return {
         "macrocycle_impacted": result["macrocycle_impacted"], 
         "macrocycle_message": result["macrocycle_message"], 
-        "macrocycle_formatted": result["macrocycle_formatted"]
+        "macrocycle_formatted": result["macrocycle_formatted"], 
+        "macrocycle_alter_old": result["macrocycle_alter_old"]
     }
 
 # Retrieve necessary information for the schedule creation.

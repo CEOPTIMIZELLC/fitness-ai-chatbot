@@ -14,6 +14,7 @@ class MainAgentState(TypedDict):
     macrocycle_impacted: bool
     macrocycle_message: str
     macrocycle_formatted: str
+    macrocycle_alter_old: bool
 
     mesocycle_impacted: bool
     mesocycle_message: str

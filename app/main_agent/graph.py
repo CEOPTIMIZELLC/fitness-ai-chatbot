@@ -40,6 +40,7 @@ def user_input_information_extraction(state: AgentState):
     state["availability_message"] = goal_class.availability.detail
     state["macrocycle_impacted"] = goal_class.macrocycle.is_requested
     state["macrocycle_message"] = goal_class.macrocycle.detail
+    state["macrocycle_alter_old"] = goal_class.macrocycle.alter_old
     state["mesocycle_impacted"] = goal_class.mesocycle.is_requested
     state["mesocycle_message"] = goal_class.mesocycle.detail
     state["microcycle_impacted"] = goal_class.microcycle.is_requested
@@ -118,18 +119,21 @@ def macrocycle_node(state: AgentState):
             "user_input": state["user_input"], 
             "attempts": state["attempts"], 
             "macrocycle_impacted": state["macrocycle_impacted"], 
-            "macrocycle_message": state["macrocycle_message"]
+            "macrocycle_message": state["macrocycle_message"],
+            "macrocycle_alter_old": state["macrocycle_alter_old"]
         })
     else:
         result = {
             "macrocycle_impacted": False, 
             "macrocycle_message": None, 
-            "macrocycle_formatted": None
+            "macrocycle_formatted": None, 
+            "macrocycle_alter_old": False
         }
     return {
         "macrocycle_impacted": result["macrocycle_impacted"], 
         "macrocycle_message": result["macrocycle_message"], 
-        "macrocycle_formatted": result["macrocycle_formatted"]
+        "macrocycle_formatted": result["macrocycle_formatted"], 
+        "macrocycle_alter_old": result["macrocycle_alter_old"]
     }
 
 def print_schedule_node(state: AgentState):

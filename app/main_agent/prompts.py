@@ -1,6 +1,6 @@
 _availability_request = {
     "description": """**Availability** — Changes to their weekly or daily availability (e.g., new days or times they can train).""", 
-    "ex_output": """- `availability`: is_requested = true, detail = "User is no longer available on Wednesdays." """}
+    "ex_output": """- `availability`: is_requested = true, detail = "User is no longer available on Wednesdays.", alter_old: false """}
 
 _macrocycle_request = {
     "description": """**Macrocycle** — Updates to their long-term goals, such as focusing on muscle gain, fat loss, or sport performance over several months.""", 
@@ -56,6 +56,10 @@ Please examine the user input and determine whether the user is requesting chang
 For each level, extract:
 - A boolean field (`is_requested`) indicating whether the user's message expresses a desire to change that level.
 - A string field (`detail`) that captures the relevant information or instruction the user gave about that level.
+
+As well, some may have a
+- A boolean field (`alter_old`) indicating whether the user's message expresses a desire to alter the currently existing element. This should only be true if it is explicitly mentioned.
+
 
 If no change is mentioned for a level, mark `is_requested` as `false` and leave the `detail` as `null`.
 

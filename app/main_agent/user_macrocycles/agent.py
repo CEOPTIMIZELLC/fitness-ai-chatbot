@@ -29,11 +29,11 @@ class AgentState(TypedDict):
     macrocycle_impacted: bool
     macrocycle_message: str
     macrocycle_formatted: str
+    macrocycle_alter_old: bool
 
     user_macrocycle: dict
     macrocycle_id: int
     goal_id: int
-    alter_old: bool
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
@@ -81,7 +81,8 @@ def ask_for_new_goal(state: AgentState):
 
     return {
         "macrocycle_impacted": goal_class.is_requested,
-        "macrocycle_message": goal_class.detail
+        "macrocycle_message": goal_class.detail, 
+        "macrocycle_alter_old": goal_class.alter_old
     }
 
 # State if the goal isn't requested.
@@ -111,15 +112,14 @@ def perform_goal_classifier(state: AgentState):
     
     return {
         "user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None,
-        "goal_id": goal["goal_id"],
-        "alter_old": True
+        "goal_id": goal["goal_id"]
     }
 
 # Determine whether the current macrocycle should be edited or if a new one should be created.
 def which_operation(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Determine whether goal should be new---------")
-    if state["alter_old"] and state["user_macrocycle"]:
+    if state["macrocycle_alter_old"] and state["user_macrocycle"]:
         return "alter_macrocycle"
     return "create_new_macrocycle"
 
