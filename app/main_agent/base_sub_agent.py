@@ -13,10 +13,6 @@ from app.main_agent.main_agent_state import MainAgentState
 
 # ----------------------------------------- Base Sub Agent -----------------------------------------
 
-
-class BaseSubAgentState(MainAgentState):
-    parent_db_entry: dict
-
 def sub_agent_focused_items(sub_agent_focus):
     return {
         "entry": f"user_{sub_agent_focus}", 
@@ -26,8 +22,8 @@ def sub_agent_focused_items(sub_agent_focus):
         "formatted": f"{sub_agent_focus}_formatted"
     }
 
-# Create a generic type variable that must be a subclass of BaseSubAgentState
-TState = TypeVar('TState', bound=BaseSubAgentState)
+# Create a generic type variable that must be a subclass of MainAgentState
+TState = TypeVar('TState', bound=MainAgentState)
 
 class BaseAgent():
     focus = ""
@@ -56,8 +52,8 @@ class BaseAgent():
         pass
 
     def schedule_printer(self, schedule):
-        schedule_printer = self.schedule_printer_class()
-        return schedule_printer.run(schedule)
+        schedule_printer_obj = self.schedule_printer_class()
+        return schedule_printer_obj.run(schedule)
 
     # Confirm that the desired section should be impacted.
     def confirm_impact(self, state: TState):
@@ -233,10 +229,6 @@ class BaseAgent():
         workflow.add_edge("end_node", END)
 
         return workflow.compile()
-
-
-
-
 
     # Retrieve all items for current user
     def get_user_list(self, state: TState):

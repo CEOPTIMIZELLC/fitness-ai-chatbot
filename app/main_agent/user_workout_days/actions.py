@@ -130,11 +130,11 @@ def agent_output_to_sqlalchemy_model(phase_components_output, user_workdays):
         user_workdays[phase_component["workday_index"]].workout_components.append(new_component)
     return user_workdays
 
-def retrieve_availability_for_week():
+def retrieve_availability_for_week(user_id):
     availability = (
         User_Weekday_Availability.query
         .join(Weekday_Library)
-        .filter(User_Weekday_Availability.user_id == current_user.id)
+        .filter(User_Weekday_Availability.user_id == user_id)
         .order_by(User_Weekday_Availability.user_id.asc())
         .all())
     return availability
@@ -148,7 +148,8 @@ def workout_day_executor(phase_id=None):
     if not phase_id:
         phase_id = user_microcycle.mesocycles.phase_id
 
-    availability = retrieve_availability_for_week()
+    user_id = current_user.id
+    availability = retrieve_availability_for_week(user_id)
     if not availability:
         abort(404, description="No active weekday availability found.")
 

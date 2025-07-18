@@ -82,7 +82,7 @@ class SubAgent(BaseAgent):
         return current_macrocycle(user_id)
 
     # Request permission from user to execute the parent initialization.
-    def ask_for_permission(self, state: AgentState):
+    def ask_for_parent_permission(self, state: AgentState):
         if verbose_subagent_steps:
             print(f"\t---------Ask user if a new Macrocycle can be made---------")
         result = interrupt({
