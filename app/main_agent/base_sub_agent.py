@@ -1,0 +1,270 @@
+from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
+from flask import current_app, abort
+from datetime import timedelta
+
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt, Command
+
+from typing_extensions import TypeVar
+from app.main_agent.main_agent_state import MainAgentState
+
+# ----------------------------------------- Base Sub Agent -----------------------------------------
+
+
+class BaseSubAgentState(MainAgentState):
+    parent_db_entry: dict
+
+def sub_agent_focused_items(sub_agent_focus):
+    return {
+        "entry": f"user_{sub_agent_focus}", 
+        "id": f"{sub_agent_focus}_id", 
+        "impact": f"{sub_agent_focus}_impacted", 
+        "message": f"{sub_agent_focus}_message", 
+        "formatted": f"{sub_agent_focus}_formatted"
+    }
+
+# Create a generic type variable that must be a subclass of BaseSubAgentState
+TState = TypeVar('TState', bound=BaseSubAgentState)
+
+class BaseAgent():
+    focus = ""
+    parent = ""
+    sub_agent_title = ""
+    parent_title = ""
+    parent_system_prompt = None
+    parent_goal = None
+    parent_scheduler_agent = None
+    schedule_printer_class = None
+
+    def __init__(self):
+        self.focus_names = sub_agent_focused_items(self.focus)
+        self.parent_names = sub_agent_focused_items(self.parent)
+
+    def retrieve_children_entries_from_parent(self, parent_db_entry):
+        pass
+
+    def user_list_query(user_id):
+        pass
+
+    def focus_retriever_agent(self, user_id):
+        pass
+
+    def parent_retriever_agent(self, user_id):
+        pass
+
+    def schedule_printer(self, schedule):
+        schedule_printer = self.schedule_printer_class()
+        return schedule_printer.run(schedule)
+
+    # Confirm that the desired section should be impacted.
+    def confirm_impact(self, state: TState):
+        if verbose_agent_introductions:
+            print(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
+        if verbose_subagent_steps:
+            print(f"\t---------Confirm that the {self.sub_agent_title} is Impacted---------")
+        if not state[self.focus_names["impact"]]:
+            if verbose_subagent_steps:
+                print(f"\t---------No Impact---------")
+            return "no_impact"
+        return "impact"
+
+
+    # Retrieve parent item that will be used for the current schedule.
+    def retrieve_parent(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving Current {self.parent_title}---------")
+        user_id = state["user_id"]
+        parent_db_entry = self.parent_retriever_agent(user_id)
+
+        # Return parent.
+        return {self.parent_names["entry"]: parent_db_entry.to_dict() if parent_db_entry else None}
+
+    # Confirm that a currently active parent exists to attach the a schedule to.
+    def confirm_parent(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Confirm there is an active {self.parent_title}---------")
+        if not state[self.parent_names["entry"]]:
+            return "no_parent"
+        return "parent"
+
+
+    # Request permission from user to execute the parent initialization.
+    def ask_for_permission(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Ask user if a new {self.parent_title} can be made---------")
+        result = interrupt({
+            "task": f"No current {self.parent_title} exists. Would you like for me to generate a {self.parent_title} for you?"
+        })
+        user_input = result["user_input"]
+
+        print(f"Extract the {self.parent_title} Goal the following message: {user_input}")
+        human = f"Extract the goals from the following message: {user_input}"
+        check_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", self.parent_system_prompt),
+                ("human", human),
+            ]
+        )
+        llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
+        structured_llm = llm.with_structured_output(self.parent_goal)
+        goal_classifier = check_prompt | structured_llm
+        goal_class = goal_classifier.invoke({})
+
+        return {
+            self.parent_names["impact"]: goal_class.is_requested,
+            self.parent_names["message"]: goal_class.detail
+        }
+
+    # Router for if permission was granted.
+    def confirm_permission(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Confirm the agent can create a new {self.parent_title}---------")
+        if not state[self.parent_names["impact"]]:
+            return "permission_denied"
+        return "permission_granted"
+
+    # State if the Parent isn't allowed to be requested.
+    def permission_denied(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Abort {self.sub_agent_title} Scheduling---------")
+        abort(404, description=f"No active {self.parent_title} found.")
+        return {}
+
+    # Retrieve necessary information for the schedule creation.
+    def retrieve_information(self, state: TState):
+        pass
+
+    def delete_children_query(self, parent_id):
+        pass
+
+    # Delete the old items belonging to the parent.
+    def delete_old_children(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Delete old {self.sub_agent_title}s---------")
+        parent_id = state[self.parent_names["id"]]
+        self.delete_children_query(parent_id)
+        if verbose:
+            print("Successfully deleted")
+        return {}
+
+    # Initializes the scheduler for the current parent.
+    def perform_scheduler(self, state: TState):
+        pass
+
+    # Convert output from the agent to SQL models.
+    def agent_output_to_sqlalchemy_model(self, state: TState):
+        pass
+
+    # Print output.
+    def get_formatted_list(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        user_id = state["user_id"]
+        parent_db_entry = self.parent_retriever_agent(user_id)
+
+        schedule_from_db = self.retrieve_children_entries_from_parent(parent_db_entry)
+        if not schedule_from_db:
+            abort(404, description=f"No {self.focus}s found for the {self.parent}.")
+
+        schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
+
+        formatted_schedule = self.schedule_printer(schedule_dict)
+        if verbose_formatted_schedule:
+            print(formatted_schedule)
+        return {self.focus_names["formatted"]: formatted_schedule}
+
+    # Node to declare that the sub agent has ended.
+    def end_node(self, state: TState):
+        if verbose_agent_introductions:
+            print(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
+        return {}
+
+    # Create main agent.
+    def create_main_agent_graph(self, state_class: type[TState]):
+        workflow = StateGraph(state_class)
+        workflow.add_node("retrieve_parent", self.retrieve_parent)
+        workflow.add_node("ask_for_permission", self.ask_for_permission)
+        workflow.add_node("permission_denied", self.permission_denied)
+        workflow.add_node("parent_agent", self.parent_scheduler_agent)
+        workflow.add_node("retrieve_information", self.retrieve_information)
+        workflow.add_node("delete_old_children", self.delete_old_children)
+        workflow.add_node("perform_scheduler", self.perform_scheduler)
+        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
+        workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("end_node", self.end_node)
+
+        workflow.add_conditional_edges(
+            START,
+            self.confirm_impact,
+            {
+                "no_impact": "end_node",
+                "impact": "retrieve_parent"
+            }
+        )
+
+        workflow.add_conditional_edges(
+            "retrieve_parent",
+            self.confirm_parent,
+            {
+                "no_parent": "ask_for_permission",
+                "parent": "retrieve_information"
+            }
+        )
+
+        workflow.add_conditional_edges(
+            "ask_for_permission",
+            self.confirm_permission,
+            {
+                "permission_denied": "permission_denied",
+                "permission_granted": "parent_agent"
+            }
+        )
+        workflow.add_edge("parent_agent", "retrieve_parent")
+
+        workflow.add_edge("retrieve_information", "delete_old_children")
+        workflow.add_edge("delete_old_children", "perform_scheduler")
+        workflow.add_edge("perform_scheduler", "agent_output_to_sqlalchemy_model")
+        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
+        workflow.add_edge("permission_denied", "end_node")
+        workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("end_node", END)
+
+        return workflow.compile()
+
+
+
+
+
+    # Retrieve all items for current user
+    def get_user_list(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving All {self.sub_agent_title} for User---------")
+        user_id = state["user_id"]
+        user_list_from_db = self.user_list_query(user_id)
+
+        return [user_list_entry.to_dict() for user_list_entry in user_list_from_db]
+
+    # Retrieve user's current items for the parent
+    def get_user_current_list(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving {self.sub_agent_title}s for Current {self.parent_title}---------")
+        user_id = state["user_id"]
+        parent_db_entry = self.parent_retriever_agent(user_id)
+        schedule_from_db = self.retrieve_children_entries_from_parent(parent_db_entry)
+        return [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
+
+    # Retrieve user's current schedule item.
+    def read_user_current_element(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving Current {self.sub_agent_title} for User---------")
+        user_id = state["user_id"]
+        entry_from_db = self.focus_retriever_agent(user_id)
+        if not entry_from_db:
+            abort(404, description=f"No active {self.sub_agent_title} found.")
+        return entry_from_db.to_dict()
+
+
+
