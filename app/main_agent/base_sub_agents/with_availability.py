@@ -13,7 +13,7 @@ from app.main_agent.user_weekdays_availability import WeekdayAvailabilityAgentNo
 from app.main_agent.prompts import availability_system_prompt
 from app.main_agent.impact_goal_models import AvailabilityGoal
 
-# ----------------------------------------- Base Sub Agent With Availability -----------------------------------------
+# ----------------------------------------- Base Sub Agent For Schedule Items With Availability -----------------------------------------
 
 class BaseAgentWithAvailability(WeekdayAvailabilityAgentNode, BaseAgent):
     availability_focus = "availability"

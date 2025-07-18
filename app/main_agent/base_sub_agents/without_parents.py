@@ -6,8 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from langgraph.types import interrupt
 
-
-# ----------------------------------------- Base Sub Agent -----------------------------------------
+# ----------------------------------------- Base Sub Agent For Schedule Items Without Parents -----------------------------------------
 
 def sub_agent_focused_items(sub_agent_focus):
     return {
