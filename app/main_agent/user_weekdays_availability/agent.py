@@ -6,13 +6,14 @@ from langgraph.graph import StateGraph, START, END
 from app import db
 from app.agents.weekday_availability import create_weekday_availability_extraction_graph
 from app.models import User_Weekday_Availability, User_Workout_Days
-from app.utils.common_table_queries import current_microcycle
+from app.utils.common_table_queries import current_weekday_availability, current_microcycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgent
 from app.main_agent.impact_goal_models import AvailabilityGoal
 from app.main_agent.prompts import availability_system_prompt
 
 from .actions import retrieve_weekday_types
+from .schedule_printer import AvailabilitySchedulePrinter
 
 # ----------------------------------------- User Availability -----------------------------------------
 
@@ -34,8 +35,16 @@ class SubAgent(BaseAgent):
     sub_agent_title = "Weekday Availability"
     focus_system_prompt = availability_system_prompt
     focus_goal = AvailabilityGoal
+    schedule_printer_class = AvailabilitySchedulePrinter
+
 
     def user_list_query(user_id):
+        return User_Weekday_Availability.query.filter_by(user_id=user_id).all()
+
+    def focus_retriever_agent(self, user_id):
+        return current_weekday_availability(user_id)
+
+    def focus_list_retriever_agent(self, user_id):
         return User_Weekday_Availability.query.filter_by(user_id=user_id).all()
 
     # Classify the new goal in one of the possible goal types.

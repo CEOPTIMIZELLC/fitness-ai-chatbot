@@ -7,15 +7,30 @@ from app.models import (
     User_Workout_Days, 
     User_Equipment, 
     User_Exercises, 
+    User_Weekday_Availability, 
     Exercise_Component_Phases, 
     Exercise_Library, 
     Exercise_Supportive_Equipment, 
     Exercise_Assistive_Equipment, 
     Exercise_Weighted_Equipment, 
     Exercise_Marking_Equipment, 
-    Exercise_Other_Equipment)
+    Exercise_Other_Equipment, 
+    Weekday_Library)
 
 from app import db
+
+
+# Retrieve the latest, currently active workday for a user.
+def current_weekday_availability(user_id):
+    # Get the weekday as an integer (0 for Monday, 6 for Sunday)
+    today = date.today().weekday()
+    active_weekday_availability = (
+        User_Weekday_Availability.query
+        .filter(
+            User_Weekday_Availability.user_id == user_id,
+            User_Weekday_Availability.weekday_id == today)
+        .first())
+    return active_weekday_availability
 
 # Retrieve the latest, currently active macrocycle for a user.
 def current_macrocycle(user_id):

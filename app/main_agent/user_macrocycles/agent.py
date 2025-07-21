@@ -13,6 +13,7 @@ from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.main_agent.prompts import macrocycle_system_prompt
 
 from .actions import retrieve_goal_types
+from .schedule_printer import MacrocycleSchedulePrinter
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 
@@ -38,12 +39,16 @@ class SubAgent(BaseAgent):
     sub_agent_title = "Macrocycle"
     focus_system_prompt = macrocycle_system_prompt
     focus_goal = MacrocycleGoal
+    schedule_printer_class = MacrocycleSchedulePrinter
 
     def user_list_query(user_id):
         return User_Macrocycles.query.filter_by(user_id=user_id).all()
 
     def focus_retriever_agent(self, user_id):
         return current_macrocycle(user_id)
+
+    def focus_list_retriever_agent(self, user_id):
+        return [current_macrocycle(user_id)]
 
     # Items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
