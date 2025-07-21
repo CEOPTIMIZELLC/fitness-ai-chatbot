@@ -1,5 +1,6 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 from flask import current_app, abort
+from typing_extensions import TypeVar
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -7,19 +8,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from typing_extensions import TypeVar
 from app.main_agent.main_agent_state import MainAgentState
 
-# ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
+from .utils import sub_agent_focused_items
 
-def sub_agent_focused_items(sub_agent_focus):
-    return {
-        "entry": f"user_{sub_agent_focus}", 
-        "id": f"{sub_agent_focus}_id", 
-        "impact": f"{sub_agent_focus}_impacted", 
-        "message": f"{sub_agent_focus}_message", 
-        "formatted": f"{sub_agent_focus}_formatted"
-    }
+# ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
 
 # Create a generic type variable that must be a subclass of MainAgentState
 TState = TypeVar('TState', bound=MainAgentState)
