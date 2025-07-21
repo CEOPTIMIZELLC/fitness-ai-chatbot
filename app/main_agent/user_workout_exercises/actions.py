@@ -34,11 +34,11 @@ def delete_old_children(workout_day_id):
         print("Successfully deleted")
     return None
 
-def retrieve_availability_for_day(user_workout_day):
+def retrieve_availability_for_day(user_id, weekday_id):
     # Retrieve availability for day.
     availability = (
         User_Weekday_Availability.query
-        .filter_by(user_id=current_user.id, weekday_id=user_workout_day.weekday_id)
+        .filter_by(user_id=user_id, weekday_id=weekday_id)
         .first())
     if availability:
         return int(availability.availability.total_seconds())
@@ -172,7 +172,7 @@ class WorkoutActions:
 
         delete_old_children(user_workout_day.id)
 
-        availability = retrieve_availability_for_day(user_workout_day)
+        availability = retrieve_availability_for_day(current_user.id, user_workout_day.weekday_id)
         if not availability:
             abort(404, description="No active weekday availability found.")
 
