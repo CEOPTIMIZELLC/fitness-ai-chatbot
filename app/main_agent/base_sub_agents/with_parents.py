@@ -138,10 +138,18 @@ class BaseAgent():
     # Determine whether the outcome is to read the entire schedule or simply the current item.
     def determine_read_operation(self, state: TState):
         if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read list of {self.parent_title} or simply the current item---------")
-        if state[self.focus_names["is_altered"]]:
-            return "alter"
-        return "read"
+            print(f"\t---------Determine if the objective is to read a list of {self.parent_title} or simply a singular item---------")
+        if state[self.focus_names["read_plural"]]:
+            return "plural"
+        return "singular"
+
+    # Determine whether the outcome is to read an item from the current set or all items from the user.
+    def determine_read_filter_operation(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Determine if the objective is to read all {self.parent_title} items for the user or only those currently active---------")
+        if state[self.focus_names["read_current"]]:
+            return "current"
+        return "all"
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: TState):
@@ -167,6 +175,21 @@ class BaseAgent():
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: TState):
         pass
+
+    # Retrieve user's current schedule item.
+    def read_user_current_element(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving Current {self.sub_agent_title} for User---------")
+        user_id = state["user_id"]
+        entry_from_db = self.focus_retriever_agent(user_id)
+        if not entry_from_db:
+            abort(404, description=f"No active {self.sub_agent_title} found.")
+
+        schedule_dict = [entry_from_db.to_dict()]
+        formatted_schedule = self.run_schedule_printer(schedule_dict)
+        if verbose_formatted_schedule:
+            print(formatted_schedule)
+        return {self.focus_names["formatted"]: formatted_schedule}
 
     # Print output.
     def get_formatted_list(self, state: TState):
@@ -200,10 +223,12 @@ class BaseAgent():
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
+        workflow.add_node("read_user_current_element", self.read_user_current_element)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("end_node", self.end_node)
 
@@ -229,8 +254,17 @@ class BaseAgent():
             "parent_retrieved",
             self.determine_operation,
             {
-                "read": "get_formatted_list",
+                "read": "operation_is_read",
                 "alter": "retrieve_information"
+            }
+        )
+
+        workflow.add_conditional_edges(
+            "operation_is_read",
+            self.determine_read_operation,
+            {
+                "plural": "get_formatted_list",
+                "singular": "read_user_current_element"
             }
         )
 
@@ -249,6 +283,7 @@ class BaseAgent():
         workflow.add_edge("perform_scheduler", "agent_output_to_sqlalchemy_model")
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
         workflow.add_edge("permission_denied", "end_node")
+        workflow.add_edge("read_user_current_element", "end_node")
         workflow.add_edge("get_formatted_list", "end_node")
         workflow.add_edge("end_node", END)
 
@@ -271,16 +306,6 @@ class BaseAgent():
         parent_db_entry = self.parent_retriever_agent(user_id)
         schedule_from_db = self.retrieve_children_entries_from_parent(parent_db_entry)
         return [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
-
-    # Retrieve user's current schedule item.
-    def read_user_current_element(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Current {self.sub_agent_title} for User---------")
-        user_id = state["user_id"]
-        entry_from_db = self.focus_retriever_agent(user_id)
-        if not entry_from_db:
-            abort(404, description=f"No active {self.sub_agent_title} found.")
-        return entry_from_db.to_dict()
 
 
 

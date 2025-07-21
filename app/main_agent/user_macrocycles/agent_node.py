@@ -25,7 +25,9 @@ class AgentNode():
         else:
             result = {
                 "macrocycle_impacted": False, 
-                "macrocycle_is_altered": False, 
+                "macrocycle_is_altered": False,
+        "macrocycle_read_plural": True,
+        "macrocycle_read_current": True, 
                 "macrocycle_read_plural": False, 
                 "macrocycle_read_current": False, 
                 "macrocycle_message": None, 

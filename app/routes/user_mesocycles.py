@@ -56,6 +56,8 @@ def get_user_current_mesocycles_formatted_list():
         "user_id": current_user.id,
         "mesocycle_impacted": True,
         "mesocycle_is_altered": False,
+        "mesocycle_read_plural": True,
+        "mesocycle_read_current": True,
         "mesocycle_message": "Retrieve mesocycle scheduling."
     }
     mesocycle_agent = create_mesocycle_agent()
@@ -67,8 +69,18 @@ def get_user_current_mesocycles_formatted_list():
 @bp.route('/current', methods=['GET'])
 @login_required
 def read_user_current_mesocycle():
-    mesocycles = MesocycleActions.read_user_current_element()
-    return jsonify({"status": "success", "mesocycles": mesocycles}), 200
+    state = {
+        "user_id": current_user.id,
+        "mesocycle_impacted": True,
+        "mesocycle_is_altered": False,
+        "mesocycle_read_plural": False,
+        "mesocycle_read_current": True,
+        "mesocycle_message": "Retrieve mesocycle scheduling."
+    }
+    mesocycle_agent = create_mesocycle_agent()
+
+    result = mesocycle_agent.invoke(state)
+    return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Perform parameter programming for mesocycle labeling.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -78,6 +90,8 @@ def mesocycle_phases():
         "user_id": current_user.id,
         "mesocycle_impacted": True,
         "mesocycle_is_altered": True,
+        "mesocycle_read_plural": False,
+        "mesocycle_read_current": False,
         "mesocycle_message": "Perform mesocycle scheduling."
     }
     mesocycle_agent = create_mesocycle_agent()

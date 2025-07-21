@@ -102,11 +102,13 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow = StateGraph(state_class)
 
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
-        workflow.add_node("operation_retrieved", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
+        workflow.add_node("read_user_current_element", self.read_user_current_element)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("no_new_input_requested", self.no_new_input_requested)
         workflow.add_node("end_node", self.end_node)
@@ -124,13 +126,22 @@ class SubAgent(BaseAgent, SchedulePrinter):
             "impact_confirmed",
             self.determine_operation,
             {
-                "read": "get_formatted_list",
-                "alter": "operation_retrieved"
+                "read": "operation_is_read",
+                "alter": "operation_is_alter"
+            }
+        )
+    
+        workflow.add_conditional_edges(
+            "operation_is_read",
+            self.determine_read_operation,
+            {
+                "plural": "get_formatted_list",
+                "singular": "read_user_current_element"
             }
         )
 
         workflow.add_conditional_edges(
-            "operation_retrieved",
+            "operation_is_alter",
             self.confirm_new_input,
             {
                 "no_new_input": "ask_for_new_input",
@@ -151,6 +162,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_edge("perform_input_parser", "agent_output_to_sqlalchemy_model")
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
         workflow.add_edge("no_new_input_requested", "end_node")
+        workflow.add_edge("read_user_current_element", "end_node")
         workflow.add_edge("get_formatted_list", "end_node")
         workflow.add_edge("end_node", END)
 

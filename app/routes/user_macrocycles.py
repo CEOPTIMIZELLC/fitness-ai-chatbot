@@ -52,6 +52,8 @@ def read_user_current_macrocycle():
         "user_id": current_user.id,
         "macrocycle_impacted": True,
         "macrocycle_is_altered": False,
+        "macrocycle_read_plural": False,
+        "macrocycle_read_current": True,
         "macrocycle_message": "Retrieve current macrocycle.",
         "macrocycle_alter_old": None
     }
@@ -68,6 +70,8 @@ def get_user_current_macrocycle_formatted():
         "user_id": current_user.id,
         "macrocycle_impacted": True,
         "macrocycle_is_altered": False,
+        "macrocycle_read_plural": True,
+        "macrocycle_read_current": True,
         "macrocycle_message": "Retrieve current macrocycle.",
         "macrocycle_alter_old": None
     }
@@ -98,6 +102,8 @@ def change_macrocycle():
         "user_id": current_user.id,
         "macrocycle_impacted": True,
         "macrocycle_is_altered": True,
+        "macrocycle_read_plural": False,
+        "macrocycle_read_current": False,
         "macrocycle_message": data.get("goal", ""),
         "macrocycle_alter_old": alter_old
     }

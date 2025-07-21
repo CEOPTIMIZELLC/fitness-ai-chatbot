@@ -24,7 +24,9 @@ class AgentNode():
         else:
             result = {
                 "availability_impacted": False, 
-                "availability_is_altered": False, 
+                "availability_is_altered": False,
+        "availability_read_plural": True,
+        "availability_read_current": True, 
                 "availability_read_plural": False, 
                 "availability_read_current": False, 
                 "availability_message": None, 

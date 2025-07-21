@@ -35,8 +35,19 @@ def get_user_current_microcycles_list():
 @bp.route('/current', methods=['GET'])
 @login_required
 def read_user_current_microcycle():
-    microcycles = MicrocycleActions.read_user_current_element()
-    return jsonify({"status": "success", "microcycles": microcycles}), 200
+    state = {
+        "user_id": current_user.id,
+        "microcycle_impacted": True,
+        "microcycle_is_altered": False,
+        "microcycle_read_plural": False,
+        "microcycle_read_current": True,
+        "microcycle_message": "Perform microcycle scheduling."
+    }
+    microcycle_agent = create_microcycle_agent()
+
+    result = microcycle_agent.invoke(state)
+
+    return jsonify({"status": "success", "microcycles": result}), 200
 
 # Retrieve user's current macrocycle's mesocycles
 @bp.route('/current_formatted_list', methods=['GET'])
@@ -46,13 +57,15 @@ def get_user_current_mesocycles_formatted_list():
         "user_id": current_user.id,
         "microcycle_impacted": True,
         "microcycle_is_altered": False,
+        "microcycle_read_plural": True,
+        "microcycle_read_current": True,
         "microcycle_message": "Perform microcycle scheduling."
     }
     microcycle_agent = create_microcycle_agent()
 
     result = microcycle_agent.invoke(state)
 
-    return jsonify({"status": "success", "mesocycles": result}), 200
+    return jsonify({"status": "success", "microcycles": result}), 200
 
 # Gives four microcycles for mesocycle.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -62,6 +75,8 @@ def microcycle_initializer():
         "user_id": current_user.id,
         "microcycle_impacted": True,
         "microcycle_is_altered": True,
+        "microcycle_read_plural": False,
+        "microcycle_read_current": False,
         "microcycle_message": "Perform microcycle scheduling."
     }
     microcycle_agent = create_microcycle_agent()

@@ -138,7 +138,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow = StateGraph(state_class)
 
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
-        workflow.add_node("operation_retrieved", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
         workflow.add_node("create_new_macrocycle", self.create_new_macrocycle)
@@ -163,12 +163,12 @@ class SubAgent(BaseAgent, SchedulePrinter):
             self.determine_operation,
             {
                 "read": "get_formatted_list",
-                "alter": "operation_retrieved"
+                "alter": "operation_is_alter"
             }
         )
 
         workflow.add_conditional_edges(
-            "operation_retrieved",
+            "operation_is_alter",
             self.confirm_new_input,
             {
                 "no_new_input": "ask_for_new_input",

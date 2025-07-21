@@ -106,6 +106,8 @@ def get_user_current_exercises_formatted_list():
         "user_id": current_user.id,
         "workout_schedule_impacted": True,
         "workout_schedule_is_altered": False,
+        "workout_schedule_read_plural": True,
+        "workout_schedule_read_current": True,
         "workout_schedule_message": "Perform workout scheduling."
     }
     workout_agent = create_workout_agent()
@@ -121,6 +123,8 @@ def exercise_initializer():
         "user_id": current_user.id,
         "workout_schedule_impacted": True,
         "workout_schedule_is_altered": True,
+        "workout_schedule_read_plural": False,
+        "workout_schedule_read_current": False,
         "workout_schedule_message": "Perform workout scheduling."
     }
     workout_agent = create_workout_agent()
