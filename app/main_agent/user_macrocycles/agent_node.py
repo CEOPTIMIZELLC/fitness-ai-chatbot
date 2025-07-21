@@ -30,7 +30,7 @@ class AgentNode():
             }
         return {
             "macrocycle_impacted": result["macrocycle_impacted"], 
-            "macrocycle_is_altered": state["macrocycle_is_altered"], 
+            "macrocycle_is_altered": result["macrocycle_is_altered"], 
             "macrocycle_message": result["macrocycle_message"], 
             "macrocycle_formatted": result["macrocycle_formatted"], 
             "macrocycle_alter_old": result["macrocycle_alter_old"]

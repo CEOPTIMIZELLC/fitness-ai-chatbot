@@ -28,7 +28,7 @@ class AgentNode():
             }
         return {
             "availability_impacted": result["availability_impacted"], 
-            "availability_is_altered": state["availability_is_altered"], 
+            "availability_is_altered": result["availability_is_altered"], 
             "availability_message": result["availability_message"], 
             "availability_formatted": result["availability_formatted"]
         }
