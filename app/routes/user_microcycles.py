@@ -1,10 +1,11 @@
 from config import verbose
 from flask import jsonify, Blueprint
-from flask_login import login_required
+from flask_login import login_required, current_user
+from datetime import timedelta
 
 from app import db
 from app.models import User_Microcycles
-from app.main_agent.user_microcycles import MicrocycleActions
+from app.main_agent.user_microcycles import create_microcycle_agent, MicrocycleActions
 
 bp = Blueprint('user_microcycles', __name__)
 
@@ -40,6 +41,19 @@ def read_user_current_microcycle():
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def microcycle_initializer():
-    result = MicrocycleActions.scheduler()
+    state = {
+        "user_id": current_user.id,
+        "microcycle_impacted": True,
+        "microcycle_message": "Perform microcycle scheduling."
+    }
+    microcycle_agent = create_microcycle_agent()
+
+    result = microcycle_agent.invoke(state)
+
+    # Correct time delta for serializing for JSON output.
+    for key, value in result.items():
+        if isinstance(value, timedelta):
+            result[key] = str(value)
+
     return jsonify({"status": "success", "microcycles": result}), 200
 

@@ -8,7 +8,7 @@ from app.agents.phase_components import Main as phase_component_main
 from app.utils.print_long_output import print_long_output
 from app.main_agent.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
-from app.main_agent.user_workout_days import MicrocycleSchedulerActions
+from app.main_agent.user_workout_days import create_microcycle_scheduler_agent, MicrocycleSchedulerActions
 
 bp = Blueprint('user_workout_days', __name__)
 
@@ -80,9 +80,14 @@ def read_user_current_workout_day():
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def workout_day_initializer():
-    # Retrieve results.
-    result = MicrocycleSchedulerActions.scheduler()
-    result["formatted_schedule"] = MicrocycleSchedulerActions.get_formatted_list()
+    state = {
+        "user_id": current_user.id,
+        "phase_component_impacted": True,
+        "phase_component_message": "Perform phase component classification."
+    }
+    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+
+    result = microcycle_scheduler_agent.invoke(state)
     return jsonify({"status": "success", "phase_components": result}), 200
 
 # Assigns phase components to days along with projected length.

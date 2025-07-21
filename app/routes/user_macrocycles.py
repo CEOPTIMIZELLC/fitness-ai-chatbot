@@ -1,11 +1,11 @@
 from flask import request, jsonify, Blueprint, abort
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from app import db
 from app.models import Goal_Library
 
 from app.agents.goals import create_goal_classification_graph
-from app.main_agent.user_macrocycles import MacrocycleActions
+from app.main_agent.user_macrocycles import create_goal_agent, MacrocycleActions
 
 bp = Blueprint('user_macrocycles', __name__)
 
@@ -63,8 +63,22 @@ def change_macrocycle():
     if ('goal' not in data):
         abort(400, description="Please fill out the form!")
     
-    macrocycles = MacrocycleActions.scheduler(data.get("goal", ""))
-    return jsonify({"status": "success", "macrocycles": macrocycles}), 200
+    # Determine if a new macrocycle should be made instead of changing the current one.
+    if (request.method == 'POST'):
+        alter_old = False
+    else:
+        alter_old = True
+
+    state = {
+        "user_id": current_user.id,
+        "macrocycle_impacted": True,
+        "macrocycle_message": data.get("goal", ""),
+        "macrocycle_alter_old": alter_old
+    }
+    goal_agent = create_goal_agent()
+
+    result = goal_agent.invoke(state)
+    return jsonify({"status": "success", "macrocycles": result}), 200
 
 # Change the current user's macrocycle by the id (doesn't restrict what can be assigned).
 @bp.route('/<goal_id>', methods=['POST', 'PATCH'])

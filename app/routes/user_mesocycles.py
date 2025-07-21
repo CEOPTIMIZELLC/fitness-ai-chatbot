@@ -1,13 +1,13 @@
 from config import verbose
 from flask import jsonify, Blueprint, abort
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from app import db
 from app.models import Goal_Library, Goal_Phase_Requirements
 
 from app.agents.phases import Main as phase_main
 from app.main_agent.utils import construct_phases_list
-from app.main_agent.user_mesocycles import MesocycleActions
+from app.main_agent.user_mesocycles import create_mesocycle_agent, MesocycleActions
 
 bp = Blueprint('user_mesocycles', __name__)
 
@@ -66,8 +66,14 @@ def read_user_current_mesocycle():
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def mesocycle_phases():
-    result = MesocycleActions.scheduler()
-    result["formatted_schedule"] = MesocycleActions.get_formatted_list()
+    state = {
+        "user_id": current_user.id,
+        "mesocycle_impacted": True,
+        "mesocycle_message": "Perform mesocycle scheduling."
+    }
+    mesocycle_agent = create_mesocycle_agent()
+
+    result = mesocycle_agent.invoke(state)
     return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Perform parameter programming for mesocycle labeling.

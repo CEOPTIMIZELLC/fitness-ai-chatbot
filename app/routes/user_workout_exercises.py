@@ -13,7 +13,7 @@ from app.utils.print_long_output import print_long_output
 from app.main_agent.utils import retrieve_total_time_needed
 from app.main_agent.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
-from app.main_agent.user_workout_exercises import WorkoutActions
+from app.main_agent.user_workout_exercises import create_workout_agent, WorkoutActions
 
 bp = Blueprint('user_workout_exercises', __name__)
 
@@ -109,8 +109,14 @@ def get_user_current_exercises_formatted_list():
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def exercise_initializer():
-    result = WorkoutActions.scheduler()
-    result["formatted_schedule"] = WorkoutActions.get_formatted_list()
+    state = {
+        "user_id": current_user.id,
+        "workout_schedule_impacted": True,
+        "workout_schedule_message": "Perform workout scheduling."
+    }
+    workout_agent = create_workout_agent()
+
+    result = workout_agent.invoke(state)
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Update user exercises if workout is completed.
