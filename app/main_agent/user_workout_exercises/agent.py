@@ -184,6 +184,7 @@ class SubAgent(BaseAgentWithAvailability):
         workflow.add_node("availability_permission_denied", self.availability_permission_denied)
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("retrieve_information", self.retrieve_information)
+        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
@@ -237,7 +238,15 @@ class SubAgent(BaseAgentWithAvailability):
         )
         workflow.add_edge("availability", "retrieve_parent")
 
-        workflow.add_edge("retrieve_information", "delete_old_children")
+        workflow.add_conditional_edges(
+            "retrieve_information",
+            self.determine_operation,
+            {
+                "read": "get_formatted_list",
+                "alter": "delete_old_children"
+            }
+        )
+
         workflow.add_edge("delete_old_children", "perform_scheduler")
         workflow.add_edge("perform_scheduler", "agent_output_to_sqlalchemy_model")
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")

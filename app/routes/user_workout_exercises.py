@@ -102,8 +102,16 @@ def get_user_current_exercises_list():
 @bp.route('/current_formatted_list', methods=['GET'])
 @login_required
 def get_user_current_exercises_formatted_list():
-    exercises = WorkoutActions.get_formatted_list()
-    return jsonify({"status": "success", "exercises": exercises}), 200
+    state = {
+        "user_id": current_user.id,
+        "workout_schedule_impacted": True,
+        "workout_schedule_is_altered": False,
+        "workout_schedule_message": "Perform workout scheduling."
+    }
+    workout_agent = create_workout_agent()
+
+    result = workout_agent.invoke(state)
+    return jsonify({"status": "success", "exercises": result}), 200
 
 # Assigns exercises to workouts.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -112,6 +120,7 @@ def exercise_initializer():
     state = {
         "user_id": current_user.id,
         "workout_schedule_impacted": True,
+        "workout_schedule_is_altered": True,
         "workout_schedule_message": "Perform workout scheduling."
     }
     workout_agent = create_workout_agent()

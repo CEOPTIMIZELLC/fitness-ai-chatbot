@@ -23,6 +23,7 @@ class AgentState(TypedDict):
     attempts: int
 
     availability_impacted: bool
+    availability_is_altered: bool
     availability_message: str
     availability_formatted: str
 
@@ -91,7 +92,7 @@ class SubAgent(BaseAgent):
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
 
-        workflow.add_node("impact_confirmed", self.impact_confirmed)
+        workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
         workflow.add_node("delete_old_children", self.delete_old_children)

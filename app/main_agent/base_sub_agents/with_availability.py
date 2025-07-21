@@ -68,6 +68,7 @@ class BaseAgentWithAvailability(WeekdayAvailabilityAgentNode, BaseAgent):
 
         return {
             self.availability_names["impact"]: goal_class.is_requested,
+            self.availability_names["is_altered"]: True,
             self.availability_names["message"]: goal_class.detail
         }
 

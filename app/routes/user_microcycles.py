@@ -1,11 +1,12 @@
 from config import verbose
 from flask import jsonify, Blueprint
 from flask_login import login_required, current_user
-from datetime import timedelta
 
 from app import db
 from app.models import User_Microcycles
 from app.main_agent.user_microcycles import create_microcycle_agent, MicrocycleActions
+
+from .utils import recursively_change_dict_timedeltas
 
 bp = Blueprint('user_microcycles', __name__)
 
@@ -37,6 +38,22 @@ def read_user_current_microcycle():
     microcycles = MicrocycleActions.read_user_current_element()
     return jsonify({"status": "success", "microcycles": microcycles}), 200
 
+# Retrieve user's current macrocycle's mesocycles
+@bp.route('/current_formatted_list', methods=['GET'])
+@login_required
+def get_user_current_mesocycles_formatted_list():
+    state = {
+        "user_id": current_user.id,
+        "microcycle_impacted": True,
+        "microcycle_is_altered": False,
+        "microcycle_message": "Perform microcycle scheduling."
+    }
+    microcycle_agent = create_microcycle_agent()
+
+    result = microcycle_agent.invoke(state)
+
+    return jsonify({"status": "success", "mesocycles": result}), 200
+
 # Gives four microcycles for mesocycle.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
@@ -44,6 +61,7 @@ def microcycle_initializer():
     state = {
         "user_id": current_user.id,
         "microcycle_impacted": True,
+        "microcycle_is_altered": True,
         "microcycle_message": "Perform microcycle scheduling."
     }
     microcycle_agent = create_microcycle_agent()
@@ -51,9 +69,7 @@ def microcycle_initializer():
     result = microcycle_agent.invoke(state)
 
     # Correct time delta for serializing for JSON output.
-    for key, value in result.items():
-        if isinstance(value, timedelta):
-            result[key] = str(value)
+    result = recursively_change_dict_timedeltas(result)
 
     return jsonify({"status": "success", "microcycles": result}), 200
 

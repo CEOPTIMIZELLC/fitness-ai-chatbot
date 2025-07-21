@@ -210,6 +210,7 @@ class SubAgent(BaseAgentWithAvailability):
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
+        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
@@ -250,7 +251,16 @@ class SubAgent(BaseAgentWithAvailability):
             self.confirm_parent,
             {
                 "no_parent": "ask_for_permission",
-                "parent": "retrieve_information"
+                "parent": "parent_retrieved"
+            }
+        )
+
+        workflow.add_conditional_edges(
+            "parent_retrieved",
+            self.determine_operation,
+            {
+                "read": "get_formatted_list",
+                "alter": "retrieve_information"
             }
         )
 

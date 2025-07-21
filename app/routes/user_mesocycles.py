@@ -52,8 +52,16 @@ def get_user_current_mesocycles_list():
 @bp.route('/current_formatted_list', methods=['GET'])
 @login_required
 def get_user_current_mesocycles_formatted_list():
-    mesocycles = MesocycleActions.get_formatted_list()
-    return jsonify({"status": "success", "mesocycles": mesocycles}), 200
+    state = {
+        "user_id": current_user.id,
+        "mesocycle_impacted": True,
+        "mesocycle_is_altered": False,
+        "mesocycle_message": "Retrieve mesocycle scheduling."
+    }
+    mesocycle_agent = create_mesocycle_agent()
+
+    result = mesocycle_agent.invoke(state)
+    return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Retrieve user's current mesocycle
 @bp.route('/current', methods=['GET'])
@@ -69,6 +77,7 @@ def mesocycle_phases():
     state = {
         "user_id": current_user.id,
         "mesocycle_impacted": True,
+        "mesocycle_is_altered": True,
         "mesocycle_message": "Perform mesocycle scheduling."
     }
     mesocycle_agent = create_mesocycle_agent()

@@ -25,6 +25,10 @@ class BaseAgent():
     def focus_retriever_agent(self, user_id):
         pass
 
+    # In between node for chained conditional edges.
+    def chained_conditional_inbetween(self, state):
+        return {}
+
     # Confirm that the desired section should be impacted.
     def confirm_impact(self, state):
         if verbose_agent_introductions:
@@ -36,10 +40,6 @@ class BaseAgent():
                 print(f"\t---------No Impact---------")
             return "no_impact"
         return "impact"
-
-    # In between node for chained conditional edges.
-    def impact_confirmed(self, state):
-        return {}
 
     # Check if a new goal exists to be classified.
     def confirm_new_input(self, state):
@@ -53,6 +53,7 @@ class BaseAgent():
     def goal_classifier_parser(self, focus_names, goal_class):
         return {
             focus_names["impact"]: goal_class.is_requested,
+            focus_names["is_altered"]: True,
             focus_names["message"]: goal_class.detail
         }
 

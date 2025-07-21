@@ -47,6 +47,10 @@ class BaseAgent():
         schedule_printer_obj = self.schedule_printer_class()
         return schedule_printer_obj.run(schedule)
 
+    # In between node for chained conditional edges.
+    def chained_conditional_inbetween(self, state: TState):
+        return {}
+
     # Confirm that the desired section should be impacted.
     def confirm_impact(self, state: TState):
         if verbose_agent_introductions:
@@ -82,6 +86,7 @@ class BaseAgent():
     def goal_classifier_parser(self, parent_names, goal_class):
         return {
             parent_names["impact"]: goal_class.is_requested,
+            parent_names["is_altered"]: True,
             parent_names["message"]: goal_class.detail
         }
 
@@ -123,6 +128,14 @@ class BaseAgent():
             print(f"\t---------Abort {self.sub_agent_title} Scheduling---------")
         abort(404, description=f"No active {self.parent_title} found.")
         return {}
+
+    # Determine the operation to be performed.
+    def determine_operation(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Determine if the objective is to read or write {self.parent_title}---------")
+        if state[self.focus_names["is_altered"]]:
+            return "alter"
+        return "read"
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: TState):
@@ -180,6 +193,7 @@ class BaseAgent():
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
+        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
@@ -201,7 +215,16 @@ class BaseAgent():
             self.confirm_parent,
             {
                 "no_parent": "ask_for_permission",
-                "parent": "retrieve_information"
+                "parent": "parent_retrieved"
+            }
+        )
+
+        workflow.add_conditional_edges(
+            "parent_retrieved",
+            self.determine_operation,
+            {
+                "read": "get_formatted_list",
+                "alter": "retrieve_information"
             }
         )
 

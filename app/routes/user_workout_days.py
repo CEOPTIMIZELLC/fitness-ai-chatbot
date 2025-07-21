@@ -10,6 +10,8 @@ from app.main_agent.utils import construct_available_exercises_list, construct_p
 from app.main_agent.utils import verify_pc_information
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent, MicrocycleSchedulerActions
 
+from .utils import recursively_change_dict_timedeltas
+
 bp = Blueprint('user_workout_days', __name__)
 
 # ----------------------------------------- Workout Days -----------------------------------------
@@ -62,12 +64,25 @@ def get_user_current_workout_days_list():
     phase_components = MicrocycleSchedulerActions.get_user_current_list()
     return jsonify({"status": "success", "phase_components": phase_components}), 200
 
+
 # Retrieve user's current microcycle's phase components
 @bp.route('/current_formatted_list', methods=['GET'])
 @login_required
 def get_user_current_workout_days_formatted_list():
-    phase_components = MicrocycleSchedulerActions.get_formatted_list()
-    return jsonify({"status": "success", "phase_components": phase_components}), 200
+    state = {
+        "user_id": current_user.id,
+        "phase_component_impacted": True,
+        "phase_component_is_altered": False,
+        "phase_component_message": "Perform phase component classification."
+    }
+    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+
+    result = microcycle_scheduler_agent.invoke(state)
+
+    # Correct time delta for serializing for JSON output.
+    result = recursively_change_dict_timedeltas(result)
+
+    return jsonify({"status": "success", "phase_components": result}), 200
 
 # Retrieve user's current phase component
 @bp.route('/current', methods=['GET'])
@@ -83,6 +98,7 @@ def workout_day_initializer():
     state = {
         "user_id": current_user.id,
         "phase_component_impacted": True,
+        "phase_component_is_altered": True,
         "phase_component_message": "Perform phase component classification."
     }
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()

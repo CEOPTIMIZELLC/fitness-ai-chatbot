@@ -39,19 +39,26 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         state["user_id"] = current_user.id
         state["attempts"] = 1
         state["availability_impacted"] = goal_class.availability.is_requested
+        state["availability_is_altered"] = True
         state["availability_message"] = goal_class.availability.detail
         state["macrocycle_impacted"] = goal_class.macrocycle.is_requested
+        state["macrocycle_is_altered"] = True
         state["macrocycle_message"] = goal_class.macrocycle.detail
         state["macrocycle_alter_old"] = goal_class.macrocycle.alter_old
         state["mesocycle_impacted"] = goal_class.mesocycle.is_requested
+        state["mesocycle_is_altered"] = True
         state["mesocycle_message"] = goal_class.mesocycle.detail
         state["microcycle_impacted"] = goal_class.microcycle.is_requested
+        state["microcycle_is_altered"] = True
         state["microcycle_message"] = goal_class.microcycle.detail
         state["phase_component_impacted"] = goal_class.phase_component.is_requested
+        state["phase_component_is_altered"] = True
         state["phase_component_message"] = goal_class.phase_component.detail
         state["workout_schedule_impacted"] = goal_class.workout_schedule.is_requested
+        state["workout_schedule_is_altered"] = True
         state["workout_schedule_message"] = goal_class.workout_schedule.detail
         state["workout_completion_impacted"] = goal_class.workout_completion.is_requested
+        state["workout_completion_is_altered"] = True
         state["workout_completion_message"] = goal_class.workout_completion.detail
 
         # # Reset to None for testing

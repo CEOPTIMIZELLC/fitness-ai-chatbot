@@ -72,6 +72,7 @@ def change_macrocycle():
     state = {
         "user_id": current_user.id,
         "macrocycle_impacted": True,
+        "macrocycle_is_altered": True,
         "macrocycle_message": data.get("goal", ""),
         "macrocycle_alter_old": alter_old
     }

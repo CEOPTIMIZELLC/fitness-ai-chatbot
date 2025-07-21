@@ -23,6 +23,7 @@ class AgentState(TypedDict):
     attempts: int
 
     macrocycle_impacted: bool
+    macrocycle_is_altered: bool
     macrocycle_message: str
     macrocycle_formatted: str
     macrocycle_alter_old: bool
@@ -48,6 +49,7 @@ class SubAgent(BaseAgent):
     def goal_classifier_parser(self, focus_names, goal_class):
         return {
             focus_names["impact"]: goal_class.is_requested,
+            focus_names["is_altered"]: True, 
             focus_names["message"]: goal_class.detail, 
             "macrocycle_alter_old": goal_class.alter_old
         }
@@ -127,7 +129,7 @@ class SubAgent(BaseAgent):
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
 
-        workflow.add_node("impact_confirmed", self.impact_confirmed)
+        workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
         workflow.add_node("create_new_macrocycle", self.create_new_macrocycle)
