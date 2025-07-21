@@ -16,7 +16,7 @@ class AgentNode():
                 "user_input": state["user_input"], 
                 "attempts": state["attempts"], 
                 "availability_impacted": state["availability_impacted"], 
-                "availability_is_altered": state["macrocycle_is_altered"], 
+                "availability_is_altered": state["availability_is_altered"], 
                 "availability_message": state["availability_message"]
             })
         else:
@@ -28,7 +28,7 @@ class AgentNode():
             }
         return {
             "availability_impacted": result["availability_impacted"], 
-            "availability_is_altered": state["macrocycle_is_altered"], 
+            "availability_is_altered": state["availability_is_altered"], 
             "availability_message": result["availability_message"], 
             "availability_formatted": result["availability_formatted"]
         }
