@@ -54,6 +54,9 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
     def goal_classifier_parser(self, parent_names, goal_class):
         return {
             parent_names["impact"]: goal_class.is_requested,
+            parent_names["is_altered"]: True,
+            parent_names["read_plural"]: False,
+            parent_names["read_current"]: False,
             parent_names["message"]: goal_class.detail, 
             "macrocycle_alter_old": goal_class.alter_old
         }

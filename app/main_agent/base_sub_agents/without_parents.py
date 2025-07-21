@@ -65,6 +65,8 @@ class BaseAgent():
         return {
             focus_names["impact"]: goal_class.is_requested,
             focus_names["is_altered"]: True,
+            focus_names["read_plural"]: False,
+            focus_names["read_current"]: False,
             focus_names["message"]: goal_class.detail
         }
 

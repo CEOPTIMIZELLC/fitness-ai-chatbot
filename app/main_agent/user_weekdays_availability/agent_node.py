@@ -17,18 +17,24 @@ class AgentNode():
                 "attempts": state["attempts"], 
                 "availability_impacted": state["availability_impacted"], 
                 "availability_is_altered": state["availability_is_altered"], 
+                "availability_read_plural": state["availability_read_plural"], 
+                "availability_read_current": state["availability_read_current"], 
                 "availability_message": state["availability_message"]
             })
         else:
             result = {
                 "availability_impacted": False, 
                 "availability_is_altered": False, 
+                "availability_read_plural": False, 
+                "availability_read_current": False, 
                 "availability_message": None, 
                 "availability_formatted": None
             }
         return {
             "availability_impacted": result["availability_impacted"], 
             "availability_is_altered": result["availability_is_altered"], 
+            "availability_read_plural": result["availability_read_plural"], 
+            "availability_read_current": result["availability_read_current"], 
             "availability_message": result["availability_message"], 
             "availability_formatted": result["availability_formatted"]
         }

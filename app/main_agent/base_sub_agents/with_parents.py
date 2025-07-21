@@ -83,6 +83,8 @@ class BaseAgent():
         return {
             parent_names["impact"]: goal_class.is_requested,
             parent_names["is_altered"]: True,
+            parent_names["read_plural"]: False,
+            parent_names["read_current"]: False,
             parent_names["message"]: goal_class.detail
         }
 
@@ -129,6 +131,14 @@ class BaseAgent():
     def determine_operation(self, state: TState):
         if verbose_subagent_steps:
             print(f"\t---------Determine if the objective is to read or write {self.parent_title}---------")
+        if state[self.focus_names["is_altered"]]:
+            return "alter"
+        return "read"
+
+    # Determine whether the outcome is to read the entire schedule or simply the current item.
+    def determine_read_operation(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Determine if the objective is to read list of {self.parent_title} or simply the current item---------")
         if state[self.focus_names["is_altered"]]:
             return "alter"
         return "read"

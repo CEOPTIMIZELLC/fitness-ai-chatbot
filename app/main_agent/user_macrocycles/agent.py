@@ -25,6 +25,8 @@ class AgentState(TypedDict):
 
     macrocycle_impacted: bool
     macrocycle_is_altered: bool
+    macrocycle_read_plural: bool
+    macrocycle_read_current: bool
     macrocycle_message: str
     macrocycle_formatted: str
     macrocycle_alter_old: bool
@@ -53,7 +55,9 @@ class SubAgent(BaseAgent, SchedulePrinter):
     def goal_classifier_parser(self, focus_names, goal_class):
         return {
             focus_names["impact"]: goal_class.is_requested,
-            focus_names["is_altered"]: True, 
+            focus_names["is_altered"]: True,
+            focus_names["read_plural"]: False,
+            focus_names["read_current"]: False, 
             focus_names["message"]: goal_class.detail, 
             "macrocycle_alter_old": goal_class.alter_old
         }

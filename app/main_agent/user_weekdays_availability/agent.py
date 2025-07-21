@@ -25,6 +25,8 @@ class AgentState(TypedDict):
 
     availability_impacted: bool
     availability_is_altered: bool
+    availability_read_plural: bool
+    availability_read_current: bool
     availability_message: str
     availability_formatted: str
 
