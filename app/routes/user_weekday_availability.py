@@ -34,8 +34,19 @@ def retrieve_weekday_types():
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_weekday_list():
-    weekdays = WeekdayAvailabilitySchedulerActions.get_user_list()
-    return jsonify({"status": "success", "weekdays": weekdays}), 200
+    state = {
+        "user_id": current_user.id,
+        "availability_impacted": True,
+        "availability_is_altered": False,
+        "availability_message": "Retrieve current availability"
+    }
+    availability_agent = create_availability_agent()
+
+    result = availability_agent.invoke(state)
+
+    # Correct time delta for serializing for JSON output.
+    result = recursively_change_dict_timedeltas(result)
+    return jsonify({"status": "success", "weekdays": result}), 200
 
 # Change the current user's weekday.
 @bp.route('/', methods=['POST', 'PATCH'])

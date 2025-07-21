@@ -41,6 +41,14 @@ class BaseAgent():
             return "no_impact"
         return "impact"
 
+    # Determine the operation to be performed.
+    def determine_operation(self, state):
+        if verbose_subagent_steps:
+            print(f"\t---------Determine if the objective is to read or write {self.parent_title}---------")
+        if state[self.focus_names["is_altered"]]:
+            return "alter"
+        return "read"
+
     # Check if a new goal exists to be classified.
     def confirm_new_input(self, state):
         if verbose_subagent_steps:

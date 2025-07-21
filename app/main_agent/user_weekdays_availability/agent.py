@@ -93,6 +93,7 @@ class SubAgent(BaseAgent):
         workflow = StateGraph(state_class)
 
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
+        workflow.add_node("operation_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
         workflow.add_node("delete_old_children", self.delete_old_children)
@@ -112,6 +113,15 @@ class SubAgent(BaseAgent):
 
         workflow.add_conditional_edges(
             "impact_confirmed",
+            self.determine_operation,
+            {
+                "read": "get_formatted_list",
+                "alter": "operation_retrieved"
+            }
+        )
+
+        workflow.add_conditional_edges(
+            "operation_retrieved",
             self.confirm_new_input,
             {
                 "no_new_input": "ask_for_new_input",

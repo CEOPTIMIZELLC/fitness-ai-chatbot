@@ -48,8 +48,17 @@ def get_user_macrocycle_list():
 @bp.route('/current', methods=['GET'])
 @login_required
 def read_user_current_macrocycle():
-    macrocycles = MacrocycleActions.read_user_current_element()
-    return jsonify({"status": "success", "macrocycles": macrocycles}), 200
+    state = {
+        "user_id": current_user.id,
+        "macrocycle_impacted": True,
+        "macrocycle_is_altered": False,
+        "macrocycle_message": "Retrieve current macrocycle.",
+        "macrocycle_alter_old": None
+    }
+    goal_agent = create_goal_agent()
+
+    result = goal_agent.invoke(state)
+    return jsonify({"status": "success", "macrocycles": result}), 200
 
 # Change the current user's macrocycle.
 @bp.route('/', methods=['POST', 'PATCH'])
