@@ -13,7 +13,7 @@ from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.main_agent.prompts import macrocycle_system_prompt
 from app.main_agent.utils import construct_phases_list
 
-from .schedule_printer import MesocycleSchedulePrinter
+from .schedule_printer import SchedulePrinter
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
@@ -28,7 +28,7 @@ class AgentState(MainAgentState):
     possible_phases: list
     agent_output: list
 
-class SubAgent(MacrocycleAgentNode, BaseAgent):
+class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
     focus = "mesocycle"
     parent = "macrocycle"
     sub_agent_title = "Mesocycle"
@@ -36,7 +36,6 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
     parent_system_prompt = macrocycle_system_prompt
     parent_goal = MacrocycleGoal
     parent_scheduler_agent = MacrocycleAgentNode.macrocycle_node
-    schedule_printer_class = MesocycleSchedulePrinter
 
     # Retrieve the Mesocycles belonging to the Macrocycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):

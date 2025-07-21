@@ -13,7 +13,7 @@ from app.main_agent.impact_goal_models import AvailabilityGoal
 from app.main_agent.prompts import availability_system_prompt
 
 from .actions import retrieve_weekday_types
-from .schedule_printer import AvailabilitySchedulePrinter
+from .schedule_printer import SchedulePrinter
 
 # ----------------------------------------- User Availability -----------------------------------------
 
@@ -30,13 +30,11 @@ class AgentState(TypedDict):
 
     agent_output: list
 
-class SubAgent(BaseAgent):
+class SubAgent(BaseAgent, SchedulePrinter):
     focus = "availability"
     sub_agent_title = "Weekday Availability"
     focus_system_prompt = availability_system_prompt
     focus_goal = AvailabilityGoal
-    schedule_printer_class = AvailabilitySchedulePrinter
-
 
     def user_list_query(user_id):
         return User_Weekday_Availability.query.filter_by(user_id=user_id).all()

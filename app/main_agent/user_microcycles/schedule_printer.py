@@ -1,7 +1,7 @@
 from app.utils.longest_string import longest_string_size_for_key
 from app.main_agent.schedule_printer import BaseSchedulePrinter
 
-class MicrocycleSchedulePrinter(BaseSchedulePrinter):
+class SchedulePrinter(BaseSchedulePrinter):
     # def _create_header_fields(self, longest_sizes: dict) -> dict:
     #     """Create all header fields with consistent formatting"""
     #     return {
@@ -31,7 +31,7 @@ class MicrocycleSchedulePrinter(BaseSchedulePrinter):
     #         schedule_string += self._formatted_entry_line(headers, _line_fields)
     #     return schedule_string
 
-    def run(self, schedule):
+    def run_schedule_printer(self, schedule):
         formatted = ""
         formatted = "\n"
         for user_microcycle in schedule:
@@ -39,5 +39,5 @@ class MicrocycleSchedulePrinter(BaseSchedulePrinter):
         return formatted
 
 def Main(schedule):
-    mesocycle_schedule_printer = MicrocycleSchedulePrinter()
-    return mesocycle_schedule_printer.run(schedule)
+    mesocycle_schedule_printer = SchedulePrinter()
+    return mesocycle_schedule_printer.run_schedule_printer(schedule)

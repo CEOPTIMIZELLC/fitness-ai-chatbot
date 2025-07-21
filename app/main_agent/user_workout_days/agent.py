@@ -11,13 +11,13 @@ from app.utils.common_table_queries import current_microcycle, current_workout_d
 from app.utils.print_long_output import print_long_output
 
 from app.main_agent.main_agent_state import MainAgentState
-from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability
+from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
 from app.main_agent.user_microcycles import create_microcycle_agent
 from app.main_agent.impact_goal_models import MicrocycleGoal
 from app.main_agent.prompts import microcycle_system_prompt
 
 from .actions import retrieve_availability_for_week, retrieve_pc_parameters
-from .schedule_printer import WorkoutDaySchedulePrinter
+from .schedule_printer import SchedulePrinter
 
 # ----------------------------------------- User Workout Days -----------------------------------------
 
@@ -90,7 +90,7 @@ def workout_day_entry_construction(microcycle_weekdays, start_date, microcycle_i
     
     return user_workdays
 
-class SubAgent(BaseAgentWithAvailability):
+class SubAgent(BaseAgent, SchedulePrinter):
     focus = "phase_component"
     parent = "microcycle"
     sub_agent_title = "Phase Component"
@@ -98,7 +98,6 @@ class SubAgent(BaseAgentWithAvailability):
     parent_system_prompt = microcycle_system_prompt
     parent_goal = MicrocycleGoal
     parent_scheduler_agent = create_microcycle_agent()
-    schedule_printer_class = WorkoutDaySchedulePrinter
 
     # Retrieve the Workout Days belonging to the Microcycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):

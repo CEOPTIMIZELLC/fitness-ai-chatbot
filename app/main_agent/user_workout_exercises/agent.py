@@ -12,13 +12,13 @@ from app.utils.common_table_queries import current_workout_day
 from app.utils.print_long_output import print_long_output
 
 from app.main_agent.main_agent_state import MainAgentState
-from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability
+from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 from app.main_agent.impact_goal_models import PhaseComponentGoal
 from app.main_agent.prompts import phase_component_system_prompt
 
 from .actions import retrieve_pc_parameters
-from .schedule_printer import ExerciseSchedulePrinter
+from .schedule_printer import SchedulePrinter
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
@@ -41,7 +41,7 @@ def retrieve_availability_for_day(user_id, weekday_id):
         return int(availability.availability.total_seconds())
     return None
 
-class SubAgent(BaseAgentWithAvailability):
+class SubAgent(BaseAgent, SchedulePrinter):
     focus = "workout_schedule"
     parent = "phase_component"
     sub_agent_title = "User Workout"
@@ -49,7 +49,7 @@ class SubAgent(BaseAgentWithAvailability):
     parent_system_prompt = phase_component_system_prompt
     parent_goal = PhaseComponentGoal
     parent_scheduler_agent = create_microcycle_scheduler_agent()
-    schedule_printer_class = ExerciseSchedulePrinter
+
 
     # Retrieve the Exercises belonging to the Workout.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -70,10 +70,6 @@ class SubAgent(BaseAgentWithAvailability):
 
     def parent_retriever_agent(self, user_id):
         return current_workout_day(user_id)
-
-    def schedule_printer(self, loading_system_id, schedule):
-        schedule_printer_obj = self.schedule_printer_class()
-        return schedule_printer_obj.run(loading_system_id, schedule)
 
     # Retrieve User's Availability.
     def availability_retriever_agent(self, state: AgentState):
@@ -167,7 +163,7 @@ class SubAgent(BaseAgentWithAvailability):
                                     {"component_id": user_workout_exercise.phase_components.components.id}
                                     for user_workout_exercise in schedule_from_db]
 
-        formatted_schedule = self.schedule_printer(loading_system_id, user_workout_exercises_dict)
+        formatted_schedule = self.run_schedule_printer(loading_system_id, user_workout_exercises_dict)
         if verbose_formatted_schedule:
             print_long_output(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
