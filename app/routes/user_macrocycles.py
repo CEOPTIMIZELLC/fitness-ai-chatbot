@@ -5,7 +5,7 @@ from app import db
 from app.models import Goal_Library
 
 from app.agents.goals import create_goal_classification_graph
-from app.main_agent.user_macrocycles import create_goal_agent, MacrocycleActions
+from app.main_agent.user_macrocycles import create_goal_agent
 
 bp = Blueprint('user_macrocycles', __name__)
 
@@ -61,10 +61,10 @@ def change_macrocycle():
         abort(400, description="Please fill out the form!")
     
     # Determine if a new macrocycle should be made instead of changing the current one.
-    if (request.method == 'POST'):
-        alter_old = False
-    else:
+    if (request.method == 'PATCH'):
         alter_old = True
+    else:
+        alter_old = False
 
     state = {
         "user_id": current_user.id,
@@ -84,8 +84,26 @@ def change_macrocycle():
 @bp.route('/<goal_id>', methods=['POST', 'PATCH'])
 @login_required
 def change_macrocycle_by_id(goal_id):
-    macrocycles = MacrocycleActions.change_by_id(goal_id)
-    return jsonify({"status": "success", "macrocycles": macrocycles}), 200
+    # Determine if a new macrocycle should be made instead of changing the current one.
+    if (request.method == 'PATCH'):
+        alter_old = True
+    else:
+        alter_old = False
+
+    state = {
+        "user_id": current_user.id,
+        "macrocycle_impacted": True,
+        "macrocycle_is_altered": True,
+        "macrocycle_read_plural": False,
+        "macrocycle_read_current": False,
+        "macrocycle_message": f"Goal of id {goal_id}.",
+        "macrocycle_perform_with_parent_id": goal_id,
+        "macrocycle_alter_old": alter_old,
+    }
+    goal_agent = create_goal_agent()
+
+    result = goal_agent.invoke(state)
+    return jsonify({"status": "success", "macrocycles": result}), 200
 
 # ---------- TEST ROUTES --------------
 

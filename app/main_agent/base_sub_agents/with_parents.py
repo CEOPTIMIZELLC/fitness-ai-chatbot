@@ -86,11 +86,12 @@ class BaseAgent():
     # In between node for when the parent is retrieved.
     def parent_retrieved(self, state: TState):
         # Change the parent id if performing it with a different id has been specified.
-        if self.focus_names["perform_with_parent_id"] in state:
+        perform_with_parent_id_key = self.focus_names["perform_with_parent_id"]
+        if perform_with_parent_id_key in state and state[perform_with_parent_id_key]:
             if verbose_subagent_steps:
                 print(f"\t---------Change parent id of {self.parent_title}---------")
             user_id = state["user_id"]
-            new_parent_id = state[self.focus_names["perform_with_parent_id"]]
+            new_parent_id = state[perform_with_parent_id_key]
             parent_db_entry = self.parent_changer(user_id, new_parent_id)
 
             db.session.commit()

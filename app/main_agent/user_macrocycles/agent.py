@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.agents.goals import create_goal_classification_graph
-from app.models import User_Macrocycles, User_Mesocycles
+from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgent
@@ -29,6 +29,7 @@ class AgentState(TypedDict):
     macrocycle_read_current: bool
     macrocycle_message: str
     macrocycle_formatted: str
+    macrocycle_perform_with_parent_id: int
     macrocycle_alter_old: bool
 
     user_macrocycle: dict
@@ -60,6 +61,23 @@ class SubAgent(BaseAgent, SchedulePrinter):
             focus_names["read_current"]: False, 
             focus_names["message"]: goal_class.detail, 
             "macrocycle_alter_old": goal_class.alter_old
+        }
+
+    # Perform the goal change to the desired ID.
+    def perform_goal_change_by_id(self, state: AgentState):
+        if verbose_subagent_steps:
+            print(f"\t---------Perform {self.sub_agent_title} ID Assignment---------")
+        goal_id = state[self.focus_names["perform_with_parent_id"]]
+        goal_entry_from_db = db.session.get(Goal_Library, goal_id)
+        goal = goal_entry_from_db.to_dict()
+
+        user_id = state["user_id"]
+        user_macrocycle = current_macrocycle(user_id)
+        
+        return {
+            "user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None,
+            "goal_id": goal_id, 
+            self.focus_names["message"]: goal["name"]
         }
 
     # Classify the new goal in one of the possible goal types.
@@ -140,6 +158,8 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
+        workflow.add_node("perform_goal_change_by_id", self.perform_goal_change_by_id)
+        workflow.add_node("alter_operation_uses_agent", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
         workflow.add_node("create_new_macrocycle", self.create_new_macrocycle)
@@ -181,9 +201,29 @@ class SubAgent(BaseAgent, SchedulePrinter):
             }
         )
 
-        # Whether there is a new goal to perform the change with.
+        # Whether goal should be changed to the included id.
         workflow.add_conditional_edges(
             "operation_is_alter",
+            self.confirm_if_performing_by_id,
+            {
+                "no_direct_goal_id": "alter_operation_uses_agent",           # Perform LLM parser if no goal id is included.
+                "present_direct_goal_id": "perform_goal_change_by_id"             # Perform direct id assignment if a goal id is included.
+            }
+        )
+
+        # Whether the intention is to alter the current macrocycle or to create a new one.
+        workflow.add_conditional_edges(
+            "perform_goal_change_by_id",
+            self.which_operation,
+            {
+                "alter_macrocycle": "retrieve_information",             # Alter the current macrocycle.
+                "create_new_macrocycle": "create_new_macrocycle"        # Create a new macrocycle.
+            }
+        )
+
+        # Whether there is a new goal to perform the change with.
+        workflow.add_conditional_edges(
+            "alter_operation_uses_agent",
             self.confirm_new_input,
             {
                 "no_new_input": "ask_for_new_input",                    # Request a new macrocycle goal if one isn't present.
