@@ -54,8 +54,22 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_workout_days_list():
-    phase_components = MicrocycleSchedulerActions.get_user_list()
-    return jsonify({"status": "success", "phase_components": phase_components}), 200
+    state = {
+        "user_id": current_user.id,
+        "phase_component_impacted": True,
+        "phase_component_is_altered": False,
+        "phase_component_read_plural": True,
+        "phase_component_read_current": False,
+        "phase_component_message": "Perform phase component classification."
+    }
+    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+
+    result = microcycle_scheduler_agent.invoke(state)
+
+    # Correct time delta for serializing for JSON output.
+    result = recursively_change_dict_timedeltas(result)
+
+    return jsonify({"status": "success", "phase_components": result}), 200
 
 # Retrieve user's current microcycle's phase components
 @bp.route('/current_list', methods=['GET'])

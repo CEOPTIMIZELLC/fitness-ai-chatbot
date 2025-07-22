@@ -210,6 +210,23 @@ class BaseAgent():
             print(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
+    # Print output.
+    def get_user_list(self, state: TState):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        user_id = state["user_id"]
+
+        schedule_from_db = self.user_list_query(user_id)
+        if not schedule_from_db:
+            abort(404, description=f"No {self.focus}s found for the user.")
+
+        schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
+
+        formatted_schedule = self.run_schedule_printer(schedule_dict)
+        if verbose_formatted_schedule:
+            print(formatted_schedule)
+        return {self.focus_names["formatted"]: formatted_schedule}
+
     # Node to declare that the sub agent has ended.
     def end_node(self, state: TState):
         if verbose_agent_introductions:
@@ -225,12 +242,14 @@ class BaseAgent():
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
+        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -268,8 +287,18 @@ class BaseAgent():
             "operation_is_read",
             self.determine_read_operation,
             {
-                "plural": "get_formatted_list",                         # Read the current schedule.
+                "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
                 "singular": "read_user_current_element"                 # Read the current element.
+            }
+        )
+
+        # Whether the plural list is for all of the elements or all elements belonging to the user.
+        workflow.add_conditional_edges(
+            "read_operation_is_plural",
+            self.determine_read_filter_operation,
+            {
+                "current": "get_formatted_list",                        # Read the current schedule.
+                "all": "get_user_list"                                  # Read all user elements.
             }
         )
 
@@ -291,27 +320,7 @@ class BaseAgent():
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")
         workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
         return workflow.compile()
-
-    # Retrieve all items for current user
-    def get_user_list(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving All {self.sub_agent_title} for User---------")
-        user_id = state["user_id"]
-        user_list_from_db = self.user_list_query(user_id)
-
-        return [user_list_entry.to_dict() for user_list_entry in user_list_from_db]
-
-    # Retrieve user's current items for the parent
-    def get_user_current_list(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving {self.sub_agent_title}s for Current {self.parent_title}---------")
-        user_id = state["user_id"]
-        parent_db_entry = self.parent_retriever_agent(user_id)
-        schedule_from_db = self.retrieve_children_entries_from_parent(parent_db_entry)
-        return [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
-
-
-

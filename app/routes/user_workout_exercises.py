@@ -88,8 +88,18 @@ def retrieve_pc_parameters(user_workout_day):
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_workout_exercises_list():
-    exercises = WorkoutActions.get_user_list()
-    return jsonify({"status": "success", "exercises": exercises}), 200
+    state = {
+        "user_id": current_user.id,
+        "workout_schedule_impacted": True,
+        "workout_schedule_is_altered": False,
+        "workout_schedule_read_plural": True,
+        "workout_schedule_read_current": False,
+        "workout_schedule_message": "Perform workout scheduling."
+    }
+    workout_agent = create_workout_agent()
+
+    result = workout_agent.invoke(state)
+    return jsonify({"status": "success", "exercises": result}), 200
 
 # Retrieve user's current microcycle's workout exercises
 @bp.route('/current_list', methods=['GET'])

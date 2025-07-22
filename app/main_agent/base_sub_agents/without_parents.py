@@ -149,6 +149,23 @@ class BaseAgent():
             print(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
+    # Print output.
+    def get_user_list(self, state):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        user_id = state["user_id"]
+
+        schedule_from_db = self.user_list_query(user_id)
+        if not schedule_from_db:
+            abort(404, description=f"No {self.focus}s found for the user.")
+
+        schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
+
+        formatted_schedule = self.run_schedule_printer(schedule_dict)
+        if verbose_formatted_schedule:
+            print(formatted_schedule)
+        return {self.focus_names["formatted"]: formatted_schedule}
+
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
         if verbose_agent_introductions:

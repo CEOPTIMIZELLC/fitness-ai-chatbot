@@ -211,12 +211,14 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
+        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -275,8 +277,18 @@ class SubAgent(BaseAgent, SchedulePrinter):
             "operation_is_read",
             self.determine_read_operation,
             {
-                "plural": "get_formatted_list",                         # Read the current schedule.
+                "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
                 "singular": "read_user_current_element"                 # Read the current element.
+            }
+        )
+
+        # Whether the plural list is for all of the elements or all elements belonging to the user.
+        workflow.add_conditional_edges(
+            "read_operation_is_plural",
+            self.determine_read_filter_operation,
+            {
+                "current": "get_formatted_list",                        # Read the current schedule.
+                "all": "get_user_list"                                  # Read all user elements.
             }
         )
 
@@ -299,6 +311,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_edge("availability_permission_denied", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")
         workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
         return workflow.compile()

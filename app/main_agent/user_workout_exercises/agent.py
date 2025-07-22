@@ -19,6 +19,7 @@ from app.main_agent.prompts import phase_component_system_prompt
 
 from .actions import retrieve_pc_parameters
 from .schedule_printer import SchedulePrinter
+from .list_printer import Main as list_printer_main
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
@@ -168,6 +169,26 @@ class SubAgent(BaseAgent, SchedulePrinter):
             print_long_output(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
+
+    # Print output.
+    def get_user_list(self, state: AgentState):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        user_id = state["user_id"]
+
+        schedule_from_db = self.user_list_query(user_id)
+        if not schedule_from_db:
+            abort(404, description=f"No {self.focus}s found for the user.")
+
+        user_workout_exercises_dict = [user_workout_exercise.to_dict() | 
+                                    {"component_id": user_workout_exercise.phase_components.components.id}
+                                    for user_workout_exercise in schedule_from_db]
+
+        formatted_schedule = list_printer_main(user_workout_exercises_dict)
+        if verbose_formatted_schedule:
+            print(formatted_schedule)
+        return {self.focus_names["formatted"]: formatted_schedule}
+
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
@@ -179,12 +200,14 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
         workflow.add_node("availability_permission_denied", self.availability_permission_denied)
         workflow.add_node("availability", self.availability_node)
+        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -244,8 +267,18 @@ class SubAgent(BaseAgent, SchedulePrinter):
             "retrieve_information",
             self.determine_operation,
             {
-                "read": "get_formatted_list",                           # Read the current schedule.
+                "read": "read_operation_is_plural",                     # In between step for if the read operation is plural.
                 "alter": "delete_old_children"                          # Delete the old children for the alteration.
+            }
+        )
+
+        # Whether the plural list is for all of the elements or all elements belonging to the user.
+        workflow.add_conditional_edges(
+            "read_operation_is_plural",
+            self.determine_read_filter_operation,
+            {
+                "current": "get_formatted_list",                        # Read the current schedule.
+                "all": "get_user_list"                                  # Read all user elements.
             }
         )
 
@@ -255,6 +288,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("availability_permission_denied", "end_node")
         workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
         return workflow.compile()

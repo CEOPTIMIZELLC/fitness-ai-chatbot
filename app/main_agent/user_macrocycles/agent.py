@@ -138,6 +138,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow = StateGraph(state_class)
 
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
@@ -145,7 +146,8 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("alter_macrocycle", self.alter_macrocycle)
-        workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("read_user_current_element", self.read_user_current_element)
+        workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("no_new_input_requested", self.no_new_input_requested)
         workflow.add_node("end_node", self.end_node)
 
@@ -164,8 +166,18 @@ class SubAgent(BaseAgent, SchedulePrinter):
             "impact_confirmed",
             self.determine_operation,
             {
-                "read": "get_formatted_list",                           # Read the current schedule.
+                "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "operation_is_alter"                           # In between step for if the operation is alter.
+            }
+        )
+
+        # Whether the read operations is for a single element or plural elements.
+        workflow.add_conditional_edges(
+            "operation_is_read",
+            self.determine_read_operation,
+            {
+                "plural": "get_user_list",                              # Read all user elements.
+                "singular": "read_user_current_element"                 # Read the current element.
             }
         )
 
@@ -201,10 +213,11 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
         workflow.add_edge("retrieve_information", "delete_old_children")
         workflow.add_edge("delete_old_children", "alter_macrocycle")
-        workflow.add_edge("alter_macrocycle", "get_formatted_list")
-        workflow.add_edge("create_new_macrocycle", "get_formatted_list")
+        workflow.add_edge("alter_macrocycle", "get_user_list")
+        workflow.add_edge("create_new_macrocycle", "get_user_list")
         workflow.add_edge("no_new_input_requested", "end_node")
-        workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("read_user_current_element", "end_node")
+        workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
         return workflow.compile()

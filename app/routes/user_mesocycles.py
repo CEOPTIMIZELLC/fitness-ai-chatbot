@@ -38,8 +38,18 @@ def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_mesocycles_list():
-    mesocycles = MesocycleActions.get_user_list()
-    return jsonify({"status": "success", "mesocycles": mesocycles}), 200
+    state = {
+        "user_id": current_user.id,
+        "mesocycle_impacted": True,
+        "mesocycle_is_altered": False,
+        "mesocycle_read_plural": True,
+        "mesocycle_read_current": False,
+        "mesocycle_message": "Retrieve mesocycle scheduling."
+    }
+    mesocycle_agent = create_mesocycle_agent()
+
+    result = mesocycle_agent.invoke(state)
+    return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Retrieve user's current macrocycles's mesocycles
 @bp.route('/current_list', methods=['GET'])

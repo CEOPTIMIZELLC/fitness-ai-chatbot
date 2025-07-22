@@ -40,8 +40,19 @@ def goal_classification_test_run(goal_app, goal_types, user_goal):
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_macrocycle_list():
-    macrocycles = MacrocycleActions.get_user_list()
-    return jsonify({"status": "success", "macrocycles": macrocycles}), 200
+    state = {
+        "user_id": current_user.id,
+        "macrocycle_impacted": True,
+        "macrocycle_is_altered": False,
+        "macrocycle_read_plural": True,
+        "macrocycle_read_current": True,
+        "macrocycle_message": "Retrieve current macrocycle.",
+        "macrocycle_alter_old": None
+    }
+    goal_agent = create_goal_agent()
+
+    result = goal_agent.invoke(state)
+    return jsonify({"status": "success", "macrocycles": result}), 200
 
 
 # Retrieve current user's macrocycles

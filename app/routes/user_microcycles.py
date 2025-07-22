@@ -21,8 +21,19 @@ def delete_old_user_microcycles(mesocycle_id):
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_microcycles_list():
-    microcycles = MicrocycleActions.get_user_list()
-    return jsonify({"status": "success", "microcycles": microcycles}), 200
+    state = {
+        "user_id": current_user.id,
+        "microcycle_impacted": True,
+        "microcycle_is_altered": False,
+        "microcycle_read_plural": True,
+        "microcycle_read_current": False,
+        "microcycle_message": "Perform microcycle scheduling."
+    }
+    microcycle_agent = create_microcycle_agent()
+
+    result = microcycle_agent.invoke(state)
+
+    return jsonify({"status": "success", "microcycles": result}), 200
 
 # Retrieve user's current mesocycle's microcycles
 @bp.route('/current_list', methods=['GET'])
