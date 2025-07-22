@@ -12,7 +12,7 @@ from app.main_agent.base_sub_agents.without_parents import BaseAgent
 from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.main_agent.prompts import macrocycle_system_prompt
 
-from .actions import retrieve_goal_types
+from .actions import retrieve_goal_types, new_macrocycle, alter_macrocycle
 from .schedule_printer import SchedulePrinter
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
@@ -109,7 +109,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         if verbose_subagent_steps:
             print(f"\t---------Determine whether goal should be new---------")
         if state["macrocycle_alter_old"] and state["user_macrocycle"]:
-            return "alter_macrocycle"
+            return "alter_old_macrocycle"
         return "create_new_macrocycle"
 
     # Creates the new macrocycle of the determined type.
@@ -117,10 +117,8 @@ class SubAgent(BaseAgent, SchedulePrinter):
         user_id = state["user_id"]
         goal_id = state["goal_id"]
         new_goal = state["macrocycle_message"]
-        new_macrocycle = User_Macrocycles(user_id=user_id, goal_id=goal_id, goal=new_goal)
-        db.session.add(new_macrocycle)
-        db.session.commit()
-        return {"user_macrocycle": new_macrocycle.to_dict()}
+        user_macrocycle = new_macrocycle(user_id, goal_id, new_goal)
+        return {"user_macrocycle": user_macrocycle.to_dict()}
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
@@ -141,14 +139,11 @@ class SubAgent(BaseAgent, SchedulePrinter):
         return {}
 
     # Alters the current macrocycle to be the determined type.
-    def alter_macrocycle(self, state: AgentState):
+    def alter_old_macrocycle(self, state: AgentState):
         goal_id = state["goal_id"]
         new_goal = state["macrocycle_message"]
         macrocycle_id = state["macrocycle_id"]
-        user_macrocycle = db.session.get(User_Macrocycles, macrocycle_id)
-        user_macrocycle.goal = new_goal
-        user_macrocycle.goal_id = goal_id
-        db.session.commit()
+        user_macrocycle = alter_macrocycle(macrocycle_id, goal_id, new_goal)
         return {"user_macrocycle": user_macrocycle.to_dict()}
 
     # Create main agent.
@@ -165,7 +160,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("create_new_macrocycle", self.create_new_macrocycle)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
-        workflow.add_node("alter_macrocycle", self.alter_macrocycle)
+        workflow.add_node("alter_old_macrocycle", self.alter_old_macrocycle)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
         workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("no_new_input_requested", self.no_new_input_requested)
@@ -216,7 +211,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
             "perform_goal_change_by_id",
             self.which_operation,
             {
-                "alter_macrocycle": "retrieve_information",             # Alter the current macrocycle.
+                "alter_old_macrocycle": "retrieve_information",             # Alter the current macrocycle.
                 "create_new_macrocycle": "create_new_macrocycle"        # Create a new macrocycle.
             }
         )
@@ -246,14 +241,14 @@ class SubAgent(BaseAgent, SchedulePrinter):
             "perform_input_parser",
             self.which_operation,
             {
-                "alter_macrocycle": "retrieve_information",             # Alter the current macrocycle.
+                "alter_old_macrocycle": "retrieve_information",             # Alter the current macrocycle.
                 "create_new_macrocycle": "create_new_macrocycle"        # Create a new macrocycle.
             }
         )
 
         workflow.add_edge("retrieve_information", "delete_old_children")
-        workflow.add_edge("delete_old_children", "alter_macrocycle")
-        workflow.add_edge("alter_macrocycle", "get_user_list")
+        workflow.add_edge("delete_old_children", "alter_old_macrocycle")
+        workflow.add_edge("alter_old_macrocycle", "get_user_list")
         workflow.add_edge("create_new_macrocycle", "get_user_list")
         workflow.add_edge("no_new_input_requested", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")
