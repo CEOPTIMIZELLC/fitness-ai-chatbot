@@ -181,6 +181,7 @@ class BaseAgent():
         if verbose_subagent_steps:
             print(f"\t---------Retrieving Current {self.sub_agent_title} for User---------")
         user_id = state["user_id"]
+
         entry_from_db = self.focus_retriever_agent(user_id)
         if not entry_from_db:
             abort(404, description=f"No active {self.sub_agent_title} found.")
