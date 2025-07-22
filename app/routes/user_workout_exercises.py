@@ -14,6 +14,7 @@ from app.main_agent.utils import retrieve_total_time_needed
 from app.main_agent.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
 from app.main_agent.user_workout_exercises import create_workout_agent, WorkoutActions
+from app.main_agent.user_workout_completion import create_workout_completion_agent
 
 bp = Blueprint('user_workout_exercises', __name__)
 
@@ -146,7 +147,17 @@ def exercise_initializer():
 @bp.route('/workout_completed', methods=['POST', 'PATCH'])
 @login_required
 def complete_workout():
-    result = WorkoutActions.complete_workout()
+    state = {
+        "user_id": current_user.id,
+        "workout_completion_impacted": True,
+        "workout_completion_is_altered": True,
+        "workout_completion_read_plural": False,
+        "workout_completion_read_current": False,
+        "workout_completion_message": "Perform workout scheduling."
+    }
+    workout_completion_agent = create_workout_completion_agent()
+
+    result = workout_completion_agent.invoke(state)
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Combine Exercise Initializer and Complete Workout for testing.
@@ -154,9 +165,25 @@ def complete_workout():
 @login_required
 def initialize_and_complete():
     result = {}
-    result["workout_exercises"] = WorkoutActions.scheduler()
-    result["formatted_schedule"] = WorkoutActions.get_formatted_list()
-    result["exercises"] = WorkoutActions.complete_workout()
+
+    state = {
+        "user_id": current_user.id,
+        "workout_schedule_impacted": True,
+        "workout_schedule_is_altered": True,
+        "workout_schedule_read_plural": False,
+        "workout_schedule_read_current": False,
+        "workout_schedule_message": "Perform workout scheduling.",
+        "workout_completion_impacted": True,
+        "workout_completion_is_altered": True,
+        "workout_completion_read_plural": False,
+        "workout_completion_read_current": False,
+        "workout_completion_message": "Perform workout scheduling."
+    }
+    workout_agent = create_workout_agent()
+    workout_completion_agent = create_workout_completion_agent()
+
+    result["workout_exercises"] = workout_agent.invoke(state)
+    result["exercises"] = workout_completion_agent.invoke(state)
     return jsonify({"status": "success", "output": result}), 200
 
 # ---------- TEST ROUTES --------------
