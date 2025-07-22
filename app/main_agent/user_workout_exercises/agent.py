@@ -55,7 +55,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
     def retrieve_children_entries_from_parent(self, parent_db_entry):
         return parent_db_entry.exercises
 
-    def user_list_query(user_id):
+    def user_list_query(self, user_id):
         return (
             User_Workout_Exercises.query
             .join(User_Workout_Days)

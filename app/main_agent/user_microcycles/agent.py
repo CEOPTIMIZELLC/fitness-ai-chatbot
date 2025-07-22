@@ -2,7 +2,7 @@ from config import verbose_subagent_steps
 from datetime import timedelta
 
 from app import db
-from app.models import User_Microcycles, User_Mesocycles
+from app.models import User_Microcycles, User_Mesocycles, User_Macrocycles
 from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 from app.main_agent.main_agent_state import MainAgentState
@@ -35,8 +35,8 @@ class SubAgent(BaseAgent, SchedulePrinter):
     def retrieve_children_entries_from_parent(self, parent_db_entry):
         return parent_db_entry.microcycles
 
-    def user_list_query(user_id):
-        return User_Microcycles.query.join(User_Mesocycles).filter_by(user_id=user_id).all()
+    def user_list_query(self, user_id):
+        return User_Microcycles.query.join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=user_id).all()
 
     def focus_retriever_agent(self, user_id):
         return current_microcycle(user_id)

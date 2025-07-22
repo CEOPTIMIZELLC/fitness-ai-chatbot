@@ -103,7 +103,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
     def retrieve_children_entries_from_parent(self, parent_db_entry):
         return parent_db_entry.workout_days
 
-    def user_list_query(user_id):
+    def user_list_query(self, user_id):
         return User_Workout_Days.query.join(User_Microcycles).join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=user_id).all()
 
     def focus_retriever_agent(self, user_id):

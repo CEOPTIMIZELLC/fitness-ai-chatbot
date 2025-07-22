@@ -38,7 +38,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
     focus_system_prompt = availability_system_prompt
     focus_goal = AvailabilityGoal
 
-    def user_list_query(user_id):
+    def user_list_query(self, user_id):
         return User_Weekday_Availability.query.filter_by(user_id=user_id).all()
 
     def focus_retriever_agent(self, user_id):

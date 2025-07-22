@@ -34,7 +34,7 @@ class BaseAgent():
     def retrieve_children_entries_from_parent(self, parent_db_entry):
         pass
 
-    def user_list_query(user_id):
+    def user_list_query(self, user_id):
         pass
 
     def focus_retriever_agent(self, user_id):

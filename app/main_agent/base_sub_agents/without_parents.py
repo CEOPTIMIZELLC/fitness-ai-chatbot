@@ -19,7 +19,7 @@ class BaseAgent():
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
 
-    def user_list_query(user_id):
+    def user_list_query(self, user_id):
         pass
 
     def focus_retriever_agent(self, user_id):
@@ -154,13 +154,3 @@ class BaseAgent():
         if verbose_agent_introductions:
             print(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
         return {}
-
-    # Retrieve all items for current user
-    def get_user_list(self, state):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving All {self.sub_agent_title} for User---------")
-        user_id = state["user_id"]
-        user_list_from_db = self.user_list_query(user_id)
-
-        return [user_list_entry.to_dict() for user_list_entry in user_list_from_db]
-
