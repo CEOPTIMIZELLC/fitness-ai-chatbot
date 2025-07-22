@@ -23,36 +23,3 @@ def retrieve_weekday_types():
         } 
         for weekday in weekdays
     ]
-
-class WeekdayAvailabilitySchedulerActions:
-    # Retrieve current user's weekdays
-    @staticmethod
-    def get_user_list():
-        user_availability = current_user.availability
-        return [weekday.to_dict() for weekday in user_availability]
-
-    # Change the current user's weekday.
-    @staticmethod
-    def scheduler(new_availability):
-        # There are only so many types a weekday can be classified as, with all of them being stored.
-        weekday_types = retrieve_weekday_types()
-        weekday_app = create_weekday_availability_extraction_graph()
-
-        # Invoke with new weekday and possible weekday types.
-        state = weekday_app.invoke(
-            {
-                "new_availability": new_availability, 
-                "weekday_types": weekday_types, 
-                "attempts": 0
-            })
-        
-        weekday_availability = state["weekday_availability"]
-        # Update each availability entry to the database.
-        for i in weekday_availability:
-            db_entry = User_Weekday_Availability(user_id=current_user.id, 
-                                                weekday_id=i["weekday_id"], 
-                                                availability=i["availability"])
-            db.session.merge(db_entry)
-        db.session.commit()
-
-        return state
