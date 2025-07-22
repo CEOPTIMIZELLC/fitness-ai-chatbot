@@ -8,6 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
+from app import db
 from app.main_agent.main_agent_state import MainAgentState
 
 from .utils import sub_agent_focused_items
@@ -77,6 +78,27 @@ class BaseAgent():
         if not state[self.parent_names["entry"]]:
             return "no_parent"
         return "parent"
+
+    # Changes the id of the parent.
+    def parent_changer(self, user_id, new_parent_id):
+        pass
+
+    # In between node for when the parent is retrieved.
+    def parent_retrieved(self, state: TState):
+        # Change the parent id if performing it with a different id has been specified.
+        if self.focus_names["perform_with_parent_id"] in state:
+            if verbose_subagent_steps:
+                print(f"\t---------Change parent id of {self.parent_title}---------")
+            user_id = state["user_id"]
+            new_parent_id = state[self.focus_names["perform_with_parent_id"]]
+            parent_db_entry = self.parent_changer(user_id, new_parent_id)
+
+            db.session.commit()
+
+            # Return new parent.
+            return {self.parent_names["entry"]: parent_db_entry.to_dict() if parent_db_entry else None}
+
+        return {}
 
     # Default items extracted from the goal classifier
     def goal_classifier_parser(self, parent_names, goal_class):
@@ -240,7 +262,7 @@ class BaseAgent():
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
-        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
+        workflow.add_node("parent_retrieved", self.parent_retrieved)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)

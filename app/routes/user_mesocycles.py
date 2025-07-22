@@ -28,12 +28,6 @@ def perform_phase_selection(goal_id, macrocycle_allowed_weeks):
         print(result["formatted"])
     return result
 
-# Method to perform phase selection on a goal of a specified id.
-def mesocycle_phases_by_id(goal_id, macrocycle_allowed_weeks):
-    if not db.session.get(Goal_Library, goal_id):
-        abort(404, description=f"Goal {goal_id} not found.")
-    return perform_phase_selection(goal_id, macrocycle_allowed_weeks)
-
 # Retrieve current user's mesocycles
 @bp.route('/', methods=['GET'])
 @login_required
@@ -113,18 +107,21 @@ def mesocycle_phases():
 @bp.route('/<goal_id>', methods=['POST', 'PATCH'])
 @login_required
 def add_mesocycle_phases_by_id(goal_id):
-    result = MesocycleActions.scheduler(goal_id)
-    result["formatted_schedule"] = MesocycleActions.get_formatted_list()
+    state = {
+        "user_id": current_user.id,
+        "mesocycle_impacted": True,
+        "mesocycle_is_altered": True,
+        "mesocycle_read_plural": False,
+        "mesocycle_read_current": False,
+        "mesocycle_message": "Perform mesocycle scheduling.",
+        "mesocycle_perform_with_parent_id": goal_id
+    }
+    mesocycle_agent = create_mesocycle_agent()
+
+    result = mesocycle_agent.invoke(state)
     return jsonify({"status": "success", "mesocycles": result}), 200
 
 # ---------- TEST ROUTES --------------
-
-# Test the phase selection by a goal id.
-@bp.route('/test/<goal_id>', methods=['GET', 'POST'])
-@login_required
-def test_mesocycle_phases_by_id(goal_id):
-    result = mesocycle_phases_by_id(goal_id, 26)
-    return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Testing for the parameter programming for mesocycle labeling.
 @bp.route('/test', methods=['GET', 'POST'])

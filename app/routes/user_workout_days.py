@@ -142,9 +142,18 @@ def workout_day_initializer():
 @bp.route('/<phase_id>', methods=['POST', 'PATCH'])
 @login_required
 def workout_day_initializer_by_id(phase_id):
-    # Retrieve results.
-    result = MicrocycleSchedulerActions.change_by_id(phase_id)
-    result["formatted_schedule"] = MicrocycleSchedulerActions.get_formatted_list()
+    state = {
+        "user_id": current_user.id,
+        "phase_component_impacted": True,
+        "phase_component_is_altered": True,
+        "phase_component_read_plural": False,
+        "phase_component_read_current": False,
+        "phase_component_message": "Perform phase component classification.",
+        "phase_component_perform_with_parent_id": phase_id
+    }
+    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+
+    result = microcycle_scheduler_agent.invoke(state)
     return jsonify({"status": "success", "phase_components": result}), 200
 
 # ---------- TEST ROUTES --------------

@@ -99,3 +99,24 @@ def microcycle_initializer():
 
     return jsonify({"status": "success", "microcycles": result}), 200
 
+# Gives four microcycles for mesocycle and gives the parent mesocycle a new id.
+@bp.route('/<phase_id>', methods=['POST', 'PATCH'])
+@login_required
+def microcycle_initializer_by_id(phase_id):
+    state = {
+        "user_id": current_user.id,
+        "microcycle_impacted": True,
+        "microcycle_is_altered": True,
+        "microcycle_read_plural": False,
+        "microcycle_read_current": False,
+        "microcycle_message": "Perform microcycle scheduling.",
+        "microcycle_perform_with_parent_id": phase_id
+    }
+    microcycle_agent = create_microcycle_agent()
+
+    result = microcycle_agent.invoke(state)
+
+    # Correct time delta for serializing for JSON output.
+    result = recursively_change_dict_timedeltas(result)
+
+    return jsonify({"status": "success", "microcycles": result}), 200

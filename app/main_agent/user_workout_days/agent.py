@@ -112,6 +112,12 @@ class SubAgent(BaseAgent, SchedulePrinter):
     def parent_retriever_agent(self, user_id):
         return current_microcycle(user_id)
 
+    # Changes the id of the parent.
+    def parent_changer(self, user_id, new_parent_id):
+        parent_db_entry = self.parent_retriever_agent(user_id)
+        parent_db_entry.mesocycles.phase_id = new_parent_id
+        return parent_db_entry
+
     # Retrieve User's Availability.
     def availability_retriever_agent(self, state: AgentState):
         user_id = state["user_id"]
@@ -209,7 +215,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
-        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
+        workflow.add_node("parent_retrieved", self.parent_retrieved)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)

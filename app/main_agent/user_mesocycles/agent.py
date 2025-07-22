@@ -50,6 +50,12 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
     def parent_retriever_agent(self, user_id):
         return current_macrocycle(user_id)
 
+    # Changes the id of the parent.
+    def parent_changer(self, user_id, new_parent_id):
+        parent_db_entry = self.parent_retriever_agent(user_id)
+        parent_db_entry.goal_id = new_parent_id
+        return parent_db_entry
+
     # Items extracted from the goal classifier
     def goal_classifier_parser(self, parent_names, goal_class):
         return {

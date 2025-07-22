@@ -44,6 +44,12 @@ class SubAgent(BaseAgent, SchedulePrinter):
     def parent_retriever_agent(self, user_id):
         return current_mesocycle(user_id)
 
+    # Changes the id of the parent.
+    def parent_changer(self, user_id, new_parent_id):
+        parent_db_entry = self.parent_retriever_agent(user_id)
+        parent_db_entry.phase_id = new_parent_id
+        return parent_db_entry
+
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
         if verbose_subagent_steps:
