@@ -219,67 +219,74 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("end_node", self.end_node)
 
+        # Whether the focus element has been indicated to be impacted.
         workflow.add_conditional_edges(
             START,
             self.confirm_impact,
             {
-                "no_impact": "end_node",
-                "impact": "retrieve_availability"
+                "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
+                "impact": "retrieve_availability"                       # Retreive the availability for the alteration.
             }
         )
 
+        # Whether an availability for the user exists.
         workflow.add_conditional_edges(
             "retrieve_availability",
             self.confirm_availability,
             {
-                "no_availability": "ask_for_availability_permission",
-                "availability": "retrieve_parent"
+                "no_availability": "ask_for_availability_permission",   # No parent element exists.
+                "availability": "retrieve_parent"                       # Retrieve the parent element if an availability is found.
             }
         )
 
+        # Whether an availability for the user is allowed to be created where one doesn't already exist.
         workflow.add_conditional_edges(
             "ask_for_availability_permission",
             self.confirm_availability_permission,
             {
-                "permission_denied": "availability_permission_denied",
-                "permission_granted": "availability"
+                "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
+                "permission_granted": "availability"                    # The agent is allowed to create availability.
             }
         )
         workflow.add_edge("availability", "retrieve_availability")
 
+        # Whether a parent element exists.
         workflow.add_conditional_edges(
             "retrieve_parent",
             self.confirm_parent,
             {
-                "no_parent": "ask_for_permission",
-                "parent": "parent_retrieved"
+                "no_parent": "ask_for_permission",                      # No parent element exists.
+                "parent": "parent_retrieved"                            # In between step for if a parent element exists.
             }
         )
 
+        # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "parent_retrieved",
             self.determine_operation,
             {
-                "read": "operation_is_read",
-                "alter": "retrieve_information"
+                "read": "operation_is_read",                            # In between step for if the operation is read.
+                "alter": "retrieve_information"                         # Retrieve the information for the alteration.
             }
         )
 
+        # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
             self.determine_read_operation,
             {
-                "plural": "get_formatted_list",
-                "singular": "read_user_current_element"
+                "plural": "get_formatted_list",                         # Read the current schedule.
+                "singular": "read_user_current_element"                 # Read the current element.
             }
         )
 
+        # Whether a parent element is allowed to be created where one doesn't already exist.
         workflow.add_conditional_edges(
             "ask_for_permission",
             self.confirm_permission,
             {
-                "permission_denied": "permission_denied",
-                "permission_granted": "parent_agent"
+                "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
+                "permission_granted": "parent_agent"                    # The agent is allowed to create a parent.
             }
         )
         workflow.add_edge("parent_agent", "retrieve_parent")

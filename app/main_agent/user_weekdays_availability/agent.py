@@ -113,48 +113,53 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("no_new_input_requested", self.no_new_input_requested)
         workflow.add_node("end_node", self.end_node)
 
+        # Whether the focus element has been indicated to be impacted.
         workflow.add_conditional_edges(
             START,
             self.confirm_impact,
             {
-                "no_impact": "end_node",
-                "impact": "impact_confirmed"
+                "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
+                "impact": "impact_confirmed"                            # In between step for if an impact is indicated.
             }
         )
 
+        # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "impact_confirmed",
             self.determine_operation,
             {
-                "read": "operation_is_read",
-                "alter": "operation_is_alter"
+                "read": "operation_is_read",                            # In between step for if the operation is read.
+                "alter": "operation_is_alter"                           # In between step for if the operation is alter.
             }
         )
     
+        # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
             self.determine_read_operation,
             {
-                "plural": "get_formatted_list",
-                "singular": "read_user_current_element"
+                "plural": "get_formatted_list",                         # Read the current schedule.
+                "singular": "read_user_current_element"                 # Read the current element.
             }
         )
 
+        # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "operation_is_alter",
             self.confirm_new_input,
             {
-                "no_new_input": "ask_for_new_input",
-                "present_new_input": "delete_old_children"
+                "no_new_input": "ask_for_new_input",                    # Request a new input to parse availability from if one isn't present.
+                "present_new_input": "delete_old_children"              # Delete the old children for the alteration if a goal was given.
             }
         )
 
+        # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "ask_for_new_input",
             self.confirm_new_input,
             {
-                "no_new_input": "no_new_input_requested",
-                "present_new_input": "delete_old_children"
+                "no_new_input": "no_new_input_requested",               # Indicate that no new goal was given.
+                "present_new_input": "delete_old_children"              # Delete the old children for the alteration if a goal was given.
             }
         )
 

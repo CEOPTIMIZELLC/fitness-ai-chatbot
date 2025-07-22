@@ -149,48 +149,53 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("no_new_input_requested", self.no_new_input_requested)
         workflow.add_node("end_node", self.end_node)
 
+        # Whether the focus element has been indicated to be impacted.
         workflow.add_conditional_edges(
             START,
             self.confirm_impact,
             {
-                "no_impact": "end_node",
-                "impact": "impact_confirmed"
+                "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
+                "impact": "impact_confirmed"                            # In between step for if an impact is indicated.
             }
         )
 
+        # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "impact_confirmed",
             self.determine_operation,
             {
-                "read": "get_formatted_list",
-                "alter": "operation_is_alter"
+                "read": "get_formatted_list",                           # Read the current schedule.
+                "alter": "operation_is_alter"                           # In between step for if the operation is alter.
             }
         )
 
+        # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "operation_is_alter",
             self.confirm_new_input,
             {
-                "no_new_input": "ask_for_new_input",
-                "present_new_input": "perform_input_parser"
+                "no_new_input": "ask_for_new_input",                    # Request a new macrocycle goal if one isn't present.
+                "present_new_input": "perform_input_parser"             # Parse the goal for what category it falls into if one is present.
             }
         )
 
+        # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "ask_for_new_input",
             self.confirm_new_input,
             {
-                "no_new_input": "no_new_input_requested",
-                "present_new_input": "perform_input_parser"
+                "no_new_input": "no_new_input_requested",               # Indicate that no new goal was given.
+                "present_new_input": "perform_input_parser"             # Parse the goal for what category it falls into if one is present.
             }
         )
 
+        # Whether the intention is to alter the current macrocycle or to create a new one.
         workflow.add_conditional_edges(
             "perform_input_parser",
             self.which_operation,
             {
-                "alter_macrocycle": "retrieve_information",
-                "create_new_macrocycle": "create_new_macrocycle"
+                "alter_macrocycle": "retrieve_information",             # Alter the current macrocycle.
+                "create_new_macrocycle": "create_new_macrocycle"        # Create a new macrocycle.
             }
         )
 
