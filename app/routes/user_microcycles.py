@@ -1,21 +1,13 @@
-from config import verbose
 from flask import jsonify, Blueprint
 from flask_login import login_required, current_user
 
-from app import db
-from app.models import User_Microcycles
-from app.main_agent.user_microcycles import create_microcycle_agent, MicrocycleActions
+from app.main_agent.user_microcycles import create_microcycle_agent
 
 from .utils import recursively_change_dict_timedeltas
 
 bp = Blueprint('user_microcycles', __name__)
 
 # ----------------------------------------- User Microcycles -----------------------------------------
-
-def delete_old_user_microcycles(mesocycle_id):
-    db.session.query(User_Microcycles).filter_by(mesocycle_id=mesocycle_id).delete()
-    if verbose:
-        print("Successfully deleted")
 
 # Retrieve current user's microcycles
 @bp.route('/', methods=['GET'])
@@ -35,12 +27,23 @@ def get_user_microcycles_list():
 
     return jsonify({"status": "success", "microcycles": result}), 200
 
-# Retrieve user's current mesocycle's microcycles
+# Retrieve user's current macrocycle's mesocycles
 @bp.route('/current_list', methods=['GET'])
 @login_required
-def get_user_current_microcycles_list():
-    microcycles = MicrocycleActions.get_user_current_list()
-    return jsonify({"status": "success", "microcycles": microcycles}), 200
+def get_user_current_mesocycles_list():
+    state = {
+        "user_id": current_user.id,
+        "microcycle_impacted": True,
+        "microcycle_is_altered": False,
+        "microcycle_read_plural": True,
+        "microcycle_read_current": True,
+        "microcycle_message": "Perform microcycle scheduling."
+    }
+    microcycle_agent = create_microcycle_agent()
+
+    result = microcycle_agent.invoke(state)
+
+    return jsonify({"status": "success", "microcycles": result}), 200
 
 # Retrieve user's current microcycle
 @bp.route('/current', methods=['GET'])
@@ -51,24 +54,6 @@ def read_user_current_microcycle():
         "microcycle_impacted": True,
         "microcycle_is_altered": False,
         "microcycle_read_plural": False,
-        "microcycle_read_current": True,
-        "microcycle_message": "Perform microcycle scheduling."
-    }
-    microcycle_agent = create_microcycle_agent()
-
-    result = microcycle_agent.invoke(state)
-
-    return jsonify({"status": "success", "microcycles": result}), 200
-
-# Retrieve user's current macrocycle's mesocycles
-@bp.route('/current_formatted_list', methods=['GET'])
-@login_required
-def get_user_current_mesocycles_formatted_list():
-    state = {
-        "user_id": current_user.id,
-        "microcycle_impacted": True,
-        "microcycle_is_altered": False,
-        "microcycle_read_plural": True,
         "microcycle_read_current": True,
         "microcycle_message": "Perform microcycle scheduling."
     }

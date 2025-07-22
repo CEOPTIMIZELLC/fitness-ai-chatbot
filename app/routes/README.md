@@ -319,14 +319,9 @@
 > > [GET] /user_mesocycles
 > > ```
 > > 
-> > ### List current user's mesocycles for the currently active macrocycle
+> > ### List current user's formatted mesocycles for the currently active macrocycle
 > > ```
 > > [GET] /user_mesocycles/current_list
-> > ```
-> > 
-> > ### Print the formatted mesocycle schedule for the current user's currently active macrocycle
-> > ```
-> > [GET] /user_mesocycles/current_formatted_list
 > > ```
 > > 
 > > ### Retrieve current user's currently active mesocycle
@@ -379,15 +374,11 @@
 > > [GET] /user_workout_days
 > > ```
 > > 
-> > ### List current user's work days (and corresponding components) for the currently active microcycle
+> > ### List current user's formatted work days (and corresponding components) for the currently active microcycle
 > > ```
 > > [GET] /user_workout_days/current_list
 > > ```
 > > 
-> > ### Print the formatted workout day schedule for the current user's currently active microcycle
-> > ```
-> > [GET] /user_workout_days/current_formatted_list
-> > ```
 > > ### Retrieve current user's currently active work day (and corresponding components)
 > > ```
 > > [GET] /user_workout_days/current
@@ -413,15 +404,11 @@
 > > [GET] /user_workout_exercises
 > > ```
 > > 
-> > ### List current user's workout exercises for the currently active workout day
+> > ### List current user's formatted workout schedule for the currently active workout day
 > > ```
 > > [GET] /user_workout_exercises/current_list
 > > ```
 > > 
-> > ### Print the formatted exercise schedule for the current user's currently active workout day
-> > ```
-> > [GET] /user_workout_exercises/current_formatted_list
-> > ```
 > > ### Perform exercise classification for the current user's currently active workout day
 > > ```
 > > [POST, PATCH] /user_workout_exercises

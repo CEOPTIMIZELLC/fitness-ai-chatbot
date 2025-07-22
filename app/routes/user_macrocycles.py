@@ -10,31 +10,6 @@ from app.main_agent.user_macrocycles import create_goal_agent, MacrocycleActions
 bp = Blueprint('user_macrocycles', __name__)
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
-# Retrieve possible goal types.
-def retrieve_goal_types():
-    goals = db.session.query(Goal_Library.id, Goal_Library.name).all()
-
-    return [
-        {
-            "id": goal.id, 
-            "name": goal.name.lower()
-        } 
-        for goal in goals
-    ]
-
-def goal_classification_test_run(goal_app, goal_types, user_goal):
-    result_temp = goal_app.invoke(
-        {
-            "new_goal": user_goal, 
-            "goal_types": goal_types, 
-            "attempts": 0
-        })
-    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
-    print("")
-    return {
-        "new_goal": user_goal,
-        "goal_classification": result_temp["goal_class"],
-        "goal_id": result_temp["goal_id"]}
 
 # Retrieve current user's macrocycles
 @bp.route('/', methods=['GET'])
@@ -64,24 +39,6 @@ def read_user_current_macrocycle():
         "macrocycle_impacted": True,
         "macrocycle_is_altered": False,
         "macrocycle_read_plural": False,
-        "macrocycle_read_current": True,
-        "macrocycle_message": "Retrieve current macrocycle.",
-        "macrocycle_alter_old": None
-    }
-    goal_agent = create_goal_agent()
-
-    result = goal_agent.invoke(state)
-    return jsonify({"status": "success", "macrocycles": result}), 200
-
-# Retrieve current user's macrocycles
-@bp.route('/current_formatted_list', methods=['GET'])
-@login_required
-def get_user_current_macrocycle_formatted():
-    state = {
-        "user_id": current_user.id,
-        "macrocycle_impacted": True,
-        "macrocycle_is_altered": False,
-        "macrocycle_read_plural": True,
         "macrocycle_read_current": True,
         "macrocycle_message": "Retrieve current macrocycle.",
         "macrocycle_alter_old": None
@@ -131,6 +88,32 @@ def change_macrocycle_by_id(goal_id):
     return jsonify({"status": "success", "macrocycles": macrocycles}), 200
 
 # ---------- TEST ROUTES --------------
+
+# Retrieve possible goal types.
+def retrieve_goal_types():
+    goals = db.session.query(Goal_Library.id, Goal_Library.name).all()
+
+    return [
+        {
+            "id": goal.id, 
+            "name": goal.name.lower()
+        } 
+        for goal in goals
+    ]
+
+def goal_classification_test_run(goal_app, goal_types, user_goal):
+    result_temp = goal_app.invoke(
+        {
+            "new_goal": user_goal, 
+            "goal_types": goal_types, 
+            "attempts": 0
+        })
+    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
+    print("")
+    return {
+        "new_goal": user_goal,
+        "goal_classification": result_temp["goal_class"],
+        "goal_id": result_temp["goal_id"]}
 
 # Testing for goal classification.
 @bp.route('/test', methods=['GET', 'POST'])

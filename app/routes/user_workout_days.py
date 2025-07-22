@@ -8,47 +8,13 @@ from app.agents.phase_components import Main as phase_component_main
 from app.utils.print_long_output import print_long_output
 from app.main_agent.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
-from app.main_agent.user_workout_days import create_microcycle_scheduler_agent, MicrocycleSchedulerActions
+from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 
 from .utils import recursively_change_dict_timedeltas
 
 bp = Blueprint('user_workout_days', __name__)
 
 # ----------------------------------------- Workout Days -----------------------------------------
-
-# Verifies and updates the phase component information.
-# Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
-# Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
-# Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
-# Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
-def verify_and_update_pc_information(parameters, pcs, exercises, total_availability, number_of_available_weekdays):
-    pc_info = verify_pc_information(parameters, pcs, exercises, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", check_globally=False, default_count_if_none=number_of_available_weekdays)
-    pcs = pc_info[0]
-    parameters["phase_components"] = pcs
-    return None
-
-# Retrieves the parameters used by the solver.
-def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability):
-    parameters = {"valid": True, "status": None}
-
-    parameters["microcycle_weekdays"] = microcycle_weekdays
-    parameters["weekday_availability"] = weekday_availability
-    parameters["phase_components"] = construct_phase_component_list(phase_id)
-    parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
-    parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
-
-    verify_and_update_pc_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:], total_availability, number_of_available_weekdays)
-
-    return parameters
-
-def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose=False):
-    parameters=retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability)
-    constraints={}
-
-    result = phase_component_main(parameters, constraints)
-    if verbose:
-        print_long_output(result["formatted"])
-    return result
 
 # Retrieve current user's phase components
 @bp.route('/', methods=['GET'])
@@ -75,14 +41,6 @@ def get_user_workout_days_list():
 @bp.route('/current_list', methods=['GET'])
 @login_required
 def get_user_current_workout_days_list():
-    phase_components = MicrocycleSchedulerActions.get_user_current_list()
-    return jsonify({"status": "success", "phase_components": phase_components}), 200
-
-
-# Retrieve user's current microcycle's phase components
-@bp.route('/current_formatted_list', methods=['GET'])
-@login_required
-def get_user_current_workout_days_formatted_list():
     state = {
         "user_id": current_user.id,
         "phase_component_impacted": True,
@@ -158,6 +116,40 @@ def workout_day_initializer_by_id(phase_id):
 
 # ---------- TEST ROUTES --------------
 
+# Verifies and updates the phase component information.
+# Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
+# Checks if the minimum amount of exercises allowed could fit into the workout with the current duration. 
+# Checks if there are enough exercises to meet the minimum amount of exercises for a phase component. 
+# Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
+def verify_and_update_pc_information(parameters, pcs, exercises, total_availability, number_of_available_weekdays):
+    pc_info = verify_pc_information(parameters, pcs, exercises, total_availability, "duration_min_for_day", "frequency_per_microcycle_min", check_globally=False, default_count_if_none=number_of_available_weekdays)
+    pcs = pc_info[0]
+    parameters["phase_components"] = pcs
+    return None
+
+# Retrieves the parameters used by the solver.
+def retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability):
+    parameters = {"valid": True, "status": None}
+
+    parameters["microcycle_weekdays"] = microcycle_weekdays
+    parameters["weekday_availability"] = weekday_availability
+    parameters["phase_components"] = construct_phase_component_list(phase_id)
+    parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
+    parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
+
+    verify_and_update_pc_information(parameters, parameters["phase_components"], parameters["possible_exercises"][1:], total_availability, number_of_available_weekdays)
+
+    return parameters
+
+def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose=False):
+    parameters=retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability)
+    constraints={}
+
+    result = phase_component_main(parameters, constraints)
+    if verbose:
+        print_long_output(result["formatted"])
+    return result
+
 def retrieve_availability_for_test():
     weekday_availability_temp = [
         {"id": 0, "name": "Monday", "availability": 6 * 60 * 60},
@@ -184,13 +176,6 @@ def retrieve_availability_for_test():
         if availability > 0:
             number_of_available_weekdays += 1
     return microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability
-
-# Testing for the parameter programming for phase component assignment.
-@bp.route('/test/<phase_id>', methods=['GET', 'POST'])
-def test_workout_day_by_id(phase_id):
-    microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability = retrieve_availability_for_test()
-    result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
-    return jsonify({"status": "success", "mesocycles": result}), 200
 
 # Testing for the parameter programming for phase component assignment.
 @bp.route('/test', methods=['GET', 'POST'])

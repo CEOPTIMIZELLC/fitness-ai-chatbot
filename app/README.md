@@ -66,8 +66,7 @@ Routes related to the creation and deletion of accounts and users, as well as lo
 | Method | Route | Description |
 | --- | --- | --- |
 | **[GET]** | `/user_mesocycles` | List current user's past and present mesocycles |
-| **[GET]** | `/user_mesocycles/current_list` | List current user's mesocycles for the currently active macrocycle |
-| **[GET]** | `/user_mesocycles/current_formatted_list` | List current user's formatted mesocycles for the currently active macrocycle |
+| **[GET]** | `/user_mesocycles/current_list` | List current user's formatted mesocycles for the currently active macrocycle |
 | **[GET]** | `/user_mesocycles/current` | Retrieve current user's currently active mesocycle |
 | **[POST, PATCH]** | `/user_mesocycles` | Perform phase classification for the current user's currently active macrocycle |
 | **[GET, POST]** | `/user_mesocycles/test` | Perform unit test for phase classification for for every viable goal type |
@@ -84,8 +83,7 @@ Routes related to the creation and deletion of accounts and users, as well as lo
 | Method | Route |  Description |
 | --- | --- | --- |
 | **[GET]** | `/user_workout_days` | List current user's past and present work days along with each day's components |
-| **[GET]** | `/user_workout_days/current_list` | List current user's work days (and corresponding components) for the currently active microcycle |
-| **[GET]** | `/user_workout_days/current_formatted_list` | List current user's formatted workout days for the currently active microcycle |
+| **[GET]** | `/user_workout_days/current_list` | List current user's formatted workout days (and corresponding components) for the currently active microcycle |
 | **[GET]** | `/user_workout_days/current` | Retrieve current user's currently active work day (and corresponding components) |
 | **[POST, PATCH]** | `/user_workout_days` | Perform phase component classification for the current user's currently active microcycle |
 | **[GET, POST]** | `/user_workout_days/test` | Perform unit test for phase component classification for for every viable phase type for a mesocycle |
@@ -94,8 +92,7 @@ Routes related to the creation and deletion of accounts and users, as well as lo
 | Method | Route | Description |
 | --- | --- | --- |
 | **[GET]** | `/user_workout_exercises` | List current user's past and present workout exercises |
-| **[GET]** | `/user_workout_exercises/current_list` | List current user's workout exercises for the currently active work day |
-| **[GET]** | `/user_workout_exercises/current_formatted_list` | List current user's formatted exercises for the currently active workout |
+| **[GET]** | `/user_workout_exercises/current_list` | List current user's formatted workout exercises for the currently active work day |
 | **[POST, PATCH]** | `/user_workout_exercises` | Perform exercise assignment for the current user's currently active workout |
 | **[POST, PATCH]** | `/user_workout_exercises/workout_completed` | Indicates the current workout is completed and updates maximum performance |
 | **[POST, PATCH]** | `/user_workout_exercises/initialize_and_complete` | Performs exercise classification and updating in one route. |

@@ -7,26 +7,11 @@ from app.models import Goal_Library, Goal_Phase_Requirements
 
 from app.agents.phases import Main as phase_main
 from app.main_agent.utils import construct_phases_list
-from app.main_agent.user_mesocycles import create_mesocycle_agent, MesocycleActions
+from app.main_agent.user_mesocycles import create_mesocycle_agent
 
 bp = Blueprint('user_mesocycles', __name__)
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
-
-def perform_phase_selection(goal_id, macrocycle_allowed_weeks):
-    parameters={
-        "macrocycle_allowed_weeks": macrocycle_allowed_weeks,
-        "goal_type": goal_id}
-    constraints={}
-
-    # Retrieve all possible phases that can be selected and convert them into a list form.
-    parameters["possible_phases"] = construct_phases_list(int(goal_id))
-
-    result = phase_main(parameters, constraints)
-
-    if verbose:
-        print(result["formatted"])
-    return result
 
 # Retrieve current user's mesocycles
 @bp.route('/', methods=['GET'])
@@ -45,17 +30,10 @@ def get_user_mesocycles_list():
     result = mesocycle_agent.invoke(state)
     return jsonify({"status": "success", "mesocycles": result}), 200
 
-# Retrieve user's current macrocycles's mesocycles
+# Retrieve user's current macrocycle's mesocycles
 @bp.route('/current_list', methods=['GET'])
 @login_required
 def get_user_current_mesocycles_list():
-    mesocycles = MesocycleActions.get_user_current_list()
-    return jsonify({"status": "success", "mesocycles": mesocycles}), 200
-
-# Retrieve user's current macrocycle's mesocycles
-@bp.route('/current_formatted_list', methods=['GET'])
-@login_required
-def get_user_current_mesocycles_formatted_list():
     state = {
         "user_id": current_user.id,
         "mesocycle_impacted": True,
@@ -122,6 +100,21 @@ def add_mesocycle_phases_by_id(goal_id):
     return jsonify({"status": "success", "mesocycles": result}), 200
 
 # ---------- TEST ROUTES --------------
+
+def perform_phase_selection(goal_id, macrocycle_allowed_weeks):
+    parameters={
+        "macrocycle_allowed_weeks": macrocycle_allowed_weeks,
+        "goal_type": goal_id}
+    constraints={}
+
+    # Retrieve all possible phases that can be selected and convert them into a list form.
+    parameters["possible_phases"] = construct_phases_list(int(goal_id))
+
+    result = phase_main(parameters, constraints)
+
+    if verbose:
+        print(result["formatted"])
+    return result
 
 # Testing for the parameter programming for mesocycle labeling.
 @bp.route('/test', methods=['GET', 'POST'])
