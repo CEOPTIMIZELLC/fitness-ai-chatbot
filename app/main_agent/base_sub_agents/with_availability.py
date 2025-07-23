@@ -24,7 +24,8 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgent):
     availability_goal = AvailabilityGoal
 
     def __init__(self):
-        super().__init__()
+        self.focus_names = sub_agent_focused_items(self.focus)
+        self.parent_names = sub_agent_focused_items(self.parent)
         self.availability_names = sub_agent_focused_items(self.availability_focus)
 
     def availability_retriever_agent(self, state: TState):

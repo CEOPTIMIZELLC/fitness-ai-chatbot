@@ -1,4 +1,4 @@
-from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
+from config import verbose, verbose_formatted_schedule, verbose_subagent_steps
 from flask import current_app, abort
 from typing_extensions import TypeVar
 
@@ -11,6 +11,7 @@ from langgraph.types import interrupt
 from app import db
 from app.main_agent.main_agent_state import MainAgentState
 
+from .base import BaseAgent
 from .utils import sub_agent_focused_items
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
@@ -18,15 +19,12 @@ from .utils import sub_agent_focused_items
 # Create a generic type variable that must be a subclass of MainAgentState
 TState = TypeVar('TState', bound=MainAgentState)
 
-class BaseAgentWithParents():
-    focus = ""
+class BaseAgentWithParents(BaseAgent):
     parent = ""
-    sub_agent_title = ""
     parent_title = ""
     parent_system_prompt = None
     parent_goal = None
     parent_scheduler_agent = None
-    schedule_printer_class = None
 
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
@@ -43,22 +41,6 @@ class BaseAgentWithParents():
 
     def parent_retriever_agent(self, user_id):
         pass
-
-    # In between node for chained conditional edges.
-    def chained_conditional_inbetween(self, state: TState):
-        return {}
-
-    # Confirm that the desired section should be impacted.
-    def confirm_impact(self, state: TState):
-        if verbose_agent_introductions:
-            print(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
-        if verbose_subagent_steps:
-            print(f"\t---------Confirm that the {self.sub_agent_title} is Impacted---------")
-        if not state[self.focus_names["impact"]]:
-            if verbose_subagent_steps:
-                print(f"\t---------No Impact---------")
-            return "no_impact"
-        return "impact"
 
     # Retrieve parent item that will be used for the current schedule.
     def retrieve_parent(self, state: TState):
@@ -100,16 +82,6 @@ class BaseAgentWithParents():
 
         return {}
 
-    # Default items extracted from the goal classifier
-    def goal_classifier_parser(self, parent_names, goal_class):
-        return {
-            parent_names["impact"]: goal_class.is_requested,
-            parent_names["is_altered"]: True,
-            parent_names["read_plural"]: False,
-            parent_names["read_current"]: False,
-            parent_names["message"]: goal_class.detail
-        }
-
     # Request permission from user to execute the parent initialization.
     def ask_for_permission(self, state: TState):
         if verbose_subagent_steps:
@@ -149,30 +121,6 @@ class BaseAgentWithParents():
         abort(404, description=f"No active {self.parent_title} found.")
         return {}
 
-    # Determine the operation to be performed.
-    def determine_operation(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read or write {self.sub_agent_title}---------")
-        if state[self.focus_names["is_altered"]]:
-            return "alter"
-        return "read"
-
-    # Determine whether the outcome is to read the entire schedule or simply the current item.
-    def determine_read_operation(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read a list of {self.sub_agent_title} or simply a singular item---------")
-        if state[self.focus_names["read_plural"]]:
-            return "plural"
-        return "singular"
-
-    # Determine whether the outcome is to read an item from the current set or all items from the user.
-    def determine_read_filter_operation(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read all {self.sub_agent_title} items for the user or only those currently active---------")
-        if state[self.focus_names["read_current"]]:
-            return "current"
-        return "all"
-
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: TState):
         pass
@@ -198,22 +146,6 @@ class BaseAgentWithParents():
     def agent_output_to_sqlalchemy_model(self, state: TState):
         pass
 
-    # Retrieve user's current schedule item.
-    def read_user_current_element(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Current {self.sub_agent_title} for User---------")
-        user_id = state["user_id"]
-
-        entry_from_db = self.focus_retriever_agent(user_id)
-        if not entry_from_db:
-            abort(404, description=f"No active {self.sub_agent_title} found.")
-
-        schedule_dict = [entry_from_db.to_dict()]
-        formatted_schedule = self.run_schedule_printer(schedule_dict)
-        if verbose_formatted_schedule:
-            print(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
-
     # Print output.
     def get_formatted_list(self, state: TState):
         if verbose_subagent_steps:
@@ -231,29 +163,6 @@ class BaseAgentWithParents():
         if verbose_formatted_schedule:
             print(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
-
-    # Print output.
-    def get_user_list(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
-        user_id = state["user_id"]
-
-        schedule_from_db = self.user_list_query(user_id)
-        if not schedule_from_db:
-            abort(404, description=f"No {self.focus}s found for the user.")
-
-        schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
-
-        formatted_schedule = self.run_schedule_printer(schedule_dict)
-        if verbose_formatted_schedule:
-            print(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
-
-    # Node to declare that the sub agent has ended.
-    def end_node(self, state: TState):
-        if verbose_agent_introductions:
-            print(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
-        return {}
 
     # Create main agent.
     def create_main_agent_graph(self, state_class: type[TState]):
