@@ -19,6 +19,12 @@ class BaseAgent():
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
 
+    def user_list_query(self, user_id):
+        pass
+
+    def focus_retriever_agent(self, user_id):
+        pass
+
     # In between node for chained conditional edges.
     def chained_conditional_inbetween(self, state):
         return {}

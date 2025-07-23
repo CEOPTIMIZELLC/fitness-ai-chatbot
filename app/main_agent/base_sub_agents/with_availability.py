@@ -1,8 +1,5 @@
 from config import verbose_subagent_steps
-from flask import current_app, abort
-
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
+from flask import abort
 
 from langgraph.types import interrupt
 
@@ -11,12 +8,12 @@ from app.main_agent.impact_goal_models import AvailabilityGoal
 from app.main_agent.user_weekdays_availability import WeekdayAvailabilityAgentNode as AvailabilityNode
 
 from .with_parents import TState
-from .with_parents import BaseAgentWithParents as BaseAgent
-from .utils import sub_agent_focused_items
+from .with_parents import BaseAgentWithParents
+from .utils import sub_agent_focused_items, new_input_request
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Availability -----------------------------------------
 
-class BaseAgentWithAvailability(AvailabilityNode, BaseAgent):
+class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
     availability_focus = "availability"
     sub_agent_title = ""
     availability_title = "Availability"
@@ -53,20 +50,12 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgent):
             "task": f"No current {self.availability_title} exists. Would you like for me to generate a {self.availability_title} for you?"
         })
         user_input = result["user_input"]
-
         print(f"Extract the {self.availability_title} Goal the following message: {user_input}")
-        human = f"Extract the goals from the following message: {user_input}"
-        check_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", self.availability_system_prompt),
-                ("human", human),
-            ]
-        )
-        llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
-        structured_llm = llm.with_structured_output(self.availability_goal)
-        goal_classifier = check_prompt | structured_llm
-        goal_class = goal_classifier.invoke({})
 
+        # Retrieve the new input for the focus item.
+        goal_class = new_input_request(user_input, self.focus_system_prompt, self.focus_goal)
+
+        # Parse the structured output values to a dictionary.
         return {
             self.availability_names["impact"]: goal_class.is_requested,
             self.availability_names["is_altered"]: True,

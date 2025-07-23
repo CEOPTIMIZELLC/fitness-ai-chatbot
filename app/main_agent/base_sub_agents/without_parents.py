@@ -1,31 +1,14 @@
 from config import verbose_formatted_schedule, verbose_subagent_steps
-from flask import current_app, abort
-
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
+from flask import abort
 
 from langgraph.types import interrupt
 
 from .base import BaseAgent
-from .utils import sub_agent_focused_items
+from .utils import new_input_request
 
 # ----------------------------------------- Base Sub Agent For Schedule Items Without Parents -----------------------------------------
 
 class BaseAgentWithoutParents(BaseAgent):
-    focus = ""
-    sub_agent_title = ""
-    focus_system_prompt = None
-    focus_goal = None
-
-    def __init__(self):
-        self.focus_names = sub_agent_focused_items(self.focus)
-
-    def user_list_query(self, user_id):
-        pass
-
-    def focus_retriever_agent(self, user_id):
-        pass
-
     def focus_list_retriever_agent(self, user_id):
         pass
 
@@ -54,20 +37,12 @@ class BaseAgentWithoutParents(BaseAgent):
             "task": f"No current {self.sub_agent_title} exists. Would you like for me to generate a {self.sub_agent_title} for you?"
         })
         user_input = result["user_input"]
-
         print(f"Extract the {self.sub_agent_title} Goal the following message: {user_input}")
-        human = f"Extract the goals from the following message: {user_input}"
-        check_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", self.focus_system_prompt),
-                ("human", human),
-            ]
-        )
-        llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
-        structured_llm = llm.with_structured_output(self.focus_goal)
-        goal_classifier = check_prompt | structured_llm
-        goal_class = goal_classifier.invoke({})
 
+        # Retrieve the new input for the focus item.
+        goal_class = new_input_request(user_input, self.focus_system_prompt, self.focus_goal)
+
+        # Parse the structured output values to a dictionary.
         return self.goal_classifier_parser(self.focus_names, goal_class)
 
     # State if no new input was requested.

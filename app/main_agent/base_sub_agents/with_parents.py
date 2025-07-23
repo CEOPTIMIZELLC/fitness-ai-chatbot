@@ -1,9 +1,6 @@
 from config import verbose, verbose_formatted_schedule, verbose_subagent_steps
-from flask import current_app, abort
+from flask import abort
 from typing_extensions import TypeVar
-
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
@@ -12,7 +9,7 @@ from app import db
 from app.main_agent.main_agent_state import MainAgentState
 
 from .base import BaseAgent
-from .utils import sub_agent_focused_items
+from .utils import sub_agent_focused_items, new_input_request
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
 
@@ -31,12 +28,6 @@ class BaseAgentWithParents(BaseAgent):
         self.parent_names = sub_agent_focused_items(self.parent)
 
     def retrieve_children_entries_from_parent(self, parent_db_entry):
-        pass
-
-    def user_list_query(self, user_id):
-        pass
-
-    def focus_retriever_agent(self, user_id):
         pass
 
     def parent_retriever_agent(self, user_id):
@@ -90,20 +81,12 @@ class BaseAgentWithParents(BaseAgent):
             "task": f"No current {self.parent_title} exists for {self.sub_agent_title}. Would you like for me to generate a {self.parent_title} for you?"
         })
         user_input = result["user_input"]
-
         print(f"Extract the {self.parent_title} Goal the following message: {user_input}")
-        human = f"Extract the goals from the following message: {user_input}"
-        check_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", self.parent_system_prompt),
-                ("human", human),
-            ]
-        )
-        llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
-        structured_llm = llm.with_structured_output(self.parent_goal)
-        goal_classifier = check_prompt | structured_llm
-        goal_class = goal_classifier.invoke({})
 
+        # Retrieve the new input for the parent item.
+        goal_class = new_input_request(user_input, self.parent_system_prompt, self.parent_goal)
+
+        # Parse the structured output values to a dictionary.
         return self.goal_classifier_parser(self.parent_names, goal_class)
 
     # Router for if permission was granted.
