@@ -25,6 +25,9 @@ class BaseAgent():
     def focus_retriever_agent(self, user_id):
         pass
 
+    def focus_list_retriever_agent(self, user_id):
+        pass
+
     # In between node for chained conditional edges.
     def chained_conditional_inbetween(self, state):
         return {}
@@ -86,6 +89,20 @@ class BaseAgent():
             abort(404, description=f"No active {self.sub_agent_title} found.")
 
         schedule_dict = [entry_from_db.to_dict()]
+        formatted_schedule = self.run_schedule_printer(schedule_dict)
+        if verbose_formatted_schedule:
+            print(formatted_schedule)
+        return {self.focus_names["formatted"]: formatted_schedule}
+
+    # Print output.
+    def get_formatted_list(self, state):
+        if verbose_subagent_steps:
+            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        user_id = state["user_id"]
+        schedule_from_db = self.focus_list_retriever_agent(user_id)
+
+        schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
+
         formatted_schedule = self.run_schedule_printer(schedule_dict)
         if verbose_formatted_schedule:
             print(formatted_schedule)

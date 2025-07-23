@@ -27,11 +27,20 @@ class BaseAgentWithParents(BaseAgent):
         self.focus_names = sub_agent_focused_items(self.focus)
         self.parent_names = sub_agent_focused_items(self.parent)
 
+    def parent_retriever_agent(self, user_id):
+        pass
+
     def retrieve_children_entries_from_parent(self, parent_db_entry):
         pass
 
-    def parent_retriever_agent(self, user_id):
-        pass
+    # Focus List Retriever uses the parent retriever and then retrieves the children from it.
+    def focus_list_retriever_agent(self, user_id):
+        parent_db_entry = self.parent_retriever_agent(user_id)
+
+        schedule_from_db = self.retrieve_children_entries_from_parent(parent_db_entry)
+        if not schedule_from_db:
+            abort(404, description=f"No {self.focus}s found for the {self.parent}.")
+        return schedule_from_db
 
     # Retrieve parent item that will be used for the current schedule.
     def retrieve_parent(self, state: TState):
@@ -129,23 +138,6 @@ class BaseAgentWithParents(BaseAgent):
     def agent_output_to_sqlalchemy_model(self, state: TState):
         pass
 
-    # Print output.
-    def get_formatted_list(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
-        user_id = state["user_id"]
-        parent_db_entry = self.parent_retriever_agent(user_id)
-
-        schedule_from_db = self.retrieve_children_entries_from_parent(parent_db_entry)
-        if not schedule_from_db:
-            abort(404, description=f"No {self.focus}s found for the {self.parent}.")
-
-        schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
-
-        formatted_schedule = self.run_schedule_printer(schedule_dict)
-        if verbose_formatted_schedule:
-            print(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
 
     # Create main agent.
     def create_main_agent_graph(self, state_class: type[TState]):

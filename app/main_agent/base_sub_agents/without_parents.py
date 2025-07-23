@@ -9,9 +9,6 @@ from .utils import new_input_request
 # ----------------------------------------- Base Sub Agent For Schedule Items Without Parents -----------------------------------------
 
 class BaseAgentWithoutParents(BaseAgent):
-    def focus_list_retriever_agent(self, user_id):
-        pass
-
     # Check if a new goal exists to be classified.
     def confirm_if_performing_by_id(self, state):
         if verbose_subagent_steps:
@@ -63,16 +60,3 @@ class BaseAgentWithoutParents(BaseAgent):
     def agent_output_to_sqlalchemy_model(self, state):
         pass
 
-    # Print output.
-    def get_formatted_list(self, state):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
-        user_id = state["user_id"]
-        schedule_from_db = self.focus_list_retriever_agent(user_id)
-
-        schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
-
-        formatted_schedule = self.run_schedule_printer(schedule_dict)
-        if verbose_formatted_schedule:
-            print(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
