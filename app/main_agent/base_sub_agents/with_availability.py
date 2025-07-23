@@ -8,14 +8,15 @@ from langgraph.types import interrupt
 
 from app.main_agent.prompts import availability_system_prompt
 from app.main_agent.impact_goal_models import AvailabilityGoal
-from app.main_agent.user_weekdays_availability import WeekdayAvailabilityAgentNode
+from app.main_agent.user_weekdays_availability import WeekdayAvailabilityAgentNode as AvailabilityNode
 
-from .with_parents import BaseAgent, TState
+from .with_parents import TState
+from .with_parents import BaseAgentWithParents as BaseAgent
 from .utils import sub_agent_focused_items
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Availability -----------------------------------------
 
-class BaseAgentWithAvailability(WeekdayAvailabilityAgentNode, BaseAgent):
+class BaseAgentWithAvailability(AvailabilityNode, BaseAgent):
     availability_focus = "availability"
     sub_agent_title = ""
     availability_title = "Availability"
@@ -26,7 +27,7 @@ class BaseAgentWithAvailability(WeekdayAvailabilityAgentNode, BaseAgent):
         super().__init__()
         self.availability_names = sub_agent_focused_items(self.availability_focus)
 
-    def availability_retriever_agent(self, state):
+    def availability_retriever_agent(self, state: TState):
         pass
 
     # Retrieve availability item that will be used for the current schedule.
@@ -42,7 +43,6 @@ class BaseAgentWithAvailability(WeekdayAvailabilityAgentNode, BaseAgent):
         if not state[self.availability_names["entry"]]:
             return "no_availability"
         return "availability"
-
 
     # Request permission from user to execute the availability initialization.
     def ask_for_availability_permission(self, state: TState):

@@ -10,7 +10,7 @@ from .utils import sub_agent_focused_items
 
 # ----------------------------------------- Base Sub Agent For Schedule Items Without Parents -----------------------------------------
 
-class BaseAgent():
+class BaseAgentWithoutParents():
     focus = ""
     sub_agent_title = ""
     focus_system_prompt = None

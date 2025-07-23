@@ -18,7 +18,7 @@ from .utils import sub_agent_focused_items
 # Create a generic type variable that must be a subclass of MainAgentState
 TState = TypeVar('TState', bound=MainAgentState)
 
-class BaseAgent():
+class BaseAgentWithParents():
     focus = ""
     parent = ""
     sub_agent_title = ""
@@ -59,7 +59,6 @@ class BaseAgent():
                 print(f"\t---------No Impact---------")
             return "no_impact"
         return "impact"
-
 
     # Retrieve parent item that will be used for the current schedule.
     def retrieve_parent(self, state: TState):
