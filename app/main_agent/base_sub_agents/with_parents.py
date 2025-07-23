@@ -115,7 +115,7 @@ class BaseAgentWithParents():
         if verbose_subagent_steps:
             print(f"\t---------Ask user if a new {self.parent_title} can be made---------")
         result = interrupt({
-            "task": f"No current {self.parent_title} exists. Would you like for me to generate a {self.parent_title} for you?"
+            "task": f"No current {self.parent_title} exists for {self.sub_agent_title}. Would you like for me to generate a {self.parent_title} for you?"
         })
         user_input = result["user_input"]
 
@@ -152,7 +152,7 @@ class BaseAgentWithParents():
     # Determine the operation to be performed.
     def determine_operation(self, state: TState):
         if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read or write {self.parent_title}---------")
+            print(f"\t---------Determine if the objective is to read or write {self.sub_agent_title}---------")
         if state[self.focus_names["is_altered"]]:
             return "alter"
         return "read"
@@ -160,7 +160,7 @@ class BaseAgentWithParents():
     # Determine whether the outcome is to read the entire schedule or simply the current item.
     def determine_read_operation(self, state: TState):
         if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read a list of {self.parent_title} or simply a singular item---------")
+            print(f"\t---------Determine if the objective is to read a list of {self.sub_agent_title} or simply a singular item---------")
         if state[self.focus_names["read_plural"]]:
             return "plural"
         return "singular"
@@ -168,7 +168,7 @@ class BaseAgentWithParents():
     # Determine whether the outcome is to read an item from the current set or all items from the user.
     def determine_read_filter_operation(self, state: TState):
         if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read all {self.parent_title} items for the user or only those currently active---------")
+            print(f"\t---------Determine if the objective is to read all {self.sub_agent_title} items for the user or only those currently active---------")
         if state[self.focus_names["read_current"]]:
             return "current"
         return "all"
