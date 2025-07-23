@@ -143,6 +143,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
             print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
         workout_day_id = state["phase_component_id"]
         parent_db_entry = db.session.get(User_Workout_Days, workout_day_id)
+        workout_date = str(parent_db_entry.date)
 
         schedule_from_db = self.retrieve_children_entries_from_parent(parent_db_entry)
         if not schedule_from_db:
@@ -154,7 +155,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
                                     {"component_id": user_workout_exercise.phase_components.components.id}
                                     for user_workout_exercise in schedule_from_db]
 
-        formatted_schedule = self.run_schedule_printer(loading_system_id, user_workout_exercises_dict)
+        formatted_schedule = self.run_schedule_printer(workout_date, loading_system_id, user_workout_exercises_dict)
         if verbose_formatted_schedule:
             print_long_output(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
