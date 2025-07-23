@@ -19,37 +19,52 @@ class SchedulePrinter(BaseSchedulePrinter):
             "end": ("", 2),
         }
 
-    def _format_transition(self, new_entry, old_entry, key):
+    def _is_value_present(self, value):
+        if value != None:
+            return True
+        return False
+
+    def _format_transition(self, old_entry, new_entry, key):
         new_value = new_entry[key]
         old_value = old_entry[key]
 
+        new_value_present = self._is_value_present(new_value)
+        old_value_present = self._is_value_present(old_value)
+
         # Return nothing if no value exists for either.
-        if (not old_value) and (not new_value):
+        if (not old_value_present) and (not new_value_present):
             return ""
         
         # Return the transistion value otherwise.
-        new_string = str(new_value) if new_value else ""
-        old_string = str(old_value) if old_value else ""
+        new_string = str(new_value) if new_value_present else ""
+        old_string = str(old_value) if old_value_present else ""
         return f"{old_string} -> {new_string}"
 
-    def _line_fields(self, i, new_entry, old_entry):
+    def _weighted_format_transition(self, old_entry, new_entry, key):
+        # Return nothing if no value exists for either.
+        if new_entry["is_weighted"]:
+            return self._format_transition(old_entry, new_entry, key)
+
+        return ""
+
+    def _line_fields(self, i, old_entry, new_entry):
         # Format line
         return {
             "number": str(i + 1),
             "exercise": new_entry["exercise_name"],
-            "duration": f"{self._format_transition(new_entry, old_entry, "duration")} sec",
-            "working_duration": f"{self._format_transition(new_entry, old_entry, "working_duration")} sec",
-            "one_rep_max": self._format_transition(new_entry, old_entry, "one_rep_max_decayed"),
-            "one_rep_load": self._format_transition(new_entry, old_entry, "one_rep_load"),
-            "intensity": self._format_transition(new_entry, old_entry, "intensity"),
-            "volume": self._format_transition(new_entry, old_entry, "volume"),
-            "density": self._format_transition(new_entry, old_entry, "density"),
-            "performance": self._format_transition(new_entry, old_entry, "performance_decayed"),
-            "last_performed": self._format_transition(new_entry, old_entry, "last_performed"),
+            "duration": f"{self._format_transition(old_entry, new_entry, "duration")} sec",
+            "working_duration": f"{self._format_transition(old_entry, new_entry, "working_duration")} sec",
+            "one_rep_max": self._weighted_format_transition(old_entry, new_entry, "one_rep_max_decayed"),
+            "one_rep_load": self._weighted_format_transition(old_entry, new_entry, "one_rep_load"),
+            "intensity": self._weighted_format_transition(old_entry, new_entry, "intensity"),
+            "volume": self._format_transition(old_entry, new_entry, "volume"),
+            "density": self._format_transition(old_entry, new_entry, "density"),
+            "performance": self._format_transition(old_entry, new_entry, "performance_decayed"),
+            "last_performed": self._format_transition(old_entry, new_entry, "last_performed"),
             "end": "",
         }
 
-    def _log_schedule(self, headers, header_line, schedule, schedule_old):
+    def _log_schedule(self, headers, header_line, schedule_old, schedule):
         schedule_string = ""
         schedule_string += header_line
         for i, (old_entry, new_entry) in enumerate(zip(schedule_old, schedule)):
@@ -57,7 +72,7 @@ class SchedulePrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_schedule_printer(self, schedule, schedule_old):
+    def run_schedule_printer(self, schedule_old, schedule):
         formatted = ""
 
         # Calculate longest string sizes
@@ -68,10 +83,10 @@ class SchedulePrinter(BaseSchedulePrinter):
         headers = self._create_final_header_fields(longest_sizes)
         header_line = self._formatted_header_line(headers)
 
-        formatted += self._log_schedule(headers, header_line, schedule, schedule_old)
+        formatted += self._log_schedule(headers, header_line, schedule_old, schedule)
 
         return formatted
 
-def Main(schedule, schedule_old):
+def Main(schedule_old, schedule):
     completed_exercise_schedule_printer = SchedulePrinter()
-    return completed_exercise_schedule_printer.run_schedule_printer(schedule, schedule_old)
+    return completed_exercise_schedule_printer.run_schedule_printer(schedule_old, schedule)

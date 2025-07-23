@@ -165,6 +165,7 @@ class User_Exercises(db.Model, TableNameMixin):
             "user_id": self.user_id, 
             "exercise_id": self.exercise_id, 
             "exercise_name": self.exercises.name,
+            "is_weighted": self.exercises.is_weighted,
             "days_since": self.days_since,
             "last_performed": self.last_performed,
             "one_rep_max": self.one_rep_max,

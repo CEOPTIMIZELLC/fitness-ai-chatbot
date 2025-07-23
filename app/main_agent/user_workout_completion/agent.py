@@ -116,7 +116,7 @@ def get_formatted_list(state: AgentState):
     user_exercises = state["user_exercises"]
     old_user_exercises = state["old_user_exercises"]
 
-    formatted_schedule = print_schedule(user_exercises, old_user_exercises)
+    formatted_schedule = print_schedule(old_user_exercises, user_exercises)
     if verbose_formatted_schedule:
         print_long_output(formatted_schedule)
 
