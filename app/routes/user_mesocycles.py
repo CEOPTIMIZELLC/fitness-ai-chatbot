@@ -1,5 +1,5 @@
 from config import verbose
-from flask import jsonify, Blueprint, abort
+from flask import jsonify, Blueprint
 from flask_login import login_required, current_user
 
 from app import db

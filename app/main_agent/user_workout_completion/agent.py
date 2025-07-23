@@ -1,5 +1,4 @@
-from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
-from flask import current_app, abort
+from config import verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
 
 from langgraph.graph import StateGraph, START, END
 

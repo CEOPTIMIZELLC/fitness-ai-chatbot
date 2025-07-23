@@ -4,7 +4,8 @@ from flask import request, jsonify, Blueprint, abort
 
 from flask_login import current_user, login_required
 
-from config import verbose, performance_decay_grace_period
+from config import performance_decay_grace_period
+from config import verbose
 from app import db
 from app.utils.sql import sql_app
 from app.utils.table_context_parser import context_retriever_app

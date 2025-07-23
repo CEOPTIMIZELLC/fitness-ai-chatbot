@@ -1,4 +1,4 @@
-from config import verbose, verbose_formatted_schedule, verbose_subagent_steps
+from config import verbose, verbose_subagent_steps
 from flask import abort
 from typing_extensions import TypeVar
 

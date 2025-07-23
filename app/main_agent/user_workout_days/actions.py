@@ -1,4 +1,4 @@
-from config import vertical_loading, verbose, verbose_subagent_steps
+from config import vertical_loading
 from datetime import timedelta
 
 from app.models import Weekday_Library, User_Weekday_Availability, User_Workout_Days

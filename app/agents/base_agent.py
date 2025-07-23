@@ -1,4 +1,5 @@
-from config import ortools_solver_time_in_seconds, verbose, verbose_agent_time, verbose_agent_steps, log_constraints
+from config import log_constraints
+from config import verbose, verbose_agent_time, verbose_agent_steps
 from time import perf_counter
 from typing_extensions import TypedDict, TypeVar
 from langgraph.graph import StateGraph, START, END

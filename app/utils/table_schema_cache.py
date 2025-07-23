@@ -1,7 +1,5 @@
 from sqlalchemy import inspect
 
-import json
-
 from config import verbose
 
 def get_foreign_keys(inspector, table_name):

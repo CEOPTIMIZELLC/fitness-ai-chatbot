@@ -1,5 +1,4 @@
-from config import vertical_loading, verbose, verbose_subagent_steps
-from datetime import timedelta
+from config import verbose, verbose_subagent_steps
 
 from langgraph.graph import StateGraph, START, END
 

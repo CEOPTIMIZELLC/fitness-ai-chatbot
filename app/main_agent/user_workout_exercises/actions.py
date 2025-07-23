@@ -1,5 +1,3 @@
-from config import verbose, verbose_formatted_schedule
-
 from flask import abort
 from flask_login import current_user
 
