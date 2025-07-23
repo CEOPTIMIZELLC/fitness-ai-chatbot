@@ -3,36 +3,13 @@ from config import verbose, verbose_formatted_schedule
 from flask import abort
 from flask_login import current_user
 
-from app import db
-from app.models import (
-    User_Exercises, 
-    User_Weekday_Availability, 
-    User_Macrocycles, 
-    User_Mesocycles, 
-    User_Microcycles, 
-    User_Workout_Days, 
-    User_Workout_Exercises
-)
-
-from app.agents.exercises import exercises_main
-
-from app.utils.common_table_queries import current_workout_day
-from app.utils.print_long_output import print_long_output
+from app.models import User_Weekday_Availability
 
 from app.main_agent.utils import retrieve_total_time_needed
 from app.main_agent.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
-from .schedule_printer import Main as print_schedule
-
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
-
-
-def delete_old_children(workout_day_id):
-    db.session.query(User_Workout_Exercises).filter_by(workout_day_id=workout_day_id).delete()
-    if verbose:
-        print("Successfully deleted")
-    return None
 
 def retrieve_availability_for_day(user_id, weekday_id):
     # Retrieve availability for day.
@@ -46,7 +23,7 @@ def retrieve_availability_for_day(user_id, weekday_id):
 
 # Verifies and updates the phase component information.
 # Updates the maximum allowed exercises to be the number of allowed exercises for a phase component if the number available is lower than the maximum.
-def verify_and_update_pc_information(parameters, pcs, exercises):
+def verify_and_update_phase_component_information(parameters, pcs, exercises):
     # Retrieve parameters. Returned information includes the phase components, exercises, and exercises for phase components.
     pcs, exercises = verify_pc_information(parameters, pcs, exercises, parameters["availability"], "duration_min", "exercises_per_bodypart_workout_min", check_globally=True)
     
@@ -75,7 +52,7 @@ def retrieve_projected_duration(user_workout_components, pcs):
 #   The projected duration of the workout.
 #   The phase component information relevant for the workout.
 #   The exercises that can be assigned in the workout.
-def retrieve_pc_parameters(user_workout_day, availability):
+def retrieve_parameters(user_workout_day, availability):
     parameters = {"valid": True, "status": None}
 
     # Retrieve user components
@@ -89,28 +66,7 @@ def retrieve_pc_parameters(user_workout_day, availability):
     parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
     parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
 
-    verify_and_update_pc_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
+    verify_and_update_phase_component_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])
 
     parameters["projected_duration"] = retrieve_projected_duration(parameters["phase_components"][1:], parameters["phase_components"][1:])
     return parameters
-
-def agent_output_to_sqlalchemy_model(exercises_output, workout_day_id):
-    new_exercises = []
-    for i, exercise in enumerate(exercises_output, start=1):
-        # Create a new exercise entry.
-        new_exercise = User_Workout_Exercises(
-            workout_day_id = workout_day_id,
-            phase_component_id = exercise["phase_component_id"],
-            exercise_id = exercise["exercise_id"],
-            bodypart_id = exercise["bodypart_id"],
-            order = i,
-            reps = exercise["reps_var"],
-            sets = exercise["sets_var"],
-            intensity = exercise["intensity_var"],
-            rest = exercise["rest_var"],
-            weight = exercise["training_weight"],
-            true_exercise_flag = exercise["true_exercise_flag"]
-        )
-
-        new_exercises.append(new_exercise)
-    return new_exercises

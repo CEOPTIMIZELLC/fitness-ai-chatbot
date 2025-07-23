@@ -4,7 +4,7 @@ from flask import abort
 from langgraph.graph import StateGraph, START, END
 
 from app import db
-from app.models import User_Workout_Exercises, User_Weekday_Availability, User_Workout_Days
+from app.models import User_Workout_Exercises, User_Workout_Days
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 
 from app.agents.exercises import exercises_main
@@ -17,7 +17,7 @@ from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 from app.main_agent.impact_goal_models import PhaseComponentGoal
 from app.main_agent.prompts import phase_component_system_prompt
 
-from .actions import retrieve_pc_parameters
+from .actions import retrieve_availability_for_day, retrieve_parameters
 from .schedule_printer import SchedulePrinter
 from .list_printer import Main as list_printer_main
 
@@ -31,16 +31,6 @@ class AgentState(MainAgentState):
     user_availability: int
     start_date: any
     agent_output: list
-
-def retrieve_availability_for_day(user_id, weekday_id):
-    # Retrieve availability for day.
-    availability = (
-        User_Weekday_Availability.query
-        .filter_by(user_id=user_id, weekday_id=weekday_id)
-        .first())
-    if availability:
-        return int(availability.availability.total_seconds())
-    return None
 
 class SubAgent(BaseAgent, SchedulePrinter):
     focus = "workout_schedule"
@@ -106,7 +96,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         availability = state["user_availability"]
 
         # Retrieve parameters.
-        parameters = retrieve_pc_parameters(user_workout_day, availability)
+        parameters = retrieve_parameters(user_workout_day, availability)
         constraints={"vertical_loading": loading_system_id == 1}
 
         result = exercises_main(parameters, constraints)

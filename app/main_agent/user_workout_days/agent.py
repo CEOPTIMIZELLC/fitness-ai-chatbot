@@ -5,7 +5,14 @@ from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.agents.phase_components import Main as phase_component_main
-from app.models import User_Workout_Components, User_Workout_Days
+from app.models import (
+    User_Workout_Components, 
+    User_Macrocycles, 
+    User_Mesocycles, 
+    User_Microcycles, 
+    User_Workout_Days
+)
+
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 from app.utils.common_table_queries import current_microcycle, current_workout_day
 from app.utils.print_long_output import print_long_output
@@ -16,7 +23,13 @@ from app.main_agent.user_microcycles import create_microcycle_agent
 from app.main_agent.impact_goal_models import MicrocycleGoal
 from app.main_agent.prompts import microcycle_system_prompt
 
-from .actions import retrieve_availability_for_week, retrieve_pc_parameters
+from .actions import (
+    retrieve_parameters, 
+    retrieve_availability_for_week, 
+    retrieve_weekday_availability_information_from_availability, 
+    duration_to_weekdays, 
+    workout_day_entry_construction 
+)
 from .schedule_printer import SchedulePrinter
 
 # ----------------------------------------- User Workout Days -----------------------------------------
@@ -35,60 +48,6 @@ class AgentState(MainAgentState):
 
     start_date: any
     agent_output: list
-
-# Retrieves various availability information from the availability query.
-# The availability for each weekday, as well as its name.
-# The total number of available weekdays.
-# The total availability over all. 
-def retrieve_weekday_availability_information_from_availability(availability):
-    weekday_availability = []
-    number_of_available_weekdays = 0
-    total_availability = 0
-
-    for day in availability:
-        weekday_availability.append({
-            "id": day["weekday_id"], 
-            "name": day["weekday_name"].title(), 
-            "availability": int(day["availability"])
-        })
-        total_availability += day["availability"]
-        if day["availability"] > 0:
-            number_of_available_weekdays += 1
-    return weekday_availability, number_of_available_weekdays, total_availability
-
-# Given a start date and a duration, convert into a list of weekdays.
-def duration_to_weekdays(dur, start_date):
-    microcycle_weekdays = []
-    start_date_number = start_date.weekday()
-
-    # Loop through the number of iterations
-    for i in range(dur):
-        # Calculate the current number using modulo to handle the circular nature
-        weekday_number = (start_date_number + i) % 7
-        microcycle_weekdays.append(weekday_number)
-    return microcycle_weekdays
-
-# Create a corresponding workout day entry.
-def workout_day_entry_construction(microcycle_weekdays, start_date, microcycle_id):
-    user_workdays = []
-
-    # Loop through the number of iterations
-    for i, weekday_number in enumerate(microcycle_weekdays):
-        if vertical_loading:
-            loading_system_id = 1
-        else:
-            loading_system_id = 2
-
-        new_workday = User_Workout_Days(
-            microcycle_id = microcycle_id,
-            weekday_id = weekday_number,
-            loading_system_id = loading_system_id,
-            order = i+1,
-            date = (start_date + timedelta(days=i))
-        )
-        user_workdays.append(new_workday)
-    
-    return user_workdays
 
 class SubAgent(BaseAgent, SchedulePrinter):
     focus = "phase_component"
@@ -160,13 +119,14 @@ class SubAgent(BaseAgent, SchedulePrinter):
     def perform_scheduler(self, state: AgentState):
         if verbose_subagent_steps:
             print(f"\t---------Perform Workout Day Scheduling---------")
+        user_id = state["user_id"]
         phase_id = state["phase_id"]
         microcycle_weekdays = state["microcycle_weekdays"]
         weekday_availability = state["weekday_availability"]
         number_of_available_weekdays = state["number_of_available_weekdays"]
         total_availability = state["total_availability"]
 
-        parameters=retrieve_pc_parameters(phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability)
+        parameters=retrieve_parameters(user_id, phase_id, microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability)
         constraints={}
 
         result = phase_component_main(parameters, constraints)

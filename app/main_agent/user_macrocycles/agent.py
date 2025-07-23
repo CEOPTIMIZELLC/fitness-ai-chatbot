@@ -12,7 +12,7 @@ from app.main_agent.base_sub_agents.without_parents import BaseAgent
 from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.main_agent.prompts import macrocycle_system_prompt
 
-from .actions import retrieve_goal_types, new_macrocycle, alter_macrocycle
+from .actions import retrieve_goal_types
 from .schedule_printer import SchedulePrinter
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
@@ -117,7 +117,9 @@ class SubAgent(BaseAgent, SchedulePrinter):
         user_id = state["user_id"]
         goal_id = state["goal_id"]
         new_goal = state["macrocycle_message"]
-        user_macrocycle = new_macrocycle(user_id, goal_id, new_goal)
+        user_macrocycle = User_Macrocycles(user_id=user_id, goal_id=goal_id, goal=new_goal)
+        db.session.add(user_macrocycle)
+        db.session.commit()
         return {"user_macrocycle": user_macrocycle.to_dict()}
 
     # Retrieve necessary information for the schedule creation.
@@ -143,7 +145,10 @@ class SubAgent(BaseAgent, SchedulePrinter):
         goal_id = state["goal_id"]
         new_goal = state["macrocycle_message"]
         macrocycle_id = state["macrocycle_id"]
-        user_macrocycle = alter_macrocycle(macrocycle_id, goal_id, new_goal)
+        user_macrocycle = db.session.get(User_Macrocycles, macrocycle_id)
+        user_macrocycle.goal = new_goal
+        user_macrocycle.goal_id = goal_id
+        db.session.commit()
         return {"user_macrocycle": user_macrocycle.to_dict()}
 
     # Create main agent.
