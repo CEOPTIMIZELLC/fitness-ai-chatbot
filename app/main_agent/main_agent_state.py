@@ -14,6 +14,7 @@ class MainAgentState(TypedDict):
     macrocycle_impacted: bool
     macrocycle_message: str
     macrocycle_formatted: str
+    macrocycle_alter_old: bool
 
     mesocycle_impacted: bool
     mesocycle_message: str
@@ -30,3 +31,7 @@ class MainAgentState(TypedDict):
     workout_schedule_impacted: bool
     workout_schedule_message: str
     workout_schedule_formatted: str
+
+    workout_completion_impacted: bool
+    workout_completion_message: str
+    workout_completion_formatted: str

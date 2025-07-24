@@ -25,7 +25,7 @@ from app.utils.print_long_output import print_long_output
 
 from app.main_agent.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
-from app.main_agent.utils import print_workout_days_schedule
+from .schedule_printer import Main as print_schedule
 
 # ----------------------------------------- Workout Days -----------------------------------------
 
@@ -202,7 +202,7 @@ class MicrocycleSchedulerActions:
         pc_dict = get_all_items(Phase_Component_Library)
         bodypart_dict = get_all_items(Bodypart_Library)
 
-        formatted_schedule = print_workout_days_schedule(pc_dict, bodypart_dict, user_workout_days_dict)
+        formatted_schedule = print_schedule(pc_dict, bodypart_dict, user_workout_days_dict)
         if verbose_formatted_schedule:
             print(formatted_schedule)
         return formatted_schedule

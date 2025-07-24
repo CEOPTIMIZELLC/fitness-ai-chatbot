@@ -22,7 +22,7 @@ from app.utils.print_long_output import print_long_output
 from app.main_agent.utils import retrieve_total_time_needed
 from app.main_agent.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
-from app.main_agent.utils import print_workout_exercises_schedule
+from .schedule_printer import Main as print_schedule
 
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
@@ -159,7 +159,7 @@ class WorkoutActions:
                                     {"component_id": user_workout_exercise.phase_components.components.id}
                                     for user_workout_exercise in user_workout_exercises]
         
-        formatted_schedule = print_workout_exercises_schedule(loading_system_id, user_workout_exercises_dict)
+        formatted_schedule = print_schedule(loading_system_id, user_workout_exercises_dict)
         if verbose_formatted_schedule:
             print_long_output(formatted_schedule)
         return formatted_schedule

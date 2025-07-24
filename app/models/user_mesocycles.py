@@ -41,5 +41,6 @@ class User_Mesocycles(BaseModel, TableNameMixin, DateRangeMixin, OrderedMixin):
             "phase_name": self.phases.name, 
             "start_date": self.start_date, 
             "end_date": self.end_date, 
+            "duration_days": total_duration.days, 
             "duration": f"{total_duration.days // 7} weeks {total_duration.days % 7} days"
         }

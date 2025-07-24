@@ -1,3 +1,4 @@
+from .checkpointer import setup_checkpointer
 from .equipment import Data_Importer as Equipment_Data
 from .exercise_equipment import Data_Importer as Exercise_Equipment_Data
 from .exercise_muscle_categories import Data_Importer as Exercise_MC_Data

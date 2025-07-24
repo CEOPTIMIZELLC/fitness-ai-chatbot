@@ -17,6 +17,9 @@ class MacrocycleGoal(BaseModel):
     detail: Optional[str] = Field(
         None, description="Extracted long-term training goals such as 'gain strength in 12 weeks' or 'prepare for a marathon'."
     )
+    alter_old: Optional[bool] = Field(
+        default=False, description="Whether the new macrocycle should alter the current goal instead of replacing it. Only true if explicitly mentioned. Only applicable if macrocycle is requested."
+    )
 
 
 class MesocycleGoal(BaseModel):
@@ -55,6 +58,15 @@ class WorkoutScheduleGoal(BaseModel):
     )
 
 
+class WorkoutCompletionGoal(BaseModel):
+    is_requested: bool = Field(
+        ..., description="True if the has completed their workout."
+    )
+    detail: Optional[str] = Field(
+        None, description="Details like if the user only completed part of their workout."
+    )
+
+
 class RoutineImpactGoals(BaseModel):
     """Hierarchical goal extraction from user input regarding exercise routine."""
     availability: AvailabilityGoal
@@ -63,3 +75,4 @@ class RoutineImpactGoals(BaseModel):
     microcycle: MicrocycleGoal
     phase_component: PhaseComponentGoal
     workout_schedule: WorkoutScheduleGoal
+    workout_completion: WorkoutCompletionGoal

@@ -1,38 +1,43 @@
 from config import verbose, verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
-from flask import abort
+from flask import current_app, abort
 from datetime import timedelta
-from langgraph.graph import StateGraph, START, END
-from app.main_agent.user_macrocycles import create_goal_agent
 
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt, Command
 
 from app import db
 from app.models import User_Mesocycles, User_Macrocycles
-
 from app.agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
-from app.main_agent.utils import construct_phases_list
-from app.main_agent.utils import print_mesocycles_schedule
+from app.main_agent.user_macrocycles import create_goal_agent
+from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent.prompts import macrocycle_system_prompt
+from app.main_agent.utils import construct_phases_list
+
+from .schedule_printer import Main as print_schedule
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
 macrocycle_weeks = 26
 
 class AgentState(MainAgentState):
-    user_macrocycle: any
+    user_macrocycle: dict
     macrocycle_id: int
     goal_id: int
     start_date: any
     macrocycle_allowed_weeks: int
     possible_phases: list
     agent_output: list
-    sql_models: any
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
     if verbose_agent_introductions:
-        print(f"\n=========Changing User Mesocycle=========")
+        print(f"\n=========Starting User Mesocycle=========")
     if verbose_subagent_steps:
         print(f"\t---------Confirm that the User Mesocycle is Impacted---------")
     if not state["mesocycle_impacted"]:
@@ -47,7 +52,9 @@ def retrieve_parent(state: AgentState):
         print(f"\t---------Retrieving Current Macrocycle---------")
     user_id = state["user_id"]
     user_macrocycle = current_macrocycle(user_id)
-    return {"user_macrocycle": user_macrocycle}
+
+    # Return parent.
+    return {"user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None}
 
 # Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
@@ -61,9 +68,28 @@ def confirm_parent(state: AgentState):
 def ask_for_permission(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Ask user if a new Macrocycle can be made---------")
+    result = interrupt({
+        "task": "No current Macrocycle exists. Would you like for me to generate a macrocycle for you?"
+    })
+    user_input = result["user_input"]
+
+    print(f"Extract the Macrocycle Goal the following message: {user_input}")
+    human = f"Extract the goals from the following message: {user_input}"
+    check_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", macrocycle_system_prompt),
+            ("human", human),
+        ]
+    )
+    llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
+    structured_llm = llm.with_structured_output(MacrocycleGoal)
+    goal_classifier = check_prompt | structured_llm
+    goal_class = goal_classifier.invoke({})
+
     return {
-        "macrocycle_impacted": True,
-        "macrocycle_message": "I would like to lose 20 pounds."
+        "macrocycle_impacted": goal_class.is_requested,
+        "macrocycle_message": goal_class.detail, 
+        "macrocycle_alter_old": goal_class.alter_old
     }
 
 # Router for if permission was granted.
@@ -90,17 +116,20 @@ def macrocycle_node(state: AgentState):
             "user_input": state["user_input"], 
             "attempts": state["attempts"], 
             "macrocycle_impacted": state["macrocycle_impacted"], 
-            "macrocycle_message": state["macrocycle_message"]
+            "macrocycle_message": state["macrocycle_message"],
+            "macrocycle_alter_old": state["macrocycle_alter_old"]
         })
     else:
         result = {
             "macrocycle_message": None, 
-            "macrocycle_formatted": None
+            "macrocycle_formatted": None, 
+            "macrocycle_alter_old": False
         }
     return {
         "macrocycle_impacted": result["macrocycle_impacted"], 
         "macrocycle_message": result["macrocycle_message"], 
-        "macrocycle_formatted": result["macrocycle_formatted"]
+        "macrocycle_formatted": result["macrocycle_formatted"], 
+        "macrocycle_alter_old": result["macrocycle_alter_old"]
     }
 
 # Retrieve necessary information for the schedule creation.
@@ -108,9 +137,9 @@ def retrieve_information(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Information for Mesocycle Scheduling---------")
     user_macrocycle = state["user_macrocycle"]
-    macrocycle_id = user_macrocycle.id
-    goal_id = user_macrocycle.goal_id
-    start_date = user_macrocycle.start_date
+    macrocycle_id = user_macrocycle["id"]
+    goal_id = user_macrocycle["goal_id"]
+    start_date = user_macrocycle["start_date"]
     macrocycle_allowed_weeks = macrocycle_weeks
     possible_phases = construct_phases_list(int(goal_id))
     return {
@@ -181,13 +210,14 @@ def agent_output_to_sqlalchemy_model(state: AgentState):
 
     db.session.add_all(user_phases)
     db.session.commit()
-    return {"sql_models": user_phases}
+    return {}
 
 # Print output.
 def get_formatted_list(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Formatted Schedule for user---------")
-    user_macrocycle = state["user_macrocycle"]
+    user_id = state["user_id"]
+    user_macrocycle = current_macrocycle(user_id)
 
     user_mesocycles = user_macrocycle.mesocycles
     if not user_mesocycles:
@@ -195,7 +225,7 @@ def get_formatted_list(state: AgentState):
 
     user_mesocycles_dict = [user_mesocycle.to_dict() for user_mesocycle in user_mesocycles]
 
-    formatted_schedule = print_mesocycles_schedule(user_mesocycles_dict)
+    formatted_schedule = print_schedule(user_mesocycles_dict)
     if verbose_formatted_schedule:
         print(formatted_schedule)
     return {"mesocycle_formatted": formatted_schedule}
@@ -213,7 +243,8 @@ def get_user_list(state: AgentState):
 def get_user_current_list(state: AgentState):
     if verbose_subagent_steps:
         print(f"\t---------Retrieving Current Mesocycles for User---------")
-    user_macrocycle = state["user_macrocycle"]
+    user_id = state["user_id"]
+    user_macrocycle = current_macrocycle(user_id)
     user_mesocycles = user_macrocycle.mesocycles
     return [user_mesocycle.to_dict() 
             for user_mesocycle in user_mesocycles]

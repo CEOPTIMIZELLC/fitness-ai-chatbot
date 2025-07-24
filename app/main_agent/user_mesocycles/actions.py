@@ -10,7 +10,7 @@ from app.agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 from app.main_agent.utils import construct_phases_list
-from app.main_agent.utils import print_mesocycles_schedule
+from .schedule_printer import Main as print_schedule
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
@@ -100,7 +100,7 @@ class MesocycleActions:
 
         user_mesocycles_dict = [user_mesocycle.to_dict() for user_mesocycle in user_mesocycles]
 
-        formatted_schedule = print_mesocycles_schedule(user_mesocycles_dict)
+        formatted_schedule = print_schedule(user_mesocycles_dict)
         if verbose_formatted_schedule:
             print(formatted_schedule)
         return formatted_schedule

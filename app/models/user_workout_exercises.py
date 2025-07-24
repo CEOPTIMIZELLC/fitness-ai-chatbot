@@ -53,6 +53,12 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
     def density(self):
         return math.floor(self.working_duration / self.duration * 100) / 100
 
+    @hybrid_property
+    def one_rep_max(self):
+        if not self.exercises.is_weighted: 
+            return 0
+        return round((self.weight * (30 + self.reps)) / 30, 2)
+
     # Performance of the exercise.
     @hybrid_property
     def performance(self):
@@ -92,6 +98,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
             "bodypart_name": self.bodyparts.name, 
             "is_warmup": self.phase_components.components.is_warmup, 
             "order": self.order, 
+            "date": self.workout_days.date, 
             "seconds_per_exercise": self.seconds_per_exercise, 
             "base_strain": self.base_strain, 
             "reps": self.reps, 
@@ -103,6 +110,7 @@ class User_Workout_Exercises(BaseModel, TableNameMixin, OrderedMixin):
             "working_duration": self.working_duration, 
             "volume": self.volume, 
             "density": self.density, 
+            "one_rep_max": self.one_rep_max, 
             "performance": self.performance, 
             "strained_duration": self.strained_duration, 
             "strained_working_duration": self.strained_working_duration, 

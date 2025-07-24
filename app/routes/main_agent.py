@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint, abort
+from flask import request, jsonify, Blueprint, current_app, abort
 from flask_login import current_user, login_required
 
 bp = Blueprint('main_agent', __name__)
@@ -8,6 +8,8 @@ from app import db
 from app.models import User_Macrocycles, User_Weekday_Availability
 
 from app.main_agent.graph import create_main_agent_graph
+from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.types import interrupt, Command
 
 # ----------------------------------------- Main Agent -----------------------------------------
 test_cases = [
@@ -29,21 +31,56 @@ def run_main_agent(data, delete_old_schedules=False):
     else:
         user_inputs = [data.get("user_input", "")]
 
-    main_agent_app = create_main_agent_graph()
+    db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
 
-    # Invoke with new macrocycle and possible goal types.
-    results = []
-    for i, user_input in enumerate(user_inputs, start=1):
-        if delete_old_schedules:
-            run_delete_schedules(current_user.id)
-        state = main_agent_app.invoke(
-            {"user_input": user_input}, 
-            config={
-                "recursion_limit": agent_recursion_limit
-            })
-        state["iteration"] = i
-        results.append(state)
+    # 👇 keep checkpointer alive during invocation
+    with PostgresSaver.from_conn_string(db_uri) as checkpointer:
+        main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
+        
+        thread = {"configurable": {"thread_id": f"user-{current_user.id}"}}
+
+        # Invoke with new macrocycle and possible goal types.
+        results = []
+        for i, user_input in enumerate(user_inputs, start=1):
+            if delete_old_schedules:
+                run_delete_schedules(current_user.id)
+            result = main_agent_app.invoke(
+                {"user_input": user_input}, 
+                config={
+                    "recursion_limit": agent_recursion_limit,
+                    "configurable": {
+                        "thread_id": f"user-{current_user.id}",
+                    }
+                })
+            result["iteration"] = i
+            result["snapshot_of_agent"] = main_agent_app.get_state(thread)
+            results.append(result)
+
     return results
+
+def resume_main_agent(data):
+    if (not data) or ('user_input' not in data):
+        abort(400, description="No update given.")
+    else:
+        user_input = data.get("user_input", "")
+
+    db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
+
+    # 👇 keep checkpointer alive during invocation
+    with PostgresSaver.from_conn_string(db_uri) as checkpointer:
+        main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
+        
+        thread = {"configurable": {"thread_id": f"user-{current_user.id}"}}
+        snapshot_of_agent = main_agent_app.get_state(thread)
+
+        result = main_agent_app.invoke(
+            Command(resume={"user_input": user_input}),
+            config=snapshot_of_agent.config
+        )
+
+        result["snapshot_of_agent"] = main_agent_app.get_state(thread)
+
+    return result
 
 def run_delete_schedules(user_id):
     db.session.query(User_Macrocycles).filter_by(user_id=user_id).delete()
@@ -63,12 +100,38 @@ def test_main_agent():
     results = run_main_agent(data)
     return jsonify({"status": "success", "states": results}), 200
 
+# Resume the main agent with a user input.
+@bp.route('/resume', methods=['POST', 'PATCH'])
+@login_required
+def test_resume_main_agent():
+    # Input is a json.
+    data = request.get_json()
+    results = resume_main_agent(data)
+    return jsonify({"status": "success", "states": results}), 200
+
 # Delete all schedules belonging to the user.
 @bp.route('/', methods=['DELETE'])
 @login_required
 def delete_schedules():
     results = run_delete_schedules(current_user.id)
     return jsonify({"status": "success", "states": results}), 200
+
+
+# Retrieve current state.
+@bp.route('/state', methods=['GET'])
+@login_required
+def get_current_state():
+    db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
+
+    # 👇 keep checkpointer alive during invocation
+    with PostgresSaver.from_conn_string(db_uri) as checkpointer:
+        main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
+        
+        thread = {"configurable": {"thread_id": f"user-{current_user.id}"}}
+
+        snapshot_of_agent = main_agent_app.get_state(thread)
+
+    return jsonify({"status": "success", "agent_snapshot": snapshot_of_agent}), 200
 
 # Test the main agent with a user input and no pre-existing data.
 @bp.route('/clean', methods=['POST', 'PATCH'])
