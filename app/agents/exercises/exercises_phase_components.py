@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
 from collections import defaultdict
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -738,7 +738,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
         
         # Create header line
-        if log_schedule: 
+        if SchedulerLoggingConfig.schedule: 
             formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
@@ -769,17 +769,17 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
-                if log_schedule:
+                if SchedulerLoggingConfig.schedule:
                     line_fields = self.line_fields(component_count, pc, general_exercise, metrics)
                     formatted += self.formatted_schedule_line(headers, line_fields)
 
             else:
-                if log_schedule:
+                if SchedulerLoggingConfig.schedule:
                     formatted += (f"| {(component_count + 1):<{2}} ----\n")
 
-        if log_counts:
+        if SchedulerLoggingConfig.counts:
             formatted += self.formatted_counts(phase_components, solution, longest_sizes)
-        if log_details:
+        if SchedulerLoggingConfig.details:
             formatted += f"Total Strain: {solution['strain_ratio']}\n"
             formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
             formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"

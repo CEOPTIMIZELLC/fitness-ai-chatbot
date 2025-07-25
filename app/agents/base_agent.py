@@ -1,4 +1,4 @@
-from config import log_constraints
+from config import SchedulerLoggingConfig
 from config import verbose, verbose_agent_time, verbose_agent_steps
 from time import perf_counter
 from typing_extensions import TypedDict, TypeVar
@@ -164,7 +164,7 @@ class BaseAgent:
         formatted += "=" * 50 + "\n\n"
 
         # Show relaxation attempts history
-        if verbose_agent_steps:
+        if SchedulerLoggingConfig.agent_steps:
             formatted = self.format_relaxation_attempts(state["relaxation_attempts"], formatted, *relaxation_attempts_args)
 
         if solution is None:
@@ -175,7 +175,7 @@ class BaseAgent:
             final_output, formatted = self.format_agent_output(solution, formatted, schedule, *agent_output_args)
 
             # Show final constraint status
-            if log_constraints:
+            if SchedulerLoggingConfig.constraints:
                 formatted += self.format_constraint_status(state["constraints"])
 
         return {"formatted": formatted, "output": final_output}

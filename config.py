@@ -29,10 +29,12 @@ verbose_agent_output = False
 verbose_formatted_schedule = True
 
 # Configurations for agent logging.
-log_schedule = True
-log_counts = True
-log_constraints = True
-log_details = True
+class SchedulerLoggingConfig:
+    schedule = False
+    agent_steps = True
+    counts = True
+    constraints = True
+    details = True
 
 # Configuration for phase components to be removed.
 change_min_max_exercises_for_those_available = True

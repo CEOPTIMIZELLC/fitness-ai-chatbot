@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, log_schedule, log_details
+from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -381,7 +381,7 @@ class PhaseAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
 
         # Create header line
-        if log_schedule: 
+        if SchedulerLoggingConfig.schedule: 
             formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
@@ -394,11 +394,11 @@ class PhaseAgent(BaseAgent):
                 "duration": phase_duration
             })
 
-            if log_schedule:
+            if SchedulerLoggingConfig.schedule:
                 line_fields = self.line_fields(i, phase, phase_duration)
                 formatted += self.formatted_schedule_line(headers, line_fields)
 
-        if log_details:
+        if SchedulerLoggingConfig.details:
             formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
             formatted += f"Total Time Used: {solution['total_weeks_time']} weeks\n"
             formatted += f"Total Time Allowed: {macrocycle_allowed_weeks} weeks\n"

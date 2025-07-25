@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from dotenv import load_dotenv
@@ -654,7 +654,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         headers = self._create_header_fields(longest_sizes)
         
         # Create header line
-        if log_schedule: 
+        if SchedulerLoggingConfig.schedule: 
             formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
@@ -719,13 +719,13 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
             else:
                 superset_var["is_resistance"] = False
 
-            if log_schedule:
+            if SchedulerLoggingConfig.schedule:
                 line_fields = self.line_fields(component_count, pc, exercise, superset_var, true_exercise_flag, metrics)
                 formatted += self.formatted_schedule_line(headers, line_fields)
 
-        if log_counts:
+        if SchedulerLoggingConfig.counts:
             formatted += self.formatted_counts(phase_components, phase_component_count, longest_sizes)
-        if log_details:
+        if SchedulerLoggingConfig.details:
             formatted += f"Total Strain: {solution['strain_ratio']}\n"
             formatted += f"Total Strain Solution 2: {solution['working_effort'] / solution['base_effort']}\n"
             formatted += f"Total Strain Scaled: {solution['strain_calc']} >= {solution['max_strain_calc']}\n"

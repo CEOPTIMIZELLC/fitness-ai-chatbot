@@ -1,4 +1,4 @@
-from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -471,7 +471,7 @@ class PhaseComponentAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
         
         # Create header line
-        if log_schedule: 
+        if SchedulerLoggingConfig.schedule: 
             formatted += self.schedule_title_line
             header_line = self.formatted_header_line(headers)
 
@@ -495,18 +495,18 @@ class PhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
-                if log_schedule:
+                if SchedulerLoggingConfig.schedule:
                     if not used_days[workday_index]["used"]:
                         formatted += self.formatted_day(header_line, weekday_availability[current_weekday], workday_index, used_days)
                     line_fields = self.line_fields(component_count, pc, metrics)
                     formatted += self.formatted_schedule_line(headers, line_fields)
             else:
-                if log_schedule:
+                if SchedulerLoggingConfig.schedule:
                     formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
         
-        if log_counts:
+        if SchedulerLoggingConfig.counts:
             formatted += self.formatted_counts(phase_components, phase_component_count, longest_sizes)
-        if log_details:
+        if SchedulerLoggingConfig.details:
             formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
             formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
 
