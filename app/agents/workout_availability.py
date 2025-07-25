@@ -1,4 +1,4 @@
-
+from logging_config import LogSolver
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
@@ -24,9 +24,10 @@ class Availability(BaseModel):
 
 
 def workout_availability_extraction(state: AgentState):
+    LogSolver.agent_steps(f"Checking classification of the availability.")
     new_availability = state["new_availability"]
 
-    print(f"Checking classification of the following availability: {new_availability}")
+    LogSolver.verbose(f"Checking classification of the following availability: {new_availability}")
     system = """You are an assistant that extracts the relevant information, if not explicitly provided, do not guess. Extract partial information.
 
 Some availabilities may be given in minutes or hours. You should convert these to seconds before storing them. 
@@ -50,15 +51,15 @@ The maximum allowed availability is 2 hours. If an availability more than that i
     workout_availability_extractor = check_prompt | structured_llm
     result = workout_availability_extractor.invoke({})
     state["workout_availability_llm"] = result.availability
-    print(f"Relevance determined: {state['workout_availability_llm']}")
+    LogSolver.verbose(f"Relevance determined: {state['workout_availability_llm']}")
     return state
 
 def llm_output_to_timedelta(state: AgentState):
-    print("Retrieving the ID of the goal class.")
+    LogSolver.agent_steps("Retrieving the ID of the goal class.")
     workout_availability_llm = state["workout_availability_llm"]
     state["workout_availability"] = timedelta(seconds=workout_availability_llm)
 
-    print(f"Workouts can only be {workout_availability_llm // 60} minutes and {workout_availability_llm % 60} seconds long.")
+    LogSolver.verbose(f"Workouts can only be {workout_availability_llm // 60} minutes and {workout_availability_llm % 60} seconds long.")
     return state
 
 def create_workout_availability_extraction_graph():

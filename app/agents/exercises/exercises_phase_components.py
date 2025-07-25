@@ -1,4 +1,5 @@
 from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
+from logging_config import LogSolver
 from collections import defaultdict
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -94,6 +95,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"Setting up the parameters and configurations.")
         """Initialize optimization parameters and constraints."""
 
         parameter_input = state.get("parameter_input", {})
@@ -154,6 +156,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, phase_components, workout_availability, phase_component_amount, general_exercise_amount, pc_bounds, min_exercises, max_exercises):
+        LogSolver.agent_steps(f"Create the model variables for the solver.")
+
         seconds_per_exercise_bounds = pc_bounds["seconds_per_exercise"]
         reps_bounds, sets_bounds, rest_bounds = pc_bounds["reps"], pc_bounds["sets"], pc_bounds["rest"]
         volume_bounds, density_bounds, duration_bounds = pc_bounds["volume"], pc_bounds["density"], pc_bounds["duration"]
@@ -246,6 +250,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return agent_vars
     
     def apply_model_constraints(self, constraints, model, agent_vars, phase_components, general_exercise_amount, workout_availability, max_exercises, projected_duration):
+        LogSolver.agent_steps(f"Apply model constraints.")
+
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -471,6 +477,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
     
     def app_model_objective(self, constraints, model, model_with_divided_strain, agent_vars, workout_availability, pc_bounds, min_exercises, max_exercises, ):
+        LogSolver.agent_steps(f"Apply model objective.")
+
         logs = ""
         # Objective: Minimize total strain of microcycle
         if constraints["minimize_strain"]:
@@ -480,7 +488,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return logs
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
-        self._log_steps("Building First Step")
+        LogSolver.agent_steps("Building Model For FIrst Step")
+
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
         constraints = state["constraints"]
@@ -537,7 +546,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return sorted_schedule
 
     def solve_model_node(self, state: State, config=None) -> dict:
-        self._log_steps("Solving First Step")
+        LogSolver.agent_steps("Solving Model For First Step")
+
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
         model, model_with_divided_strain, agent_vars = state["opt_model"]

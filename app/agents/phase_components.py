@@ -1,4 +1,5 @@
 from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
+from logging_config import LogSolver
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -64,6 +65,7 @@ class PhaseComponentAgent(BaseAgent):
             "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"Setting up the parameters and configurations.")
         """Initialize optimization parameters and constraints."""
 
         parameter_input = state.get("parameter_input", {})
@@ -118,6 +120,8 @@ class PhaseComponentAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, phase_components, workout_availability, microcycle_weekdays):
+        LogSolver.agent_steps(f"Create the model variables for the solver.")
+
         # Define variables =====================================
         agent_vars = {}
 
@@ -178,6 +182,8 @@ class PhaseComponentAgent(BaseAgent):
 
 
     def apply_model_constraints(self, constraints, model, agent_vars, phase_components, workout_availability):
+        LogSolver.agent_steps(f"Apply model constraints.")
+
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -247,6 +253,8 @@ class PhaseComponentAgent(BaseAgent):
         return logs
 
     def apply_model_objective(self, constraints, model, agent_vars, workout_availability):
+        LogSolver.agent_steps(f"Apply model objective.")
+
         logs = ""
         duration_spread_var = None
         # Secondary Objective: Minimize the spread of duration.
@@ -283,6 +291,8 @@ class PhaseComponentAgent(BaseAgent):
 
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps("Building Model")
+
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
         constraints = state["constraints"]
@@ -302,6 +312,8 @@ class PhaseComponentAgent(BaseAgent):
         return {"opt_model": (model, workout_availability, agent_vars, duration_spread_var, total_duration_to_maximize)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps("Solving Model")
+
         """Solve model and record relaxation attempt results."""
         model, workout_availability, agent_vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]
         active_phase_components, exercises_per_bodypart_vars, partial_duration_vars, duration_vars = agent_vars["active_phase_components"], agent_vars["exercises_per_bodypart"], agent_vars["partial_duration"], agent_vars["duration"]

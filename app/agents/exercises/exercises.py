@@ -1,4 +1,5 @@
 from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
+from logging_config import LogSolver
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from dotenv import load_dotenv
@@ -76,7 +77,7 @@ def encourage_increase_for_subcomponent(model, exercises, phase_component_ids, u
 
 class ExerciseAgent(ExercisePhaseComponentAgent):
     def solve_model_node_temp(self, state: State, config=None) -> dict:
-        self._log_steps("Solving First Step")
+        LogSolver.agent_steps("Solving Model for First Step")
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
         # model, model_with_divided_strain, phase_component_vars, pc_count_vars, active_exercise_vars, seconds_per_exercise_vars, reps_vars, sets_vars, rest_vars, duration_vars, working_duration_vars = state["opt_model"]
@@ -138,6 +139,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return {"solution": None}
 
     def create_model_pc_vars(self, model, phase_components, workout_availability, phase_component_ids, max_exercises):
+        LogSolver.agent_steps(f"Create the model phase component variables for the solver.")
+
         # Define variables =====================================
         pc_vars = {}
 
@@ -157,6 +160,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return pc_vars
     
     def create_model_exercise_vars(self, model, phase_component_ids, phase_components, pc_vars, pc_bounds, exercises, max_exercises, ex_bounds):
+        LogSolver.agent_steps(f"Create the model exercise variables for the solver.")
+
         exercise_amount = len(exercises)
         weighted_exercise_indices = [i for i, exercise in enumerate(exercises[1:], start=1) if exercise["is_weighted"]]
 
@@ -219,6 +224,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
 
 
     def apply_model_constraints_2(self, constraints, model, phase_component_ids, general_exercise_ids, phase_components, pc_vars, pc_bounds, exercises, exercise_vars, ex_bounds, max_exercises, workout_availability, projected_duration):
+        LogSolver.agent_steps(f"Apply model constraints for Second Step.")
+
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -386,6 +393,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return None
 
     def apply_model_objective_2(self, constraints, model, model_with_divided_strain, pc_vars, pc_bounds, exercise_vars, exercise_bounds, max_exercises, workout_availability):
+        LogSolver.agent_steps(f"Apply model objective for Second Step.")
+
         logs = ""
         # Objective: Maximize total strain of microcycle
         if constraints["minimize_strain"]:
@@ -395,7 +404,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return logs
 
     def build_opt_model_node_2(self, state: State, config=None) -> dict:
-        self._log_steps("Building Second Step")
+        LogSolver.agent_steps("Building Model For Second Step")
 
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
@@ -433,7 +442,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         return {"opt_model": (model, model_with_divided_strain, phase_component_ids, exercise_vars, pc_vars)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
-        self._log_steps("Solving Second Step")
+        LogSolver.agent_steps("Solving Model For Second Step")
+
         """Solve model and record relaxation attempt results."""
         model, model_with_divided_strain, phase_component_vars, ex_vars, pc_vars = state["opt_model"]
         exercise_vars, base_strain_vars, one_rep_max_vars, training_weight_vars, is_weighted_vars, volume_vars, density_vars, performance_vars = ex_vars["exercises"], ex_vars["base_strain"], ex_vars["one_rep_max"], ex_vars["training_weight"], ex_vars["weighted_exercises"], ex_vars["volume"], ex_vars["density"], ex_vars["performance"]

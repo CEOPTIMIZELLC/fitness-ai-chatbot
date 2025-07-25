@@ -1,3 +1,4 @@
+from logging_config import LogSolver
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
@@ -19,12 +20,13 @@ class GoalClassification(BaseModel):
     )
 
 def goal_classification(state: AgentState):
+    LogSolver.agent_steps("Checking classification of the goal.")
     new_goal = state["new_goal"]
     goal_types = state["goal_types"]
 
     goal_types_stringified = ", ".join(f'"{s["name"]}"' for s in goal_types)
 
-    print(f"Checking classification of the following goal: {new_goal}")
+    LogSolver.verbose(f"Checking classification of the following goal: {new_goal}")
     system = """You are an assistant that determines what goal type a given goal falls into of the following types:
 
 Goal Types:
@@ -52,11 +54,11 @@ Respond only with {goal_types}.
     goal_classifier = check_prompt | structured_llm
     goal_class = goal_classifier.invoke({})
     state["goal_class"] = goal_class.goal_class
-    print(f"Relevance determined: {state['goal_class']}")
+    LogSolver.verbose(f"Relevance determined: {state['goal_class']}")
     return state
 
 def goal_type_to_id(state: AgentState):
-    print("Retrieving the ID of the goal class.")
+    LogSolver.agent_steps("Retrieving the ID of the goal class.")
     goal_types = state["goal_types"]
     goal_class = state["goal_class"]
 
@@ -70,13 +72,13 @@ def goal_type_to_id(state: AgentState):
         # Set the goal and goal id for the user if one is present.
         if goal_id:
             state["goal_id"] = goal_id["id"]
-            print(f"Goal id is: {state['goal_id']}")
+            LogSolver.verbose(f"Goal id is: {state['goal_id']}")
         else:
             state["goal_id"] = "Goal not found"
-            print("Goal not found in the database.")
+            LogSolver.verbose("Goal not found in the database.")
     except Exception as e:
         state["goal_id"] = "Error retrieving goal"
-        print(f"Error retrieving goal: {str(e)}")
+        LogSolver.verbose(f"Error retrieving goal: {str(e)}")
     return state
 
 def create_goal_classification_graph():

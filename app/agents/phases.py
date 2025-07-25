@@ -1,4 +1,5 @@
 from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
+from logging_config import LogSolver
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -54,10 +55,11 @@ class PhaseAgent(BaseAgent):
             "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"Setting up the parameters and configurations.")
+        """Initialize optimization parameters and constraints."""
 
         parameter_input = state.get("parameter_input", {})
 
-        """Initialize optimization parameters and constraints."""
         parameters = {
             "macrocycle_allowed_weeks": 43,
             "possible_phases": [
@@ -106,6 +108,8 @@ class PhaseAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, macrocycle_allowed_weeks, phases, phase_amount, min_mesocycles, max_mesocycles):
+        LogSolver.agent_steps(f"Create the model variables for the solver.")
+
         agent_vars = {}
 
         # Integer variable representing the phase chosen at mesocycle i.
@@ -146,6 +150,8 @@ class PhaseAgent(BaseAgent):
         return agent_vars
 
     def apply_model_constraints(self, constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles):
+        LogSolver.agent_steps(f"Apply model constraints.")
+
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -214,6 +220,8 @@ class PhaseAgent(BaseAgent):
         return logs
 
     def apply_model_objective(self, constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles):
+        LogSolver.agent_steps(f"Apply model objective.")
+
         logs = ""
 
         # Objective: Maximize time spent on goal phases
@@ -252,6 +260,8 @@ class PhaseAgent(BaseAgent):
         return logs
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps("Building Model")
+
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
         constraints = state["constraints"]
@@ -274,6 +284,8 @@ class PhaseAgent(BaseAgent):
         return {"opt_model": (model, agent_vars["mesocycles"], agent_vars["duration"], agent_vars["used"], agent_vars["active_mesocycles"])}
 
     def solve_model_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps("Solving Model")
+
         """Solve model and record relaxation attempt results."""
         model, mesocycle_vars, duration_vars, used_vars, active_mesocycle_vars = state["opt_model"]
 

@@ -1,5 +1,5 @@
 from config import SchedulerLoggingConfig
-from config import verbose, verbose_agent_time, verbose_agent_steps
+from logging_config import LogSolver
 from time import perf_counter
 from typing_extensions import TypedDict, TypeVar
 from langgraph.graph import StateGraph, START, END
@@ -53,11 +53,6 @@ class BaseAgent:
             "relaxation_attempts": [],
             "current_attempt": {"constraints": set(), "reasoning": None, "expected_impact": None}
         }
-    
-    def _log_steps(self, message):
-        if verbose_agent_steps:
-            print(message)
-        return None
 
     def _format_duration(self, seconds: int) -> str:
         """Format duration in minutes and seconds"""
@@ -86,6 +81,8 @@ class BaseAgent:
         return line + "\n"
 
     def analyze_infeasibility_node(self, state: TState, config=None) -> dict:
+        LogSolver.agent_steps("Analyzing Feasibility")
+
         """Use LLM to analyze solver logs and suggest constraints to relax."""
         # Prepare history of what's been tried
         history = retrieve_relaxation_history(state["relaxation_attempts"])
@@ -101,10 +98,8 @@ class BaseAgent:
         status = solver.Solve(model)
         end_time = perf_counter()
         solver_duration = end_time - start_time
-        if verbose_agent_time:
-            print(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
+        LogSolver.agent_time(f"Time taken to solve the model: {int(solver_duration // 60)} minutes {round((solver_duration % 60), 3)} seconds")
         return status
-
 
     # Retrieve formatted string for time.
     def _time_string(self, time_in_seconds):
@@ -123,8 +118,7 @@ class BaseAgent:
             solver.parameters.max_time_in_seconds = new_max_time
         if message_end:
             new_searcher_message += (" " + message_end)
-        if verbose:
-            print(new_searcher_message)
+        LogSolver.verbose(new_searcher_message)
         return self._solve_and_time_solver(solver, model)
 
     def format_relaxation_attempts(self, relaxation_attempts, formatted, *args):
@@ -153,6 +147,8 @@ class BaseAgent:
         return formatted
 
     def format_solution_node(self, state: TState, config=None) -> dict:
+        LogSolver.agent_steps("Formatting Solution")
+
         """Format the optimization results."""
         solution, parameters = state["solution"], state["parameters"]
         
