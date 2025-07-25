@@ -1,3 +1,4 @@
+from logging_config import LogMainAgent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, END
@@ -20,9 +21,10 @@ from .main_agent_state import MainAgentState as AgentState
 
 class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     def user_input_information_extraction(self, state: AgentState):
+        LogMainAgent.agent_steps(f"\n=========Extract Input=========")
         user_input = state["user_input"]
 
-        print(f"Extract the goals from the following message: {user_input}")
+        LogMainAgent.verbose(f"Extract the goals from the following message: {user_input}")
         human = f"Extract the goals from the following message: {user_input}"
         # human = f"New_goal: {user_input}"
         check_prompt = ChatPromptTemplate.from_messages(
@@ -77,43 +79,43 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         # if "workout_schedule_formatted" in state:
         #     state["workout_schedule_formatted"] = None
 
-        print(f"Goals extracted.")
+        LogMainAgent.input_info(f"Goals extracted.")
         if state["workout_completion_impacted"]:
-            print(f"workout_completion: {state["workout_completion_message"]}")
+            LogMainAgent.input_info(f"workout_completion: {state["workout_completion_message"]}")
         if state["availability_impacted"]:
-            print(f"availability: {state["availability_message"]}")
+            LogMainAgent.input_info(f"availability: {state["availability_message"]}")
         if state["macrocycle_impacted"]:
-            print(f"macrocycle: {state["macrocycle_message"]}")
+            LogMainAgent.input_info(f"macrocycle: {state["macrocycle_message"]}")
         if state["mesocycle_impacted"]:
-            print(f"mesocycle: {state["mesocycle_message"]}")
+            LogMainAgent.input_info(f"mesocycle: {state["mesocycle_message"]}")
         if state["microcycle_impacted"]:
-            print(f"microcycle: {state["microcycle_message"]}")
+            LogMainAgent.input_info(f"microcycle: {state["microcycle_message"]}")
         if state["phase_component_impacted"]:
-            print(f"phase_component: {state["phase_component_message"]}")
+            LogMainAgent.input_info(f"phase_component: {state["phase_component_message"]}")
         if state["workout_schedule_impacted"]:
-            print(f"workout_schedule: {state["workout_schedule_message"]}")
-        print("")
+            LogMainAgent.input_info(f"workout_schedule: {state["workout_schedule_message"]}")
+        LogMainAgent.input_info("")
 
         return state
 
     def print_schedule_node(self, state: AgentState):
-        print(f"\n=========Printing Schedule=========")
-        print(f"Goals extracted.")
+        LogMainAgent.agent_steps(f"\n=========Printing Schedule=========")
+        LogMainAgent.formatted_schedule(f"Schedule Generatted.")
         if ("workout_completion_formatted" in state) and (state["workout_completion_impacted"]):
-            print(f"workout_completion: \n{state["workout_completion_formatted"]}")
+            LogMainAgent.formatted_schedule(f"workout_completion: \n{state["workout_completion_formatted"]}")
         if ("availability_formatted" in state) and (state["availability_impacted"]):
-            print(f"availability: \n{state["availability_formatted"]}")
+            LogMainAgent.formatted_schedule(f"availability: \n{state["availability_formatted"]}")
         if ("macrocycle_formatted" in state) and (state["macrocycle_impacted"]):
-            print(f"macrocycle: \n{state["macrocycle_formatted"]}")
+            LogMainAgent.formatted_schedule(f"macrocycle: \n{state["macrocycle_formatted"]}")
         if ("mesocycle_formatted" in state) and (state["mesocycle_impacted"]):
-            print(f"mesocycle: \n{state["mesocycle_formatted"]}")
+            LogMainAgent.formatted_schedule(f"mesocycle: \n{state["mesocycle_formatted"]}")
         if ("microcycle_formatted" in state) and (state["microcycle_impacted"]):
-            print(f"microcycle: \n{state["microcycle_formatted"]}")
+            LogMainAgent.formatted_schedule(f"microcycle: \n{state["microcycle_formatted"]}")
         if ("phase_component_formatted" in state) and (state["phase_component_impacted"]):
-            print(f"phase_component: \n{state["phase_component_formatted"]}")
+            LogMainAgent.formatted_schedule(f"phase_component: \n{state["phase_component_formatted"]}")
         if ("workout_schedule_formatted" in state) and (state["workout_schedule_impacted"]):
-            print(f"workout_schedule: \n{state["workout_schedule_formatted"]}")
-        print("")
+            LogMainAgent.formatted_schedule(f"workout_schedule: \n{state["workout_schedule_formatted"]}")
+        LogMainAgent.formatted_schedule("")
 
         return state
 

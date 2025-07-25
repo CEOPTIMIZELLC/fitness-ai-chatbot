@@ -19,15 +19,20 @@ exponential_decay = True
 
 # Configurations for verbose options.
 verbose = True
-verbose_agent_introductions = True
-verbose_subagent_steps = True
-verbose_formatted_schedule = True
 
 # Configurations for verbose options.
 class VerbosityConfig:
     verbose = True
     existing_data_errors = True
 
+# Configurations options for the main agent.
+class MainAgentVerbosityConfig:
+    verbose = True
+    agent_introductions = True
+    agent_steps = True
+    agent_output = True
+    input_info = True
+    formatted_schedule = True
 
 # Configurations options for the main sub agents.
 class MainSubAgentVerbosityConfig:
