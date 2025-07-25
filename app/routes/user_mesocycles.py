@@ -1,4 +1,4 @@
-from config import verbose
+from logging_config import LogRoute
 from flask import jsonify, Blueprint
 from flask_login import login_required, current_user
 
@@ -112,8 +112,7 @@ def perform_phase_selection(goal_id, macrocycle_allowed_weeks):
 
     result = phase_main(parameters, constraints)
 
-    if verbose:
-        print(result["formatted"])
+    LogRoute.verbose(result["formatted"])
     return result
 
 # Testing for the parameter programming for mesocycle labeling.
@@ -127,16 +126,14 @@ def phase_classification_test():
 
     # Test with default test values.
     result = phase_main(parameters, constraints)
-    if verbose:
-        print("TESTING")
-        print(result["formatted"])
+    LogRoute.verbose("TESTING")
+    LogRoute.verbose(result["formatted"])
     test_results.append({
         "macrocycle_allowed_weeks": parameters["macrocycle_allowed_weeks"], 
         "goal_id": 0,
         "result": result
     })
-    if verbose:
-        print("----------------------")
+    LogRoute.verbose("----------------------")
     
 
     # Retrieve all possible goals.
@@ -152,16 +149,14 @@ def phase_classification_test():
 
     # Test for all goals that exist.
     for goal in goals:
-        if verbose:
-            print("----------------------")
-            print(str(goal.id))
+        LogRoute.verbose("----------------------")
+        LogRoute.verbose(str(goal.id))
         result = perform_phase_selection(goal.id, macrocycle_allowed_weeks)
         test_results.append({
             "macrocycle_allowed_weeks": macrocycle_allowed_weeks, 
             "goal_id": goal.id,
             "result": result
         })
-        if verbose:
-            print(f"----------------------\n")
+        LogRoute.verbose(f"----------------------\n")
 
     return jsonify({"status": "success", "test_results": test_results}), 200

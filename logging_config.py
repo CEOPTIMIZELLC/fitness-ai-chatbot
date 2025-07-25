@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 
-from config import VerbosityConfig, MainAgentVerbosityConfig, MainSubAgentVerbosityConfig, SchedulerVerbosityConfig, SchedulerPreProcessingVerbosityConfig
+from config import VerbosityConfig, RouteVerbosityConfig, MainAgentVerbosityConfig, MainSubAgentVerbosityConfig, SchedulerVerbosityConfig, SchedulerPreProcessingVerbosityConfig
 
 # Set Up the Logger
 logger = logging.getLogger("my_app")
@@ -27,6 +27,10 @@ def verbose_log(enabled: bool, message: str, level=logging.INFO):
 
 # Partial Functions for Each Verbosity Type
 log_existing_data_errors = partial(verbose_log, VerbosityConfig.existing_data_errors)
+
+
+class LogRoute:
+    verbose = partial(verbose_log, RouteVerbosityConfig.verbose)
 
 class LogMainAgent:
     verbose = partial(verbose_log, MainAgentVerbosityConfig.verbose)

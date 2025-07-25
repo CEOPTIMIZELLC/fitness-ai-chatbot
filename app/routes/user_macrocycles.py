@@ -1,3 +1,4 @@
+from logging_config import LogRoute
 from flask import request, jsonify, Blueprint, abort
 from flask_login import login_required, current_user
 
@@ -126,8 +127,8 @@ def goal_classification_test_run(goal_app, goal_types, user_goal):
             "goal_types": goal_types, 
             "attempts": 0
         })
-    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
-    print("")
+    LogRoute.verbose(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
+    LogRoute.verbose("")
     return {
         "new_goal": user_goal,
         "goal_classification": result_temp["goal_class"],

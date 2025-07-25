@@ -1,3 +1,4 @@
+from logging_config import LogRoute
 from random import randint
 from datetime import timedelta, date
 from flask import request, jsonify, Blueprint, abort
@@ -80,8 +81,8 @@ def initialize_sub_agents():
     return sub_agents
 
 def run_schedule_segment(state, subagent, segment_name=None):
-    if verbose and segment_name:
-        print(f"\n========================== {segment_name} ==========================")
+    if segment_name:
+        LogRoute.verbose(f"\n========================== {segment_name} ==========================")
     result = subagent.invoke(state)
     return result
 
@@ -106,8 +107,7 @@ def run_sub_agents(state, sub_agents, runs=1):
     for i in range(1, runs+1):
         result = run_sub_agents_singular(i, state, sub_agents)
         results.append(result)
-        if verbose:
-            print(f"\n========================== FINISHED RUN {i} ==========================\n\n")
+        LogRoute.verbose(f"\n========================== FINISHED RUN {i} ==========================\n\n")
 
     return results
 

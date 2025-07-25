@@ -1,11 +1,10 @@
-from config import verbose
+from logging_config import LogRoute
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
 from app.models import Phase_Library
 from app.agents.phase_components import Main as phase_component_main
-from app.utils.print_long_output import print_long_output
 from app.main_agent.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
@@ -146,8 +145,7 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     constraints={}
 
     result = phase_component_main(parameters, constraints)
-    if verbose:
-        print_long_output(result["formatted"])
+    LogRoute.verbose(result["formatted"])
     return result
 
 def retrieve_availability_for_test():
@@ -194,15 +192,13 @@ def phase_component_classification_test():
 
     for phase in phases:
         result = perform_workout_day_selection(phase.id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays)
-        if verbose:
-            print(str(phase.id))
-            print_long_output(result["formatted"])
+        LogRoute.verbose(str(phase.id))
+        LogRoute.verbose(result["formatted"])
         test_results.append({
             # "phase_components": parameters["phase_components"], 
             "phase_id": phase.id,
             "result": result
         })
-        if verbose:
-            print("----------------------")
+        LogRoute.verbose("----------------------")
 
     return jsonify({"status": "success", "test_results": test_results}), 200

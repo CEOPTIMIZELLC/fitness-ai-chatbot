@@ -1,4 +1,4 @@
-from config import verbose
+from logging_config import LogRoute
 
 from flask import jsonify, Blueprint, abort
 from flask_login import current_user, login_required
@@ -8,7 +8,6 @@ from app.models import User_Weekday_Availability
 from app.agents.exercises import exercise_pc_main
 
 from app.utils.common_table_queries import current_workout_day
-from app.utils.print_long_output import print_long_output
 
 from app.main_agent.utils import retrieve_total_time_needed
 from app.main_agent.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
@@ -193,8 +192,7 @@ def exercise_phase_components_test():
     constraints={"vertical_loading": user_workout_day.loading_systems.id == 1}
 
     result = exercise_pc_main(parameters, constraints)
-    if verbose:
-        print_long_output(result["formatted"])
+    LogRoute.verbose(result["formatted"])
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Assigns exercises to workouts.

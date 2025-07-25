@@ -25,6 +25,10 @@ class VerbosityConfig:
     verbose = True
     existing_data_errors = True
 
+# Configurations options for the routes.
+class RouteVerbosityConfig:
+    verbose = True
+
 # Configurations options for the main agent.
 class MainAgentVerbosityConfig:
     verbose = True
