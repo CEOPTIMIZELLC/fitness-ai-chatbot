@@ -1,3 +1,4 @@
+from logging_config import log_existing_data_errors
 import pandas as pd
 import numpy as np
 
@@ -46,7 +47,7 @@ class Data_Importer:
     def muscle_categories(self):
         # Ensure that the ids neccessary have been initialized.
         if not (self.muscle_ids and self.muscle_group_ids and self.body_region_ids and self.bodypart_ids):
-            print("IDs not initialized.")
+            log_existing_data_errors("IDs not initialized.")
             return None
 
         # Replace the names of values with their corresponding ids.

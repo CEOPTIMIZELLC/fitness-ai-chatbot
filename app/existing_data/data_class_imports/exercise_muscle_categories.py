@@ -1,3 +1,4 @@
+from logging_config import log_existing_data_errors
 import numpy as np
 
 from app import db
@@ -12,7 +13,7 @@ class Data_Importer:
     def exercise_muscles(self):
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.muscle_ids):
-            print("IDs not initialized.")
+            log_existing_data_errors("IDs not initialized.")
             return None
         # Retrieve relevant information for target muscle classification for exercises, as well as dropping the None values.
         exercise_muscle_df = self.exercises_df[["Exercise", "Target Muscle"]].copy().dropna()
@@ -27,7 +28,7 @@ class Data_Importer:
         # Create a list of entries for Exercise Phase Components table.
         for _, row in exercise_muscle_df.iterrows():
             if np.isnan(row["Exercise ID"]) or np.isnan(row["Target Muscle ID"]):
-                print(row["Exercise"], "has ID of", row["Exercise ID"], "while", row["Target Muscle"], "has id of", row["Target Muscle ID"])
+                log_existing_data_errors(row["Exercise"], "has ID of", row["Exercise ID"], "while", row["Target Muscle"], "has id of", row["Target Muscle ID"])
             else:
                 db_entry = Exercise_Muscles(
                     exercise_id=row["Exercise ID"], 
@@ -39,7 +40,7 @@ class Data_Importer:
     def exercise_muscle_groups(self):
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.muscle_group_ids):
-            print("IDs not initialized.")
+            log_existing_data_errors("IDs not initialized.")
             return None
         # Retrieve relevant information for target muscle group classification for exercises, as well as dropping the None values.
         exercise_muscle_group_df = self.exercises_df[["Exercise", "Target Muscle Group"]].copy().dropna()
@@ -63,7 +64,7 @@ class Data_Importer:
     def exercise_body_regions(self):
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.body_region_ids):
-            print("IDs not initialized.")
+            log_existing_data_errors("IDs not initialized.")
             return None
         # Retrieve relevant information for target body region classification for exercises, as well as dropping the None values.
         exercise_body_region_df = self.exercises_df[["Exercise", "Target Body Region"]].copy().dropna()
@@ -87,7 +88,7 @@ class Data_Importer:
     def exercise_bodyparts(self):
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.bodypart_ids):
-            print("IDs not initialized.")
+            log_existing_data_errors("IDs not initialized.")
             return None
         # Retrieve relevant information for target general body area classification for exercises, as well as dropping the None values.
         exercise_bodypart_df = self.exercises_df[["Exercise", "Target General Body Area"]].copy().dropna()

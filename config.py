@@ -28,6 +28,10 @@ verbose_agent_steps = False
 verbose_agent_output = False
 verbose_formatted_schedule = True
 
+# Configurations for verbose options.
+class VerbosityConfig:
+    existing_data_errors = True
+
 # Configurations for agent logging.
 class SchedulerLoggingConfig:
     schedule = False

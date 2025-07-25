@@ -1,3 +1,4 @@
+from logging_config import log_existing_data_errors
 import numpy as np
 from datetime import timedelta
 
@@ -111,7 +112,7 @@ class Data_Importer:
     def phase_components(self):
         # Ensure that the ids neccessary have been initialized.
         if not (self.phase_ids and self.component_ids and self.subcomponent_ids):
-            print("IDs not initialized.")
+            log_existing_data_errors("IDs not initialized.")
             return None
 
         # Split Routine

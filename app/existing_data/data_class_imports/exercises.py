@@ -1,3 +1,4 @@
+from logging_config import log_existing_data_errors
 import pandas as pd
 import numpy as np
 
@@ -26,7 +27,7 @@ class Data_Importer:
     def _general_exercises(self):
         # Ensure that the ids neccessary have been initialized.
         if not self.exercise_ids:
-            print("IDs not initialized.")
+            log_existing_data_errors("IDs not initialized.")
             return None
 
         system = """You are a helpful assistant trained in fitness and exercise terminology.
@@ -53,7 +54,7 @@ class Data_Importer:
     def _exercises(self):
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.general_exercise_ids):
-            print("IDs not initialized.")
+            log_existing_data_errors("IDs not initialized.")
             return None
 
         # Create a list of entries for the exercises
