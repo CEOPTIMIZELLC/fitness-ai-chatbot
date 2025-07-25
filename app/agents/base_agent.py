@@ -36,6 +36,7 @@ class BaseAgentState(TypedDict):
 TState = TypeVar('TState', bound=BaseAgentState)
 
 class BaseAgent:
+    schedule_title = ""
     schedule_title_line = "\nFinal Training Schedule:\n" + "-" * 40 + "\n"
 
     # Each child class should override this with their specific constraints
@@ -81,7 +82,7 @@ class BaseAgent:
         return line + "\n"
 
     def analyze_infeasibility_node(self, state: TState, config=None) -> dict:
-        LogSolver.agent_steps("Analyzing Feasibility")
+        LogSolver.agent_steps(f"{self.schedule_title}: Analyzing Feasibility")
 
         """Use LLM to analyze solver logs and suggest constraints to relax."""
         # Prepare history of what's been tried
@@ -147,7 +148,7 @@ class BaseAgent:
         return formatted
 
     def format_solution_node(self, state: TState, config=None) -> dict:
-        LogSolver.agent_steps("Formatting Solution")
+        LogSolver.agent_steps(f"{self.schedule_title}: Formatting Solution")
 
         """Format the optimization results."""
         solution, parameters = state["solution"], state["parameters"]

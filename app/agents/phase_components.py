@@ -56,6 +56,7 @@ class State(BaseAgentState):
     parameter_input: dict
 
 class PhaseComponentAgent(BaseAgent):
+    schedule_title = "Phase Component Subagent"
     available_constraints = available_constraints
 
     def __init__(self, parameters={}, constraints={}):
@@ -65,7 +66,7 @@ class PhaseComponentAgent(BaseAgent):
             "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps(f"Setting up the parameters and configurations.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Setting up the parameters and configurations.")
         """Initialize optimization parameters and constraints."""
 
         parameter_input = state.get("parameter_input", {})
@@ -120,7 +121,7 @@ class PhaseComponentAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, phase_components, workout_availability, microcycle_weekdays):
-        LogSolver.agent_steps(f"Create the model variables for the solver.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Create the model variables for the solver.")
 
         # Define variables =====================================
         agent_vars = {}
@@ -182,7 +183,7 @@ class PhaseComponentAgent(BaseAgent):
 
 
     def apply_model_constraints(self, constraints, model, agent_vars, phase_components, workout_availability):
-        LogSolver.agent_steps(f"Apply model constraints.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model constraints.")
 
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
@@ -253,7 +254,7 @@ class PhaseComponentAgent(BaseAgent):
         return logs
 
     def apply_model_objective(self, constraints, model, agent_vars, workout_availability):
-        LogSolver.agent_steps(f"Apply model objective.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model objective.")
 
         logs = ""
         duration_spread_var = None
@@ -291,7 +292,7 @@ class PhaseComponentAgent(BaseAgent):
 
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps("Building Model")
+        LogSolver.agent_steps(f"{self.schedule_title}: Building Model")
 
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
@@ -312,7 +313,7 @@ class PhaseComponentAgent(BaseAgent):
         return {"opt_model": (model, workout_availability, agent_vars, duration_spread_var, total_duration_to_maximize)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps("Solving Model")
+        LogSolver.agent_steps(f"{self.schedule_title}: Solving Model")
 
         """Solve model and record relaxation attempt results."""
         model, workout_availability, agent_vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]

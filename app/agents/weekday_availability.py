@@ -31,7 +31,7 @@ class Availability(BaseModel):
 
 
 def weekday_availability_extraction(state: AgentState):
-    LogSolver.agent_steps(f"Checking classification of the availability.")
+    LogSolver.agent_steps(f"Availability Subagent: Checking classification of the availability.")
     new_availability = state["new_availability"]
 
     LogSolver.verbose(f"Checking classification of the following availability: {new_availability}")
@@ -63,7 +63,7 @@ The minimum allowed availability is 15 minutues. If an availability less than th
     return state
 
 def llm_output_to_timedelta(state: AgentState):
-    LogSolver.agent_steps("Retrieving the ID of the goal class.")
+    LogSolver.agent_steps("Availability Subagent: Retrieving the ID of the goal class.")
     weekday_availability_llm = state["weekday_availability_llm"]
     result = []
     for id, availability in enumerate(weekday_availability_llm):

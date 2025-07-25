@@ -86,6 +86,7 @@ class State(BaseAgentState):
     parameter_input: dict
 
 class ExercisePhaseComponentAgent(BaseAgent):
+    schedule_title = "Exercise Phase Component Subagent"
     available_constraints = available_constraints
 
     def __init__(self, parameters={}, constraints={}):
@@ -95,7 +96,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps(f"Setting up the parameters and configurations.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Setting up the parameters and configurations.")
         """Initialize optimization parameters and constraints."""
 
         parameter_input = state.get("parameter_input", {})
@@ -156,7 +157,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, phase_components, workout_availability, phase_component_amount, general_exercise_amount, pc_bounds, min_exercises, max_exercises):
-        LogSolver.agent_steps(f"Create the model variables for the solver.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Create the model variables for the solver.")
 
         seconds_per_exercise_bounds = pc_bounds["seconds_per_exercise"]
         reps_bounds, sets_bounds, rest_bounds = pc_bounds["reps"], pc_bounds["sets"], pc_bounds["rest"]
@@ -250,7 +251,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return agent_vars
     
     def apply_model_constraints(self, constraints, model, agent_vars, phase_components, general_exercise_amount, workout_availability, max_exercises, projected_duration):
-        LogSolver.agent_steps(f"Apply model constraints.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model constraints.")
 
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
@@ -477,7 +478,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
     
     def app_model_objective(self, constraints, model, model_with_divided_strain, agent_vars, workout_availability, pc_bounds, min_exercises, max_exercises, ):
-        LogSolver.agent_steps(f"Apply model objective.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model objective.")
 
         logs = ""
         # Objective: Minimize total strain of microcycle
@@ -488,7 +489,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return logs
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps("Building Model For FIrst Step")
+        LogSolver.agent_steps(f"{self.schedule_title}: Building Model For FIrst Step")
 
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
@@ -546,7 +547,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return sorted_schedule
 
     def solve_model_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps("Solving Model For First Step")
+        LogSolver.agent_steps(f"{self.schedule_title}: Solving Model For First Step")
 
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}

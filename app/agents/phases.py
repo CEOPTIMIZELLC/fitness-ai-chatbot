@@ -46,6 +46,7 @@ class State(BaseAgentState):
     parameter_input: dict
 
 class PhaseAgent(BaseAgent):
+    schedule_title = "Phase Subagent"
     available_constraints = available_constraints
 
     def __init__(self, parameters={}, constraints={}):
@@ -55,7 +56,7 @@ class PhaseAgent(BaseAgent):
             "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps(f"Setting up the parameters and configurations.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Setting up the parameters and configurations.")
         """Initialize optimization parameters and constraints."""
 
         parameter_input = state.get("parameter_input", {})
@@ -108,7 +109,7 @@ class PhaseAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, macrocycle_allowed_weeks, phases, phase_amount, min_mesocycles, max_mesocycles):
-        LogSolver.agent_steps(f"Create the model variables for the solver.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Create the model variables for the solver.")
 
         agent_vars = {}
 
@@ -150,7 +151,7 @@ class PhaseAgent(BaseAgent):
         return agent_vars
 
     def apply_model_constraints(self, constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles):
-        LogSolver.agent_steps(f"Apply model constraints.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model constraints.")
 
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
@@ -220,7 +221,7 @@ class PhaseAgent(BaseAgent):
         return logs
 
     def apply_model_objective(self, constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles):
-        LogSolver.agent_steps(f"Apply model objective.")
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model objective.")
 
         logs = ""
 
@@ -260,7 +261,7 @@ class PhaseAgent(BaseAgent):
         return logs
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps("Building Model")
+        LogSolver.agent_steps(f"{self.schedule_title}: Building Model")
 
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
@@ -284,7 +285,7 @@ class PhaseAgent(BaseAgent):
         return {"opt_model": (model, agent_vars["mesocycles"], agent_vars["duration"], agent_vars["used"], agent_vars["active_mesocycles"])}
 
     def solve_model_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps("Solving Model")
+        LogSolver.agent_steps(f"{self.schedule_title}: Solving Model")
 
         """Solve model and record relaxation attempt results."""
         model, mesocycle_vars, duration_vars, used_vars, active_mesocycle_vars = state["opt_model"]

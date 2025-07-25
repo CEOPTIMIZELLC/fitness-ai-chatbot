@@ -20,7 +20,7 @@ class GoalClassification(BaseModel):
     )
 
 def goal_classification(state: AgentState):
-    LogSolver.agent_steps("Checking classification of the goal.")
+    LogSolver.agent_steps("Goal Subagent: Checking classification of the goal.")
     new_goal = state["new_goal"]
     goal_types = state["goal_types"]
 
@@ -58,7 +58,7 @@ Respond only with {goal_types}.
     return state
 
 def goal_type_to_id(state: AgentState):
-    LogSolver.agent_steps("Retrieving the ID of the goal class.")
+    LogSolver.agent_steps("Goal Subagent: Retrieving the ID of the goal class.")
     goal_types = state["goal_types"]
     goal_class = state["goal_class"]
 
