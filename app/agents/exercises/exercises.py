@@ -680,7 +680,8 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
         for component_count, (i, exercise_index, phase_component_index, component_id, subcomponent_id, bodypart_id, *metrics) in enumerate(schedule):
             exercise = exercises[exercise_index]
             pc = phase_components[phase_component_index]
-            true_exercise_flag = pc["true_exercise_indicators"][exercise_index]
+
+            true_exercise_flag = pc["true_exercise_indicators"].get(exercise_index, "Not part of original exercises allowed.")
 
             (base_strain, seconds_per_exercise, 
              reps_var, sets_var, rest_var, intensity_var, 

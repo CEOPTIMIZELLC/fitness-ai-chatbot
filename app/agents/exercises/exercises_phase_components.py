@@ -755,7 +755,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
         for component_count, (i, phase_component_index, general_exercise_index, _, _, _, *metrics) in enumerate(schedule):
             pc = phase_components[phase_component_index]
-            general_exercise = general_exercises[general_exercise_index]
+            general_exercise = general_exercises.get(general_exercise_index, "Included after 1st attempt.")
 
             (active_exercises, seconds_per_exercise, 
              reps_var, sets_var, rest_var, 

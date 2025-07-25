@@ -64,7 +64,7 @@ class SchedulerVerbosityConfig:
 
 # Configurations for agent logging.
 class SchedulerLoggingConfig:
-    schedule = False
+    schedule = True
     agent_steps = True
     counts = True
     constraints = True
