@@ -1,31 +1,39 @@
 from datetime import datetime, date
 import math
 from app import db
-from config import performance_decay_grace_period, performance_decay_rate
-from config import one_rep_max_decay_grace_period, one_rep_max_decay_rate
-from config import exponential_decay
+from config import ExercisePerformanceDecayConfig as PerformanceConfig
+from config import ExerciseOneRepMaxDecayConfig as OneRepMaxConfig
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.models.base import BaseModel
 from app.models.mixins import TableNameMixin
 from collections import defaultdict, Counter
 
+# Linear Decay
 def linear_value_change(original_value, days_since, decay_rate=-0.01):
     performance_change = (decay_rate * days_since)
     decayed_value = original_value + performance_change
     return decayed_value
 
+# Exponential Decay
 def exponential_value_change(original_value, days_since, decay_rate=-0.01):
     performance_change = math.exp(decay_rate * days_since)
     decayed_value = original_value * performance_change
     return decayed_value
 
-def decayed_value(original_value, days_since, grace_period, decay_rate=-0.01):
+# Retrieve the Decayed version of the original value.
+def decayed_value(original_value, days_since, exercise_metric_config):
+    grace_period = exercise_metric_config.grace_period
+    decay_rate = -abs(exercise_metric_config.decay_rate)
+    exponential_decay = exercise_metric_config.exponential_decay
+
     # Wait for the grace period to end before altering the original value.
     if days_since <= grace_period:
         return original_value
 
     # Only use period of time after the grace period.
     effective_days = days_since - grace_period
+
+    # Perform either exponential or linear rate of decay depending on configuration.
     if exponential_decay:
         return exponential_value_change(original_value, effective_days, decay_rate)
     return linear_value_change(original_value, effective_days, decay_rate)
@@ -61,10 +69,9 @@ class User_Exercises(db.Model, TableNameMixin):
         if not self.exercises.is_weighted: 
             return 0
         decayed_one_rep_max = decayed_value(
-            self.one_rep_max, 
-            self.days_since, 
-            one_rep_max_decay_grace_period, 
-            -abs(one_rep_max_decay_rate))
+            original_value = self.one_rep_max, 
+            days_since = self.days_since, 
+            exercise_metric_config = OneRepMaxConfig)
 
         one_rep_max = int(decayed_one_rep_max)
 
@@ -75,10 +82,9 @@ class User_Exercises(db.Model, TableNameMixin):
     @hybrid_property
     def performance_decayed(self):
         decayed_performance = decayed_value(
-            float(self.performance), 
-            self.days_since, 
-            performance_decay_grace_period,
-            -abs(performance_decay_rate))
+            original_value = float(self.performance), 
+            days_since = self.days_since, 
+            exercise_metric_config = PerformanceConfig)
 
         return round(decayed_performance, 2)
 

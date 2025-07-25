@@ -5,7 +5,7 @@ from flask import request, jsonify, Blueprint, abort
 
 from flask_login import current_user, login_required
 
-from config import performance_decay_grace_period
+from config import ExercisePerformanceDecayConfig
 from config import verbose
 from app import db
 from app.utils.sql import sql_app
@@ -188,8 +188,8 @@ def test_equipment_sql():
 # Apply random performance metrics to all user exercises.
 def populate_user_exercise(user_exercise):
     # Set the last performed to be a date to allow for performance decay
-    days_since = randint(performance_decay_grace_period - 1, 
-                         performance_decay_grace_period + 10)
+    days_since = randint(ExercisePerformanceDecayConfig.grace_period - 1, 
+                         ExercisePerformanceDecayConfig.grace_period + 10)
     user_exercise.last_performed = date.today() - timedelta(days=days_since)
 
     # Set user exercise metrics to random performance values.

@@ -1,10 +1,6 @@
 import copy
 from logging_config import LogSolverPreProcessing
-from config import (
-    include_all_exercises_for_desired_full_body, 
-    include_all_exercises_for_desired_bodypart, 
-    incude_all_exercises_for_desired_phase_component, 
-    include_all_exercises)
+from config import BackupExerciseRetrieval as BackupRetrieval
 
 def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):
     return [i for i, exercise in enumerate(exercises, start=1) 
@@ -61,7 +57,7 @@ def get_exercises_for_pc(exercises, phase_component):
     true_exercises_message = f"{phase_component['pc_name']} doesn't have enough exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
 
     # Adds all exercises for the phase component if the body part is full body.
-    if include_all_exercises_for_desired_full_body and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
+    if BackupRetrieval.for_desired_full_body and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
         action_message = action_messages[0]
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
         LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")
@@ -72,7 +68,7 @@ def get_exercises_for_pc(exercises, phase_component):
                                                            ])
 
     # Adds all exercises of a bodypart if there are still no exercises.
-    if include_all_exercises_for_desired_bodypart and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
+    if BackupRetrieval.for_desired_bodypart and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = action_messages[1]
         message = f"Including all exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
         LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")
@@ -84,7 +80,7 @@ def get_exercises_for_pc(exercises, phase_component):
 
 
     # Adds all exercises for a phase component if there are still no exercises.
-    if incude_all_exercises_for_desired_phase_component and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
+    if BackupRetrieval.for_desired_phase_component and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = action_messages[2]
         message = f"Including all exercises for component {pc_name}."
         LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")
@@ -95,7 +91,7 @@ def get_exercises_for_pc(exercises, phase_component):
                                                            ])
 
     # Adds all exercises if the body part is full body.
-    if include_all_exercises_for_desired_full_body and include_all_exercises_for_desired_bodypart and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
+    if BackupRetrieval.for_desired_full_body and BackupRetrieval.for_desired_bodypart and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
         action_message = action_messages[3]
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
         LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")
@@ -105,7 +101,7 @@ def get_exercises_for_pc(exercises, phase_component):
                                                            ])
 
     # Adds all exercises if there are still no exercises.
-    if include_all_exercises and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
+    if BackupRetrieval.all_exercises and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = action_messages[-3]
         message = f"Including all exercises."
         LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")

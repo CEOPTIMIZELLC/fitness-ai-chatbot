@@ -9,13 +9,16 @@ ortools_solver_time_in_seconds = 5
 vertical_loading = True
 
 # Configurations for exercise performance decay.
-performance_decay_grace_period = 14
-performance_decay_rate = -0.05
-one_rep_max_decay_grace_period = 14
-one_rep_max_decay_rate = -0.05
+class ExercisePerformanceDecayConfig:
+    grace_period = 14
+    decay_rate = -0.05
+    exponential_decay = True
 
-## Linear decay if False.
-exponential_decay = True
+# Configurations for exercise performance decay.
+class ExerciseOneRepMaxDecayConfig:
+    grace_period = 14
+    decay_rate = -0.05
+    exponential_decay = True
 
 # Configurations for verbose options.
 verbose = True
@@ -73,10 +76,11 @@ turn_off_invalid_phase_components = True
 turn_off_required_resistances = True
 
 # Configurations for exerecises to be included for phase components upon initial failure.
-include_all_exercises_for_desired_full_body = True
-include_all_exercises_for_desired_bodypart = True
-incude_all_exercises_for_desired_phase_component = False
-include_all_exercises = False
+class BackupExerciseRetrieval:
+    for_desired_full_body = True
+    for_desired_bodypart = True
+    for_desired_phase_component = False
+    all_exercises = False
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
