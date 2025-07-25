@@ -1,4 +1,4 @@
-from config import verbose_subagent_steps
+from logging_config import LogMainSubAgent
 from datetime import timedelta
 
 from app import db
@@ -52,8 +52,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Information for Microcycle Scheduling---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Microcycle Scheduling---------")
         user_mesocycle = state["user_mesocycle"]
 
         # Each microcycle must last 1 week.
@@ -81,8 +80,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Initializes the microcycle schedule for the current mesocycle.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Perform Microcycle Scheduling---------")
+        LogMainSubAgent.agent_steps(f"\t---------Perform Microcycle Scheduling---------")
         mesocycle_id = state["mesocycle_id"]
         microcycle_duration = state["microcycle_duration"]
         microcycle_count = state["microcycle_count"]

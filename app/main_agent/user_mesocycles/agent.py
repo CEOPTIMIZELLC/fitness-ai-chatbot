@@ -1,4 +1,4 @@
-from config import verbose, verbose_subagent_steps
+from logging_config import LogMainSubAgent
 from datetime import timedelta
 
 from app import db
@@ -69,8 +69,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Information for Mesocycle Scheduling---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Mesocycle Scheduling---------")
         user_macrocycle = state["user_macrocycle"]
         macrocycle_id = user_macrocycle["id"]
         goal_id = user_macrocycle["goal_id"]
@@ -92,8 +91,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
 
     # Executes the agent to create the mesocycle/phase schedule for the current macrocycle.
     def perform_scheduler(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Perform Mesocycle Scheduling---------")
+        LogMainSubAgent.agent_steps(f"\t---------Perform Mesocycle Scheduling---------")
         goal_id = state["goal_id"]
         macrocycle_allowed_weeks = state["macrocycle_allowed_weeks"]
         parameters={
@@ -106,16 +104,14 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
 
         result = phase_main(parameters, constraints)
 
-        if verbose:
-            print(result["formatted"])
+        LogMainSubAgent.agent_output(result["formatted"])
         return {
             "agent_output": result["output"]
         }
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Convert schedule to SQLAlchemy models.---------")
+        LogMainSubAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         phases_output = state["agent_output"]
         macrocycle_id = state["macrocycle_id"]
         mesocycle_start_date = state["start_date"]

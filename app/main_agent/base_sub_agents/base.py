@@ -1,4 +1,4 @@
-from config import verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
+from logging_config import LogMainSubAgent
 from flask import abort
 from typing_extensions import TypeVar
 
@@ -34,13 +34,10 @@ class BaseAgent():
 
     # Confirm that the desired section should be impacted.
     def confirm_impact(self, state):
-        if verbose_agent_introductions:
-            print(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
-        if verbose_subagent_steps:
-            print(f"\t---------Confirm that the {self.sub_agent_title} is Impacted---------")
+        LogMainSubAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
+        LogMainSubAgent.agent_steps(f"\t---------Confirm that the {self.sub_agent_title} is Impacted---------")
         if not state[self.focus_names["impact"]]:
-            if verbose_subagent_steps:
-                print(f"\t---------No Impact---------")
+            LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
             return "no_impact"
         return "impact"
 
@@ -56,32 +53,28 @@ class BaseAgent():
 
     # Determine the operation to be performed.
     def determine_operation(self, state):
-        if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read or write {self.sub_agent_title}---------")
+        LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read or write {self.sub_agent_title}---------")
         if state[self.focus_names["is_altered"]]:
             return "alter"
         return "read"
 
     # Determine whether the outcome is to read the entire schedule or simply the current item.
     def determine_read_operation(self, state):
-        if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read a list of {self.sub_agent_title} or simply a singular item---------")
+        LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read a list of {self.sub_agent_title} or simply a singular item---------")
         if state[self.focus_names["read_plural"]]:
             return "plural"
         return "singular"
 
     # Determine whether the outcome is to read an item from the current set or all items from the user.
     def determine_read_filter_operation(self, state):
-        if verbose_subagent_steps:
-            print(f"\t---------Determine if the objective is to read all {self.sub_agent_title} items for the user or only those currently active---------")
+        LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read all {self.sub_agent_title} items for the user or only those currently active---------")
         if state[self.focus_names["read_current"]]:
             return "current"
         return "all"
 
     # Retrieve user's current schedule item.
     def read_user_current_element(self, state):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Current {self.sub_agent_title} for User---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Current {self.sub_agent_title} for User---------")
         user_id = state["user_id"]
 
         entry_from_db = self.focus_retriever_agent(user_id)
@@ -90,28 +83,24 @@ class BaseAgent():
 
         schedule_dict = [entry_from_db.to_dict()]
         formatted_schedule = self.run_schedule_printer(schedule_dict)
-        if verbose_formatted_schedule:
-            print(formatted_schedule)
+        LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
     # Print output.
     def get_formatted_list(self, state):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
         user_id = state["user_id"]
         schedule_from_db = self.focus_list_retriever_agent(user_id)
 
         schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
 
         formatted_schedule = self.run_schedule_printer(schedule_dict)
-        if verbose_formatted_schedule:
-            print(formatted_schedule)
+        LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
     # Print output.
     def get_user_list(self, state):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
         user_id = state["user_id"]
 
         schedule_from_db = self.user_list_query(user_id)
@@ -121,12 +110,10 @@ class BaseAgent():
         schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
 
         formatted_schedule = self.run_schedule_printer(schedule_dict)
-        if verbose_formatted_schedule:
-            print(formatted_schedule)
+        LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
-        if verbose_agent_introductions:
-            print(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
+        LogMainSubAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
         return {}

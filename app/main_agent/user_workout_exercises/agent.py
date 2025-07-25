@@ -1,4 +1,4 @@
-from config import verbose, verbose_formatted_schedule, verbose_subagent_steps
+from logging_config import LogMainSubAgent
 from flask import abort
 
 from langgraph.graph import StateGraph, START, END
@@ -9,7 +9,6 @@ from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 
 from app.agents.exercises import exercises_main
 from app.utils.common_table_queries import current_workout_day
-from app.utils.print_long_output import print_long_output
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
@@ -71,8 +70,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Information for Workout Exercise Scheduling---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Workout Exercise Scheduling---------")
         user_workout_day = state["user_phase_component"]
 
         return {
@@ -87,8 +85,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Executes the agent to create the phase component schedule for each workout in the current workout_day.
     def perform_scheduler(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Perform Workout Exercise Scheduling---------")
+        LogMainSubAgent.agent_steps(f"\t---------Perform Workout Exercise Scheduling---------")
         workout_day_id = state["phase_component_id"]
         user_workout_day = db.session.get(User_Workout_Days, workout_day_id)
         loading_system_id = state["loading_system_id"]
@@ -100,8 +97,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         constraints={"vertical_loading": loading_system_id == 1}
 
         result = exercises_main(parameters, constraints)
-        if verbose:
-            print_long_output(result["formatted"])
+        LogMainSubAgent.agent_output(result["formatted"])
 
         return {
             "agent_output": result["output"]
@@ -109,8 +105,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Convert schedule to SQLAlchemy models.---------")
+        LogMainSubAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         workout_day_id = state["phase_component_id"]
         exercises_output = state["agent_output"]
 
@@ -139,8 +134,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Print output.
     def get_formatted_list(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
         workout_day_id = state["phase_component_id"]
         parent_db_entry = db.session.get(User_Workout_Days, workout_day_id)
         workout_date = str(parent_db_entry.date)
@@ -156,15 +150,13 @@ class SubAgent(BaseAgent, SchedulePrinter):
                                     for user_workout_exercise in schedule_from_db]
 
         formatted_schedule = self.run_schedule_printer(workout_date, loading_system_id, user_workout_exercises_dict)
-        if verbose_formatted_schedule:
-            print_long_output(formatted_schedule)
+        LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
 
     # Print output.
     def get_user_list(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
         user_id = state["user_id"]
 
         schedule_from_db = self.user_list_query(user_id)
@@ -176,8 +168,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
                                     for user_workout_exercise in schedule_from_db]
 
         formatted_schedule = list_printer_main(user_workout_exercises_dict)
-        if verbose_formatted_schedule:
-            print(formatted_schedule)
+        LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
     # Create main agent.

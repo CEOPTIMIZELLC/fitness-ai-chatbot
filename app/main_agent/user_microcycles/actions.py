@@ -1,4 +1,4 @@
-from config import verbose
+from logging_config import LogMainSubAgent
 from flask import abort
 from flask_login import current_user
 from datetime import timedelta
@@ -12,5 +12,4 @@ from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 def delete_old_children(mesocycle_id):
     db.session.query(User_Microcycles).filter_by(mesocycle_id=mesocycle_id).delete()
-    if verbose:
-        print("Successfully deleted")
+    LogMainSubAgent.verbose("Successfully deleted")

@@ -1,4 +1,4 @@
-from config import verbose, verbose_subagent_steps
+from logging_config import LogMainSubAgent
 
 from langgraph.graph import StateGraph, START, END
 
@@ -14,7 +14,6 @@ from app.models import (
 
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 from app.utils.common_table_queries import current_microcycle, current_workout_day
-from app.utils.print_long_output import print_long_output
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
@@ -86,8 +85,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Information for Workout Day Scheduling---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Workout Day Scheduling---------")
         user_microcycle = state["user_microcycle"]
         user_availability = state["user_availability"]
         microcycle_id = user_microcycle["id"]
@@ -116,8 +114,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Executes the agent to create the phase component schedule for each workout in the current microcycle.
     def perform_scheduler(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Perform Workout Day Scheduling---------")
+        LogMainSubAgent.agent_steps(f"\t---------Perform Workout Day Scheduling---------")
         user_id = state["user_id"]
         phase_id = state["phase_id"]
         microcycle_weekdays = state["microcycle_weekdays"]
@@ -129,8 +126,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         constraints={}
 
         result = phase_component_main(parameters, constraints)
-        if verbose:
-            print_long_output(result["formatted"])
+        LogMainSubAgent.agent_output(result["formatted"])
 
         return {
             "agent_output": result["output"]
@@ -138,8 +134,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Convert schedule to SQLAlchemy models.---------")
+        LogMainSubAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         phase_components_output = state["agent_output"]
         user_microcycle = state["user_microcycle"]
         microcycle_id = user_microcycle["id"]

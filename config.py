@@ -28,6 +28,15 @@ class VerbosityConfig:
     verbose = True
     existing_data_errors = True
 
+
+# Configurations options for the main sub agents.
+class MainSubAgentVerbosityConfig:
+    verbose = True
+    agent_introductions = True
+    agent_steps = True
+    agent_output = True
+    formatted_schedule = True
+
 # Configurations options for the solver preprocessing verbosity.
 class SchedulerPreProcessingVerbosityConfig:
     verbose = True

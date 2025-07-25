@@ -1,3 +1,4 @@
+from logging_config import LogMainSubAgent
 from typing_extensions import TypeVar
 from app.main_agent.main_agent_state import MainAgentState
 
@@ -8,7 +9,7 @@ TState = TypeVar('TState', bound=MainAgentState)
 
 class AgentNode():
     def availability_node(self, state: TState):
-        print(f"\n=========Starting User Availability=========")
+        LogMainSubAgent.agent_introductions(f"\n=========Starting User Availability=========")
         if state["availability_impacted"]:
             availability_agent = create_main_agent_graph()
             result = availability_agent.invoke({

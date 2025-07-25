@@ -1,11 +1,10 @@
-from config import verbose_formatted_schedule, verbose_agent_introductions, verbose_subagent_steps
+from logging_config import LogMainSubAgent
 
 from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.models import User_Exercises
 from app.utils.common_table_queries import current_workout_day
-from app.utils.print_long_output import print_long_output
 
 from app.main_agent.main_agent_state import MainAgentState
 
@@ -21,20 +20,16 @@ class AgentState(MainAgentState):
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
-    if verbose_agent_introductions:
-        print(f"\n=========Starting User Workout Completion=========")
-    if verbose_subagent_steps:
-        print(f"\t---------Confirm that the User Microcycle is Impacted---------")
+    LogMainSubAgent.agent_introductions(f"\n=========Starting User Workout Completion=========")
+    LogMainSubAgent.agent_steps(f"\t---------Confirm that the User Microcycle is Impacted---------")
     if not state["workout_completion_impacted"]:
-        if verbose_subagent_steps:
-            print(f"\t---------No Impact---------")
+        LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
         return "no_impact"
     return "impact"
 
 # Retrieve parent item that will be used for the current schedule.
 def retrieve_parent(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Retrieving Current Workout Day---------")
+    LogMainSubAgent.agent_steps(f"\t---------Retrieving Current Workout Day---------")
     user_id = state["user_id"]
     user_workout_day = current_workout_day(user_id)
 
@@ -43,16 +38,14 @@ def retrieve_parent(state: AgentState):
 
 # Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Confirm there is an active Workout Day---------")
+    LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active Workout Day---------")
     if not state["user_workout_day"]:
         return "no_parent"
     return "parent"
 
 # Retrieve necessary information for the schedule creation.
 def retrieve_information(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Retrieving Information for Microcycle Scheduling---------")
+    LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Microcycle Scheduling---------")
     user_workout_day = state["user_workout_day"]
     workout_exercises = user_workout_day["exercises"]
 
@@ -60,16 +53,14 @@ def retrieve_information(state: AgentState):
 
 # Confirm that there is a workout to complete.
 def confirm_children(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Confirm there is an active Workout---------")
+    LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active Workout---------")
     if not state["workout_exercises"]:
         return "no_schedule"
     return "present_schedule"
 
 # Initializes the microcycle schedule for the current mesocycle.
 def perform_workout_completion(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Perform Workout Completion---------")
+    LogMainSubAgent.agent_steps(f"\t---------Perform Workout Completion---------")
     user_id = state["user_id"]
     workout_exercises = state["workout_exercises"]
 
@@ -110,21 +101,18 @@ def perform_workout_completion(state: AgentState):
 
 # Print output.
 def get_formatted_list(state: AgentState):
-    if verbose_subagent_steps:
-        print(f"\t---------Retrieving Formatted Schedule for user---------")
+    LogMainSubAgent.agent_steps(f"\t---------Retrieving Formatted Schedule for user---------")
     user_exercises = state["user_exercises"]
     old_user_exercises = state["old_user_exercises"]
 
     formatted_schedule = print_schedule(old_user_exercises, user_exercises)
-    if verbose_formatted_schedule:
-        print_long_output(formatted_schedule)
+    LogMainSubAgent.formatted_schedule(formatted_schedule)
 
     return {"workout_completion_formatted": formatted_schedule}
 
 # Node to declare that the sub agent has ended.
 def end_node(state: AgentState):
-    if verbose_agent_introductions:
-        print(f"=========Ending User Workout Completion=========\n")
+    LogMainSubAgent.agent_introductions(f"=========Ending User Workout Completion=========\n")
     return {}
 
 # Create main agent.

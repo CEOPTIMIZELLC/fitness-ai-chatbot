@@ -1,4 +1,4 @@
-from config import verbose, verbose_subagent_steps
+from logging_config import LogMainSubAgent
 from typing_extensions import TypedDict
 
 from langgraph.graph import StateGraph, START, END
@@ -49,8 +49,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Classify the new goal in one of the possible goal types.
     def perform_input_parser(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Perform {self.sub_agent_title} Parsing---------")
+        LogMainSubAgent.agent_steps(f"\t---------Perform {self.sub_agent_title} Parsing---------")
         new_availability = state["availability_message"]
 
         # There are only so many types a weekday can be classified as, with all of them being stored.
@@ -69,8 +68,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Convert schedule to SQLAlchemy models.---------")
+        LogMainSubAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         user_id = state["user_id"]
         weekday_availability = state["agent_output"]
         # Update each availability entry to the database.
@@ -85,16 +83,14 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Delete the old children belonging to the current item.
     def delete_old_children(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Delete old items of current Weekday Availability---------")
+        LogMainSubAgent.agent_steps(f"\t---------Delete old items of current Weekday Availability---------")
         user_id = state["user_id"]
         user_microcycle = current_microcycle(user_id)
         if user_microcycle:
             microcycle_id = user_microcycle.id
 
             db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
-            if verbose:
-                print("Successfully deleted")
+            LogMainSubAgent.verbose("Successfully deleted")
         return {}
 
     # Create main agent.

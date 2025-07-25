@@ -1,4 +1,4 @@
-from config import verbose, verbose_subagent_steps
+from logging_config import LogMainSubAgent
 from flask import abort
 from typing_extensions import TypeVar
 
@@ -44,8 +44,7 @@ class BaseAgentWithParents(BaseAgent):
 
     # Retrieve parent item that will be used for the current schedule.
     def retrieve_parent(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Current {self.parent_title}---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Current {self.parent_title}---------")
         user_id = state["user_id"]
         parent_db_entry = self.parent_retriever_agent(user_id)
 
@@ -54,8 +53,7 @@ class BaseAgentWithParents(BaseAgent):
 
     # Confirm that a currently active parent exists to attach the a schedule to.
     def confirm_parent(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Confirm there is an active {self.parent_title}---------")
+        LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active {self.parent_title}---------")
         if not state[self.parent_names["entry"]]:
             return "no_parent"
         return "parent"
@@ -69,8 +67,7 @@ class BaseAgentWithParents(BaseAgent):
         # Change the parent id if performing it with a different id has been specified.
         perform_with_parent_id_key = self.focus_names["perform_with_parent_id"]
         if perform_with_parent_id_key in state and state[perform_with_parent_id_key]:
-            if verbose_subagent_steps:
-                print(f"\t---------Change parent id of {self.parent_title}---------")
+            LogMainSubAgent.agent_steps(f"\t---------Change parent id of {self.parent_title}---------")
             user_id = state["user_id"]
             new_parent_id = state[perform_with_parent_id_key]
             parent_db_entry = self.parent_changer(user_id, new_parent_id)
@@ -84,13 +81,12 @@ class BaseAgentWithParents(BaseAgent):
 
     # Request permission from user to execute the parent initialization.
     def ask_for_permission(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Ask user if a new {self.parent_title} can be made---------")
+        LogMainSubAgent.agent_steps(f"\t---------Ask user if a new {self.parent_title} can be made---------")
         result = interrupt({
             "task": f"No current {self.parent_title} exists for {self.sub_agent_title}. Would you like for me to generate a {self.parent_title} for you?"
         })
         user_input = result["user_input"]
-        print(f"Extract the {self.parent_title} Goal the following message: {user_input}")
+        LogMainSubAgent.verbose(f"Extract the {self.parent_title} Goal the following message: {user_input}")
 
         # Retrieve the new input for the parent item.
         goal_class = new_input_request(user_input, self.parent_system_prompt, self.parent_goal)
@@ -100,16 +96,14 @@ class BaseAgentWithParents(BaseAgent):
 
     # Router for if permission was granted.
     def confirm_permission(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Confirm the agent can create a new {self.parent_title}---------")
+        LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new {self.parent_title}---------")
         if not state[self.parent_names["impact"]]:
             return "permission_denied"
         return "permission_granted"
 
     # State if the Parent isn't allowed to be requested.
     def permission_denied(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Abort {self.sub_agent_title} Scheduling---------")
+        LogMainSubAgent.agent_steps(f"\t---------Abort {self.sub_agent_title} Scheduling---------")
         abort(404, description=f"No active {self.parent_title} found.")
         return {}
 
@@ -122,12 +116,10 @@ class BaseAgentWithParents(BaseAgent):
 
     # Delete the old items belonging to the parent.
     def delete_old_children(self, state: TState):
-        if verbose_subagent_steps:
-            print(f"\t---------Delete old {self.sub_agent_title}s---------")
+        LogMainSubAgent.agent_steps(f"\t---------Delete old {self.sub_agent_title}s---------")
         parent_id = state[self.parent_names["id"]]
         self.delete_children_query(parent_id)
-        if verbose:
-            print("Successfully deleted")
+        LogMainSubAgent.verbose("Successfully deleted")
         return {}
 
     # Initializes the scheduler for the current parent.

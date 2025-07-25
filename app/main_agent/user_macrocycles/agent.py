@@ -1,4 +1,4 @@
-from config import verbose, verbose_subagent_steps
+from logging_config import LogMainSubAgent
 from typing_extensions import TypedDict
 
 from langgraph.graph import StateGraph, START, END
@@ -65,8 +65,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Perform the goal change to the desired ID.
     def perform_goal_change_by_id(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Perform {self.sub_agent_title} ID Assignment---------")
+        LogMainSubAgent.agent_steps(f"\t---------Perform {self.sub_agent_title} ID Assignment---------")
         goal_id = state[self.focus_names["perform_with_parent_id"]]
         goal_entry_from_db = db.session.get(Goal_Library, goal_id)
         goal = goal_entry_from_db.to_dict()
@@ -82,8 +81,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Classify the new goal in one of the possible goal types.
     def perform_input_parser(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Perform {self.sub_agent_title} Classifier---------")
+        LogMainSubAgent.agent_steps(f"\t---------Perform {self.sub_agent_title} Classifier---------")
         new_goal = state["macrocycle_message"]
 
         # There are only so many goal types a macrocycle can be classified as, with all of them being stored.
@@ -106,8 +104,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Determine whether the current macrocycle should be edited or if a new one should be created.
     def which_operation(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Determine whether goal should be new---------")
+        LogMainSubAgent.agent_steps(f"\t---------Determine whether goal should be new---------")
         if state["macrocycle_alter_old"] and state["user_macrocycle"]:
             return "alter_old_macrocycle"
         return "create_new_macrocycle"
@@ -124,20 +121,17 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Retrieving Information for Macrocycle Changing---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Macrocycle Changing---------")
         user_macrocycle = state["user_macrocycle"]
         macrocycle_id = user_macrocycle["id"]
         return {"macrocycle_id": macrocycle_id}
 
     # Delete the old children belonging to the current item.
     def delete_old_children(self, state: AgentState):
-        if verbose_subagent_steps:
-            print(f"\t---------Delete old items of current Macrocycle---------")
+        LogMainSubAgent.agent_steps(f"\t---------Delete old items of current Macrocycle---------")
         macrocycle_id = state["macrocycle_id"]
         db.session.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
-        if verbose:
-            print("Successfully deleted")
+        LogMainSubAgent.verbose("Successfully deleted")
         return {}
 
     # Alters the current macrocycle to be the determined type.
