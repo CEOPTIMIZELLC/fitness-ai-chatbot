@@ -1,5 +1,5 @@
 from config import change_min_max_exercises_for_those_available
-from config import verbose_agent_preprocessing
+from logging_config import LogSolverPreProcessing
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 from .check_exercise_quantity import Main as check_exercise_quantity
 from .check_for_enough_time import Main as check_for_enough_time
@@ -8,8 +8,7 @@ from flask import abort
 
 
 def print_logging_message(message):
-    if verbose_agent_preprocessing:
-        print(f"\n{"-" * 40}\n{message}")
+    LogSolverPreProcessing.verbose(f"\n{"-" * 40}\n{message}")
 
 # Attach allowed exercises to phase components.
 def attach_exercises_to_pcs(pcs, exercises, exercises_for_pcs, true_exercise_indicators_for_pcs):

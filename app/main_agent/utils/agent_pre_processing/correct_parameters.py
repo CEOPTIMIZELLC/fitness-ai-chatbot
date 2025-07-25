@@ -1,7 +1,7 @@
 import heapq
 from .utils import check_for_required, remove_impossible_not_required_phase_components
 from config import change_min_max_exercises_for_those_available
-from config import verbose_agent_preprocessing
+from logging_config import LogSolverPreProcessing
 
 def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises):
     unsatisfiable = []
@@ -67,8 +67,7 @@ def _correct_allowed_exercises(pc, key, number_of_exercises_available):
     original_value = pc.get(key)
     if original_value:
         if original_value > number_of_exercises_available:
-            if verbose_agent_preprocessing:
-                print(f"{pc["pc_name_for_bodypart"]}'s {key} value of {original_value} is less than the {number_of_exercises_available} exercises available. Correcting to {number_of_exercises_available}")
+            LogSolverPreProcessing.verbose(f"{pc["pc_name_for_bodypart"]}'s {key} value of {original_value} is less than the {number_of_exercises_available} exercises available. Correcting to {number_of_exercises_available}")
             pc[key] = number_of_exercises_available
     else:
         pc[key] = number_of_exercises_available

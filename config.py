@@ -21,8 +21,6 @@ exponential_decay = True
 verbose = True
 verbose_agent_introductions = True
 verbose_subagent_steps = True
-verbose_agent_preprocessing = False
-verbose_exercises_for_pc_steps = False
 verbose_formatted_schedule = True
 
 # Configurations for verbose options.
@@ -30,7 +28,12 @@ class VerbosityConfig:
     verbose = True
     existing_data_errors = True
 
-# Configurations for verbose options.
+# Configurations options for the solver preprocessing verbosity.
+class SchedulerPreProcessingVerbosityConfig:
+    verbose = True
+    exercises_for_pc_steps = True
+
+# Configurations options for the solver agent verbosity.
 class SchedulerVerbosityConfig:
     verbose = True
     agent_time = True

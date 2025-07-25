@@ -1,5 +1,5 @@
 import copy
-from config import verbose_agent_preprocessing, verbose_exercises_for_pc_steps
+from logging_config import LogSolverPreProcessing
 from config import (
     include_all_exercises_for_desired_full_body, 
     include_all_exercises_for_desired_bodypart, 
@@ -64,8 +64,7 @@ def get_exercises_for_pc(exercises, phase_component):
     if include_all_exercises_for_desired_full_body and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
         action_message = action_messages[0]
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
-        if verbose_exercises_for_pc_steps:
-            print(f"{action_message} {true_exercises_message} {message}")
+        LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_is_allowed_for_phase_component,
@@ -76,8 +75,7 @@ def get_exercises_for_pc(exercises, phase_component):
     if include_all_exercises_for_desired_bodypart and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = action_messages[1]
         message = f"Including all exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
-        if verbose_exercises_for_pc_steps:
-            print(f"{action_message} {true_exercises_message} {message}")
+        LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_is_of_desired_bodypart,
@@ -89,8 +87,7 @@ def get_exercises_for_pc(exercises, phase_component):
     if incude_all_exercises_for_desired_phase_component and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = action_messages[2]
         message = f"Including all exercises for component {pc_name}."
-        if verbose_exercises_for_pc_steps:
-            print(f"{action_message} {true_exercises_message} {message}")
+        LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_is_allowed_for_phase_component,
@@ -101,8 +98,7 @@ def get_exercises_for_pc(exercises, phase_component):
     if include_all_exercises_for_desired_full_body and include_all_exercises_for_desired_bodypart and ((len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min'])) and (phase_component["bodypart_id"] == 1):
         action_message = action_messages[3]
         message = f"Bodypart is total body, so all exercises for component {pc_name} will be included."
-        if verbose_exercises_for_pc_steps:
-            print(f"{action_message} {true_exercises_message} {message}")
+        LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_has_valid_weights
@@ -112,8 +108,7 @@ def get_exercises_for_pc(exercises, phase_component):
     if include_all_exercises and (len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']):
         action_message = action_messages[-3]
         message = f"Including all exercises."
-        if verbose_exercises_for_pc_steps:
-            print(f"{action_message} {true_exercises_message} {message}")
+        LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message} {true_exercises_message} {message}")
         exercises_for_pc = get_exercises_for_pc_conditions(exercises, phase_component, 
                                                            conditions=[
                                                                exercise_has_valid_weights
@@ -121,22 +116,20 @@ def get_exercises_for_pc(exercises, phase_component):
 
     if len(exercises_for_pc) < phase_component['exercises_per_bodypart_workout_min']:
         action_message = action_messages[-2]
-        if verbose_exercises_for_pc_steps:
-            print(f"{action_message:<{action_messages_max_length}} {true_exercises_message} {message}")
+        LogSolverPreProcessing.exercises_for_pc_steps(f"{action_message:<{action_messages_max_length}} {true_exercises_message} {message}")
         message = f"No solution found."
 
     # Log whether other exercises needed to be included.
-    if message and verbose_agent_preprocessing:
-        print(f"{action_message:<{action_messages_max_length}} {true_exercises_message} {message}")
-        if verbose_exercises_for_pc_steps:
-            print("")
+    if message:
+        LogSolverPreProcessing.verbose(f"{action_message:<{action_messages_max_length}} {true_exercises_message} {message}")
+        LogSolverPreProcessing.exercises_for_pc_steps("")
 
     # Log whether no exercises were found yet none were needed.
-    elif phase_component['exercises_per_bodypart_workout_min'] == 0 and len(exercises_for_pc) == 0 and verbose_agent_preprocessing:
+    elif phase_component['exercises_per_bodypart_workout_min'] == 0 and len(exercises_for_pc) == 0:
         action_message = action_messages[-1]
         true_exercises_message = f"{phase_component['pc_name']} had and needs NO exercises for bodypart '{phase_component['bodypart_name'].upper()}'."
         message = "None were required so no action was taken."
-        print(f"{action_message:<{action_messages_max_length}} {true_exercises_message} {message}")
+        LogSolverPreProcessing.verbose(f"{action_message:<{action_messages_max_length}} {true_exercises_message} {message}")
 
     true_exercise_indicators_for_pc = indicate_if_exercise_is_true(true_exercises_for_pc, exercises_for_pc, message)
     return exercises_for_pc, true_exercise_indicators_for_pc
