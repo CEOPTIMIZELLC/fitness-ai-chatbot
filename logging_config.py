@@ -26,8 +26,8 @@ def verbose_log(enabled: bool, message: str, level=logging.INFO):
         log_long_output(level, message)
 
 # Partial Functions for Each Verbosity Type
+log_verbose = partial(verbose_log, VerbosityConfig.verbose)
 log_existing_data_errors = partial(verbose_log, VerbosityConfig.existing_data_errors)
-
 
 class LogRoute:
     verbose = partial(verbose_log, RouteVerbosityConfig.verbose)

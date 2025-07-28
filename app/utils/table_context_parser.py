@@ -1,8 +1,4 @@
-# %%
-
-
-# %%
-# sql_agent.py
+from logging_config import log_verbose, logger
 
 from typing import List
 from typing_extensions import TypedDict
@@ -34,25 +30,25 @@ class GetCurrentUser(BaseModel):
     )
 
 def get_current_user(state: AgentState):
-    print("Retrieving the current user based on user ID.")
+    log_verbose("Retrieving the current user based on user ID.")
     user_id = current_user.id
     
     if not user_id:
         state["current_user"] = "User not found"
-        print("No user ID provided in the configuration.")
+        log_verbose("No user ID provided in the configuration.")
         return state
 
     try:
         user = db.session.query(Users).filter(Users.id == int(user_id)).first()
         if user:
             state["current_user"] = user.first_name
-            print(f"Current user set to: {state['current_user']}")
+            log_verbose(f"Current user set to: {state['current_user']}")
         else:
             state["current_user"] = "User not found"
-            print("User not found in the database.")
+            log_verbose("User not found in the database.")
     except Exception as e:
         state["current_user"] = "Error retrieving user"
-        print(f"Error retrieving user: {str(e)}")
+        logger.error(f"Error retrieving user: {str(e)}")
     finally:
         db.session.close()
     return state
@@ -66,7 +62,7 @@ def check_relevance(state: AgentState):
     question = state["question"]
     #schema = get_database_schema(db)
     schema = current_app.table_schema
-    print(f"Checking relevance of the question: {question}")
+    log_verbose(f"Checking relevance of the question: {question}")
     system = """You are an assistant that determines whether a given question is related to the following database schema.
 
 Schema:
@@ -86,14 +82,14 @@ Respond with only "relevant" or "not_relevant".
     relevance_checker = check_prompt | structured_llm
     relevance = relevance_checker.invoke({})
     state["relevance"] = relevance.relevance
-    print(f"Relevance determined: {state['relevance']}")
+    log_verbose(f"Relevance determined: {state['relevance']}")
     return state
 
 
 def irrelevant_question(state: AgentState):
     state["subjects"] = "No subjects"
     state["query_result"] = "Question is irrelevant."
-    print(f"{state['query_result']}")
+    log_verbose(f"{state['query_result']}")
     return state
 
 
@@ -107,7 +103,7 @@ def tag_question(state: AgentState):
     current_user = state["current_user"]
     questions = ["I love langchain", "non mi piace questo cibo"]
     for question in questions:
-        print(f"Tagging context for user '{current_user}': {question}")
+        log_verbose(f"Tagging context for user '{current_user}': {question}")
 
         system = "Think carefully, and then tag the text as instructed"
         convert_prompt = ChatPromptTemplate.from_messages(
@@ -121,7 +117,7 @@ def tag_question(state: AgentState):
         tag_generator = convert_prompt | structured_llm
         result = tag_generator.invoke({"question": question})
         state["tags"] = {"sentiment": result.sentiment, "language": result.language}
-        print(f"Generated tags: {state['tags']}")
+        log_verbose(f"Generated tags: {state['tags']}")
     state["query_result"] = "Nothing"
     return state
 
@@ -143,7 +139,7 @@ def extract_information(state: AgentState):
 
     questions = ["Joe is 30, his mom is Martha", f"{current_user} is 15, their mom is Amber"]
     for question in questions:
-        print(f"Tagging context for user '{current_user}': {question}")
+        log_verbose(f"Tagging context for user '{current_user}': {question}")
 
         system = "Extract the relevant information, if not explicitly provided do not guess. Extract partial info"
         convert_prompt = ChatPromptTemplate.from_messages(
@@ -157,7 +153,7 @@ def extract_information(state: AgentState):
         extraction_generator = convert_prompt | structured_llm
         result = extraction_generator.invoke({"question": question})
         state["extracted_information"] = result.people
-        print(f"Extracted information: {state['extracted_information']}")
+        log_verbose(f"Extracted information: {state['extracted_information']}")
     state["query_result"] = "Nothing"
     return state
 
@@ -166,7 +162,7 @@ class RewrittenQuestion(BaseModel):
 
 def regenerate_query(state: AgentState):
     question = state["question"]
-    print("Regenerating the SQL query by rewriting the question.")
+    log_verbose("Regenerating the SQL query by rewriting the question.")
     system = """You are an assistant that reformulates an original question to enable more precise SQL queries. Ensure that all necessary details, such as table joins, are preserved to retrieve complete and accurate data.
     """
     rewrite_prompt = ChatPromptTemplate.from_messages(
@@ -183,7 +179,7 @@ def regenerate_query(state: AgentState):
     rewriter = rewrite_prompt | structured_llm
     rewritten = rewriter.invoke({})
     state["question"] = rewritten.question
-    print(f"Rewritten question: {state['question']}")
+    log_verbose(f"Rewritten question: {state['question']}")
     return state
 
 class TableTagging(BaseModel):
@@ -193,7 +189,7 @@ class TableTagging(BaseModel):
 def tag_table_question(state: AgentState):
     question = state["question"]
     current_user = state["current_user"]
-    print(f"Tagging context for user '{current_user}': {question}")
+    log_verbose(f"Tagging context for user '{current_user}': {question}")
 
     system = "Think carefully, and then tag the text as instructed"
     convert_prompt = ChatPromptTemplate.from_messages(
@@ -207,7 +203,7 @@ def tag_table_question(state: AgentState):
     tag_generator = convert_prompt | structured_llm
     result = tag_generator.invoke({"question": question})
     state["subjects"] = result.subjects
-    print(f"Table names: {state['subjects']}")
+    log_verbose(f"Table names: {state['subjects']}")
     return state
 
 class TableNames(BaseModel):
@@ -219,7 +215,7 @@ def retrieve_table_names(state: AgentState):
     current_user = state["current_user"]
     #schema = get_database_schema(db)
     schema = current_app.table_schema
-    print(f"Tagging context for user '{current_user}': {question}")
+    log_verbose(f"Tagging context for user '{current_user}': {question}")
 
     system = """You are an assistant that retrieves context and extracts relevant information from natural language questions to be used later for SQL queries based on the following schema:
 
@@ -245,7 +241,7 @@ Provide only the tagging without any explanations.
     result = tag_generator.invoke({"question": question})
     state["tables"] = result.tables
     state["query_result"] = result.tables
-    print(f"Table names: {state['tables']}")
+    log_verbose(f"Table names: {state['tables']}")
     return state
 
 def relevance_router(state: AgentState):

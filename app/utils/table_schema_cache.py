@@ -1,6 +1,6 @@
 from sqlalchemy import inspect
 
-from config import verbose
+from logging_config import log_verbose
 
 def get_foreign_keys(inspector, table_name):
     foreign_keys_map = {}
@@ -60,6 +60,5 @@ def get_database_schema(db):
 
             schema += f"- {col_name}: {col_type}\n"
         schema += "\n"
-    if verbose:
-        print("Retrieved database schema.")
+    log_verbose("Retrieved database schema.")
     return schema

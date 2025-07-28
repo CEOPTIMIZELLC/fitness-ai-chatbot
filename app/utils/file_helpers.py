@@ -1,4 +1,5 @@
 import os
+from logging_config import logger
 
 def get_relative_path(file):
 
@@ -22,5 +23,5 @@ def create_file_if_not_exists(file_path=None, file_name="file_name", file_extens
         file = open(file_path, "x")
         file.close()
     except FileExistsError:
-        print("File already exists.")
+        logger.error("File already exists.")
     return file_path
