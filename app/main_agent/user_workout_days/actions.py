@@ -3,8 +3,9 @@ from datetime import timedelta
 
 from app.models import Weekday_Library, User_Weekday_Availability, User_Workout_Days
 
-from app.main_agent.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
-from app.main_agent.utils import verify_pc_information
+from app.utils.agent_pre_processing import verify_pc_information
+
+from .construct_lists_from_sql import *
 
 # ----------------------------------------- Workout Days -----------------------------------------
 

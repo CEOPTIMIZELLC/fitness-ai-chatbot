@@ -3,9 +3,9 @@ from flask_login import current_user
 
 from app.models import User_Weekday_Availability
 
-from app.main_agent.utils import retrieve_total_time_needed
-from app.main_agent.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
-from app.main_agent.utils import verify_pc_information
+from app.utils.agent_pre_processing import retrieve_total_time_needed, verify_pc_information
+
+from .construct_lists_from_sql import *
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 

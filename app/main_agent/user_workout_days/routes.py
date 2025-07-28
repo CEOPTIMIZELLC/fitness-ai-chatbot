@@ -4,11 +4,12 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.models import Phase_Library
-from app.main_agent.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
-from app.main_agent.utils import verify_pc_information
-from app.main_agent.user_workout_days import create_microcycle_scheduler_agent, phase_component_main
-
+from app.utils.agent_pre_processing import verify_pc_information
 from app.utils.alter_json_dict import recursively_change_dict_timedeltas
+
+from .agent import create_main_agent_graph as create_microcycle_scheduler_agent
+from .construct_lists_from_sql import *
+from .solver import Main as phase_component_main
 
 bp = Blueprint('user_workout_days', __name__)
 

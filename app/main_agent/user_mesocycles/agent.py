@@ -10,8 +10,8 @@ from app.main_agent.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.main_agent.prompts import macrocycle_system_prompt
-from app.main_agent.utils import construct_phases_list
 
+from .construct_list import construct_phases_list
 from .schedule_printer import SchedulePrinter
 from .solver import Main as phase_main
 

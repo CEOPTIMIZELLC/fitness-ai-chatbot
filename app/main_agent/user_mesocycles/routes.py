@@ -5,8 +5,9 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import Goal_Library, Goal_Phase_Requirements
 
-from app.main_agent.utils import construct_phases_list
-from app.main_agent.user_mesocycles import create_mesocycle_agent, phase_main
+from .agent import create_main_agent_graph as create_mesocycle_agent
+from .construct_list import construct_phases_list
+from .solver import Main as phase_main
 
 bp = Blueprint('user_mesocycles', __name__)
 
