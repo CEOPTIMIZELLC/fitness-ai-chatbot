@@ -30,9 +30,6 @@ def current_weekday_availability(user_id):
             User_Weekday_Availability.user_id == user_id,
             User_Weekday_Availability.weekday_id == today)
         .first())
-    print(user_id, today)
-    print(active_weekday_availability)
-    print(active_weekday_availability.to_dict())
     return active_weekday_availability
 
 # Retrieve the latest, currently active macrocycle for a user.
