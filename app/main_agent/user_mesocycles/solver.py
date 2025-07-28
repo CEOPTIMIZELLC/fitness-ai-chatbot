@@ -4,7 +4,7 @@ from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
 
-from app.agents.constraints import (
+from app.core.constraints import (
     link_entry_and_item, 
     constrain_active_entries_vars, 
     entries_within_min_max, 
@@ -13,7 +13,7 @@ from app.agents.constraints import (
     only_use_required_items, 
     use_all_required_items)
 
-from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
+from app.core.base_solver import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 from app.utils.longest_string import longest_string_size_for_key
 
 _ = load_dotenv()

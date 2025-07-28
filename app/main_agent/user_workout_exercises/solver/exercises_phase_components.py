@@ -3,7 +3,7 @@ from logging_config import LogSolver
 from collections import defaultdict
 from ortools.sat.python import cp_model
 from typing import Set, Optional
-from app.agents.constraints import (
+from app.core.constraints import (
     entries_equal, 
     entries_within_min_max, 
     ensure_all_vars_equal, 
@@ -18,16 +18,16 @@ from app.agents.constraints import (
     add_tight_bounds, 
     retrieve_indication_of_increase)
 
-from app.agents.exercises.exercise_model_specific_constraints import (
+from .exercise_model_specific_constraints import (
     constrain_volume_vars, 
     constrain_density_vars, 
     constrain_performance_vars,
     constrain_non_warmup_vars,
     resistances_of_same_bodypart_have_equal_sets)
 
-from app.agents.exercises.exercise_model_specific_constraints import create_duration_var
+from .exercise_model_specific_constraints import create_duration_var
 
-from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
+from app.core.base_solver import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 from app.utils.longest_string import longest_string_size_for_key
 from .get_pc_exercise_bounds import get_phase_component_bounds
 

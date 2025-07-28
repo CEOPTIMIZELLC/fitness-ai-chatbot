@@ -3,17 +3,17 @@ from datetime import timedelta
 
 from app import db
 from app.models import User_Mesocycles, User_Macrocycles
-from app.agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 from app.main_agent.user_macrocycles import MacrocycleAgentNode
 from app.main_agent.main_agent_state import MainAgentState
-from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.core.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.impact_goal_models import MacrocycleGoal
 from app.main_agent.prompts import macrocycle_system_prompt
 from app.main_agent.utils import construct_phases_list
 
 from .schedule_printer import SchedulePrinter
+from .solver import Main as phase_main
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 

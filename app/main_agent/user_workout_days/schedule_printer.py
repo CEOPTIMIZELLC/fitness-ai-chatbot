@@ -1,5 +1,5 @@
 from app.utils.longest_string import longest_string_size_for_key
-from app.main_agent.schedule_printer import BaseSchedulePrinter
+from app.core.base_sub_agents.schedule_printer import BaseSchedulePrinter
 
 from app.models import Bodypart_Library, Phase_Component_Library
 from app.utils.db_helpers import get_all_items

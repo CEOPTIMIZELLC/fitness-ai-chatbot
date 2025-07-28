@@ -1,5 +1,5 @@
 from app.utils.longest_string import longest_string_size_for_key
-from app.main_agent.schedule_printer import BaseSchedulePrinter
+from app.core.base_sub_agents.schedule_printer import BaseSchedulePrinter
 
 class SchedulePrinter(BaseSchedulePrinter):
     def _create_header_fields(self, longest_sizes: dict) -> dict:

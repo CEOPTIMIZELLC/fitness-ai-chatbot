@@ -5,14 +5,12 @@ from flask_login import current_user, login_required
 
 from app.models import User_Weekday_Availability
 
-from app.agents.exercises import exercise_pc_main
-
 from app.utils.common_table_queries import current_workout_day
 
 from app.main_agent.utils import retrieve_total_time_needed
 from app.main_agent.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
-from app.main_agent.user_workout_exercises import create_workout_agent
+from app.main_agent.user_workout_exercises import create_workout_agent, exercise_pc_main
 from app.main_agent.user_workout_completion import create_workout_completion_agent
 
 bp = Blueprint('user_workout_exercises', __name__)

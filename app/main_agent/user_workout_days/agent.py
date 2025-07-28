@@ -3,7 +3,6 @@ from logging_config import LogMainSubAgent
 from langgraph.graph import StateGraph, START, END
 
 from app import db
-from app.agents.phase_components import Main as phase_component_main
 from app.models import (
     User_Workout_Components, 
     User_Macrocycles, 
@@ -16,7 +15,7 @@ from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 from app.utils.common_table_queries import current_microcycle, current_workout_day
 
 from app.main_agent.main_agent_state import MainAgentState
-from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
+from app.core.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
 from app.main_agent.user_microcycles import create_microcycle_agent
 from app.main_agent.impact_goal_models import MicrocycleGoal
 from app.main_agent.prompts import microcycle_system_prompt
@@ -29,6 +28,7 @@ from .actions import (
     workout_day_entry_construction 
 )
 from .schedule_printer import SchedulePrinter
+from .solver import Main as phase_component_main
 
 # ----------------------------------------- User Workout Days -----------------------------------------
 
