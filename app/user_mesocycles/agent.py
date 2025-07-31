@@ -9,7 +9,7 @@ from app.user_macrocycles import MacrocycleAgentNode, MacrocycleGoal, macrocycle
 from app.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 
-from .construct_list import Main as construct_phases_list
+from .construct_list_from_sql import Main as construct_phases_list
 from .retrieve_current import current_mesocycle
 from .schedule_printer import SchedulePrinter
 from .solver import Main as phase_main
