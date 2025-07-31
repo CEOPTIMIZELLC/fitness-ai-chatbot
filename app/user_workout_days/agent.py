@@ -16,8 +16,7 @@ from app.utils.common_table_queries import current_microcycle, current_workout_d
 
 from app.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
-from app.user_microcycles import create_microcycle_agent, MicrocycleGoal
-from app.prompts import microcycle_system_prompt
+from app.user_microcycles import create_microcycle_agent, MicrocycleGoal, microcycle_system_prompt
 
 from .actions import (
     retrieve_parameters, 

@@ -1,2 +1,3 @@
 from .agent import create_main_agent_graph as create_workout_completion_agent
 from .goal_model import WorkoutCompletionGoal
+from .prompt import workout_complete_system_prompt, workout_complete_request
