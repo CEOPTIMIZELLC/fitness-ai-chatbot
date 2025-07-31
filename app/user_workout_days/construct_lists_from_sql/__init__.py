@@ -1,3 +1,0 @@
-from .exercises import Main as construct_available_exercises_list
-from .general_exercises import Main as construct_available_general_exercises_list
-from .phase_components import Main as construct_phase_component_list

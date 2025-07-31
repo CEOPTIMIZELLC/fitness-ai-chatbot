@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 from app import db
 from app.models import User_Exercises
 
-from app.user_exercises.retrieve_possible import user_possible_exercises, user_possible_exercises_with_user_exercise_info, user_available_exercises
+from .retrieve_possible import user_possible_exercises, user_possible_exercises_with_user_exercise_info, user_available_exercises
 from app.user_workout_days.retrieve_current import current_workout_day
 
 bp = Blueprint('user_exercises', __name__)

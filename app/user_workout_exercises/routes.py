@@ -8,10 +8,11 @@ from app.models import User_Weekday_Availability
 from app.user_workout_days.retrieve_current import current_workout_day
 
 from app.utils.agent_pre_processing import retrieve_total_time_needed, verify_pc_information
+from app.user_exercises.construct_list_from_sql import construct_available_exercises_list, construct_available_general_exercises_list
 from app.user_workout_exercises import create_workout_agent, exercise_pc_main
 from app.user_workout_completion import create_workout_completion_agent
 
-from .construct_lists_from_sql import *
+from .construct_list_from_sql import construct_user_workout_components_list
 
 bp = Blueprint('user_workout_exercises', __name__)
 
