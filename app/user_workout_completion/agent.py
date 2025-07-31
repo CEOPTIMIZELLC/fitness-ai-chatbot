@@ -4,7 +4,7 @@ from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.models import User_Exercises
-from app.utils.common_table_queries import current_workout_day
+from app.user_workout_days.retrieve_current import current_workout_day
 
 from app.main_agent_state import MainAgentState
 

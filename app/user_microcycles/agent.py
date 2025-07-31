@@ -3,12 +3,13 @@ from datetime import timedelta
 
 from app import db
 from app.models import User_Microcycles, User_Mesocycles, User_Macrocycles
-from app.utils.common_table_queries import current_mesocycle, current_microcycle
+from app.user_mesocycles.retrieve_current import current_mesocycle
 
 from app.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.user_mesocycles import create_mesocycle_agent, MesocycleGoal, mesocycle_system_prompt
 
+from .retrieve_current import current_microcycle
 from .schedule_printer import SchedulePrinter
 
 # ----------------------------------------- User Microcycles -----------------------------------------

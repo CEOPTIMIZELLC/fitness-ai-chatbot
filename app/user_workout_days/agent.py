@@ -12,7 +12,7 @@ from app.models import (
 )
 
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
-from app.utils.common_table_queries import current_microcycle, current_workout_day
+from app.user_microcycles.retrieve_current import current_microcycle
 
 from app.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
@@ -25,6 +25,7 @@ from .actions import (
     duration_to_weekdays, 
     workout_day_entry_construction 
 )
+from .retrieve_current import current_workout_day
 from .schedule_printer import SchedulePrinter
 from .solver import Main as phase_component_main
 

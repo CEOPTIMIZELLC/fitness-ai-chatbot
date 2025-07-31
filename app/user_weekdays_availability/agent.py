@@ -5,13 +5,14 @@ from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.models import User_Weekday_Availability, User_Workout_Days
-from app.utils.common_table_queries import current_weekday_availability, current_microcycle
+from app.user_microcycles.retrieve_current import current_microcycle
 
 from app.core.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 
 from .actions import retrieve_weekday_types
 from .goal_model import AvailabilityGoal
 from .prompt import availability_system_prompt
+from .retrieve_current import current_weekday_availability
 from .schedule_printer import SchedulePrinter
 from .solver import create_weekday_availability_extraction_graph
 

@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
-from app.utils.common_table_queries import current_macrocycle
+from app.user_macrocycles.retrieve_current import current_macrocycle
 
 from app.core.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 

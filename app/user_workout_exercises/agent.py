@@ -7,7 +7,7 @@ from app import db
 from app.models import User_Workout_Exercises, User_Workout_Days
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 
-from app.utils.common_table_queries import current_workout_day
+from app.user_workout_days.retrieve_current import current_workout_day
 
 from app.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
