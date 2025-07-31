@@ -7,9 +7,8 @@ from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 from app.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.impact_goal_models import MesocycleGoal
 from app.prompts import mesocycle_system_prompt
-from app.user_mesocycles import create_mesocycle_agent
+from app.user_mesocycles import create_mesocycle_agent, MesocycleGoal
 
 from .schedule_printer import SchedulePrinter
 

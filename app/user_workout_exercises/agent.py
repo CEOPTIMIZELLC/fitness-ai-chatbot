@@ -11,8 +11,7 @@ from app.utils.common_table_queries import current_workout_day
 
 from app.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
-from app.user_workout_days import create_microcycle_scheduler_agent
-from app.impact_goal_models import PhaseComponentGoal
+from app.user_workout_days import create_microcycle_scheduler_agent, PhaseComponentGoal
 from app.prompts import phase_component_system_prompt
 
 from .actions import retrieve_availability_for_day, retrieve_parameters

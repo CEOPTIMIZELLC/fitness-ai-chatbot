@@ -5,10 +5,9 @@ from app import db
 from app.models import User_Mesocycles, User_Macrocycles
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
-from app.user_macrocycles import MacrocycleAgentNode
+from app.user_macrocycles import MacrocycleAgentNode, MacrocycleGoal
 from app.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.impact_goal_models import MacrocycleGoal
 from app.prompts import macrocycle_system_prompt
 
 from .construct_list import Main as construct_phases_list

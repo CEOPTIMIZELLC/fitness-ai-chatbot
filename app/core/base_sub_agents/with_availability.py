@@ -4,8 +4,7 @@ from flask import abort
 from langgraph.types import interrupt
 
 from app.prompts import availability_system_prompt
-from app.impact_goal_models import AvailabilityGoal
-from app.user_weekdays_availability import WeekdayAvailabilityAgentNode
+from app.user_weekdays_availability import WeekdayAvailabilityAgentNode, AvailabilityGoal
 
 from .with_parents import TState
 from .with_parents import BaseAgentWithParents

@@ -1,3 +1,4 @@
 from .agent import create_main_agent_graph as create_availability_agent
 from .agent_node import AgentNode as WeekdayAvailabilityAgentNode
+from .goal_model import AvailabilityGoal
 from .solver import create_weekday_availability_extraction_graph
