@@ -5,7 +5,7 @@ from langgraph.types import interrupt
 
 from app.prompts import availability_system_prompt
 from app.impact_goal_models import AvailabilityGoal
-from app.user_weekdays_availability import WeekdayAvailabilityAgentNode as AvailabilityNode
+from app.user_weekdays_availability import WeekdayAvailabilityAgentNode
 
 from .with_parents import TState
 from .with_parents import BaseAgentWithParents
@@ -13,7 +13,7 @@ from .utils import sub_agent_focused_items, new_input_request
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Availability -----------------------------------------
 
-class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
+class BaseAgentWithAvailability(WeekdayAvailabilityAgentNode, BaseAgentWithParents):
     availability_focus = "availability"
     sub_agent_title = ""
     availability_title = "Availability"
