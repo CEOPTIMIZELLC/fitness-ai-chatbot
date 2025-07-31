@@ -68,8 +68,8 @@ def register_blueprints(app):
         from .user_workout_exercises import routes
         app.register_blueprint(routes.bp, url_prefix='/user_workout_exercises')
 
-        from .routes import user_exercises
-        app.register_blueprint(user_exercises.bp, url_prefix='/user_exercises')
+        from .user_exercises import routes
+        app.register_blueprint(routes.bp, url_prefix='/user_exercises')
         
         from .routes import user_equipment
         app.register_blueprint(user_equipment.bp, url_prefix='/user_equipment')

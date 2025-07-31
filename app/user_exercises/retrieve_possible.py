@@ -20,6 +20,7 @@ def user_possible_exercises(user_id):
         .all()
     )
 
+    # Only include exercise that the user have all of the equipment for
     available_exercises = []
     for user_exercise in user_exercises:
         if user_exercise.has_all_equipment:

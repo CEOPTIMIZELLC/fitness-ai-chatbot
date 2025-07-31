@@ -1,4 +1,4 @@
-from app.utils.common_table_queries import user_possible_exercises_with_user_exercise_info
+from app.user_exercises.retrieve_possible import user_possible_exercises_with_user_exercise_info
 
 dummy_exercise = {
     "id": 0,
