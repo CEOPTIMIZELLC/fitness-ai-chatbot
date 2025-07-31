@@ -6,7 +6,7 @@ from app import db
 from app.models import User_Exercises
 from app.utils.common_table_queries import current_workout_day
 
-from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent_state import MainAgentState
 
 from .schedule_printer import Main as print_schedule
 

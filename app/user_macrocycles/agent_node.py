@@ -1,6 +1,6 @@
 from logging_config import LogMainSubAgent
 from typing_extensions import TypeVar
-from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent_state import MainAgentState
 
 from .agent import create_main_agent_graph
 

@@ -8,8 +8,8 @@ from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
 from app.core.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.main_agent.impact_goal_models import MacrocycleGoal
-from app.main_agent.prompts import macrocycle_system_prompt
+from app.impact_goal_models import MacrocycleGoal
+from app.prompts import macrocycle_system_prompt
 
 from .actions import retrieve_goal_types
 from .parser import create_goal_classification_graph

@@ -2,7 +2,7 @@ from logging_config import LogMainSubAgent
 from flask import abort
 from typing_extensions import TypeVar
 
-from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent_state import MainAgentState
 from .utils import sub_agent_focused_items
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------

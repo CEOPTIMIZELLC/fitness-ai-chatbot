@@ -7,7 +7,7 @@ from config import agent_recursion_limit
 from app import db
 from app.models import User_Macrocycles, User_Weekday_Availability
 
-from app.main_agent.graph import create_main_agent_graph
+from app.graph import create_main_agent_graph
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.types import interrupt, Command
 

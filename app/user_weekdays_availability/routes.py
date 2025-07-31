@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 
-from app.main_agent.user_weekdays_availability import create_availability_agent
+from app.user_weekdays_availability import create_availability_agent
 
 from app.utils.alter_json_dict import recursively_change_dict_timedeltas
 

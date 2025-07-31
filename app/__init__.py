@@ -50,22 +50,22 @@ def register_blueprints(app):
         app.register_blueprint(library_routes.components_bp, url_prefix='/components')
         app.register_blueprint(library_routes.subcomponents_bp, url_prefix='/subcomponents')
 
-        from .main_agent.user_weekdays_availability import routes
+        from .user_weekdays_availability import routes
         app.register_blueprint(routes.bp, url_prefix='/user_weekday_availability')
 
-        from .main_agent.user_macrocycles import routes
+        from .user_macrocycles import routes
         app.register_blueprint(routes.bp, url_prefix='/user_macrocycles')
 
-        from .main_agent.user_mesocycles import routes
+        from .user_mesocycles import routes
         app.register_blueprint(routes.bp, url_prefix='/user_mesocycles')
 
-        from .main_agent.user_microcycles import routes
+        from .user_microcycles import routes
         app.register_blueprint(routes.bp, url_prefix='/user_microcycles')
 
-        from .main_agent.user_workout_days import routes
+        from .user_workout_days import routes
         app.register_blueprint(routes.bp, url_prefix='/user_workout_days')
 
-        from .main_agent.user_workout_exercises import routes
+        from .user_workout_exercises import routes
         app.register_blueprint(routes.bp, url_prefix='/user_workout_exercises')
 
         from .routes import user_exercises

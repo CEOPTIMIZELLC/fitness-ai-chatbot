@@ -10,13 +10,13 @@ from app import db
 from app.utils.sql import sql_app
 from app.utils.table_context_parser import context_retriever_app
 
-from app.main_agent.user_macrocycles import create_goal_agent
-from app.main_agent.user_mesocycles import create_mesocycle_agent
-from app.main_agent.user_microcycles import create_microcycle_agent
-from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
-from app.main_agent.user_workout_exercises import create_workout_agent
-from app.main_agent.user_workout_completion import create_workout_completion_agent
-from app.main_agent.user_weekdays_availability import create_availability_agent
+from app.user_macrocycles import create_goal_agent
+from app.user_mesocycles import create_mesocycle_agent
+from app.user_microcycles import create_microcycle_agent
+from app.user_workout_days import create_microcycle_scheduler_agent
+from app.user_workout_exercises import create_workout_agent
+from app.user_workout_completion import create_workout_completion_agent
+from app.user_weekdays_availability import create_availability_agent
 
 from app.utils.alter_json_dict import recursively_change_dict_timedeltas
 

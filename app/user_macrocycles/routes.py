@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import Goal_Library
 
-from app.main_agent.user_macrocycles import create_goal_agent, create_goal_classification_graph
+from app.user_macrocycles import create_goal_agent, create_goal_classification_graph
 
 bp = Blueprint('user_macrocycles', __name__)
 

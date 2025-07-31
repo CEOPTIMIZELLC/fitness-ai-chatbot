@@ -14,11 +14,11 @@ from app.models import (
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 from app.utils.common_table_queries import current_microcycle, current_workout_day
 
-from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent_state import MainAgentState
 from app.core.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
-from app.main_agent.user_microcycles import create_microcycle_agent
-from app.main_agent.impact_goal_models import MicrocycleGoal
-from app.main_agent.prompts import microcycle_system_prompt
+from app.user_microcycles import create_microcycle_agent
+from app.impact_goal_models import MicrocycleGoal
+from app.prompts import microcycle_system_prompt
 
 from .actions import (
     retrieve_parameters, 
