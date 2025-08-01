@@ -25,6 +25,9 @@ def link_entry_and_item(model, items, entry_vars, number_of_entries, used_vars):
             model.Add(entry_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
     return None
 
+# Sets the constraints for an optional integer variable
+# Set the value to be 0 when inactive. 
+# Give the variable a min and a max when active.
 def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_active=1, value_if_inactive=0):
     # Enforce entry = 0 if the activator is off.
     model.Add(entry == value_if_inactive).OnlyEnforceIf(activator.Not())
@@ -36,14 +39,15 @@ def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_acti
     return None
 
 # Method for the creation of what is essentially an optional variable. 
-# This was created to reduce repetition of code
 def create_optional_intvar(model, name_of_entry_var, activator, min_if_active=0, max_if_active=1, value_if_inactive=0):
     var_entry = model.NewIntVar(value_if_inactive, max_if_active, name_of_entry_var)
-    model = constrain_active_entry(model, entry=var_entry, activator=activator, 
-                                   min_if_active=min_if_active, max_if_active=max_if_active, 
-                                   value_if_inactive=value_if_inactive)
+    model = constrain_active_entry(
+        model, entry=var_entry, activator=activator, 
+        min_if_active=min_if_active, max_if_active=max_if_active, 
+        value_if_inactive=value_if_inactive)
     return var_entry
 
+# Method for creating a list of model variables.
 def declare_model_vars(model, name, active_vars, max_entries, min_if_active, max_if_active):
     return [
         create_optional_intvar(
@@ -90,6 +94,8 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
     
     return None
 
+# Sets the variable to be equal to a value. 
+# Only applied when the given condition(s) is true, if applicable.
 def entry_equals(model, agent_var, item, key, condition=None):
     """Generic function to add equals constraints with optional condition."""
     if (key in item) and (item[key] is not None):
@@ -108,6 +114,8 @@ def entries_equal(model, items, key, number_of_entries, used_vars, duration_vars
             )
     return None
 
+# Sets the variable to be within the range allowed. 
+# Only applied when the given condition(s) is true, if applicable.
 def entry_within_min_max(model, agent_var, item, min_key, max_key, condition=None):
     """Generic function to add min/max constraints with optional condition."""
     if (min_key in item) and (item[min_key] is not None):
@@ -130,11 +138,13 @@ def entries_within_min_max(model, items, minimum_key, maximum_key, number_of_ent
             )
     return None
 
+# Forces all items in the list to be equal without a condition.
 def _ensure_all_vars_equal_no_activator(model, agent_vars):
     for agent_var, var_next in zip(agent_vars, agent_vars[1:]):
         model.Add(agent_var == var_next)
     return None
 
+# Forces all items in the list to be equal for a condition.
 def _ensure_all_vars_equal_with_activator(model, agent_vars, active_vars):
     for agent_var, active_var, var_next, active_var_next in zip(agent_vars, active_vars, agent_vars[1:], active_vars[1:]):
         model.Add(agent_var == var_next).OnlyEnforceIf(active_var, active_var_next)
@@ -327,6 +337,7 @@ def add_tight_bounds(model, entry_vars, used_vars, items, name="", minimum_key=N
         
     return phase_component_counts
 
+# Find if performance has increased for an exercise. If no increase is found, by how much.
 def retrieve_indication_of_increase(model, items, max_performance, var_index, performance_var, used_item):
     # Booleans to check if the performance increased for whichever item was selected.
     performance_increase_for_pc_met = [model.NewBoolVar(f'item_{i}_performance_increase_for_{var_index}')
@@ -346,8 +357,13 @@ def retrieve_indication_of_increase(model, items, max_performance, var_index, pe
         model.Add(performance_var <= item["performance"]).OnlyEnforceIf(item_selected, performance_increase_met_for_item.Not())
 
         # Calculate penalty if increase isn't met.
+        # The performance check is only performed for which ever item is selected (item_selected)
+        # Performance difference is 0 if there is any increase.
         model.Add(performance_difference == 0).OnlyEnforceIf(item_selected, performance_increase_met_for_item)
+
+        # Calculate the performance difference if the performance is less than the previous.
         model.Add(performance_difference == (100 + item["performance"] - performance_var)).OnlyEnforceIf(item_selected, performance_increase_met_for_item.Not())
 
+    # The final performance penalty for a variable is the negative performance increase over 100.
     model.AddDivisionEquality(performance_penalty, performance_difference, 100)
     return performance_penalty
