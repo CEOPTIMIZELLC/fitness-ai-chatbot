@@ -45,6 +45,7 @@ class LogMainSubAgent:
     agent_introductions = partial(verbose_log, MainSubAgentVerbosityConfig.agent_introductions)
     agent_steps = partial(verbose_log, MainSubAgentVerbosityConfig.agent_steps)
     agent_output = partial(verbose_log, MainSubAgentVerbosityConfig.agent_output)
+    parsed_goal = partial(verbose_log, MainSubAgentVerbosityConfig.parsed_goal)
     formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
 
 class LogSolverPreProcessing:

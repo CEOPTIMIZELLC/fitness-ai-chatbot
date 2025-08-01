@@ -47,6 +47,7 @@ class MainSubAgentVerbosityConfig:
     agent_introductions = True
     agent_steps = True
     agent_output = True
+    parsed_goal = True
     formatted_schedule = True
 
 # Configurations options for the solver preprocessing verbosity.

@@ -1,3 +1,4 @@
+from logging_config import LogMainSubAgent
 from flask import current_app
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -28,5 +29,14 @@ def new_input_request(user_input, item_system_prompt, item_goal):
     structured_llm = llm.with_structured_output(item_goal)
     goal_classifier = check_prompt | structured_llm
     goal_class = goal_classifier.invoke({})
+
+    # Convert the Pydantic model to a dictionary
+    goal_dict = goal_class.model_dump()
+
+    # Iterate and print names and values
+    LogMainSubAgent.parsed_goal(f"Parsed Goal Fields: ")
+    for key, value in goal_dict.items():
+        LogMainSubAgent.parsed_goal(f"{key}: {value}")
+    LogMainSubAgent.parsed_goal(f"")
 
     return goal_class
