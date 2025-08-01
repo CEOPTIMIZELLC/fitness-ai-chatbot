@@ -9,8 +9,9 @@ from app.models import User_Exercises, User_Workout_Days
 from app.utils.common_table_queries import current_workout_day
 
 from app.main_agent.main_agent_state import MainAgentState
+from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 
-from .schedule_printer import Main as print_schedule
+from .schedule_printer import SchedulePrinter
 from .list_printer import Main as list_printer_main
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
@@ -23,39 +24,22 @@ class AgentState(MainAgentState):
     schedule_list: list
     schedule_printed: str
 
-class SubAgent:
+class SubAgent(BaseAgent, SchedulePrinter):
+    focus = "workout_completion"
+    parent = "workout_day"
     sub_agent_title = "Workout Completion"
     parent_title = "Workout Day"
 
-    # Confirm that the desired section should be impacted.
-    def confirm_impact(self, state: AgentState):
-        LogMainSubAgent.agent_introductions(f"\n=========Starting User {self.sub_agent_title}=========")
-        LogMainSubAgent.agent_steps(f"\t---------Confirm that the User Microcycle is Impacted---------")
-        if not state["workout_completion_impacted"]:
-            LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
-            return "no_impact"
-        return "impact"
+    # def focus_retriever_agent(self, user_id):
+    #     return current_workout_day(user_id)
 
-    # Retrieve parent item that will be used for the current schedule.
-    def retrieve_parent(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving Current {self.parent_title}---------")
-        user_id = state["user_id"]
-        user_workout_day = current_workout_day(user_id)
-
-        # Return parent.
-        return {"user_workout_day": user_workout_day.to_dict() if user_workout_day else None}
-
-    # Confirm that a currently active parent exists to attach the a schedule to.
-    def confirm_parent(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active {self.parent_title}---------")
-        if not state["user_workout_day"]:
-            return "no_parent"
-        return "parent"
+    def parent_retriever_agent(self, user_id):
+        return current_workout_day(user_id)
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for {self.sub_agent_title}---------")
-        user_workout_day = state["user_workout_day"]
+        user_workout_day = state[self.parent_names["entry"]]
         workout_exercises = user_workout_day["exercises"]
 
         return {"workout_exercises": workout_exercises}
@@ -68,9 +52,9 @@ class SubAgent:
         return "present_schedule"
 
     # Print output.
-    def get_user_list(self, state: AgentState):
+    def get_proposed_list(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Show Proposed Workout Schedule---------")
-        user_workout_day = state["user_workout_day"]
+        user_workout_day = state[self.parent_names["entry"]]
         workout_day_id = user_workout_day["id"]
         parent_db_entry = db.session.get(User_Workout_Days, workout_day_id)
 
@@ -133,15 +117,9 @@ class SubAgent:
         user_exercises = state["user_exercises"]
         old_user_exercises = state["old_user_exercises"]
 
-        formatted_schedule = print_schedule(old_user_exercises, user_exercises)
+        formatted_schedule = self.run_schedule_printer(old_user_exercises, user_exercises)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
-
-        return {"workout_completion_formatted": formatted_schedule}
-
-    # Node to declare that the sub agent has ended.
-    def end_node(self, state: AgentState):
-        LogMainSubAgent.agent_introductions(f"=========Ending User {self.sub_agent_title}=========\n")
-        return {}
+        return {self.focus_names["formatted"]: formatted_schedule}
 
     # Create main agent.
     def create_main_agent_graph(self, state_class):
@@ -149,7 +127,7 @@ class SubAgent:
 
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("get_user_list", self.get_user_list)
+        workflow.add_node("get_proposed_list", self.get_proposed_list)
         workflow.add_node("perform_workout_completion", self.perform_workout_completion)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("end_node", self.end_node)
@@ -177,11 +155,11 @@ class SubAgent:
             self.confirm_children,
             {
                 "no_schedule": "end_node",
-                "present_schedule": "get_user_list"
+                "present_schedule": "get_proposed_list"
             }
         )
 
-        workflow.add_edge("get_user_list", "perform_workout_completion")
+        workflow.add_edge("get_proposed_list", "perform_workout_completion")
         workflow.add_edge("perform_workout_completion", "get_formatted_list")
         workflow.add_edge("get_formatted_list", "end_node")
         workflow.add_edge("end_node", END)
