@@ -15,15 +15,15 @@ from app.agents.constraints import (
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
     symmetry_breaking_constraints, 
-    add_tight_bounds, 
-    retrieve_indication_of_increase)
+    add_tight_bounds)
 
 from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_volume_vars, 
     constrain_density_vars, 
     constrain_performance_vars,
     constrain_non_warmup_vars,
-    resistances_of_same_bodypart_have_equal_sets)
+    resistances_of_same_bodypart_have_equal_sets, 
+    retrieve_indication_of_increase)
 
 from app.agents.exercises.exercise_model_specific_constraints import create_duration_var
 

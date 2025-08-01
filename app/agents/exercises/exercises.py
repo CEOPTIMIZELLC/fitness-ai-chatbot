@@ -12,8 +12,7 @@ from app.agents.constraints import (
     no_repeated_items, 
     only_use_required_items, 
     ensure_all_vars_equal, 
-    entries_equal, 
-    retrieve_indication_of_increase)
+    entries_equal)
 
 from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_duration_var, 
@@ -24,7 +23,8 @@ from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_training_weight_vars, 
     constrain_volume_vars, 
     constrain_density_vars, 
-    constrain_performance_vars)
+    constrain_performance_vars, 
+    retrieve_indication_of_increase)
 
 from .exercises_phase_components import RelaxationAttempt, State, ExercisePhaseComponentAgent
 from app.utils.longest_string import longest_string_size_for_key
