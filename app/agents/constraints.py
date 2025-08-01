@@ -96,10 +96,10 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
 
 # Sets the variable to be equal to a value. 
 # Only applied when the given condition(s) is true, if applicable.
-def entry_equals(model, agent_var, item, key, condition=None):
+def entry_equals(model, agent_var, item_value, condition=None):
     """Generic function to add equals constraints with optional condition."""
-    if (key in item) and (item[key] is not None):
-        constraint = model.Add(agent_var == item[key])
+    if item_value is not None:
+        constraint = model.Add(agent_var == item_value)
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
 
@@ -107,23 +107,24 @@ def entry_equals(model, agent_var, item, key, condition=None):
 def entries_equal(model, items, key, number_of_entries, used_vars, duration_vars):
     for i in range(number_of_entries):
         for j, item in enumerate(items):
+            item_value = item.get(key)
             # The duration_vars[i] must be within the allowed range of the item.
             entry_equals(
-                model, duration_vars[i], item,
-                key, used_vars[i][j]
+                model, duration_vars[i],
+                item_value, used_vars[i][j]
             )
     return None
 
 # Sets the variable to be within the range allowed. 
 # Only applied when the given condition(s) is true, if applicable.
-def entry_within_min_max(model, agent_var, item, min_key, max_key, condition=None):
+def entry_within_min_max(model, agent_var, min_val=None, max_val=None, condition=None):
     """Generic function to add min/max constraints with optional condition."""
-    if (min_key in item) and (item[min_key] is not None):
-        constraint = model.Add(agent_var >= item[min_key])
+    if min_val is not None:
+        constraint = model.Add(agent_var >= min_val)
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
-    if (max_key in item) and (item[max_key] is not None):
-        constraint = model.Add(agent_var <= item[max_key])
+    if max_val is not None:
+        constraint = model.Add(agent_var <= max_val)
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
 
@@ -131,10 +132,13 @@ def entry_within_min_max(model, agent_var, item, min_key, max_key, condition=Non
 def entries_within_min_max(model, items, minimum_key, maximum_key, number_of_entries, used_vars, duration_vars):
     for i in range(number_of_entries):
         for j, item in enumerate(items):
+            minimum_value = item.get(minimum_key)
+            maximum_value = item.get(maximum_key)
+
             # The duration_vars[i] must be within the allowed range of the item.
             entry_within_min_max(
-                model, duration_vars[i], item,
-                minimum_key, maximum_key, used_vars[i][j]
+                model, duration_vars[i], 
+                minimum_value, maximum_value, used_vars[i][j]
             )
     return None
 
@@ -178,10 +182,13 @@ def frequency_within_min_max(model, phase_components, active_phase_components, m
         # Ensure that the phase component has been used more than once
         model.Add(sum(active_window) == 0).OnlyEnforceIf(used_phase_components[phase_component_index].Not())
 
+        minimum_value = phase_component.get(minimum_key)
+        maximum_value = phase_component.get(maximum_key)
+
         # Constrain to be between the minimum and maximum allowed (if one exists)
         entry_within_min_max(
-            model, sum(active_window), phase_component,
-            minimum_key, maximum_key,
+            model, sum(active_window),
+            minimum_value, maximum_value,
             used_phase_components[phase_component_index]
         )
     return None
@@ -191,10 +198,14 @@ def exercises_per_bodypart_within_min_max(model, required_items, items, minimum_
     for item_index in required_items:
         exercises_of_phase = [row[item_index] for row in used_vars]
 
+        required_item = items[item_index]
+        minimum_value = required_item.get(minimum_key)
+        maximum_value = required_item.get(maximum_key)
+
         # Constrain to be between the minimum and maximum allowed (if one exists)
         entry_within_min_max(
-            model, sum(exercises_of_phase), items[item_index],
-            minimum_key, maximum_key
+            model, sum(exercises_of_phase), 
+            minimum_value, maximum_value
         )
     return None
 
