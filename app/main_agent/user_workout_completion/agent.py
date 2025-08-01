@@ -1,14 +1,17 @@
+from flask import abort
+
 from logging_config import LogMainSubAgent
 
 from langgraph.graph import StateGraph, START, END
 
 from app import db
-from app.models import User_Exercises
+from app.models import User_Exercises, User_Workout_Days
 from app.utils.common_table_queries import current_workout_day
 
 from app.main_agent.main_agent_state import MainAgentState
 
 from .schedule_printer import Main as print_schedule
+from .list_printer import Main as list_printer_main
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
 
@@ -17,6 +20,8 @@ class AgentState(MainAgentState):
     workout_exercises: list
     user_exercises: list
     old_user_exercises: list
+    schedule_list: list
+    schedule_printed: str
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state: AgentState):
@@ -57,6 +62,25 @@ def confirm_children(state: AgentState):
     if not state["workout_exercises"]:
         return "no_schedule"
     return "present_schedule"
+
+# Print output.
+def get_user_list(state: AgentState):
+    LogMainSubAgent.agent_steps(f"\t---------Show Proposed Schedule---------")
+    user_workout_day = state["user_workout_day"]
+    workout_day_id = user_workout_day["id"]
+    parent_db_entry = db.session.get(User_Workout_Days, workout_day_id)
+
+    schedule_from_db = parent_db_entry.exercises
+    if not schedule_from_db:
+        abort(404, description=f"No exercises found for the workout.")
+
+    user_workout_exercises_dict = [user_workout_exercise.to_dict() | 
+                                {"component_id": user_workout_exercise.phase_components.components.id}
+                                for user_workout_exercise in schedule_from_db]
+
+    formatted_schedule = list_printer_main(user_workout_exercises_dict)
+    LogMainSubAgent.formatted_schedule(formatted_schedule)
+    return {"schedule_printed": formatted_schedule}
 
 # Initializes the microcycle schedule for the current mesocycle.
 def perform_workout_completion(state: AgentState):
@@ -121,6 +145,7 @@ def create_main_agent_graph():
 
     workflow.add_node("retrieve_parent", retrieve_parent)
     workflow.add_node("retrieve_information", retrieve_information)
+    workflow.add_node("get_user_list", get_user_list)
     workflow.add_node("perform_workout_completion", perform_workout_completion)
     workflow.add_node("get_formatted_list", get_formatted_list)
     workflow.add_node("end_node", end_node)
@@ -148,10 +173,11 @@ def create_main_agent_graph():
         confirm_children,
         {
             "no_schedule": "end_node",
-            "present_schedule": "perform_workout_completion"
+            "present_schedule": "get_user_list"
         }
     )
 
+    workflow.add_edge("get_user_list", "perform_workout_completion")
     workflow.add_edge("perform_workout_completion", "get_formatted_list")
     workflow.add_edge("get_formatted_list", "end_node")
     workflow.add_edge("end_node", END)
