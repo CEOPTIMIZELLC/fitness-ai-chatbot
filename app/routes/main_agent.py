@@ -1,3 +1,5 @@
+from logging_config import log_verbose
+
 from flask import request, jsonify, Blueprint, current_app, abort
 from flask_login import current_user, login_required
 
@@ -52,9 +54,16 @@ def run_main_agent(data, delete_old_schedules=False):
                         "thread_id": f"user-{current_user.id}",
                     }
                 })
-            result["iteration"] = i
-            result["snapshot_of_agent"] = main_agent_app.get_state(thread)
-            results.append(result)
+
+            # Retrieve the current state of the agent.
+            snapshot_of_agent = main_agent_app.get_state(thread)
+
+            # Retrieve the current interrupt, if there is one.
+            tasks = snapshot_of_agent.tasks
+            if tasks:
+                interrupt_message = snapshot_of_agent.tasks[0].interrupts[0].value["task"]
+                log_verbose(f"Interrupt: {interrupt_message}")
+            results.append(snapshot_of_agent)
 
     return results
 
@@ -78,9 +87,15 @@ def resume_main_agent(data):
             config=snapshot_of_agent.config
         )
 
-        result["snapshot_of_agent"] = main_agent_app.get_state(thread)
+        # Retrieve the current state of the agent.
+        snapshot_of_agent = main_agent_app.get_state(thread)
 
-    return result
+        # Retrieve the current interrupt, if there is one.
+        tasks = snapshot_of_agent.tasks
+        if tasks:
+            interrupt_message = snapshot_of_agent.tasks[0].interrupts[0].value["task"]
+            log_verbose(f"Interrupt: {interrupt_message}")
+    return snapshot_of_agent
 
 def run_delete_schedules(user_id):
     db.session.query(User_Macrocycles).filter_by(user_id=user_id).delete()
