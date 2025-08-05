@@ -1,20 +1,40 @@
 from flask import abort
+import copy
 
 from logging_config import LogMainSubAgent
 
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt
 
 from app import db
 from app.models import User_Exercises, User_Workout_Days
 from app.utils.common_table_queries import current_workout_day
+from app.utils.datetime_to_string import recursively_change_dict_timedeltas
 
+from app.main_agent.edit_prompts import workout_edit_system_prompt
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.main_agent.base_sub_agents.utils import new_input_request
 
+from .edit_goal_model import EditGoal
 from .schedule_printer import SchedulePrinter
 from .list_printer import Main as list_printer_main
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
+
+keys_to_remove = [
+    "id", 
+    "workout_day_id", 
+    "phase_component_id", 
+    "exercise_id", 
+    "bodypart_id", 
+    "date", 
+    "component_id", 
+    "strained_duration", 
+    "strained_working_duration", 
+    "component_id", 
+    "component_id", 
+]
 
 class AgentState(MainAgentState):
     user_workout_day: dict
@@ -29,6 +49,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
     parent = "workout_day"
     sub_agent_title = "Workout Completion"
     parent_title = "Workout Day"
+    edit_prompt = workout_edit_system_prompt
 
     # def focus_retriever_agent(self, user_id):
     #     return current_workout_day(user_id)
@@ -51,9 +72,9 @@ class SubAgent(BaseAgent, SchedulePrinter):
             return "no_schedule"
         return "present_schedule"
 
-    # Print output.
+    # Create the structured schedule.
     def get_proposed_list(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Show Proposed Workout Schedule---------")
+        LogMainSubAgent.agent_steps(f"\t---------Get Proposed Workout Schedule---------")
         user_workout_day = state[self.parent_names["entry"]]
         workout_day_id = user_workout_day["id"]
         parent_db_entry = db.session.get(User_Workout_Days, workout_day_id)
@@ -66,9 +87,44 @@ class SubAgent(BaseAgent, SchedulePrinter):
                                     {"component_id": user_workout_exercise.phase_components.components.id}
                                     for user_workout_exercise in schedule_from_db]
 
-        formatted_schedule = list_printer_main(user_workout_exercises_dict)
+        schedule_list = recursively_change_dict_timedeltas(user_workout_exercises_dict)
+
+        return {"schedule_list": schedule_list}
+
+    # Format the structured schedule.
+    def format_proposed_list(self, state: AgentState):
+        LogMainSubAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
+        schedule_list = state["schedule_list"]
+
+        formatted_schedule = list_printer_main(schedule_list)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
+
         return {"schedule_printed": formatted_schedule}
+
+    # Request permission from user to execute the parent initialization.
+    def ask_for_edits(self, state: AgentState):
+        LogMainSubAgent.agent_steps(f"\t---------Ask user if Workout Performance is Accurate---------")
+        # Get a copy of the current schedule and remove the items not useful for the AI.
+        schedule_list = copy.deepcopy(state["schedule_list"])
+        for exercise in schedule_list:
+            # Remove all items not useful for the AI
+            for key_to_remove in keys_to_remove:
+                exercise.pop(key_to_remove, None)
+
+        import json
+        print(json.dumps(schedule_list, indent=4))
+
+        result = interrupt({
+            "task": f"Is the proposed schedule for the current {self.parent_title} accurate to the work you performed?"
+        })
+        user_input = result["user_input"]
+        LogMainSubAgent.verbose(f"Extract the {self.parent_title} Goal the following message: {user_input}")
+
+        # Retrieve the new input for the parent item.
+        goal_class = new_input_request(user_input, self.edit_prompt, EditGoal)
+
+        # Parse the structured output values to a dictionary.
+        return self.goal_classifier_parser(self.parent_names, goal_class)
 
     # Initializes the microcycle schedule for the current mesocycle.
     def perform_workout_completion(self, state: AgentState):
@@ -101,7 +157,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
             # Only replace if the new performance is larger.
             user_exercise.performance = max(user_exercise.performance_decayed, exercise["performance"])
 
-            db.session.commit()
+            # db.session.commit()
 
             # Append new exercise performance for formatted schedule later.
             user_exercises.append(user_exercise.to_dict())
@@ -128,6 +184,8 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("get_proposed_list", self.get_proposed_list)
+        workflow.add_node("format_proposed_list", self.format_proposed_list)
+        workflow.add_node("ask_for_edits", self.ask_for_edits)
         workflow.add_node("perform_workout_completion", self.perform_workout_completion)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("end_node", self.end_node)
@@ -159,7 +217,9 @@ class SubAgent(BaseAgent, SchedulePrinter):
             }
         )
 
-        workflow.add_edge("get_proposed_list", "perform_workout_completion")
+        workflow.add_edge("format_proposed_list", "format_proposed_list")
+        workflow.add_edge("get_proposed_list", "ask_for_edits")
+        workflow.add_edge("ask_for_edits", "perform_workout_completion")
         workflow.add_edge("perform_workout_completion", "get_formatted_list")
         workflow.add_edge("get_formatted_list", "end_node")
         workflow.add_edge("end_node", END)
