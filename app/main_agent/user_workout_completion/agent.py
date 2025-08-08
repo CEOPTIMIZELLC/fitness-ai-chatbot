@@ -156,6 +156,26 @@ class SubAgent(BaseAgent, SchedulePrinter):
         return {"schedule_printed": formatted_schedule}
 
 
+    # Retrieve entry for the edit.
+    def goal_edit_parser(self, goal_edit, goal_edits_output):
+        if bool(goal_edit.remove) or any(
+            v is not None for v in (
+                goal_edit.reps, 
+                goal_edit.sets, 
+                goal_edit.rest, 
+                goal_edit.weight
+            )
+        ):
+            goal_edits_output[goal_edit.id] = {
+                "remove": goal_edit.remove, 
+                "reps": goal_edit.reps, 
+                "sets": goal_edit.sets, 
+                "rest": goal_edit.rest, 
+                "weight": goal_edit.weight, 
+            }
+        return goal_edits_output
+
+
     # Items extracted from the edit request.
     def goal_edits_parser(self, goal_edits=None):
         # Return an empty dictionary of edits if no edits were made.
@@ -166,7 +186,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         
         # Convert goal edits to a dictionary format
         for goal_edit in goal_edits:
-            goal_edits_dict[goal_edit.id] = {
+            goal_edit_information = {
                 "remove": goal_edit.remove, 
                 "reps": goal_edit.reps, 
                 "sets": goal_edit.sets, 
@@ -174,13 +194,22 @@ class SubAgent(BaseAgent, SchedulePrinter):
                 "weight": goal_edit.weight, 
             }
 
+            # Only add an item to the list if an edit has been provided.
+            if any(value for value in goal_edit_information.values()):
+                goal_edits_dict[goal_edit.id] = goal_edit_information
+
         return goal_edits_dict
 
     # Items extracted from the edit request.
     def goal_edit_request_parser(self, goal_class):
+        goal_edits = goal_class.edits
+        if goal_edits: 
+            goal_edits_output = self.goal_edits_parser(goal_edits)
+        else: 
+            goal_edits_output = {}
         return {
-            "is_edited": goal_class.is_schedule_edited,
-            "edits": self.goal_edits_parser(goal_class.edits),
+            "is_edited": True if goal_edits_output else False,
+            "edits": goal_edits_output,
             "other_requests": goal_class.other_requests
         }
 

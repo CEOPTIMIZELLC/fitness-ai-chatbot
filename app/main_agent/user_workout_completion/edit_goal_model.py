@@ -10,10 +10,6 @@ class ExerciseEdit(BaseModel):
     exercise_name: str = Field(
         ..., description="The name of the exercise in question."
     )
-    # If the user wants to change this exercise:
-    changed: bool = Field(
-        False, description="True ONLY if one of the fields in the current schedule has been changed from the original."
-    )
     # If the user wants to remove this exercise:
     remove: Optional[bool] = Field(
         False, description="True ONLY if the exercise has been indicated to be removed."
@@ -36,9 +32,6 @@ class ExerciseEdit(BaseModel):
 # Model to extract information on whether the user wants to edit something.
 class EditGoal(BaseModel):
     """Goal extraction from user input regarding editing the current workout schedule."""
-    is_schedule_edited: bool = Field(
-        False, description="True ONLY if the user indicates a desire to change a value in one or more exercises in the current workout schedule."
-    )
     edits: Optional[List[ExerciseEdit]] = Field(
         [], description="Details about what updates should be made."
     )
