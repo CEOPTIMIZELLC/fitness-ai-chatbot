@@ -7,7 +7,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
 from app import db
-from app.models import User_Exercises, User_Workout_Days
+from app.models import User_Exercises, User_Workout_Exercises, User_Workout_Days
 from app.utils.common_table_queries import current_workout_day
 from app.utils.datetime_to_string import recursively_change_dict_timedeltas
 
@@ -174,6 +174,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         # Convert goal edits to a dictionary format
         for goal_edit in goal_edits:
             goal_edit_information = {
+                "id": goal_edit.id, 
                 "remove": goal_edit.remove, 
                 "reps": goal_edit.reps, 
                 "sets": goal_edit.sets, 
@@ -187,7 +188,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
     # Retrieve entry for the edit.
     def compare_edits(self, original_schedule, altered_schedule):
-        edits_to_be_applyed = {}
+        edits_to_be_applyed = []
         for original_schedule_item in original_schedule:
             original_schedule_item_id = original_schedule_item["id"]
             altered_schedule_item = altered_schedule[original_schedule_item_id]
@@ -196,11 +197,11 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
             # Include the item if it has been indicated to be removed.
             if altered_schedule_item["remove"]:
-                edits_to_be_applyed[original_schedule_item_id] = altered_schedule[original_schedule_item_id]
+                edits_to_be_applyed.append(altered_schedule[original_schedule_item_id])
 
             # Only include the item if any value has been changed from the original.
             elif any(original_schedule_item[key] != altered_schedule_item[key] for key in common_keys):
-                edits_to_be_applyed[original_schedule_item_id] = altered_schedule[original_schedule_item_id]
+                edits_to_be_applyed.append(altered_schedule[original_schedule_item_id])
         return edits_to_be_applyed
 
     # Items extracted from the edit request.
@@ -255,6 +256,35 @@ class SubAgent(BaseAgent, SchedulePrinter):
     # Perform the edits.
     def perform_edits(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for {self.sub_agent_title}---------")
+
+        schedule_edits = state["edits"]
+
+        # Retrieve the workout day id for more security in retrieval.
+        user_workout_day = state[self.parent_names["entry"]]
+        workout_day_id = user_workout_day["id"]
+
+        # Apply the schedule edits to the workout exercises.
+        for schedule_edit in schedule_edits:
+            # If there is a desire to remove the entry, remove it.
+            if schedule_edit["remove"]:
+                db.session.query(User_Workout_Exercises).filter_by(id=schedule_edit["id"], workout_day_id=workout_day_id).delete()
+                continue
+
+            schedule_entry = db.session.query(User_Workout_Exercises).filter_by(id=schedule_edit["id"], workout_day_id=workout_day_id).first()
+            if not schedule_entry:
+                continue
+
+            schedule_entry.reps = schedule_edit["reps"]
+            schedule_entry.sets = schedule_edit["sets"]
+            schedule_entry.rest = schedule_edit["rest"]
+
+            # In case a weight is accidentally applied to a non-weighted exercises
+            if schedule_entry.exercises.is_weighted:
+                schedule_entry.weight = schedule_edit["weight"]
+
+                # Calculate new intensity.
+                schedule_entry.intensity = schedule_entry.weight / schedule_entry.one_rep_max
+        
         return {}
 
     # Initializes the microcycle schedule for the current mesocycle.
@@ -288,7 +318,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
             # Only replace if the new performance is larger.
             user_exercise.performance = max(user_exercise.performance_decayed, exercise["performance"])
 
-            # db.session.commit()
+            db.session.commit()
 
             # Append new exercise performance for formatted schedule later.
             user_exercises.append(user_exercise.to_dict())
