@@ -11,30 +11,85 @@ from app.models import User_Exercises, User_Workout_Days
 from app.utils.common_table_queries import current_workout_day
 from app.utils.datetime_to_string import recursively_change_dict_timedeltas
 
-from app.main_agent.edit_prompts import workout_edit_system_prompt
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.utils import new_input_request
 
 from .edit_goal_model import EditGoal
+from .edit_prompts import workout_edit_system_prompt
 from .schedule_printer import SchedulePrinter
 from .list_printer import Main as list_printer_main
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
 
 keys_to_remove = [
-    "id", 
+    # "id", 
     "workout_day_id", 
     "phase_component_id", 
     "exercise_id", 
     "bodypart_id", 
     "date", 
     "component_id", 
+
+    "true_exercise_flag", 
+    "working_duration", 
+    "intensity", 
+    "one_rep_max", 
+
     "strained_duration", 
     "strained_working_duration", 
-    "component_id", 
+    "base_strain", 
     "component_id", 
 ]
+
+# Method to remove keys from the schedule that aren't useful for the LLM.
+def remove_unnecessary_keys_from_workout_schedule(schedule_list):
+    for exercise in schedule_list:
+        # Add unit of measurementforrequired fields.
+        exercise["seconds_per_exercise"] = f"{exercise["seconds_per_exercise"]} seconds"
+        exercise["rest"] = f"{exercise["rest"]} seconds"
+        exercise["weight"] = f"{exercise["weight"]} lbs"
+        
+        # Make flag a boolean.
+        if exercise["true_exercise_flag"] == "True Exercise":
+            exercise["true_exercise_flag"] = True
+        else:
+            exercise["true_exercise_flag"] = False
+
+        # Remove all items not useful for the AI
+        for key_to_remove in keys_to_remove:
+            exercise.pop(key_to_remove, None)
+        
+        # if exercise["weight"] == 0 and exercise["intensity"] == 0 and exercise["one_rep_max"] == 0:
+        #     exercise.pop("weight", None)
+        #     exercise.pop("intensity", None)
+        #     exercise.pop("one_rep_max", None)
+
+    return schedule_list
+
+# Method to get the list names and ids.
+def get_ids_and_names(list_of_dicts):
+    string_output = ", \n".join(
+        f"{{{{'id': {e["id"]}, 'exercise_name': {e["exercise_name"]}}}}}"
+        for e in list_of_dicts
+    )
+    return f"[{string_output}]"
+
+# Method to format a dictionary element to a string.
+def dict_to_string(dict_item):
+    string_output = ", ".join(
+        f"'{key}': '{value}'" 
+        for key, value in dict_item.items()
+    )
+    return string_output
+
+# Method to format the workout summary for the LLM.
+def list_of_dicts_to_string(list_of_dicts):
+    string_output = ", \n".join(
+        f"{{{{{dict_to_string(list_item)}}}}}"
+        for list_item in list_of_dicts
+    )
+    return f"[{string_output}]"
 
 class AgentState(MainAgentState):
     user_workout_day: dict
@@ -49,7 +104,6 @@ class SubAgent(BaseAgent, SchedulePrinter):
     parent = "workout_day"
     sub_agent_title = "Workout Completion"
     parent_title = "Workout Day"
-    edit_prompt = workout_edit_system_prompt
 
     # def focus_retriever_agent(self, user_id):
     #     return current_workout_day(user_id)
@@ -101,30 +155,72 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
         return {"schedule_printed": formatted_schedule}
 
+
+    # Items extracted from the edit request.
+    def goal_edits_parser(self, goal_edits=None):
+        # Return an empty dictionary of edits if no edits were made.
+        if not goal_edits:
+            return {}
+    
+        goal_edits_dict={}
+        
+        # Convert goal edits to a dictionary format
+        for goal_edit in goal_edits:
+            goal_edits_dict[goal_edit.id] = {
+                "remove": goal_edit.remove, 
+                "reps": goal_edit.reps, 
+                "sets": goal_edit.sets, 
+                "rest": goal_edit.rest, 
+                "weight": goal_edit.weight, 
+            }
+
+        return goal_edits_dict
+
+    # Items extracted from the edit request.
+    def goal_edit_request_parser(self, goal_class):
+        return {
+            "is_edited": goal_class.is_schedule_edited,
+            "edits": self.goal_edits_parser(goal_class.edits),
+            "other_requests": goal_class.other_requests
+        }
+
     # Request permission from user to execute the parent initialization.
     def ask_for_edits(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Ask user if Workout Performance is Accurate---------")
         # Get a copy of the current schedule and remove the items not useful for the AI.
-        schedule_list = copy.deepcopy(state["schedule_list"])
-        for exercise in schedule_list:
-            # Remove all items not useful for the AI
-            for key_to_remove in keys_to_remove:
-                exercise.pop(key_to_remove, None)
-
-        import json
-        print(json.dumps(schedule_list, indent=4))
+        formatted_schedule_list = state["schedule_printed"]
 
         result = interrupt({
-            "task": f"Is the proposed schedule for the current {self.parent_title} accurate to the work you performed?"
+            "task": f"Is the proposed schedule for the current {self.parent_title} accurate to the work you performed?\n\n{formatted_schedule_list}"
         })
         user_input = result["user_input"]
         LogMainSubAgent.verbose(f"Extract the {self.parent_title} Goal the following message: {user_input}")
 
+        schedule_list = copy.deepcopy(state["schedule_list"])
+        schedule_list = remove_unnecessary_keys_from_workout_schedule(schedule_list)
+        allowed_list = get_ids_and_names(schedule_list)
+        schedule_summary = list_of_dicts_to_string(schedule_list)
+        edit_prompt = workout_edit_system_prompt(schedule_summary, allowed_list)
+
         # Retrieve the new input for the parent item.
-        goal_class = new_input_request(user_input, self.edit_prompt, EditGoal)
+        goal_class = new_input_request(user_input, edit_prompt, EditGoal)
 
         # Parse the structured output values to a dictionary.
-        return self.goal_classifier_parser(self.parent_names, goal_class)
+        return self.goal_edit_request_parser(goal_class)
+
+    # Confirm that the desired section should be edited.
+    def confirm_edits(self, state):
+        LogMainSubAgent.agent_steps(f"\t---------Confirm that the {self.sub_agent_title} is Edited---------")
+        if state["is_edited"]:
+        # if state["edits"]:
+            LogMainSubAgent.agent_steps(f"\t---------Is Edited---------")
+            return "is_edited"
+        return "not_edited"
+
+    # Perform the edits.
+    def perform_edits(self, state):
+        LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for {self.sub_agent_title}---------")
+        return {}
 
     # Initializes the microcycle schedule for the current mesocycle.
     def perform_workout_completion(self, state: AgentState):
@@ -186,6 +282,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("get_proposed_list", self.get_proposed_list)
         workflow.add_node("format_proposed_list", self.format_proposed_list)
         workflow.add_node("ask_for_edits", self.ask_for_edits)
+        workflow.add_node("perform_edits", self.perform_edits)
         workflow.add_node("perform_workout_completion", self.perform_workout_completion)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("end_node", self.end_node)
@@ -217,9 +314,21 @@ class SubAgent(BaseAgent, SchedulePrinter):
             }
         )
 
-        workflow.add_edge("format_proposed_list", "format_proposed_list")
-        workflow.add_edge("get_proposed_list", "ask_for_edits")
-        workflow.add_edge("ask_for_edits", "perform_workout_completion")
+        workflow.add_edge("get_proposed_list", "format_proposed_list")
+        workflow.add_edge("format_proposed_list", "ask_for_edits")
+
+
+        workflow.add_conditional_edges(
+            "ask_for_edits",
+            self.confirm_edits,
+            {
+                "is_edited": "perform_edits",
+                "not_edited": "perform_workout_completion"
+            }
+        )
+
+        workflow.add_edge("perform_edits", "retrieve_parent")
+
         workflow.add_edge("perform_workout_completion", "get_formatted_list")
         workflow.add_edge("get_formatted_list", "end_node")
         workflow.add_edge("end_node", END)

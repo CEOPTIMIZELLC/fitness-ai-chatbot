@@ -7,6 +7,10 @@ class MainAgentState(TypedDict):
     check: bool
     attempts: int
 
+    is_edited: bool
+    edits: any
+    other_requests: str
+
     availability_impacted: bool
     availability_is_altered: bool
     availability_read_plural: bool
