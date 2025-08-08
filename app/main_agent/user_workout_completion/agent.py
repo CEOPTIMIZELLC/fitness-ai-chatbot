@@ -191,6 +191,11 @@ class SubAgent(BaseAgent, SchedulePrinter):
         edits_to_be_applyed = []
         for original_schedule_item in original_schedule:
             original_schedule_item_id = original_schedule_item["id"]
+
+            # Skip the entry if the schedule item isn't present.
+            if original_schedule_item_id not in altered_schedule.keys():
+                continue
+
             altered_schedule_item = altered_schedule[original_schedule_item_id]
 
             common_keys = set(original_schedule_item.keys()) & set(altered_schedule_item.keys())

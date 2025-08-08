@@ -14,7 +14,8 @@ You may ONLY output the exercises in this list; all exercises in this list MUST 
 {allowed_list}
 
 STRICT RULES:
-- ALL exercises on the allowlist should be in the schedule. All values in the schedule should be the same as the original, except those that have been edited in the user request.
+- ALL exercises on the allowlist should be in the schedule at least once.
+- All values in the schedule should be the same as the original, except those that have been edited in the user request.
 - If the user mentions any exercise not in the allowlist (e.g., "squats", "leg press"), do NOT put it in schedule. Put it in other_requests.
 - Never invent ids or names. All schedule items MUST reference an (id,name) pair from the allowlist exactly.
 - A user may request an edit for multiple allowlisted exercises at once with similar names. Allowlisted exercises that fall into this category should be as specific as possible.
