@@ -155,26 +155,13 @@ class SubAgent(BaseAgent, SchedulePrinter):
 
         return {"schedule_printed": formatted_schedule}
 
-
-    # Retrieve entry for the edit.
-    def goal_edit_parser(self, goal_edit, goal_edits_output):
-        if bool(goal_edit.remove) or any(
-            v is not None for v in (
-                goal_edit.reps, 
-                goal_edit.sets, 
-                goal_edit.rest, 
-                goal_edit.weight
-            )
-        ):
-            goal_edits_output[goal_edit.id] = {
-                "remove": goal_edit.remove, 
-                "reps": goal_edit.reps, 
-                "sets": goal_edit.sets, 
-                "rest": goal_edit.rest, 
-                "weight": goal_edit.weight, 
-            }
-        return goal_edits_output
-
+    # Create prompt to request schedule edits.
+    def edit_prompt_creator(self, schedule_list_original):
+        schedule_list = remove_unnecessary_keys_from_workout_schedule(schedule_list_original)
+        allowed_list = get_ids_and_names(schedule_list)
+        schedule_summary = list_of_dicts_to_string(schedule_list)
+        edit_prompt = workout_edit_system_prompt(schedule_summary, allowed_list)
+        return edit_prompt
 
     # Items extracted from the edit request.
     def goal_edits_parser(self, goal_edits=None):
@@ -194,22 +181,33 @@ class SubAgent(BaseAgent, SchedulePrinter):
                 "weight": goal_edit.weight, 
             }
 
-            # Only add an item to the list if an edit has been provided.
-            if any(value for value in goal_edit_information.values()):
-                goal_edits_dict[goal_edit.id] = goal_edit_information
+            goal_edits_dict[goal_edit.id] = goal_edit_information
 
         return goal_edits_dict
 
+    # Retrieve entry for the edit.
+    def compare_edits(self, original_schedule, altered_schedule):
+        edits_to_be_applyed = {}
+        for original_schedule_item in original_schedule:
+            original_schedule_item_id = original_schedule_item["id"]
+            altered_schedule_item = altered_schedule[original_schedule_item_id]
+
+            common_keys = set(original_schedule_item.keys()) & set(altered_schedule_item.keys())
+
+            # Include the item if it has been indicated to be removed.
+            if altered_schedule_item["remove"]:
+                edits_to_be_applyed[original_schedule_item_id] = altered_schedule[original_schedule_item_id]
+
+            # Only include the item if any value has been changed from the original.
+            elif any(original_schedule_item[key] != altered_schedule_item[key] for key in common_keys):
+                edits_to_be_applyed[original_schedule_item_id] = altered_schedule[original_schedule_item_id]
+        return edits_to_be_applyed
+
     # Items extracted from the edit request.
-    def goal_edit_request_parser(self, goal_class):
-        goal_edits = goal_class.edits
-        if goal_edits: 
-            goal_edits_output = self.goal_edits_parser(goal_edits)
-        else: 
-            goal_edits_output = {}
+    def goal_edit_request_parser(self, goal_class, edits_to_be_applyed):
         return {
-            "is_edited": True if goal_edits_output else False,
-            "edits": goal_edits_output,
+            "is_edited": True if edits_to_be_applyed else False,
+            "edits": edits_to_be_applyed,
             "other_requests": goal_class.other_requests
         }
 
@@ -225,17 +223,25 @@ class SubAgent(BaseAgent, SchedulePrinter):
         user_input = result["user_input"]
         LogMainSubAgent.verbose(f"Extract the {self.parent_title} Goal the following message: {user_input}")
 
-        schedule_list = copy.deepcopy(state["schedule_list"])
-        schedule_list = remove_unnecessary_keys_from_workout_schedule(schedule_list)
-        allowed_list = get_ids_and_names(schedule_list)
-        schedule_summary = list_of_dicts_to_string(schedule_list)
-        edit_prompt = workout_edit_system_prompt(schedule_summary, allowed_list)
+        # Retrieve the schedule and format it for the prompt.
+        schedule_list = state["schedule_list"]
+        edit_prompt = self.edit_prompt_creator(copy.deepcopy(schedule_list))
 
         # Retrieve the new input for the parent item.
         goal_class = new_input_request(user_input, edit_prompt, EditGoal)
 
+        new_schedule = goal_class.schedule
+        if new_schedule: 
+            # Convert to dictionary form.
+            goal_edits_dict = self.goal_edits_parser(new_schedule)
+
+            # Refine and remove entries that weren't edited.
+            edits_to_be_applyed = self.compare_edits(state["schedule_list"], goal_edits_dict)
+        else: 
+            edits_to_be_applyed = {}
+
         # Parse the structured output values to a dictionary.
-        return self.goal_edit_request_parser(goal_class)
+        return self.goal_edit_request_parser(goal_class, edits_to_be_applyed)
 
     # Confirm that the desired section should be edited.
     def confirm_edits(self, state):
