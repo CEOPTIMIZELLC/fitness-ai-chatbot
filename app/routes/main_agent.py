@@ -35,7 +35,7 @@ def run_delete_schedules(user_id):
     return results
 
 # Enters the main agent.
-def enter_main_agent(user_id, delete_old_schedules=False):
+def enter_main_agent(user_id):
     db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
 
     # 👇 keep checkpointer alive during invocation
@@ -45,8 +45,6 @@ def enter_main_agent(user_id, delete_old_schedules=False):
         thread = {"configurable": {"thread_id": f"user-{user_id}"}}
 
         # Invoke with new macrocycle and possible goal types.
-        if delete_old_schedules:
-            run_delete_schedules(user_id)
         result = main_agent_app.invoke(
             {"user_id": user_id}, 
             config={
@@ -67,12 +65,7 @@ def enter_main_agent(user_id, delete_old_schedules=False):
     return snapshot_of_agent
 
 # Resumes the main agent with user input.
-def resume_main_agent(user_id, data):
-    if (not data) or ('user_input' not in data):
-        abort(400, description="No update given.")
-    else:
-        user_input = data.get("user_input", "")
-
+def resume_main_agent(user_id, user_input):
     db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
 
     # 👇 keep checkpointer alive during invocation
@@ -110,7 +103,8 @@ def test_enter_main_agent():
 @login_required
 def test_clean_enter_main_agent():
     user_id = current_user.id
-    results = enter_main_agent(user_id, delete_old_schedules=True)
+    run_delete_schedules(user_id)
+    results = enter_main_agent(user_id)
     return jsonify({"status": "success", "states": results}), 200
 
 
@@ -120,8 +114,13 @@ def test_clean_enter_main_agent():
 def test_resume_main_agent():
     # Input is a json.
     data = request.get_json()
+    if (not data) or ('user_input' not in data):
+        abort(400, description="No update given.")
+    else:
+        user_input = data.get("user_input", "")
+
     user_id = current_user.id
-    results = resume_main_agent(user_id, data)
+    results = resume_main_agent(user_id, user_input)
     return jsonify({"status": "success", "states": results}), 200
 
 # Enter the main agent and test it with a user input.
@@ -130,9 +129,14 @@ def test_resume_main_agent():
 def test_main_agent():
     # Input is a json.
     data = request.get_json()
+    if (not data) or ('user_input' not in data):
+        abort(400, description="No update given.")
+    else:
+        user_input = data.get("user_input", "")
+
     user_id = current_user.id
     results = enter_main_agent(user_id)
-    results = resume_main_agent(user_id, data)
+    results = resume_main_agent(user_id, user_input)
     return jsonify({"status": "success", "states": results}), 200
 
 # Enter the main agent and test it with a user input and no pre-existing data.
@@ -141,9 +145,15 @@ def test_main_agent():
 def test_clean_main_agent():
     # Input is a json.
     data = request.get_json()
+    if (not data) or ('user_input' not in data):
+        abort(400, description="No update given.")
+    else:
+        user_input = data.get("user_input", "")
+
     user_id = current_user.id
-    results = enter_main_agent(user_id, delete_old_schedules=True)
-    results = resume_main_agent(user_id, data)
+    run_delete_schedules(user_id)
+    results = enter_main_agent(user_id)
+    results = resume_main_agent(user_id, user_input)
     return jsonify({"status": "success", "states": results}), 200
 
 # Delete all schedules belonging to the user.
