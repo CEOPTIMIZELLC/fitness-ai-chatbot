@@ -1,17 +1,15 @@
-from logging_config import log_verbose
-
 from flask import request, jsonify, Blueprint, current_app, abort
 from flask_login import current_user, login_required
 
 bp = Blueprint('main_agent', __name__)
 
-from config import agent_recursion_limit
+from langgraph.checkpoint.postgres import PostgresSaver
+
 from app import db
 from app.models import User_Macrocycles, User_Weekday_Availability
 
 from app.main_agent.graph import create_main_agent_graph
-from langgraph.checkpoint.postgres import PostgresSaver
-from langgraph.types import interrupt, Command
+from app.main_agent.actions import enter_main_agent, resume_main_agent
 
 # ----------------------------------------- Main Agent -----------------------------------------
 test_cases = [
@@ -34,62 +32,6 @@ def run_delete_schedules(user_id):
     results = f"Successfully deleted all schedules for user {user_id}."
     return results
 
-# Enters the main agent.
-def enter_main_agent(user_id):
-    db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
-
-    # 👇 keep checkpointer alive during invocation
-    with PostgresSaver.from_conn_string(db_uri) as checkpointer:
-        main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
-        
-        thread = {"configurable": {"thread_id": f"user-{user_id}"}}
-
-        # Invoke with new macrocycle and possible goal types.
-        result = main_agent_app.invoke(
-            {"user_id": user_id}, 
-            config={
-                "recursion_limit": agent_recursion_limit,
-                "configurable": {
-                    "thread_id": f"user-{user_id}",
-                }
-            })
-
-        # Retrieve the current state of the agent.
-        snapshot_of_agent = main_agent_app.get_state(thread)
-
-        # Retrieve the current interrupt, if there is one.
-        tasks = snapshot_of_agent.tasks
-        if tasks:
-            interrupt_message = snapshot_of_agent.tasks[0].interrupts[0].value["task"]
-            log_verbose(f"Interrupt: {interrupt_message}")
-    return snapshot_of_agent
-
-# Resumes the main agent with user input.
-def resume_main_agent(user_id, user_input):
-    db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
-
-    # 👇 keep checkpointer alive during invocation
-    with PostgresSaver.from_conn_string(db_uri) as checkpointer:
-        main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
-        
-        thread = {"configurable": {"thread_id": f"user-{user_id}"}}
-        snapshot_of_agent = main_agent_app.get_state(thread)
-
-        result = main_agent_app.invoke(
-            Command(resume={"user_input": user_input}),
-            config=snapshot_of_agent.config
-        )
-
-        # Retrieve the current state of the agent.
-        snapshot_of_agent = main_agent_app.get_state(thread)
-
-        # Retrieve the current interrupt, if there is one.
-        tasks = snapshot_of_agent.tasks
-        if tasks:
-            interrupt_message = snapshot_of_agent.tasks[0].interrupts[0].value["task"]
-            log_verbose(f"Interrupt: {interrupt_message}")
-    return snapshot_of_agent
-
 # Enter into the main agent with a user input.
 @bp.route('/enter', methods=['POST', 'PATCH'])
 @login_required
@@ -106,7 +48,6 @@ def test_clean_enter_main_agent():
     run_delete_schedules(user_id)
     results = enter_main_agent(user_id)
     return jsonify({"status": "success", "states": results}), 200
-
 
 # Resumes the main agent with a user input.
 @bp.route('/resume', methods=['POST', 'PATCH'])
