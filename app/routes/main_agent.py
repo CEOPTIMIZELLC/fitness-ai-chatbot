@@ -75,6 +75,16 @@ def test_resume_main_agent():
     results = resume_main_agent(user_id, user_input)
     return jsonify({"status": "success", "states": results}), 200
 
+# Exit the Main Agent.
+@bp.route('/exit', methods=['POST', 'PATCH'])
+@login_required
+def test_exit_main_agent():
+    user_id = current_user.id
+
+    # Results of the user input.
+    results = resume_main_agent(user_id, "")
+    return jsonify({"status": "success", "states": results}), 200
+
 # Enter the main agent and test it with a user input.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
