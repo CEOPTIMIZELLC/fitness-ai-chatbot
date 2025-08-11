@@ -52,9 +52,9 @@ def test_enter_main_agent():
     return jsonify({"status": "success", "states": results}), 200
 
 # Enter the main agent with a user input and no pre-existing data.
-@bp.route('/clean_enter', methods=['POST', 'PATCH'])
+@bp.route('/enter/clean', methods=['POST', 'PATCH'])
 @login_required
-def test_clean_enter_main_agent():
+def test_enter_main_agent_clean():
     user_id = current_user.id
 
     # Results of the inital agent entry.
@@ -96,7 +96,7 @@ def test_main_agent():
 # Enter the main agent and test it with a user input and no pre-existing data.
 @bp.route('/clean', methods=['POST', 'PATCH'])
 @login_required
-def test_clean_main_agent():
+def test_main_agent_clean():
     user_id = current_user.id
 
     # Results of the inital agent entry.
