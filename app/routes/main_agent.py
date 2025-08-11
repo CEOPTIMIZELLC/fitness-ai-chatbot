@@ -44,8 +44,12 @@ def run_delete_schedules(user_id):
 # Enter into the main agent with a user input.
 @bp.route('/enter', methods=['POST', 'PATCH'])
 @login_required
-def test_enter_main_agent():
+def test_enter_main_agent(delete_all_user_schedules=False):
     user_id = current_user.id
+
+    # If deletion is desired, remove all previous schedule and availabilities.
+    if delete_all_user_schedules:
+        run_delete_schedules(user_id)
 
     # Results of the inital agent entry.
     results = enter_main_agent(user_id)
@@ -55,12 +59,7 @@ def test_enter_main_agent():
 @bp.route('/enter/clean', methods=['POST', 'PATCH'])
 @login_required
 def test_enter_main_agent_clean():
-    user_id = current_user.id
-
-    # Results of the inital agent entry.
-    run_delete_schedules(user_id)
-    results = enter_main_agent(user_id)
-    return jsonify({"status": "success", "states": results}), 200
+    return test_enter_main_agent(delete_all_user_schedules=True)
 
 # Resumes the main agent with a user input.
 @bp.route('/resume', methods=['POST', 'PATCH'])
@@ -79,8 +78,12 @@ def test_resume_main_agent():
 # Enter the main agent and test it with a user input.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
-def test_main_agent():
+def test_main_agent(delete_all_user_schedules=False):
     user_id = current_user.id
+
+    # If deletion is desired, remove all previous schedule and availabilities.
+    if delete_all_user_schedules:
+        run_delete_schedules(user_id)
 
     # Results of the inital agent entry.
     results = enter_main_agent(user_id)
@@ -97,19 +100,7 @@ def test_main_agent():
 @bp.route('/clean', methods=['POST', 'PATCH'])
 @login_required
 def test_main_agent_clean():
-    user_id = current_user.id
-
-    # Results of the inital agent entry.
-    run_delete_schedules(user_id)
-    results = enter_main_agent(user_id)
-
-    # Input is a json.
-    data = request.get_json()
-    user_input = retrieve_user_input_from_json_input(data)
-
-    # Results of the user input.
-    results = resume_main_agent(user_id, user_input)
-    return jsonify({"status": "success", "states": results}), 200
+    return test_main_agent(delete_all_user_schedules=True)
 
 # Delete all schedules belonging to the user.
 @bp.route('/', methods=['DELETE'])
