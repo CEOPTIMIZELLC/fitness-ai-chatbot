@@ -35,9 +35,14 @@ Routes related to the creation and deletion of accounts and users, as well as lo
 ### [Main Agent](routes/main_agent.py)
 | Method | Route | Body | Description |
 | --- | --- | --- | --- |
+| **[POST, PATCH]** | `/main_agent/enter` | | Enters the main agent. |
+| **[POST, PATCH]** | `/main_agent/enter/clean` | | Remove all current schedules and availabilities before entering the main agent. |
+| **[POST, PATCH]** | `/main_agent/resume` | **(raw)**: `user_input` | Resumes the agent after an interrupt to accept a user input. |
+| **[POST, PATCH]** | `/main_agent/exit` | | Exits the main agent. |
 | **[POST, PATCH]** | `/main_agent` | **(raw)**: `user_input` | Executes agent with user input. |
-| **[DELETE]** | `/main_agent` | | Remove all current schedules and availabilities. |
 | **[POST, PATCH]** | `/main_agent/clean` | **(raw)**: `user_input` | Remove all current schedules and availabilities before executing agent with user input. |
+| **[DELETE]** | `/main_agent` | | Remove all current schedules and availabilities. |
+| **[GET]** | `/main_agent/state` | | Retrieves the current state of the agent for the user. |
 
 ### [User Info](routes/users.py)
 | Method | Route | Body | Description |

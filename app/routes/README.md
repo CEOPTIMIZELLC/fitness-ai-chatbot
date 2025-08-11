@@ -152,28 +152,61 @@
 
 # Main Agent
 > The tests for the main agent application. 
-> > ## Run Agent
-> > - Executes the agent for a user input. 
-> > - Body type: `raw`
-> > - Optional inputs: `user_input` (default=[multiple test cases])
+> > ## Enter Agent
+> > - The user's initial entry into the agent. Must be performed in some for to allow for the user to provide input.
 > > ```
-> > [POST, PATCH] /main_agent
-> > user_input (optional, default=[multiple test cases])
+> > [POST, PATCH] /main_agent/enter
 > > ```
 > > 
-> > ## Retrieve Pipeline's Current State
+> > ## Clean Enter Agent
+> > - Removes the current schedules and exeuctes the user's entry.
+> > ```
+> > [POST, PATCH] /main_agent/enter
+> > ```
+> > 
+> > ## Resume Agent
+> > - Resume the agent at what ever point it has been interrupted at. Accepts user input and parses it for relevant goals. The agent must have been initialized before this is allowed.
+> > - Body type: `raw`
+> > - Required inputs: `user_input`
+> > ```
+> > [POST, PATCH] /main_agent/resume
+> > user_input
+> > ```
+> > 
+> > ## Exit Agent
+> > - Executes the agent with an empty user input to end the agent.
+> > ```
+> > [POST, PATCH] /main_agent/exit
+> > ```
+> > 
+> > ## Run Agent
+> > - Enters the agent and resumes it with user input. 
+> > - Body type: `raw`
+> > - Required inputs: `user_input`
+> > ```
+> > [POST, PATCH] /main_agent
+> > user_input
+> > ```
+> > 
+> > ## Clean Run
+> > - Removes the current schedules, enters the agent, and resumes it for a user input. 
+> > - Body type: `raw`
+> > - Required inputs: `user_input`
+> > ```
+> > [POST, PATCH] /main_agent/clean
+> > user_input
+> > ```
+> > 
+> > ## Delete Schedules for User
 > > - Deletes the current schedules for the current user. 
 > > ```
 > > [DELETE] /main_agent
 > > ```
 > > 
-> > ## Clean Run
-> > - Removes the current schedules and executes the agent for a user input. 
-> > - Body type: `raw`
-> > - Optional inputs: `user_input` (default=[multiple test cases])
+> > ## Retrieve Agent's Current State
+> > - Retrieves the current state of the agent for the current user. 
 > > ```
-> > [POST, PATCH] /main_agent/clean
-> > user_input (optional, default=[multiple test cases])
+> > [GET] /main_agent/state
 > > ```
 
 <hr style="border:2px solid gray">
