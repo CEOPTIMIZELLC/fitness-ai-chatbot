@@ -489,7 +489,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return logs
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
-        LogSolver.agent_steps(f"{self.schedule_title}: Building Model For FIrst Step")
+        LogSolver.agent_steps(f"{self.schedule_title}: Building Model For First Step")
 
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
