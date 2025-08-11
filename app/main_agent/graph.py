@@ -1,7 +1,7 @@
 from logging_config import LogMainAgent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, START, END
 from flask import current_app
 from flask_login import current_user
 
@@ -20,6 +20,19 @@ from .main_agent_state import MainAgentState as AgentState
 
 
 class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
+    def entry_node(self, state: AgentState):
+        LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
+        return {}
+
+    # Confirm that the desired section should be impacted.
+    def confirm_input(self, state):
+        LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
+        LogMainAgent.agent_steps(f"\t---------Confirm that an Input Exists---------")
+        if not state["user_input"]:
+            LogMainAgent.agent_steps(f"\t---------No Input---------")
+            return "no_input"
+        return "included_input"
+
     def user_input_information_extraction(self, state: AgentState):
         LogMainAgent.agent_steps(f"\n=========Extract Input=========")
         user_input = state["user_input"]
@@ -63,22 +76,6 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         state["workout_completion_is_altered"] = True
         state["workout_completion_message"] = goal_class.workout_completion.detail
 
-        # # Reset to None for testing
-        # if "workout_completion_formatted" in state:
-        #     state["workout_completion_formatted"] = None
-        # if "availability_formatted" in state:
-        #     state["availability_formatted"] = None
-        # if "macrocycle_formatted" in state:
-        #     state["macrocycle_formatted"] = None
-        # if "mesocycle_formatted" in state:
-        #     state["mesocycle_formatted"] = None
-        # if "microcycle_formatted" in state:
-        #     state["microcycle_formatted"] = None
-        # if "phase_component_formatted" in state:
-        #     state["phase_component_formatted"] = None
-        # if "workout_schedule_formatted" in state:
-        #     state["workout_schedule_formatted"] = None
-
         LogMainAgent.input_info(f"Goals extracted.")
         if state["workout_completion_impacted"]:
             LogMainAgent.input_info(f"workout_completion: {state["workout_completion_message"]}")
@@ -119,6 +116,11 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
 
         return state
 
+    # Node to declare that the sub agent has ended.
+    def end_node(self, state: AgentState):
+        LogMainAgent.agent_introductions(f"=========Ending Main Agent=========\n")
+        return {}
+
     # Create main agent.
     def create_main_agent_graph(self, checkpointer=None):
         mesocycle_agent = create_mesocycle_agent()
@@ -129,8 +131,8 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
 
         workflow = StateGraph(AgentState)
 
+        workflow.add_node("entry_node", self.entry_node)
         workflow.add_node("user_input_extraction", self.user_input_information_extraction)
-
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("macrocycle", self.macrocycle_node)
         workflow.add_node("mesocycle", mesocycle_agent)
@@ -139,6 +141,17 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         workflow.add_node("workout_schedule", workout_agent)
         workflow.add_node("workout_completion", workout_completion_agent)
         workflow.add_node("print_schedule", self.print_schedule_node)
+        workflow.add_node("end_node", self.end_node)
+
+        # Check whether a user input exists.
+        workflow.add_conditional_edges(
+            "entry_node",
+            self.confirm_input,
+            {
+                "no_input": "end_node",                                     # End the agent if no input is given.
+                "included_input": "user_input_extraction"                   # Parse the user input if one is given.
+            }
+        )
 
         # User Input to Workout Completion
         workflow.add_edge("user_input_extraction", "workout_completion")
@@ -162,9 +175,10 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
 
         # Workout Exercises to End
         workflow.add_edge("workout_schedule", "print_schedule")
-        workflow.add_edge("print_schedule", END)
+        workflow.add_edge("print_schedule", "end_node")
 
-        workflow.set_entry_point("user_input_extraction")
+        workflow.set_entry_point("entry_node")
+        workflow.set_finish_point("end_node")
 
         return workflow.compile(checkpointer=checkpointer)
 
