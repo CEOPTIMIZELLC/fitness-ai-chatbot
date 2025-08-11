@@ -2,6 +2,7 @@ from logging_config import LogMainAgent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt
 from flask import current_app
 
 from .prompts import goal_extraction_system_prompt
@@ -17,18 +18,46 @@ from .user_weekdays_availability import WeekdayAvailabilityAgentNode
 from .impact_goal_models import RoutineImpactGoals
 from .main_agent_state import MainAgentState as AgentState
 
+# Resets the value of an item in the state to None if it exists.
+def reset_schedule_item(state, state_item):
+    if state_item in state:
+        state[state_item] = None
+    return state
+
+# Resets the values related to a schedule section in the state to None.
+def reset_schedule_section(state, schedule_name):
+    reset_schedule_item(state, f"{schedule_name}_impacted")
+    reset_schedule_item(state, f"{schedule_name}_is_altered")
+    reset_schedule_item(state, f"{schedule_name}_read_plural")
+    reset_schedule_item(state, f"{schedule_name}_read_current")
+    reset_schedule_item(state, f"{schedule_name}_message")
+    reset_schedule_item(state, f"{schedule_name}_formatted")
+    reset_schedule_item(state, f"{schedule_name}_perform_with_parent_id")
+    return state
 
 class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     def entry_node(self, state: AgentState):
         LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
         return {}
 
+    # Request User Input.
+    def ask_for_user_request(self, state: AgentState):
+        LogMainAgent.agent_steps(f"---------Ask user for a new request---------")
+        result = interrupt({
+            "task": f"Hello there! How can I help you today?"
+        })
+        user_input = result["user_input"]
+        LogMainAgent.verbose(f"New request: {user_input}")
+        
+        state["user_input"] = user_input
+        return state
+
     # Confirm that the desired section should be impacted.
     def confirm_input(self, state):
         LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
-        LogMainAgent.agent_steps(f"\t---------Confirm that an Input Exists---------")
+        LogMainAgent.agent_steps(f"---------Confirm that an Input Exists---------")
         if not state["user_input"]:
-            LogMainAgent.agent_steps(f"\t---------No Input---------")
+            LogMainAgent.agent_steps(f"---------No Input---------")
             return "no_input"
         return "included_input"
 
@@ -117,7 +146,16 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     # Node to declare that the sub agent has ended.
     def end_node(self, state: AgentState):
         LogMainAgent.agent_introductions(f"=========Ending Main Agent=========\n")
-        return {}
+        # Reset to None for testing
+        state = reset_schedule_section(state, "workout_completion")
+        state = reset_schedule_section(state, "availability")
+        state = reset_schedule_section(state, "macrocycle")
+        state = reset_schedule_section(state, "mesocycle")
+        state = reset_schedule_section(state, "microcycle")
+        state = reset_schedule_section(state, "phase_component")
+        state = reset_schedule_section(state, "workout_schedule")
+        state = reset_schedule_section(state, "workout_completion")
+        return state
 
     # Create main agent.
     def create_main_agent_graph(self, checkpointer=None):
@@ -130,6 +168,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         workflow = StateGraph(AgentState)
 
         workflow.add_node("entry_node", self.entry_node)
+        workflow.add_node("ask_for_user_request", self.ask_for_user_request)
         workflow.add_node("user_input_extraction", self.user_input_information_extraction)
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("macrocycle", self.macrocycle_node)
@@ -141,9 +180,11 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         workflow.add_node("print_schedule", self.print_schedule_node)
         workflow.add_node("end_node", self.end_node)
 
+        workflow.add_edge("entry_node", "ask_for_user_request")
+
         # Check whether a user input exists.
         workflow.add_conditional_edges(
-            "entry_node",
+            "ask_for_user_request",
             self.confirm_input,
             {
                 "no_input": "end_node",                                     # End the agent if no input is given.

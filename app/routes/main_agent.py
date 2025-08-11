@@ -25,6 +25,37 @@ test_cases = [
     "Can we drop one hypertrophy session and add in some mobility work instead? Also, swap out overhead press for incline dumbbell press."
 ]
 
+def enter_main_agent(user_id, delete_old_schedules=False):
+    db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
+
+    # 👇 keep checkpointer alive during invocation
+    with PostgresSaver.from_conn_string(db_uri) as checkpointer:
+        main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
+        
+        thread = {"configurable": {"thread_id": f"user-{user_id}"}}
+
+        # Invoke with new macrocycle and possible goal types.
+        if delete_old_schedules:
+            run_delete_schedules(user_id)
+        result = main_agent_app.invoke(
+            {"user_id": user_id}, 
+            config={
+                "recursion_limit": agent_recursion_limit,
+                "configurable": {
+                    "thread_id": f"user-{user_id}",
+                }
+            })
+
+        # Retrieve the current state of the agent.
+        snapshot_of_agent = main_agent_app.get_state(thread)
+
+        # Retrieve the current interrupt, if there is one.
+        tasks = snapshot_of_agent.tasks
+        if tasks:
+            interrupt_message = snapshot_of_agent.tasks[0].interrupts[0].value["task"]
+            log_verbose(f"Interrupt: {interrupt_message}")
+    return snapshot_of_agent
+
 def run_main_agent(user_id, data, delete_old_schedules=False):
     if not data:
         user_inputs = test_cases
@@ -109,6 +140,14 @@ def run_delete_schedules(user_id):
     return results
 
 
+# Enter into the main agent with a user input.
+@bp.route('/enter', methods=['POST', 'PATCH'])
+@login_required
+def test_enter_main_agent():
+    user_id = current_user.id
+    results = enter_main_agent(user_id)
+    return jsonify({"status": "success", "states": results}), 200
+
 # Test the main agent with a user input.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
@@ -157,8 +196,6 @@ def get_current_state():
 @bp.route('/clean', methods=['POST', 'PATCH'])
 @login_required
 def test_clean_main_agent():
-    # Input is a json.
-    data = request.get_json()
     user_id = current_user.id
-    results = run_main_agent(user_id, data, delete_old_schedules=True)
+    results = enter_main_agent(user_id, delete_old_schedules=True)
     return jsonify({"status": "success", "states": results}), 200
