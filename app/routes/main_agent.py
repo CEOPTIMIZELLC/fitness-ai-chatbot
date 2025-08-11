@@ -24,7 +24,7 @@ test_cases = [
 ]
 
 # Method to retrieve the user input for the user.
-def retrieve_user_input(data):
+def retrieve_user_input_from_json_input(data):
     if (not data) or ('user_input' not in data):
         abort(400, description="No update given.")
 
@@ -70,7 +70,7 @@ def test_resume_main_agent():
 
     # Input is a json.
     data = request.get_json()
-    user_input = retrieve_user_input(data)
+    user_input = retrieve_user_input_from_json_input(data)
 
     # Results of the user input.
     results = resume_main_agent(user_id, user_input)
@@ -87,7 +87,7 @@ def test_main_agent():
 
     # Input is a json.
     data = request.get_json()
-    user_input = retrieve_user_input(data)
+    user_input = retrieve_user_input_from_json_input(data)
 
     # Results of the user input.
     results = resume_main_agent(user_id, user_input)
@@ -105,7 +105,7 @@ def test_clean_main_agent():
 
     # Input is a json.
     data = request.get_json()
-    user_input = retrieve_user_input(data)
+    user_input = retrieve_user_input_from_json_input(data)
 
     # Results of the user input.
     results = resume_main_agent(user_id, user_input)
