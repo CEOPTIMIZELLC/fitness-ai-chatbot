@@ -23,6 +23,15 @@ test_cases = [
     "Can we drop one hypertrophy session and add in some mobility work instead? Also, swap out overhead press for incline dumbbell press."
 ]
 
+# Method to retrieve the user input for the user.
+def retrieve_user_input(data):
+    if (not data) or ('user_input' not in data):
+        abort(400, description="No update given.")
+
+    else:
+        user_input = data.get("user_input", "")
+    return user_input
+
 # Deletes all current schedule items and availabilities for the current user.
 def run_delete_schedules(user_id):
     db.session.query(User_Macrocycles).filter_by(user_id=user_id).delete()
@@ -37,6 +46,8 @@ def run_delete_schedules(user_id):
 @login_required
 def test_enter_main_agent():
     user_id = current_user.id
+
+    # Results of the inital agent entry.
     results = enter_main_agent(user_id)
     return jsonify({"status": "success", "states": results}), 200
 
@@ -45,6 +56,8 @@ def test_enter_main_agent():
 @login_required
 def test_clean_enter_main_agent():
     user_id = current_user.id
+
+    # Results of the inital agent entry.
     run_delete_schedules(user_id)
     results = enter_main_agent(user_id)
     return jsonify({"status": "success", "states": results}), 200
@@ -53,14 +66,13 @@ def test_clean_enter_main_agent():
 @bp.route('/resume', methods=['POST', 'PATCH'])
 @login_required
 def test_resume_main_agent():
+    user_id = current_user.id
+
     # Input is a json.
     data = request.get_json()
-    if (not data) or ('user_input' not in data):
-        abort(400, description="No update given.")
-    else:
-        user_input = data.get("user_input", "")
+    user_input = retrieve_user_input(data)
 
-    user_id = current_user.id
+    # Results of the user input.
     results = resume_main_agent(user_id, user_input)
     return jsonify({"status": "success", "states": results}), 200
 
@@ -68,15 +80,16 @@ def test_resume_main_agent():
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def test_main_agent():
+    user_id = current_user.id
+
+    # Results of the inital agent entry.
+    results = enter_main_agent(user_id)
+
     # Input is a json.
     data = request.get_json()
-    if (not data) or ('user_input' not in data):
-        abort(400, description="No update given.")
-    else:
-        user_input = data.get("user_input", "")
+    user_input = retrieve_user_input(data)
 
-    user_id = current_user.id
-    results = enter_main_agent(user_id)
+    # Results of the user input.
     results = resume_main_agent(user_id, user_input)
     return jsonify({"status": "success", "states": results}), 200
 
@@ -84,16 +97,17 @@ def test_main_agent():
 @bp.route('/clean', methods=['POST', 'PATCH'])
 @login_required
 def test_clean_main_agent():
-    # Input is a json.
-    data = request.get_json()
-    if (not data) or ('user_input' not in data):
-        abort(400, description="No update given.")
-    else:
-        user_input = data.get("user_input", "")
-
     user_id = current_user.id
+
+    # Results of the inital agent entry.
     run_delete_schedules(user_id)
     results = enter_main_agent(user_id)
+
+    # Input is a json.
+    data = request.get_json()
+    user_input = retrieve_user_input(data)
+
+    # Results of the user input.
     results = resume_main_agent(user_id, user_input)
     return jsonify({"status": "success", "states": results}), 200
 
