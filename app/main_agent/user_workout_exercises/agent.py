@@ -86,6 +86,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
     # Executes the agent to create the phase component schedule for each workout in the current workout_day.
     def perform_scheduler(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Perform Workout Exercise Scheduling---------")
+        user_id = state["user_id"]
         workout_day_id = state["phase_component_id"]
         user_workout_day = db.session.get(User_Workout_Days, workout_day_id)
         loading_system_id = state["loading_system_id"]
@@ -93,7 +94,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         availability = state["user_availability"]
 
         # Retrieve parameters.
-        parameters = retrieve_parameters(user_workout_day, availability)
+        parameters = retrieve_parameters(user_id, user_workout_day, availability)
         constraints={"vertical_loading": loading_system_id == 1}
 
         result = exercises_main(parameters, constraints)

@@ -25,7 +25,7 @@ test_cases = [
     "Can we drop one hypertrophy session and add in some mobility work instead? Also, swap out overhead press for incline dumbbell press."
 ]
 
-def run_main_agent(data, delete_old_schedules=False):
+def run_main_agent(user_id, data, delete_old_schedules=False):
     if not data:
         user_inputs = test_cases
     elif 'user_input' not in data:
@@ -39,19 +39,22 @@ def run_main_agent(data, delete_old_schedules=False):
     with PostgresSaver.from_conn_string(db_uri) as checkpointer:
         main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
         
-        thread = {"configurable": {"thread_id": f"user-{current_user.id}"}}
+        thread = {"configurable": {"thread_id": f"user-{user_id}"}}
 
         # Invoke with new macrocycle and possible goal types.
         results = []
         for i, user_input in enumerate(user_inputs, start=1):
             if delete_old_schedules:
-                run_delete_schedules(current_user.id)
+                run_delete_schedules(user_id)
             result = main_agent_app.invoke(
-                {"user_input": user_input}, 
+                {
+                    "user_id": user_id, 
+                    "user_input": user_input
+                }, 
                 config={
                     "recursion_limit": agent_recursion_limit,
                     "configurable": {
-                        "thread_id": f"user-{current_user.id}",
+                        "thread_id": f"user-{user_id}",
                     }
                 })
 
@@ -67,7 +70,7 @@ def run_main_agent(data, delete_old_schedules=False):
 
     return results
 
-def resume_main_agent(data):
+def resume_main_agent(user_id, data):
     if (not data) or ('user_input' not in data):
         abort(400, description="No update given.")
     else:
@@ -79,7 +82,7 @@ def resume_main_agent(data):
     with PostgresSaver.from_conn_string(db_uri) as checkpointer:
         main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
         
-        thread = {"configurable": {"thread_id": f"user-{current_user.id}"}}
+        thread = {"configurable": {"thread_id": f"user-{user_id}"}}
         snapshot_of_agent = main_agent_app.get_state(thread)
 
         result = main_agent_app.invoke(
@@ -112,7 +115,8 @@ def run_delete_schedules(user_id):
 def test_main_agent():
     # Input is a json.
     data = request.get_json()
-    results = run_main_agent(data)
+    user_id = current_user.id
+    results = run_main_agent(user_id, data)
     return jsonify({"status": "success", "states": results}), 200
 
 # Resume the main agent with a user input.
@@ -121,7 +125,8 @@ def test_main_agent():
 def test_resume_main_agent():
     # Input is a json.
     data = request.get_json()
-    results = resume_main_agent(data)
+    user_id = current_user.id
+    results = resume_main_agent(user_id, data)
     return jsonify({"status": "success", "states": results}), 200
 
 # Delete all schedules belonging to the user.
@@ -154,5 +159,6 @@ def get_current_state():
 def test_clean_main_agent():
     # Input is a json.
     data = request.get_json()
-    results = run_main_agent(data, delete_old_schedules=True)
+    user_id = current_user.id
+    results = run_main_agent(user_id, data, delete_old_schedules=True)
     return jsonify({"status": "success", "states": results}), 200

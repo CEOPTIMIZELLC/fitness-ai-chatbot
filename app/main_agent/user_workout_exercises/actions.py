@@ -1,5 +1,4 @@
 from flask import abort
-from flask_login import current_user
 
 from app.models import User_Weekday_Availability
 
@@ -50,7 +49,7 @@ def retrieve_projected_duration(user_workout_components, pcs):
 #   The projected duration of the workout.
 #   The phase component information relevant for the workout.
 #   The exercises that can be assigned in the workout.
-def retrieve_parameters(user_workout_day, availability):
+def retrieve_parameters(user_id, user_workout_day, availability):
     parameters = {"valid": True, "status": None}
 
     # Retrieve user components
@@ -61,7 +60,7 @@ def retrieve_parameters(user_workout_day, availability):
     parameters["one_rep_max_improvement_percentage"] = 25
     parameters["availability"] = availability
     parameters["phase_components"] = construct_user_workout_components_list(user_workout_components)
-    parameters["possible_exercises"] = construct_available_exercises_list(current_user.id)
+    parameters["possible_exercises"] = construct_available_exercises_list(user_id)
     parameters["possible_general_exercises"] = construct_available_general_exercises_list(parameters["possible_exercises"])
 
     verify_and_update_phase_component_information(parameters, parameters["phase_components"][1:], parameters["possible_exercises"][1:])

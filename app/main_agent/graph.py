@@ -3,7 +3,6 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, START, END
 from flask import current_app
-from flask_login import current_user
 
 from .prompts import goal_extraction_system_prompt
 
@@ -51,7 +50,6 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         goal_classifier = check_prompt | structured_llm
         goal_class = goal_classifier.invoke({})
 
-        state["user_id"] = current_user.id
         state["attempts"] = 1
         state["availability_impacted"] = goal_class.availability.is_requested
         state["availability_is_altered"] = True
