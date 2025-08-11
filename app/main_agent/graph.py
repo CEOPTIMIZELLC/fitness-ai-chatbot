@@ -1,3 +1,4 @@
+from config import loop_main_agent
 from logging_config import LogMainAgent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -20,16 +21,20 @@ from .main_agent_state import MainAgentState as AgentState
 
 # Resets the value of an item in the state to None if it exists.
 def reset_schedule_item(state, state_item):
-    if state_item in state:
-        state[state_item] = None
+    state[state_item] = None
+    return state
+
+# Resets the value of a boolean in the state to False if it exists.
+def reset_schedule_bool(state, state_item):
+    state[state_item] = False
     return state
 
 # Resets the values related to a schedule section in the state to None.
 def reset_schedule_section(state, schedule_name):
-    reset_schedule_item(state, f"{schedule_name}_impacted")
-    reset_schedule_item(state, f"{schedule_name}_is_altered")
-    reset_schedule_item(state, f"{schedule_name}_read_plural")
-    reset_schedule_item(state, f"{schedule_name}_read_current")
+    reset_schedule_bool(state, f"{schedule_name}_impacted")
+    reset_schedule_bool(state, f"{schedule_name}_is_altered")
+    reset_schedule_bool(state, f"{schedule_name}_read_plural")
+    reset_schedule_bool(state, f"{schedule_name}_read_current")
     reset_schedule_item(state, f"{schedule_name}_message")
     reset_schedule_item(state, f"{schedule_name}_formatted")
     reset_schedule_item(state, f"{schedule_name}_perform_with_parent_id")
@@ -38,7 +43,16 @@ def reset_schedule_section(state, schedule_name):
 class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     def entry_node(self, state: AgentState):
         LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
-        return {}
+        # Reset to None for testing
+        state = reset_schedule_section(state, "workout_completion")
+        state = reset_schedule_section(state, "availability")
+        state = reset_schedule_section(state, "macrocycle")
+        state = reset_schedule_section(state, "mesocycle")
+        state = reset_schedule_section(state, "microcycle")
+        state = reset_schedule_section(state, "phase_component")
+        state = reset_schedule_section(state, "workout_schedule")
+        state = reset_schedule_section(state, "workout_completion")
+        return state
 
     # Request User Input.
     def ask_for_user_request(self, state: AgentState):
@@ -143,6 +157,13 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
 
         return state
 
+    # Determine if the agent should be looping or end after one iteration.
+    def is_agent_a_loop(self, state: AgentState):
+        LogMainAgent.agent_steps(f"---------Check if Main Agent should loop---------")
+        if loop_main_agent:
+            return "yes_loop"
+        return "no_loop"
+
     # Node to declare that the sub agent has ended.
     def end_node(self, state: AgentState):
         LogMainAgent.agent_introductions(f"=========Ending Main Agent=========\n")
@@ -214,7 +235,16 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
 
         # Workout Exercises to End
         workflow.add_edge("workout_schedule", "print_schedule")
-        workflow.add_edge("print_schedule", "end_node")
+
+        # Check whether the agent should loop.
+        workflow.add_conditional_edges(
+            "print_schedule",
+            self.is_agent_a_loop,
+            {
+                "no_loop": "end_node",                                      # End the agent if it shouldn't loop.
+                "yes_loop": "ask_for_user_request"                          # Restart agent if it should loop.
+            }
+        )
 
         workflow.set_entry_point("entry_node")
         workflow.set_finish_point("end_node")

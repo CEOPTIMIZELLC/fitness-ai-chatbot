@@ -7,6 +7,7 @@ distance_threshold = 1.1
 user_equipment_population_default = 2
 ortools_solver_time_in_seconds = 5
 vertical_loading = True
+loop_main_agent = True
 
 # Configurations for exercise performance decay.
 class ExercisePerformanceDecayConfig:
