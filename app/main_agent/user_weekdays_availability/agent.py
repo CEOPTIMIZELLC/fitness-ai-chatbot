@@ -10,7 +10,7 @@ from app.utils.common_table_queries import current_weekday_availability, current
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 from app.main_agent.impact_goal_models import AvailabilityGoal
-from app.main_agent.prompts import availability_system_prompt
+from app.goal_prompts import availability_system_prompt
 
 from .actions import retrieve_weekday_types
 from .schedule_printer import SchedulePrinter

@@ -14,7 +14,7 @@ from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 from app.main_agent.impact_goal_models import PhaseComponentGoal
-from app.main_agent.prompts import phase_component_system_prompt
+from app.goal_prompts import phase_component_system_prompt
 
 from .actions import retrieve_availability_for_day, retrieve_parameters
 from .schedule_printer import SchedulePrinter

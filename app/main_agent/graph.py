@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 from flask import current_app
 
-from .prompts import goal_extraction_system_prompt
+from app.goal_prompts import goal_extraction_system_prompt
 
 from .user_macrocycles import MacrocycleAgentNode
 from .user_mesocycles import create_mesocycle_agent
