@@ -51,9 +51,6 @@ class VerbosityConfig:
     # Log results throughout project.
     verbose = True
 
-    # Log if an error occurs in the initial database population.
-    existing_data_errors = True
-
 # Logging configurations options for the database initialization.
 class DatabaseInitVerbosityConfig:
     # Log any items in this configuration set.
@@ -64,6 +61,9 @@ class DatabaseInitVerbosityConfig:
 
     # Log the clustering steps.
     clustering = True
+
+    # Log if an error occurs in the initial database population.
+    data_errors = True
 
 # Logging configurations options for the routes.
 class RouteVerbosityConfig:
@@ -180,5 +180,6 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://'+os.environ["POSTRGRES_USER"]+':'+os.environ["POSTRGRES_PASSWORD"]+'@'+os.environ["POSTRGRES_HOST"]+'/'+os.environ["POSTRGRES_DATABASE"]
     SQLALCHEMY_DATABASE_URI = "postgresql://postgres:" + os.environ["SUPABASE_PASSWORD"] + "@db.ibjmsnuozqlwcdaqtcwh.supabase.co:5432/postgres"
+    LANGUAGE_MODEL = os.environ.get("LANGUAGE_MODEL")
     EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL")
     #PERMANENT_SESSION_LIFETIME = timedelta(minutes=1)
