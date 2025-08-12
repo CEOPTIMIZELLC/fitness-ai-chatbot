@@ -64,7 +64,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, MesocycleSchedulePrinter):
             parent_names["read_plural"]: False,
             parent_names["read_current"]: False,
             parent_names["message"]: goal_class.detail, 
-            "other_requests": goal_class.detail,
+            "other_requests": goal_class.other_requests,
             "macrocycle_alter_old": goal_class.alter_old
         }
 

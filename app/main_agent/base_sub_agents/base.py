@@ -49,7 +49,7 @@ class BaseAgent():
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False,
             focus_names["message"]: goal_class.detail,
-            "other_requests": goal_class.detail
+            "other_requests": goal_class.other_requests
         }
 
     # Determine the operation to be performed.
