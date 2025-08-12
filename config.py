@@ -104,6 +104,9 @@ class MainSubAgentVerbosityConfig:
     # Log the output of the sub agents.
     agent_output = True
 
+    # Log information regarding user input in the sub agents.
+    input_info = True
+
     # Log the parsed user input for the sub agents.
     parsed_goal = True
 
