@@ -42,6 +42,10 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
 
     # Request permission from user to execute the availability initialization.
     def ask_for_availability_permission(self, state: TState):
+        # If the permission has already been given, move on ahead.
+        if state[self.availability_names["impact"]]:
+            LogMainSubAgent.agent_steps(f"\t---------Permission already granted---------")
+            return {}
         LogMainSubAgent.agent_steps(f"\t---------Ask user if a new {self.availability_title} can be made---------")
         result = interrupt({
             "task": f"No current {self.availability_title} exists. Would you like for me to generate a {self.availability_title} for you?"
@@ -60,6 +64,11 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
             self.availability_names["read_current"]: False,
             self.availability_names["message"]: goal_class.detail
         }
+
+    # Request is unique for Availability retrieval
+    def availability_requests_extraction(self, state: TState):
+        LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests for Availability---------")
+        return self.other_requests_information_extractor(state, f"availability_other_requests")
 
     # Router for if permission was granted.
     def confirm_availability_permission(self, state: TState):

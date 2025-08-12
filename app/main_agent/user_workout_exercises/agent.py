@@ -182,6 +182,7 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("retrieve_availability", self.retrieve_availability)
         workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
+        workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
         workflow.add_node("availability_permission_denied", self.availability_permission_denied)
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
@@ -237,8 +238,9 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         )
 
         # Whether an availability for the user is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
         workflow.add_conditional_edges(
-            "ask_for_availability_permission",
+            "availability_requests_extraction",
             self.confirm_availability_permission,
             {
                 "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
