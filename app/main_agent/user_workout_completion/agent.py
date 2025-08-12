@@ -17,7 +17,7 @@ from app.main_agent.base_sub_agents.utils import new_input_request
 
 from .edit_goal_model import EditGoal
 from .edit_prompts import workout_edit_system_prompt
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import WorkoutCompletionSchedulePrinter
 from app.list_printers import workout_completion_list_printer_main
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
@@ -99,7 +99,7 @@ class AgentState(MainAgentState):
     schedule_list: list
     schedule_printed: str
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent, WorkoutCompletionSchedulePrinter):
     focus = "workout_completion"
     parent = "workout_day"
     sub_agent_title = "Workout Completion"

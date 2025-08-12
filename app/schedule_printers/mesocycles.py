@@ -1,7 +1,7 @@
 from app.utils.longest_string import longest_string_size_for_key
-from app.main_agent.schedule_printer import BaseSchedulePrinter
+from .base import BaseSchedulePrinter
 
-class SchedulePrinter(BaseSchedulePrinter):
+class MesocycleSchedulePrinter(BaseSchedulePrinter):
     def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
@@ -47,5 +47,5 @@ class SchedulePrinter(BaseSchedulePrinter):
         return formatted
 
 def Main(schedule):
-    mesocycle_schedule_printer = SchedulePrinter()
+    mesocycle_schedule_printer = MesocycleSchedulePrinter()
     return mesocycle_schedule_printer.run_schedule_printer(schedule)

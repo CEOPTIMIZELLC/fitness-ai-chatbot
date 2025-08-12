@@ -13,7 +13,7 @@ from app.impact_goal_models import MacrocycleGoal
 from app.goal_prompts import macrocycle_system_prompt
 from app.main_agent.utils import construct_phases_list
 
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import MesocycleSchedulePrinter
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
@@ -28,7 +28,7 @@ class AgentState(MainAgentState):
     possible_phases: list
     agent_output: list
 
-class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
+class SubAgent(MacrocycleAgentNode, BaseAgent, MesocycleSchedulePrinter):
     focus = "mesocycle"
     parent = "macrocycle"
     sub_agent_title = "Mesocycle"

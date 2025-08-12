@@ -17,7 +17,7 @@ from app.impact_goal_models import PhaseComponentGoal
 from app.goal_prompts import phase_component_system_prompt
 
 from .actions import retrieve_availability_for_day, retrieve_parameters
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import WorkoutScheduleSchedulePrinter
 from app.list_printers import workout_schedule_list_printer_main
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
@@ -31,7 +31,7 @@ class AgentState(MainAgentState):
     start_date: any
     agent_output: list
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
     focus = "workout_schedule"
     parent = "phase_component"
     sub_agent_title = "User Workout"

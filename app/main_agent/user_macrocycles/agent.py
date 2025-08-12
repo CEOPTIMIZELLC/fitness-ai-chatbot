@@ -13,7 +13,7 @@ from app.impact_goal_models import MacrocycleGoal
 from app.goal_prompts import macrocycle_system_prompt
 
 from .actions import retrieve_goal_types
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import MacrocycleSchedulePrinter
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 
@@ -37,7 +37,7 @@ class AgentState(TypedDict):
     goal_id: int
 
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent, MacrocycleSchedulePrinter):
     focus = "macrocycle"
     sub_agent_title = "Macrocycle"
     focus_system_prompt = macrocycle_system_prompt

@@ -28,7 +28,7 @@ from .actions import (
     duration_to_weekdays, 
     workout_day_entry_construction 
 )
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import PhaseComponentSchedulePrinter
 
 # ----------------------------------------- User Workout Days -----------------------------------------
 
@@ -47,7 +47,7 @@ class AgentState(MainAgentState):
     start_date: any
     agent_output: list
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent, PhaseComponentSchedulePrinter):
     focus = "phase_component"
     parent = "microcycle"
     sub_agent_title = "Phase Component"

@@ -11,7 +11,7 @@ from app.impact_goal_models import MesocycleGoal
 from app.goal_prompts import mesocycle_system_prompt
 from app.main_agent.user_mesocycles import create_mesocycle_agent
 
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import MicrocycleSchedulePrinter
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 
@@ -22,7 +22,7 @@ class AgentState(MainAgentState):
     microcycle_duration: any
     start_date: any
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent, MicrocycleSchedulePrinter):
     focus = "microcycle"
     parent = "mesocycle"
     sub_agent_title = "Microcycle"
