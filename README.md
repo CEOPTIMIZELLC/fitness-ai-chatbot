@@ -184,12 +184,6 @@ class BackupExerciseRetrieval:
 
 ***
 
-# Database Initial Setup
-If significant changes have been made to the models, it may be necessary to run the following from the parent directory to restart the database. As of right now, if you remove models that map to tables that would have foreign keys that rely on it, the code may not be able to drop them from the database with the current restarting route in the application. To get around this, a script has been created that will simply delete the old database and make a new empty one that can be used. 
-```bash
-poetry run python reinitialize_db_script.py
-```
-
 # How to Run
 ```bash
 poetry run python run.py
