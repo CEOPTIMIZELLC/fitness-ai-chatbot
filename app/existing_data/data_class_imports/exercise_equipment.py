@@ -1,4 +1,4 @@
-from logging_config import log_existing_data_errors
+from logging_config import LogDBInit, log_existing_data_errors
 import re
 
 from app import db
@@ -57,6 +57,7 @@ class Data_Importer:
         return exercise_equipment_df
 
     def exercise_supportive_equipment(self):
+        LogDBInit.introductions(f"Initializing Exercise_Supportive_Equipment table.")
         # Copy Information from exercise df and rename the column name for the parser it.
         exercise_supportive_equipment_df = self.exercises_df[["Exercise", "Supportive Equipment"]].copy().dropna()
         exercise_supportive_equipment_df.rename(columns={"Supportive Equipment": "Equipment"}, inplace=True)
@@ -64,6 +65,7 @@ class Data_Importer:
         return None
 
     def exercise_assistive_equipment(self):
+        LogDBInit.introductions(f"Initializing Exercise_Assistive_Equipment table.")
         # Copy Information from exercise df and rename the column name for the parser it.
         exercise_assistive_equipment_df = self.exercises_df[["Exercise", "Assistive Equipment"]].copy().dropna()
         exercise_assistive_equipment_df.rename(columns={"Assistive Equipment": "Equipment"}, inplace=True)
@@ -71,6 +73,7 @@ class Data_Importer:
         return None
 
     def exercise_weighted_equipment(self):
+        LogDBInit.introductions(f"Initializing Exercise_Weighted_Equipment table.")
         # Copy Information from exercise df and rename the column name for the parser it.
         exercise_weighted_equipment_df = self.exercises_df[["Exercise", "Weighted Equipment"]].copy().dropna()
         exercise_weighted_equipment_df.rename(columns={"Weighted Equipment": "Equipment"}, inplace=True)
@@ -78,6 +81,7 @@ class Data_Importer:
         return None
 
     def exercise_marking_equipment(self):
+        LogDBInit.introductions(f"Initializing Exercise_Marking_Equipment table.")
         # Copy Information from exercise df and rename the column name for the parser it.
         exercise_marking_equipment_df = self.exercises_df[["Exercise", "Marking Equipment"]].copy().dropna()
         exercise_marking_equipment_df.rename(columns={"Marking Equipment": "Equipment"}, inplace=True)
@@ -85,6 +89,7 @@ class Data_Importer:
         return None
 
     def exercise_other_equipment(self):
+        LogDBInit.introductions(f"Initializing Exercise_Other_Equipment table.")
         # Copy Information from exercise df and rename the column name for the parser it.
         exercise_other_equipment_df = self.exercises_df[["Exercise", "Other Equipment"]].copy().dropna()
         exercise_other_equipment_df.rename(columns={"Other Equipment": "Equipment"}, inplace=True)

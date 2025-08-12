@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 import pandas as pd
 import numpy as np
 import re
@@ -22,6 +23,7 @@ class Data_Importer:
                                                             "Other Equipment"]].values.ravel(), columns=["Equipment"]).dropna()
 
     def equipment(self):
+        LogDBInit.introductions(f"Initializing Equipment table.")
         # Convert the ' & 's to a list and explode into new rows.
         self.equipment_df["Equipment"] = self.equipment_df["Equipment"].str.split(' & ')
         self.equipment_df = self.equipment_df.explode("Equipment", ignore_index=True)

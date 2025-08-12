@@ -1,4 +1,4 @@
-from logging_config import log_existing_data_errors
+from logging_config import LogDBInit, log_existing_data_errors
 import pandas as pd
 import numpy as np
 
@@ -25,6 +25,7 @@ class Data_Importer:
         self.exercises_df.drop_duplicates(subset=["Exercise"], inplace=True)
 
     def _general_exercises(self):
+        LogDBInit.introductions(f"Initializing General_Exercise_Library table.")
         # Ensure that the ids neccessary have been initialized.
         if not self.exercise_ids:
             log_existing_data_errors("IDs not initialized.")
@@ -52,6 +53,7 @@ class Data_Importer:
         return None
 
     def _exercises(self):
+        LogDBInit.introductions(f"Initializing Exercise_Library table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.general_exercise_ids):
             log_existing_data_errors("IDs not initialized.")

@@ -1,4 +1,4 @@
-from logging_config import log_existing_data_errors
+from logging_config import LogDBInit, log_existing_data_errors
 import numpy as np
 
 from app import db
@@ -11,6 +11,7 @@ from app.models import (
 
 class Data_Importer:
     def exercise_muscles(self):
+        LogDBInit.introductions(f"Initializing Exercise_Muscles table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.muscle_ids):
             log_existing_data_errors("IDs not initialized.")
@@ -38,6 +39,7 @@ class Data_Importer:
         return None
 
     def exercise_muscle_groups(self):
+        LogDBInit.introductions(f"Initializing Exercise_Muscle_Groups table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.muscle_group_ids):
             log_existing_data_errors("IDs not initialized.")
@@ -62,6 +64,7 @@ class Data_Importer:
         return None
 
     def exercise_body_regions(self):
+        LogDBInit.introductions(f"Initializing Exercise_Body_Regions table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.body_region_ids):
             log_existing_data_errors("IDs not initialized.")
@@ -86,6 +89,7 @@ class Data_Importer:
         return None
 
     def exercise_bodyparts(self):
+        LogDBInit.introductions(f"Initializing Exercise_Bodyparts table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.bodypart_ids):
             log_existing_data_errors("IDs not initialized.")

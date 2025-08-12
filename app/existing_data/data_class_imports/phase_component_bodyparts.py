@@ -1,4 +1,4 @@
-from logging_config import log_existing_data_errors
+from logging_config import LogDBInit, log_existing_data_errors
 import numpy as np
 
 from app import db
@@ -12,6 +12,7 @@ class Data_Importer:
         self.phase_component_bodyparts_df.replace(np.nan, None, inplace=True)
 
     def phase_component_bodyparts(self):
+        LogDBInit.introductions(f"Initializing Phase_Component_Bodyparts table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.phase_ids and self.component_ids and self.bodypart_ids):
             log_existing_data_errors("IDs not initialized.")

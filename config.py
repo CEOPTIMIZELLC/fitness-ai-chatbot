@@ -54,6 +54,17 @@ class VerbosityConfig:
     # Log if an error occurs in the initial database population.
     existing_data_errors = True
 
+# Logging configurations options for the database initialization.
+class DatabaseInitVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log the success of the tables being generated.
+    introductions = True
+
+    # Log the clustering steps.
+    clustering = True
+
 # Logging configurations options for the routes.
 class RouteVerbosityConfig:
     # Log route outputs.

@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 
-from config import VerbosityConfig, RouteVerbosityConfig, MainAgentVerbosityConfig, MainSubAgentVerbosityConfig, SchedulerVerbosityConfig, SchedulerPreProcessingVerbosityConfig
+from config import VerbosityConfig, RouteVerbosityConfig, DatabaseInitVerbosityConfig, MainAgentVerbosityConfig, MainSubAgentVerbosityConfig, SchedulerVerbosityConfig, SchedulerPreProcessingVerbosityConfig
 
 # Set Up the Logger
 logger = logging.getLogger("my_app")
@@ -31,6 +31,11 @@ log_existing_data_errors = partial(verbose_log, VerbosityConfig.existing_data_er
 
 class LogRoute:
     verbose = partial(verbose_log, RouteVerbosityConfig.verbose)
+
+class LogDBInit:
+    verbose = partial(verbose_log, DatabaseInitVerbosityConfig.verbose)
+    introductions = partial(verbose_log, DatabaseInitVerbosityConfig.introductions)
+    clustering = partial(verbose_log, DatabaseInitVerbosityConfig.clustering)
 
 class LogMainAgent:
     verbose = partial(verbose_log, MainAgentVerbosityConfig.verbose)
