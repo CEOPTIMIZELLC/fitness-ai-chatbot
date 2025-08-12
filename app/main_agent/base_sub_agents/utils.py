@@ -97,36 +97,25 @@ def update_bool(final_state, old_state, updated_state, key):
     final_state[key] = old_state.get(key, False) or updated_state.get(key, False)
     return final_state
 
-def agent_state_update(old_state, updated_state):
+# Update a schedule section 
+def update_state_schedule_section(state, old_state, updated_state, section, ignore_section):
+    if section == ignore_section:
+        return state
+    update_bool(state, old_state, updated_state, f"{section}_impacted")
+    update_bool(state, old_state, updated_state, f"{section}_is_altered")
+    update_val(state, old_state, updated_state, f"{section}_message")
+    return state
+
+def agent_state_update(old_state, updated_state, ignore_section=None):
     LogMainSubAgent.agent_steps(f"\n=========Update other requests=========")
     state = {}
-    update_bool(state, old_state, updated_state, "availability_impacted")
-    update_bool(state, old_state, updated_state, "availability_is_altered")
-    update_val(state, old_state, updated_state, "availability_message")
-
-    update_bool(state, old_state, updated_state, "macrocycle_impacted")
-    update_bool(state, old_state, updated_state, "macrocycle_is_altered")
-    update_val(state, old_state, updated_state, "macrocycle_message")
-    update_bool(state, old_state, updated_state, "macrocycle_alter_old")
-
-    update_bool(state, old_state, updated_state, "mesocycle_impacted")
-    update_bool(state, old_state, updated_state, "mesocycle_is_altered")
-    update_val(state, old_state, updated_state, "mesocycle_message")
-
-    update_bool(state, old_state, updated_state, "microcycle_impacted")
-    update_bool(state, old_state, updated_state, "microcycle_is_altered")
-    update_val(state, old_state, updated_state, "microcycle_message")
-
-    update_bool(state, old_state, updated_state, "phase_component_impacted")
-    update_bool(state, old_state, updated_state, "phase_component_is_altered")
-    update_val(state, old_state, updated_state, "phase_component_message")
-
-    update_bool(state, old_state, updated_state, "workout_schedule_impacted")
-    update_bool(state, old_state, updated_state, "workout_schedule_is_altered")
-    update_val(state, old_state, updated_state, "workout_schedule_message")
-
-    update_bool(state, old_state, updated_state, "workout_completion_impacted")
-    update_bool(state, old_state, updated_state, "workout_completion_is_altered")
-    update_val(state, old_state, updated_state, "workout_completion_message")
-
+    update_state_schedule_section(state, old_state, updated_state, "availability", ignore_section)
+    update_state_schedule_section(state, old_state, updated_state, "macrocycle", ignore_section)
+    if "macrocycle" != ignore_section:
+        update_bool(state, old_state, updated_state, "macrocycle_alter_old")
+    update_state_schedule_section(state, old_state, updated_state, "mesocycle", ignore_section)
+    update_state_schedule_section(state, old_state, updated_state, "microcycle", ignore_section)
+    update_state_schedule_section(state, old_state, updated_state, "phase_component", ignore_section)
+    update_state_schedule_section(state, old_state, updated_state, "workout_schedule", ignore_section)
+    update_state_schedule_section(state, old_state, updated_state, "workout_completion", ignore_section)
     return state

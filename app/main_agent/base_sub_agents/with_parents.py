@@ -98,7 +98,7 @@ class BaseAgentWithParents(BaseAgent):
         # Parse the structured output values to a dictionary.
         return self.goal_classifier_parser(self.parent_names, goal_class)
 
-    def other_requests_information_extractor(self, state, other_requests="other_requests"):
+    def other_requests_information_extractor(self, state, ignore_section, other_requests="other_requests"):
         # Retrieve the other requests.
         user_input = state.get(other_requests)
         if not user_input:
@@ -109,30 +109,33 @@ class BaseAgentWithParents(BaseAgent):
 
         updated_state = user_input_information_extraction(user_input)
 
-        result = agent_state_update(state, updated_state)
+        result = agent_state_update(state, updated_state, ignore_section)
 
         LogMainSubAgent.input_info(f"Goals extracted.")
-        if result["workout_completion_impacted"]:
+        if result.get("workout_completion_impacted"):
             LogMainSubAgent.input_info(f"workout_completion: {result["workout_completion_message"]}")
-        if result["availability_impacted"]:
+        if result.get("availability_impacted"):
             LogMainSubAgent.input_info(f"availability: {result["availability_message"]}")
-        if result["macrocycle_impacted"]:
+        if result.get("macrocycle_impacted"):
             LogMainSubAgent.input_info(f"macrocycle: {result["macrocycle_message"]}")
-        if result["mesocycle_impacted"]:
+        if result.get("mesocycle_impacted"):
             LogMainSubAgent.input_info(f"mesocycle: {result["mesocycle_message"]}")
-        if result["microcycle_impacted"]:
+        if result.get("microcycle_impacted"):
             LogMainSubAgent.input_info(f"microcycle: {result["microcycle_message"]}")
-        if result["phase_component_impacted"]:
+        if result.get("phase_component_impacted"):
             LogMainSubAgent.input_info(f"phase_component: {result["phase_component_message"]}")
-        if result["workout_schedule_impacted"]:
+        if result.get("workout_schedule_impacted"):
             LogMainSubAgent.input_info(f"workout_schedule: {result["workout_schedule_message"]}")
         LogMainSubAgent.input_info("")
+
+        # Reset other requests to be empty.
+        state[other_requests] = None
         return result
 
     # Find other requests from the previous parent message retrieval.
     def parent_requests_extraction(self, state: TState):
         LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests---------")
-        return self.other_requests_information_extractor(state)
+        return self.other_requests_information_extractor(state, self.parent)
 
     # Router for if permission was granted.
     def confirm_permission(self, state: TState):

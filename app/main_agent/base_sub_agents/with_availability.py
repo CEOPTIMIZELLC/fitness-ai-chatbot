@@ -68,7 +68,7 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
     # Request is unique for Availability retrieval
     def availability_requests_extraction(self, state: TState):
         LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests for Availability---------")
-        return self.other_requests_information_extractor(state, f"availability_other_requests")
+        return self.other_requests_information_extractor(state, self.availability_focus, f"availability_other_requests")
 
     # Router for if permission was granted.
     def confirm_availability_permission(self, state: TState):
