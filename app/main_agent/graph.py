@@ -16,7 +16,7 @@ from .user_workout_exercises import create_workout_agent
 from .user_workout_completion import create_workout_completion_agent
 from .user_weekdays_availability import WeekdayAvailabilityAgentNode
 
-from .impact_goal_models import RoutineImpactGoals
+from app.impact_goal_models import RoutineImpactGoals
 from .main_agent_state import MainAgentState as AgentState
 
 # Resets the value of an item in the state to None if it exists.

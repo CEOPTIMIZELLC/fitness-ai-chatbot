@@ -7,7 +7,7 @@ from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.main_agent.impact_goal_models import MesocycleGoal
+from app.impact_goal_models import MesocycleGoal
 from app.goal_prompts import mesocycle_system_prompt
 from app.main_agent.user_mesocycles import create_mesocycle_agent
 
