@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 # Model to extract goal information for the Macrocycle from user input.
-class MacrocycleGoal(BaseModel):
+class MacrocycleGoalPart(BaseModel):
     """Goal extraction from user input regarding user macrocycles."""
     is_requested: bool = Field(
         ..., description="True if the user is indicating a change to their long-term training goals, e.g., muscle gain, fat loss, or sport-specific goals."
@@ -12,4 +12,10 @@ class MacrocycleGoal(BaseModel):
     )
     alter_old: Optional[bool] = Field(
         default=False, description="Whether the new macrocycle should alter the current goal instead of replacing it. Only true if explicitly mentioned. Only applicable if macrocycle is requested."
+    )
+
+# Model to extract information along with additional requests.
+class MacrocycleGoal(MacrocycleGoalPart):
+    other_requests: Optional[str] = Field(
+        None, description="All information and requests not immedately relevant to the macrocycle requests."
     )
