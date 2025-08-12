@@ -22,6 +22,7 @@ class AgentState(TypedDict):
 
     user_input: str
     attempts: int
+    other_requests: str
 
     availability_impacted: bool
     availability_is_altered: bool

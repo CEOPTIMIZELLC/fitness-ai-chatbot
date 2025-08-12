@@ -22,6 +22,7 @@ class AgentState(TypedDict):
 
     user_input: str
     attempts: int
+    other_requests: str
 
     macrocycle_impacted: bool
     macrocycle_is_altered: bool
@@ -60,6 +61,7 @@ class SubAgent(BaseAgent, MacrocycleSchedulePrinter):
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False, 
             focus_names["message"]: goal_class.detail, 
+            "other_requests": goal_class.detail, 
             "macrocycle_alter_old": goal_class.alter_old
         }
 

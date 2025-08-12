@@ -10,6 +10,8 @@ class MainAgentState(TypedDict):
     is_edited: bool
     edits: any
     other_requests: str
+    macrocycle_other_requests: str
+    availability_other_requests: str
 
     availability_impacted: bool
     availability_is_altered: bool

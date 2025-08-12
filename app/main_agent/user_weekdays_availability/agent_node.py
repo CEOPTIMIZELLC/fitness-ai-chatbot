@@ -29,7 +29,8 @@ class AgentNode():
                 "availability_read_plural": False, 
                 "availability_read_current": False, 
                 "availability_message": None, 
-                "availability_formatted": None
+                "availability_formatted": None,
+                "availability_other_requests": None
             }
         return {
             "availability_impacted": result["availability_impacted"], 
@@ -37,5 +38,6 @@ class AgentNode():
             "availability_read_plural": result["availability_read_plural"], 
             "availability_read_current": result["availability_read_current"], 
             "availability_message": result["availability_message"], 
-            "availability_formatted": result["availability_formatted"]
+            "availability_formatted": result["availability_formatted"], 
+            "availability_other_requests": result.get("other_requests")
         }
