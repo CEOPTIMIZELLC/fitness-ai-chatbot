@@ -1,4 +1,4 @@
-from logging_config import LogDBInit, log_existing_data_errors
+from logging_config import LogDBInit
 import numpy as np
 from datetime import timedelta
 
@@ -117,7 +117,7 @@ class Data_Importer:
         LogDBInit.introductions(f"Initializing Phase_Component_Library table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.phase_ids and self.component_ids and self.subcomponent_ids):
-            log_existing_data_errors("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         # Split Routine

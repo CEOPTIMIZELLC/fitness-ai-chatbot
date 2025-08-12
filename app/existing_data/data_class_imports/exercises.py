@@ -1,4 +1,4 @@
-from logging_config import LogDBInit, log_existing_data_errors
+from logging_config import LogDBInit
 import pandas as pd
 import numpy as np
 
@@ -28,7 +28,7 @@ class Data_Importer:
         LogDBInit.introductions(f"Initializing General_Exercise_Library table.")
         # Ensure that the ids neccessary have been initialized.
         if not self.exercise_ids:
-            log_existing_data_errors("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         system = """You are a helpful assistant trained in fitness and exercise terminology.
@@ -56,7 +56,7 @@ class Data_Importer:
         LogDBInit.introductions(f"Initializing Exercise_Library table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.general_exercise_ids):
-            log_existing_data_errors("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         # Create a list of entries for the exercises

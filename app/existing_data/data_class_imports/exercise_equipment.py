@@ -1,4 +1,4 @@
-from logging_config import LogDBInit, log_existing_data_errors
+from logging_config import LogDBInit
 import re
 
 from app import db
@@ -17,7 +17,7 @@ class Data_Importer:
     def _parse_exercise_join_table(self, exercise_equipment_df, model_type):
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.equipment_ids):
-            log_existing_data_errors("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         # Create the new column to determine how the equipment should be included.

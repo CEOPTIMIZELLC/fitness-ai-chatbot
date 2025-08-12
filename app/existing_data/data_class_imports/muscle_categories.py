@@ -1,4 +1,4 @@
-from logging_config import LogDBInit, log_existing_data_errors
+from logging_config import LogDBInit
 import pandas as pd
 import numpy as np
 
@@ -52,7 +52,7 @@ class Data_Importer:
         LogDBInit.introductions(f"Initializing Muscle_Categories table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.muscle_ids and self.muscle_group_ids and self.body_region_ids and self.bodypart_ids):
-            log_existing_data_errors("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         # Replace the names of values with their corresponding ids.

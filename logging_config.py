@@ -27,7 +27,6 @@ def verbose_log(enabled: bool, message: str, level=logging.INFO):
 
 # Partial Functions for Each Verbosity Type
 log_verbose = partial(verbose_log, VerbosityConfig.verbose)
-log_existing_data_errors = partial(verbose_log, VerbosityConfig.existing_data_errors)
 
 class LogRoute:
     verbose = partial(verbose_log, RouteVerbosityConfig.verbose)
@@ -36,6 +35,7 @@ class LogDBInit:
     verbose = partial(verbose_log, DatabaseInitVerbosityConfig.verbose)
     introductions = partial(verbose_log, DatabaseInitVerbosityConfig.introductions)
     clustering = partial(verbose_log, DatabaseInitVerbosityConfig.clustering)
+    data_errors = partial(verbose_log, DatabaseInitVerbosityConfig.data_errors)
 
 class LogMainAgent:
     verbose = partial(verbose_log, MainAgentVerbosityConfig.verbose)

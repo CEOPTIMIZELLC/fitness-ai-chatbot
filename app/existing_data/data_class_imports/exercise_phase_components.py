@@ -1,4 +1,4 @@
-from logging_config import LogDBInit, log_existing_data_errors
+from logging_config import LogDBInit
 from app import db
 from app.models import Exercise_Component_Phases
 
@@ -7,7 +7,7 @@ class Data_Importer:
         LogDBInit.introductions(f"Initializing Exercise_Phase_Component table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.component_ids and self.subcomponent_ids):
-            log_existing_data_errors("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
         
         component_ids = {k.title(): v for k, v in self.component_ids.items()}

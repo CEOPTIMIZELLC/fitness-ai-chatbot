@@ -1,4 +1,4 @@
-from logging_config import LogDBInit, log_existing_data_errors
+from logging_config import LogDBInit
 import numpy as np
 from flask import current_app
 
@@ -99,7 +99,7 @@ class Data_Clustering:
         
         # Check that embeddings were made before executing.
         if 'embedding' not in self.df.columns:
-            log_existing_data_errors("No embeddings present")
+            LogDBInit.data_errors("No embeddings present")
             return None
         
         embedding_matrix = self._retrieve_embedding_matrix()
