@@ -167,6 +167,7 @@ class SubAgent(BaseAgent, PhaseComponentSchedulePrinter):
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
+        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("parent_retrieved", self.parent_retrieved)
@@ -253,8 +254,9 @@ class SubAgent(BaseAgent, PhaseComponentSchedulePrinter):
         )
 
         # Whether a parent element is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_permission", "parent_requests_extraction")
         workflow.add_conditional_edges(
-            "ask_for_permission",
+            "parent_requests_extraction",
             self.confirm_permission,
             {
                 "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.

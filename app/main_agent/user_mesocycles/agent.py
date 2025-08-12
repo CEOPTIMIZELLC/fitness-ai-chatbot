@@ -68,6 +68,11 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, MesocycleSchedulePrinter):
             "macrocycle_alter_old": goal_class.alter_old
         }
 
+    # Request is unique for Macrocycle for Mesocycle
+    def parent_requests_extraction(self, state: AgentState):
+        LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests---------")
+        return self.other_requests_information_extractor(state, f"{self.parent}_other_requests")
+
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Mesocycle Scheduling---------")

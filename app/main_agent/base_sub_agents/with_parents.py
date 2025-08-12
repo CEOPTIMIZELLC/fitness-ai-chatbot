@@ -81,6 +81,10 @@ class BaseAgentWithParents(BaseAgent):
 
     # Request permission from user to execute the parent initialization.
     def ask_for_permission(self, state: TState):
+        # If the permission has already been given, move on ahead.
+        if state[self.parent_names["impact"]]:
+            LogMainSubAgent.agent_steps(f"\t---------Permission already granted---------")
+            return {}
         LogMainSubAgent.agent_steps(f"\t---------Ask user if a new {self.parent_title} can be made---------")
         result = interrupt({
             "task": f"No current {self.parent_title} exists for {self.sub_agent_title}. Would you like for me to generate a {self.parent_title} for you?"
@@ -93,6 +97,42 @@ class BaseAgentWithParents(BaseAgent):
 
         # Parse the structured output values to a dictionary.
         return self.goal_classifier_parser(self.parent_names, goal_class)
+
+    def other_requests_information_extractor(self, state, other_requests="other_requests"):
+        # Retrieve the other requests.
+        user_input = state.get(other_requests)
+        if not user_input:
+            LogMainSubAgent.agent_steps(f"\n---------No Other Requests---------")
+            return {}
+
+        LogMainSubAgent.verbose(f"Extract the goals from the following message: {user_input}")
+
+        updated_state = user_input_information_extraction(user_input)
+
+        result = agent_state_update(state, updated_state)
+
+        LogMainSubAgent.input_info(f"Goals extracted.")
+        if result["workout_completion_impacted"]:
+            LogMainSubAgent.input_info(f"workout_completion: {result["workout_completion_message"]}")
+        if result["availability_impacted"]:
+            LogMainSubAgent.input_info(f"availability: {result["availability_message"]}")
+        if result["macrocycle_impacted"]:
+            LogMainSubAgent.input_info(f"macrocycle: {result["macrocycle_message"]}")
+        if result["mesocycle_impacted"]:
+            LogMainSubAgent.input_info(f"mesocycle: {result["mesocycle_message"]}")
+        if result["microcycle_impacted"]:
+            LogMainSubAgent.input_info(f"microcycle: {result["microcycle_message"]}")
+        if result["phase_component_impacted"]:
+            LogMainSubAgent.input_info(f"phase_component: {result["phase_component_message"]}")
+        if result["workout_schedule_impacted"]:
+            LogMainSubAgent.input_info(f"workout_schedule: {result["workout_schedule_message"]}")
+        LogMainSubAgent.input_info("")
+        return result
+
+    # Find other requests from the previous parent message retrieval.
+    def parent_requests_extraction(self, state: TState):
+        LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests---------")
+        return self.other_requests_information_extractor(state)
 
     # Router for if permission was granted.
     def confirm_permission(self, state: TState):
@@ -136,6 +176,7 @@ class BaseAgentWithParents(BaseAgent):
         workflow = StateGraph(state_class)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
+        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("parent_retrieved", self.parent_retrieved)
@@ -201,8 +242,9 @@ class BaseAgentWithParents(BaseAgent):
         )
 
         # Whether a parent element is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_permission", "parent_requests_extraction")
         workflow.add_conditional_edges(
-            "ask_for_permission",
+            "parent_requests_extraction",
             self.confirm_permission,
             {
                 "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
