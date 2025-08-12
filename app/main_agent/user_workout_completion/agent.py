@@ -18,7 +18,7 @@ from app.main_agent.base_sub_agents.utils import new_input_request
 from .edit_goal_model import EditGoal
 from .edit_prompts import workout_edit_system_prompt
 from .schedule_printer import SchedulePrinter
-from .list_printer import Main as list_printer_main
+from app.list_printers import workout_completion_list_printer_main
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
 
@@ -150,7 +150,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         LogMainSubAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
         schedule_list = state["schedule_list"]
 
-        formatted_schedule = list_printer_main(schedule_list)
+        formatted_schedule = workout_completion_list_printer_main(schedule_list)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
 
         return {"schedule_printed": formatted_schedule}

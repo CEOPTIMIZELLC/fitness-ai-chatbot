@@ -18,7 +18,7 @@ from app.goal_prompts import phase_component_system_prompt
 
 from .actions import retrieve_availability_for_day, retrieve_parameters
 from .schedule_printer import SchedulePrinter
-from .list_printer import Main as list_printer_main
+from app.list_printers import workout_schedule_list_printer_main
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
@@ -168,7 +168,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
                                     {"component_id": user_workout_exercise.phase_components.components.id}
                                     for user_workout_exercise in schedule_from_db]
 
-        formatted_schedule = list_printer_main(user_workout_exercises_dict)
+        formatted_schedule = workout_schedule_list_printer_main(user_workout_exercises_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
