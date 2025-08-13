@@ -8,6 +8,9 @@ agent_recursion_limit = 30
 # Distance threshold for if semantic clustering of exercises (smaller number means more precise).
 distance_threshold = 1.1
 
+# When clusters are created for items, should names be generated where not necessary. (Makes database initialization slower.)
+generate_cluster_names = True
+
 # If a dummy user is created in the database initialization, which preset for equipment to be included.
 # [1-3]
 user_equipment_population_default = 2

@@ -1,3 +1,4 @@
+from config import generate_cluster_names
 from logging_config import LogDBInit
 import numpy as np
 from flask import current_app
@@ -87,7 +88,11 @@ class Data_Clustering:
         cluster_names = {}
 
         for cluster_id, items in clustered_items.items():
-            name = self._generate_cluster_name(items)
+            # Whether the cluster name should be generated or if the clusters should be given simple names.
+            if generate_cluster_names:
+                name = self._generate_cluster_name(items)
+            else:
+                name = f"cluster_{cluster_id}"
             cluster_names[cluster_id] = name
 
         self.df[self.cluster_name_column] = self.df["General Cluster"].map(cluster_names)
