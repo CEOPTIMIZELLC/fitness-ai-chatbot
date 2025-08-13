@@ -5,10 +5,6 @@ def find_constraints_on_variable(model_proto, agent_var):
     constraints_on_var = []
 
     for constraint_proto in model_proto.constraints:
-        # print(constraint_proto)
-        # print(constraint_proto.int_div)
-        # print(constraint_proto.__dict__.keys())
-        # print(agent_vars(constraint_proto.int_div).keys())
         if ((constraint_proto.HasField("linear") and var_index in constraint_proto.linear.agent_vars) or 
             (constraint_proto.HasField("bool_or") and var_index in constraint_proto.bool_or.literals) or 
             (constraint_proto.HasField("interval") and (var_index == constraint_proto.interval.start or 

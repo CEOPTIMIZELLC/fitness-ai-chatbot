@@ -1,5 +1,5 @@
 from config import turn_off_invalid_phase_components, turn_off_required_resistances
-from config import verbose_agent_preprocessing
+from logging_config import LogSolverPreProcessing
 
 def turn_off_impossible_pcs(pc):
     pc["frequency_per_microcycle_min"]=0
@@ -35,15 +35,14 @@ def log_action(message, not_required, turn_off_invalid_phase_components, is_resi
     elif turn_off_required_resistances and is_resistance:
         action = "Is a resistance component, so removing from available."
     if action:
-        print(f"{message} {action}")
+        LogSolverPreProcessing.verbose(f"{message} {action}")
     return None
 
 def check_for_required(index_of_phase_component, unsatisfiable, pcs_to_remove, message="", is_required=False, is_resistance=False):
     not_required = not(is_required)
     # If the component isn't required, simply remove it from the available phase components.
     if not_required or turn_off_invalid_phase_components or (turn_off_required_resistances and is_resistance):
-        if verbose_agent_preprocessing:
-            log_action(message, not_required, turn_off_invalid_phase_components, is_resistance)
+        log_action(message, not_required, turn_off_invalid_phase_components, is_resistance)
         pcs_to_remove.append(index_of_phase_component)
     # If the component is required, append to message.
     else:

@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 import pandas as pd
 import numpy as np
 
@@ -14,6 +15,7 @@ class Data_Importer:
         self.loading_systems_df.replace(np.nan, None, inplace=True)
 
     def loading_systems(self):
+        LogDBInit.introductions(f"Initializing Loading_System_Library table.")
         # Loading Systems
         # Create list of Loading Systems
         for i, row in self.loading_systems_df.iterrows():

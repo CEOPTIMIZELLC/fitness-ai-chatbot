@@ -1,4 +1,5 @@
-from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
+from logging_config import LogSolver
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -55,6 +56,7 @@ class State(BaseAgentState):
     parameter_input: dict
 
 class PhaseComponentAgent(BaseAgent):
+    schedule_title = "Phase Component Subagent"
     available_constraints = available_constraints
 
     def __init__(self, parameters={}, constraints={}):
@@ -64,6 +66,7 @@ class PhaseComponentAgent(BaseAgent):
             "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"{self.schedule_title}: Setting up the parameters and configurations.")
         """Initialize optimization parameters and constraints."""
 
         parameter_input = state.get("parameter_input", {})
@@ -118,6 +121,8 @@ class PhaseComponentAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, phase_components, workout_availability, microcycle_weekdays):
+        LogSolver.agent_steps(f"{self.schedule_title}: Create the model variables for the solver.")
+
         # Define variables =====================================
         agent_vars = {}
 
@@ -178,6 +183,8 @@ class PhaseComponentAgent(BaseAgent):
 
 
     def apply_model_constraints(self, constraints, model, agent_vars, phase_components, workout_availability):
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model constraints.")
+
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -247,6 +254,8 @@ class PhaseComponentAgent(BaseAgent):
         return logs
 
     def apply_model_objective(self, constraints, model, agent_vars, workout_availability):
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model objective.")
+
         logs = ""
         duration_spread_var = None
         # Secondary Objective: Minimize the spread of duration.
@@ -283,6 +292,8 @@ class PhaseComponentAgent(BaseAgent):
 
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"{self.schedule_title}: Building Model")
+
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
         constraints = state["constraints"]
@@ -302,6 +313,8 @@ class PhaseComponentAgent(BaseAgent):
         return {"opt_model": (model, workout_availability, agent_vars, duration_spread_var, total_duration_to_maximize)}
 
     def solve_model_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"{self.schedule_title}: Solving Model")
+
         """Solve model and record relaxation attempt results."""
         model, workout_availability, agent_vars, duration_spread_var, total_duration_to_maximize = state["opt_model"]
         active_phase_components, exercises_per_bodypart_vars, partial_duration_vars, duration_vars = agent_vars["active_phase_components"], agent_vars["exercises_per_bodypart"], agent_vars["partial_duration"], agent_vars["duration"]
@@ -471,7 +484,7 @@ class PhaseComponentAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
         
         # Create header line
-        if log_schedule: 
+        if SchedulerLoggingConfig.schedule: 
             formatted += self.schedule_title_line
             header_line = self.formatted_header_line(headers)
 
@@ -495,18 +508,18 @@ class PhaseComponentAgent(BaseAgent):
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
 
-                if log_schedule:
+                if SchedulerLoggingConfig.schedule:
                     if not used_days[workday_index]["used"]:
                         formatted += self.formatted_day(header_line, weekday_availability[current_weekday], workday_index, used_days)
                     line_fields = self.line_fields(component_count, pc, metrics)
                     formatted += self.formatted_schedule_line(headers, line_fields)
             else:
-                if log_schedule:
+                if SchedulerLoggingConfig.schedule:
                     formatted += (f"Day {workday_index + 1}; Comp {component_count + 1}: \t----\n")
         
-        if log_counts:
+        if SchedulerLoggingConfig.counts:
             formatted += self.formatted_counts(phase_components, phase_component_count, longest_sizes)
-        if log_details:
+        if SchedulerLoggingConfig.details:
             formatted += f"Total Time Used: {self._format_duration(solution['microcycle_duration'])}\n"
             formatted += f"Total Time Allowed: {self._format_duration(workout_time)}\n"
 

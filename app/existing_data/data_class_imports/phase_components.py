@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 import numpy as np
 from datetime import timedelta
 
@@ -31,6 +32,7 @@ class Data_Importer:
         self.phase_components_df.replace(np.nan, None, inplace=True)
 
     def goals(self):
+        LogDBInit.introductions(f"Initializing Goal_Library table.")
         # Retrieve the three goal type
         goal_columns = self.phases_df.columns[-3:].tolist()
 
@@ -46,6 +48,7 @@ class Data_Importer:
         db.session.commit()
 
     def phases(self):
+        LogDBInit.introductions(f"Initializing Phase_Library and Goal_Phase_Requirements table.")
         # Phases, Goal Phase Requirements
 
         # Retrieve the three goal type
@@ -76,6 +79,7 @@ class Data_Importer:
         return None
 
     def components(self):
+        LogDBInit.introductions(f"Initializing Component_Library table.")
         # Retrieve Components from phase components sheet
         component_names = self.phase_components_df['component'].unique()
 
@@ -92,6 +96,7 @@ class Data_Importer:
         return None
 
     def subcomponents(self):
+        LogDBInit.introductions(f"Initializing Subcomponent_Library table.")
         # Subcomponents
         # Create list of Subcomponents
         for i, row in self.subcomponents_df.iterrows():
@@ -109,9 +114,10 @@ class Data_Importer:
         return None
 
     def phase_components(self):
+        LogDBInit.introductions(f"Initializing Phase_Component_Library table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.phase_ids and self.component_ids and self.subcomponent_ids):
-            print("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         # Split Routine

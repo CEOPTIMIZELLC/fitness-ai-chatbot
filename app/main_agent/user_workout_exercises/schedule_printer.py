@@ -1,7 +1,7 @@
 from app.utils.longest_string import longest_string_size_for_key
 from app.main_agent.schedule_printer import BaseSchedulePrinter
 
-class ExerciseSchedulePrinter(BaseSchedulePrinter):
+class SchedulePrinter(BaseSchedulePrinter):
     def _create_final_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
@@ -124,8 +124,8 @@ class ExerciseSchedulePrinter(BaseSchedulePrinter):
             schedule_string += self._log_sub_schedule(sub_schedule_name, headers, header_line, schedule, False)
         return schedule_string
 
-    def run(self, loading_system_id, schedule):
-        formatted = ""
+    def run_schedule_printer(self, workout_date, loading_system_id, schedule):
+        formatted = f"Workout for {str(workout_date)}"
 
         # Calculate longest string sizes
         longest_sizes = {
@@ -144,6 +144,6 @@ class ExerciseSchedulePrinter(BaseSchedulePrinter):
 
         return formatted
 
-def Main(loading_system_id, schedule):
-    exercise_schedule_printer = ExerciseSchedulePrinter()
-    return exercise_schedule_printer.run(loading_system_id, schedule)
+def Main(workout_date, loading_system_id, schedule):
+    exercise_schedule_printer = SchedulePrinter()
+    return exercise_schedule_printer.run_schedule_printer(workout_date, loading_system_id, schedule)

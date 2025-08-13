@@ -1,18 +1,119 @@
-from config import verbose
+from logging_config import LogRoute
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 
 from app import db
 from app.models import Phase_Library
 from app.agents.phase_components import Main as phase_component_main
-from app.utils.print_long_output import print_long_output
 from app.main_agent.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
-from app.main_agent.user_workout_days import MicrocycleSchedulerActions
+from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
+
+from app.utils.datetime_to_string import recursively_change_dict_timedeltas
 
 bp = Blueprint('user_workout_days', __name__)
 
 # ----------------------------------------- Workout Days -----------------------------------------
+
+# Retrieve current user's phase components
+@bp.route('/', methods=['GET'])
+@login_required
+def get_user_workout_days_list():
+    state = {
+        "user_id": current_user.id,
+        "phase_component_impacted": True,
+        "phase_component_is_altered": False,
+        "phase_component_read_plural": True,
+        "phase_component_read_current": False,
+        "phase_component_message": "Perform phase component classification."
+    }
+    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+
+    result = microcycle_scheduler_agent.invoke(state)
+
+    # Correct time delta for serializing for JSON output.
+    result = recursively_change_dict_timedeltas(result)
+
+    return jsonify({"status": "success", "phase_components": result}), 200
+
+# Retrieve user's current microcycle's phase components
+@bp.route('/current_list', methods=['GET'])
+@login_required
+def get_user_current_workout_days_list():
+    state = {
+        "user_id": current_user.id,
+        "phase_component_impacted": True,
+        "phase_component_is_altered": False,
+        "phase_component_read_plural": True,
+        "phase_component_read_current": True,
+        "phase_component_message": "Perform phase component classification."
+    }
+    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+
+    result = microcycle_scheduler_agent.invoke(state)
+
+    # Correct time delta for serializing for JSON output.
+    result = recursively_change_dict_timedeltas(result)
+
+    return jsonify({"status": "success", "phase_components": result}), 200
+
+# Retrieve user's current phase component
+@bp.route('/current', methods=['GET'])
+@login_required
+def read_user_current_workout_day():
+    state = {
+        "user_id": current_user.id,
+        "phase_component_impacted": True,
+        "phase_component_is_altered": False,
+        "phase_component_read_plural": False,
+        "phase_component_read_current": True,
+        "phase_component_message": "Perform phase component classification."
+    }
+    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+
+    result = microcycle_scheduler_agent.invoke(state)
+
+    # Correct time delta for serializing for JSON output.
+    result = recursively_change_dict_timedeltas(result)
+
+    return jsonify({"status": "success", "phase_components": result}), 200
+
+# Assigns phase components to days along with projected length.
+@bp.route('/', methods=['POST', 'PATCH'])
+@login_required
+def workout_day_initializer():
+    state = {
+        "user_id": current_user.id,
+        "phase_component_impacted": True,
+        "phase_component_is_altered": True,
+        "phase_component_read_plural": False,
+        "phase_component_read_current": False,
+        "phase_component_message": "Perform phase component classification."
+    }
+    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+
+    result = microcycle_scheduler_agent.invoke(state)
+    return jsonify({"status": "success", "phase_components": result}), 200
+
+# Assigns phase components to days along with projected length.
+@bp.route('/<phase_id>', methods=['POST', 'PATCH'])
+@login_required
+def workout_day_initializer_by_id(phase_id):
+    state = {
+        "user_id": current_user.id,
+        "phase_component_impacted": True,
+        "phase_component_is_altered": True,
+        "phase_component_read_plural": False,
+        "phase_component_read_current": False,
+        "phase_component_message": "Perform phase component classification.",
+        "phase_component_perform_with_parent_id": phase_id
+    }
+    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+
+    result = microcycle_scheduler_agent.invoke(state)
+    return jsonify({"status": "success", "phase_components": result}), 200
+
+# ---------- TEST ROUTES --------------
 
 # Verifies and updates the phase component information.
 # Updates the lower bound for duration if the user's current performance for all exercises in a phase component requires a higher minimum.
@@ -44,57 +145,8 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
     constraints={}
 
     result = phase_component_main(parameters, constraints)
-    if verbose:
-        print_long_output(result["formatted"])
+    LogRoute.verbose(result["formatted"])
     return result
-
-# Retrieve current user's phase components
-@bp.route('/', methods=['GET'])
-@login_required
-def get_user_workout_days_list():
-    phase_components = MicrocycleSchedulerActions.get_user_list()
-    return jsonify({"status": "success", "phase_components": phase_components}), 200
-
-# Retrieve user's current microcycle's phase components
-@bp.route('/current_list', methods=['GET'])
-@login_required
-def get_user_current_workout_days_list():
-    phase_components = MicrocycleSchedulerActions.get_user_current_list()
-    return jsonify({"status": "success", "phase_components": phase_components}), 200
-
-# Retrieve user's current microcycle's phase components
-@bp.route('/current_formatted_list', methods=['GET'])
-@login_required
-def get_user_current_workout_days_formatted_list():
-    phase_components = MicrocycleSchedulerActions.get_formatted_list()
-    return jsonify({"status": "success", "phase_components": phase_components}), 200
-
-# Retrieve user's current phase component
-@bp.route('/current', methods=['GET'])
-@login_required
-def read_user_current_workout_day():
-    phase_components = MicrocycleSchedulerActions.read_user_current_element()
-    return jsonify({"status": "success", "phase_components": phase_components}), 200
-
-# Assigns phase components to days along with projected length.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def workout_day_initializer():
-    # Retrieve results.
-    result = MicrocycleSchedulerActions.scheduler()
-    result["formatted_schedule"] = MicrocycleSchedulerActions.get_formatted_list()
-    return jsonify({"status": "success", "phase_components": result}), 200
-
-# Assigns phase components to days along with projected length.
-@bp.route('/<phase_id>', methods=['POST', 'PATCH'])
-@login_required
-def workout_day_initializer_by_id(phase_id):
-    # Retrieve results.
-    result = MicrocycleSchedulerActions.change_by_id(phase_id)
-    result["formatted_schedule"] = MicrocycleSchedulerActions.get_formatted_list()
-    return jsonify({"status": "success", "phase_components": result}), 200
-
-# ---------- TEST ROUTES --------------
 
 def retrieve_availability_for_test():
     weekday_availability_temp = [
@@ -124,13 +176,6 @@ def retrieve_availability_for_test():
     return microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability
 
 # Testing for the parameter programming for phase component assignment.
-@bp.route('/test/<phase_id>', methods=['GET', 'POST'])
-def test_workout_day_by_id(phase_id):
-    microcycle_weekdays, weekday_availability, number_of_available_weekdays, total_availability = retrieve_availability_for_test()
-    result = perform_workout_day_selection(phase_id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays, verbose)
-    return jsonify({"status": "success", "mesocycles": result}), 200
-
-# Testing for the parameter programming for phase component assignment.
 @bp.route('/test', methods=['GET', 'POST'])
 def phase_component_classification_test():
     test_results = []
@@ -147,15 +192,13 @@ def phase_component_classification_test():
 
     for phase in phases:
         result = perform_workout_day_selection(phase.id, microcycle_weekdays, total_availability, weekday_availability, number_of_available_weekdays)
-        if verbose:
-            print(str(phase.id))
-            print_long_output(result["formatted"])
+        LogRoute.verbose(str(phase.id))
+        LogRoute.verbose(result["formatted"])
         test_results.append({
             # "phase_components": parameters["phase_components"], 
             "phase_id": phase.id,
             "result": result
         })
-        if verbose:
-            print("----------------------")
+        LogRoute.verbose("----------------------")
 
     return jsonify({"status": "success", "test_results": test_results}), 200

@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 import pandas as pd
 import numpy as np
 
@@ -24,29 +25,34 @@ class Data_Importer:
         self.muscle_groups_df.replace(np.nan, None, inplace=True)
 
     def muscles(self):
+        LogDBInit.introductions(f"Initializing Muscle_Library table.")
         muscle_names = self.muscle_groups_df['Muscle'].unique()
         self.muscle_ids = create_list_of_table_entries(self.muscle_ids, muscle_names, Muscle_Library)
         return None
 
     def muscle_groups(self):
+        LogDBInit.introductions(f"Initializing Muscle_Group_Library table.")
         muscle_group_names = self.muscle_groups_df['Muscle Group'].unique()
         self.muscle_group_ids = create_list_of_table_entries(self.muscle_group_ids, muscle_group_names, Muscle_Group_Library)
         return None
 
     def body_regions(self):
+        LogDBInit.introductions(f"Initializing Body_Region_Library table.")
         body_region_names = self.muscle_groups_df['Body Region'].unique()
         self.body_region_ids = create_list_of_table_entries(self.body_region_ids, body_region_names, Body_Region_Library)
         return None
 
     def bodyparts(self):
+        LogDBInit.introductions(f"Initializing Bodypart_Library table.")
         general_body_area_names = self.muscle_groups_df['General Body Area (Resistance Phase Component)'].unique()
         self.bodypart_ids = create_list_of_table_entries(self.bodypart_ids, general_body_area_names, Bodypart_Library)
         return None
 
     def muscle_categories(self):
+        LogDBInit.introductions(f"Initializing Muscle_Categories table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.muscle_ids and self.muscle_group_ids and self.body_region_ids and self.bodypart_ids):
-            print("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         # Replace the names of values with their corresponding ids.

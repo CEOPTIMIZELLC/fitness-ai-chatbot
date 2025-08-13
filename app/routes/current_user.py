@@ -6,8 +6,6 @@ from app.models import Users
 
 from app import db, login_manager
 
-from app.agents.workout_availability import create_workout_availability_extraction_graph
-
 bp = Blueprint('current_user', __name__)
 
 # ----------------------------------------- User Info -----------------------------------------

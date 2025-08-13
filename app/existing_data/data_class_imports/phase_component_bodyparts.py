@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 import numpy as np
 
 from app import db
@@ -11,9 +12,10 @@ class Data_Importer:
         self.phase_component_bodyparts_df.replace(np.nan, None, inplace=True)
 
     def phase_component_bodyparts(self):
+        LogDBInit.introductions(f"Initializing Phase_Component_Bodyparts table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.phase_ids and self.component_ids and self.bodypart_ids):
-            print("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         # Capitalize to match format of identifier strings

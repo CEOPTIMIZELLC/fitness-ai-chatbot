@@ -1,3 +1,4 @@
+from logging_config import LogSolver
 
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
@@ -30,9 +31,10 @@ class Availability(BaseModel):
 
 
 def weekday_availability_extraction(state: AgentState):
+    LogSolver.agent_steps(f"Availability Subagent: Checking classification of the availability.")
     new_availability = state["new_availability"]
 
-    print(f"Checking classification of the following availability: {new_availability}")
+    LogSolver.verbose(f"Checking classification of the following availability: {new_availability}")
     system = """You are an assistant that extracts the relevant information, if not explicitly provided, do not guess. Extract partial information.
 
 Some availabilities may be given in minutes or hours. You should convert these to seconds before storing them. 
@@ -57,11 +59,11 @@ The minimum allowed availability is 15 minutues. If an availability less than th
     weekday_availability_extractor = check_prompt | structured_llm
     result = weekday_availability_extractor.invoke({})
     state["weekday_availability_llm"] = result
-    print(f"Relevance determined: {state['weekday_availability_llm']}")
+    LogSolver.verbose(f"Relevance determined: {state['weekday_availability_llm']}")
     return state
 
 def llm_output_to_timedelta(state: AgentState):
-    print("Retrieving the ID of the goal class.")
+    LogSolver.agent_steps("Availability Subagent: Retrieving the ID of the goal class.")
     weekday_availability_llm = state["weekday_availability_llm"]
     result = []
     for id, availability in enumerate(weekday_availability_llm):
@@ -73,7 +75,7 @@ def llm_output_to_timedelta(state: AgentState):
     from calendar import day_name
     for day in result:
         total_seconds = day["availability"].total_seconds()
-        print(f"{day_name[day["weekday_id"]]}: {total_seconds // 60} minutes and {total_seconds % 60} seconds")
+        LogSolver.verbose(f"{day_name[day["weekday_id"]]}: {total_seconds // 60} minutes and {total_seconds % 60} seconds")
 
     state["weekday_availability"] = result
     return state

@@ -1,4 +1,5 @@
-from config import ortools_solver_time_in_seconds, log_schedule, log_details
+from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
+from logging_config import LogSolver
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
@@ -45,6 +46,7 @@ class State(BaseAgentState):
     parameter_input: dict
 
 class PhaseAgent(BaseAgent):
+    schedule_title = "Phase Subagent"
     available_constraints = available_constraints
 
     def __init__(self, parameters={}, constraints={}):
@@ -54,10 +56,11 @@ class PhaseAgent(BaseAgent):
             "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"{self.schedule_title}: Setting up the parameters and configurations.")
+        """Initialize optimization parameters and constraints."""
 
         parameter_input = state.get("parameter_input", {})
 
-        """Initialize optimization parameters and constraints."""
         parameters = {
             "macrocycle_allowed_weeks": 43,
             "possible_phases": [
@@ -106,6 +109,8 @@ class PhaseAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, macrocycle_allowed_weeks, phases, phase_amount, min_mesocycles, max_mesocycles):
+        LogSolver.agent_steps(f"{self.schedule_title}: Create the model variables for the solver.")
+
         agent_vars = {}
 
         # Integer variable representing the phase chosen at mesocycle i.
@@ -146,6 +151,8 @@ class PhaseAgent(BaseAgent):
         return agent_vars
 
     def apply_model_constraints(self, constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles):
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model constraints.")
+
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -214,6 +221,8 @@ class PhaseAgent(BaseAgent):
         return logs
 
     def apply_model_objective(self, constraints, model, agent_vars, phases, macrocycle_allowed_weeks, max_mesocycles):
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model objective.")
+
         logs = ""
 
         # Objective: Maximize time spent on goal phases
@@ -252,6 +261,8 @@ class PhaseAgent(BaseAgent):
         return logs
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"{self.schedule_title}: Building Model")
+
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
         constraints = state["constraints"]
@@ -274,6 +285,8 @@ class PhaseAgent(BaseAgent):
         return {"opt_model": (model, agent_vars["mesocycles"], agent_vars["duration"], agent_vars["used"], agent_vars["active_mesocycles"])}
 
     def solve_model_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"{self.schedule_title}: Solving Model")
+
         """Solve model and record relaxation attempt results."""
         model, mesocycle_vars, duration_vars, used_vars, active_mesocycle_vars = state["opt_model"]
 
@@ -381,7 +394,7 @@ class PhaseAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
 
         # Create header line
-        if log_schedule: 
+        if SchedulerLoggingConfig.schedule: 
             formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
@@ -394,11 +407,11 @@ class PhaseAgent(BaseAgent):
                 "duration": phase_duration
             })
 
-            if log_schedule:
+            if SchedulerLoggingConfig.schedule:
                 line_fields = self.line_fields(i, phase, phase_duration)
                 formatted += self.formatted_schedule_line(headers, line_fields)
 
-        if log_details:
+        if SchedulerLoggingConfig.details:
             formatted += f"\nTotal Goal Time: {solution['total_weeks_goal']} weeks\n"
             formatted += f"Total Time Used: {solution['total_weeks_time']} weeks\n"
             formatted += f"Total Time Allowed: {macrocycle_allowed_weeks} weeks\n"

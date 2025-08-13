@@ -1,7 +1,10 @@
 from app.utils.longest_string import longest_string_size_for_key
 from app.main_agent.schedule_printer import BaseSchedulePrinter
 
-class WorkoutDaySchedulePrinter(BaseSchedulePrinter):
+from app.models import Bodypart_Library, Phase_Component_Library
+from app.utils.db_helpers import get_all_items
+
+class SchedulePrinter(BaseSchedulePrinter):
     def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
@@ -39,7 +42,10 @@ class WorkoutDaySchedulePrinter(BaseSchedulePrinter):
                     schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run(self, phase_components, bodyparts, schedule):
+    def run_schedule_printer(self, schedule):
+        phase_components = get_all_items(Phase_Component_Library)
+        bodyparts = get_all_items(Bodypart_Library)
+
         formatted = ""
 
         # Calculate longest string sizes
@@ -57,6 +63,7 @@ class WorkoutDaySchedulePrinter(BaseSchedulePrinter):
 
         return formatted
 
-def Main(phase_components, bodyparts, schedule):
-    workout_day_schedule_printer = WorkoutDaySchedulePrinter()
-    return workout_day_schedule_printer.run(phase_components, bodyparts, schedule)
+
+def Main(phase_components):
+    workout_day_schedule_printer = SchedulePrinter()
+    return workout_day_schedule_printer.run_schedule_printer(phase_components)

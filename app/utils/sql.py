@@ -1,8 +1,4 @@
-# %%
-
-
-# %%
-# sql_agent.py
+from logging_config import log_verbose, logger
 
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
@@ -35,25 +31,25 @@ class GetCurrentUser(BaseModel):
     )
 
 def get_current_user(state: AgentState):
-    print("Retrieving the current user based on user ID.")
+    log_verbose("Retrieving the current user based on user ID.")
     user_id = current_user.id
     
     if not user_id:
         state["current_user"] = "User not found"
-        print("No user ID provided in the configuration.")
+        log_verbose("No user ID provided in the configuration.")
         return state
 
     try:
         user = db.session.query(Users).filter(Users.id == int(user_id)).first()
         if user:
             state["current_user"] = user.first_name
-            print(f"Current user set to: {state['current_user']}")
+            log_verbose(f"Current user set to: {state['current_user']}")
         else:
             state["current_user"] = "User not found"
-            print("User not found in the database.")
+            log_verbose("User not found in the database.")
     except Exception as e:
         state["current_user"] = "Error retrieving user"
-        print(f"Error retrieving user: {str(e)}")
+        logger.error(f"Error retrieving user: {str(e)}")
     finally:
         db.session.close()
     return state
@@ -67,7 +63,7 @@ def check_relevance(state: AgentState):
     question = state["question"]
     #schema = get_database_schema(db)
     schema = current_app.table_schema
-    print(f"Checking relevance of the question: {question}")
+    log_verbose(f"Checking relevance of the question: {question}")
     system = """You are an assistant that determines whether a given question is related to the following database schema.
 
 Schema:
@@ -87,7 +83,7 @@ Respond with only "relevant" or "not_relevant".
     relevance_checker = check_prompt | structured_llm
     relevance = relevance_checker.invoke({})
     state["relevance"] = relevance.relevance
-    print(f"Relevance determined: {state['relevance']}")
+    log_verbose(f"Relevance determined: {state['relevance']}")
     return state
 
 class ConvertToSQL(BaseModel):
@@ -100,7 +96,7 @@ def convert_nl_to_sql(state: AgentState):
     current_user = state["current_user"]
     #schema = get_database_schema(db)
     schema = current_app.table_schema
-    print(f"Converting question to SQL for user '{current_user}': {question}")
+    log_verbose(f"Converting question to SQL for user '{current_user}': {question}")
     system = """You are an assistant that converts natural language questions into SQL queries based on the following schema:
 
 {schema}
@@ -130,12 +126,12 @@ For example,
     sql_generator = convert_prompt | structured_llm
     result = sql_generator.invoke({"question": question})
     state["sql_query"] = result.sql_query
-    print(f"Generated SQL query: {state['sql_query']}")
+    log_verbose(f"Generated SQL query: {state['sql_query']}")
     return state
 
 def execute_sql(state: AgentState):
     sql_query = state["sql_query"].strip()
-    print(f"Executing SQL query: {sql_query}")
+    log_verbose(f"Executing SQL query: {sql_query}")
     try:
         result = db.session.execute(text(sql_query))
         if sql_query.lower().startswith("select"):
@@ -144,7 +140,7 @@ def execute_sql(state: AgentState):
             if rows:
                 header = ", ".join(columns)
                 state["query_rows"] = [dict(zip(columns, row)) for row in rows]
-                print(f"Raw SQL Query Result: {state['query_rows']}")
+                log_verbose(f"Raw SQL Query Result: {state['query_rows']}")
                 # Format the result for readability
                 data = ""
                 #data = "; ".join([f"{row.get('food_name', row.get('name'))} for ${row.get('price', row.get('food_price'))}" for row in state["query_rows"]])
@@ -153,23 +149,23 @@ def execute_sql(state: AgentState):
                     for key, value in row.items():
                         row_data = row_data + f"{key}: {value}, "
                     data = data + row_data + "; "
-                    print(data)
+                    log_verbose(data)
                 formatted_result = f"{header}\n{data}"
             else:
                 state["query_rows"] = []
                 formatted_result = "No results found."
             state["query_result"] = formatted_result
             state["sql_error"] = False
-            print("SQL SELECT query executed successfully.")
+            log_verbose("SQL SELECT query executed successfully.")
         else:
             db.session.commit()
             state["query_result"] = "The action has been successfully completed."
             state["sql_error"] = False
-            print("SQL command executed successfully.")
+            log_verbose("SQL command executed successfully.")
     except Exception as e:
         state["query_result"] = f"Error executing SQL query: {str(e)}"
         state["sql_error"] = True
-        print(f"Error executing SQL query: {str(e)}")
+        logger.error(f"Error executing SQL query: {str(e)}")
     return state
 
 def generate_human_readable_answer(state: AgentState):
@@ -178,7 +174,7 @@ def generate_human_readable_answer(state: AgentState):
     current_user = state["current_user"]
     query_rows = state.get("query_rows", [])
     sql_error = state.get("sql_error", False)
-    print("Generating a human-readable answer.")
+    log_verbose("Generating a human-readable answer.")
     system = """You are an assistant that converts SQL query results into clear, natural language responses without including any identifiers like order IDs. Start the response with a friendly greeting that includes the user's name.
     """
     if sql_error:
@@ -255,7 +251,7 @@ Formulate a clear and understandable confirmation message in a single sentence, 
     human_response = generate_prompt | llm | StrOutputParser()
     answer = human_response.invoke({})
     state["query_result"] = answer
-    print("Generated human-readable answer.")
+    log_verbose("Generated human-readable answer.")
     return state
 
 class RewrittenQuestion(BaseModel):
@@ -263,7 +259,7 @@ class RewrittenQuestion(BaseModel):
 
 def regenerate_query(state: AgentState):
     question = state["question"]
-    print("Regenerating the SQL query by rewriting the question.")
+    log_verbose("Regenerating the SQL query by rewriting the question.")
     system = """You are an assistant that reformulates an original question to enable more precise SQL queries. Ensure that all necessary details, such as table joins, are preserved to retrieve complete and accurate data.
     """
     rewrite_prompt = ChatPromptTemplate.from_messages(
@@ -281,11 +277,11 @@ def regenerate_query(state: AgentState):
     rewritten = rewriter.invoke({})
     state["question"] = rewritten.question
     state["attempts"] += 1
-    print(f"Rewritten question: {state['question']}")
+    log_verbose(f"Rewritten question: {state['question']}")
     return state
 
 def generate_funny_response(state: AgentState):
-    print("Generating a funny response for an unrelated question.")
+    log_verbose("Generating a funny response for an unrelated question.")
     system = """You are a charming and funny assistant who responds in a playful manner.
     """
     human_message = "I can not help with that, but doesn't asking questions make you hungry? You can always order something delicious."
@@ -299,12 +295,12 @@ def generate_funny_response(state: AgentState):
     funny_response = funny_prompt | llm | StrOutputParser()
     message = funny_response.invoke({})
     state["query_result"] = message
-    print("Generated funny response.")
+    log_verbose("Generated funny response.")
     return state
 
 def end_max_iterations(state: AgentState):
     state["query_result"] = "Please try again."
-    print("Maximum attempts reached. Ending the workflow.")
+    log_verbose("Maximum attempts reached. Ending the workflow.")
     return state
 
 def relevance_router(state: AgentState):

@@ -152,28 +152,61 @@
 
 # Main Agent
 > The tests for the main agent application. 
-> > ## Run Agent
-> > - Executes the agent for a user input. 
-> > - Body type: `raw`
-> > - Optional inputs: `user_input` (default=[multiple test cases])
+> > ## Enter Agent
+> > - The user's initial entry into the agent. Must be performed in some for to allow for the user to provide input.
 > > ```
-> > [POST, PATCH] /main_agent
-> > user_input (optional, default=[multiple test cases])
+> > [POST, PATCH] /main_agent/enter
 > > ```
 > > 
-> > ## Retrieve Pipeline's Current State
+> > ## Clean Enter Agent
+> > - Removes the current schedules and exeuctes the user's entry.
+> > ```
+> > [POST, PATCH] /main_agent/enter
+> > ```
+> > 
+> > ## Resume Agent
+> > - Resume the agent at what ever point it has been interrupted at. Accepts user input and parses it for relevant goals. The agent must have been initialized before this is allowed.
+> > - Body type: `raw`
+> > - Required inputs: `user_input`
+> > ```
+> > [POST, PATCH] /main_agent/resume
+> > user_input
+> > ```
+> > 
+> > ## Exit Agent
+> > - Executes the agent with an empty user input to end the agent.
+> > ```
+> > [POST, PATCH] /main_agent/exit
+> > ```
+> > 
+> > ## Run Agent
+> > - Enters the agent and resumes it with user input. 
+> > - Body type: `raw`
+> > - Required inputs: `user_input`
+> > ```
+> > [POST, PATCH] /main_agent
+> > user_input
+> > ```
+> > 
+> > ## Clean Run
+> > - Removes the current schedules, enters the agent, and resumes it for a user input. 
+> > - Body type: `raw`
+> > - Required inputs: `user_input`
+> > ```
+> > [POST, PATCH] /main_agent/clean
+> > user_input
+> > ```
+> > 
+> > ## Delete Schedules for User
 > > - Deletes the current schedules for the current user. 
 > > ```
 > > [DELETE] /main_agent
 > > ```
 > > 
-> > ## Clean Run
-> > - Removes the current schedules and executes the agent for a user input. 
-> > - Body type: `raw`
-> > - Optional inputs: `user_input` (default=[multiple test cases])
+> > ## Retrieve Agent's Current State
+> > - Retrieves the current state of the agent for the current user. 
 > > ```
-> > [POST, PATCH] /main_agent/clean
-> > user_input (optional, default=[multiple test cases])
+> > [GET] /main_agent/state
 > > ```
 
 <hr style="border:2px solid gray">
@@ -319,14 +352,9 @@
 > > [GET] /user_mesocycles
 > > ```
 > > 
-> > ### List current user's mesocycles for the currently active macrocycle
+> > ### List current user's formatted mesocycles for the currently active macrocycle
 > > ```
 > > [GET] /user_mesocycles/current_list
-> > ```
-> > 
-> > ### Print the formatted mesocycle schedule for the current user's currently active macrocycle
-> > ```
-> > [GET] /user_mesocycles/current_formatted_list
 > > ```
 > > 
 > > ### Retrieve current user's currently active mesocycle
@@ -379,15 +407,11 @@
 > > [GET] /user_workout_days
 > > ```
 > > 
-> > ### List current user's work days (and corresponding components) for the currently active microcycle
+> > ### List current user's formatted work days (and corresponding components) for the currently active microcycle
 > > ```
 > > [GET] /user_workout_days/current_list
 > > ```
 > > 
-> > ### Print the formatted workout day schedule for the current user's currently active microcycle
-> > ```
-> > [GET] /user_workout_days/current_formatted_list
-> > ```
 > > ### Retrieve current user's currently active work day (and corresponding components)
 > > ```
 > > [GET] /user_workout_days/current
@@ -413,15 +437,11 @@
 > > [GET] /user_workout_exercises
 > > ```
 > > 
-> > ### List current user's workout exercises for the currently active workout day
+> > ### List current user's formatted workout schedule for the currently active workout day
 > > ```
 > > [GET] /user_workout_exercises/current_list
 > > ```
 > > 
-> > ### Print the formatted exercise schedule for the current user's currently active workout day
-> > ```
-> > [GET] /user_workout_exercises/current_formatted_list
-> > ```
 > > ### Perform exercise classification for the current user's currently active workout day
 > > ```
 > > [POST, PATCH] /user_workout_exercises

@@ -3,13 +3,13 @@ from flask_login import current_user, login_required
 
 bp = Blueprint('main_agent', __name__)
 
-from config import agent_recursion_limit
+from langgraph.checkpoint.postgres import PostgresSaver
+
 from app import db
 from app.models import User_Macrocycles, User_Weekday_Availability
 
 from app.main_agent.graph import create_main_agent_graph
-from langgraph.checkpoint.postgres import PostgresSaver
-from langgraph.types import interrupt, Command
+from app.main_agent.actions import enter_main_agent, resume_main_agent
 
 # ----------------------------------------- Main Agent -----------------------------------------
 test_cases = [
@@ -23,65 +23,16 @@ test_cases = [
     "Can we drop one hypertrophy session and add in some mobility work instead? Also, swap out overhead press for incline dumbbell press."
 ]
 
-def run_main_agent(data, delete_old_schedules=False):
-    if not data:
-        user_inputs = test_cases
-    elif 'user_input' not in data:
-        user_inputs = test_cases
-    else:
-        user_inputs = [data.get("user_input", "")]
-
-    db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
-
-    # 👇 keep checkpointer alive during invocation
-    with PostgresSaver.from_conn_string(db_uri) as checkpointer:
-        main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
-        
-        thread = {"configurable": {"thread_id": f"user-{current_user.id}"}}
-
-        # Invoke with new macrocycle and possible goal types.
-        results = []
-        for i, user_input in enumerate(user_inputs, start=1):
-            if delete_old_schedules:
-                run_delete_schedules(current_user.id)
-            result = main_agent_app.invoke(
-                {"user_input": user_input}, 
-                config={
-                    "recursion_limit": agent_recursion_limit,
-                    "configurable": {
-                        "thread_id": f"user-{current_user.id}",
-                    }
-                })
-            result["iteration"] = i
-            result["snapshot_of_agent"] = main_agent_app.get_state(thread)
-            results.append(result)
-
-    return results
-
-def resume_main_agent(data):
+# Method to retrieve the user input for the user.
+def retrieve_user_input_from_json_input(data):
     if (not data) or ('user_input' not in data):
         abort(400, description="No update given.")
+
     else:
         user_input = data.get("user_input", "")
+    return user_input
 
-    db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
-
-    # 👇 keep checkpointer alive during invocation
-    with PostgresSaver.from_conn_string(db_uri) as checkpointer:
-        main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
-        
-        thread = {"configurable": {"thread_id": f"user-{current_user.id}"}}
-        snapshot_of_agent = main_agent_app.get_state(thread)
-
-        result = main_agent_app.invoke(
-            Command(resume={"user_input": user_input}),
-            config=snapshot_of_agent.config
-        )
-
-        result["snapshot_of_agent"] = main_agent_app.get_state(thread)
-
-    return result
-
+# Deletes all current schedule items and availabilities for the current user.
 def run_delete_schedules(user_id):
     db.session.query(User_Macrocycles).filter_by(user_id=user_id).delete()
     db.session.commit()
@@ -90,24 +41,76 @@ def run_delete_schedules(user_id):
     results = f"Successfully deleted all schedules for user {user_id}."
     return results
 
-
-# Test the main agent with a user input.
-@bp.route('/', methods=['POST', 'PATCH'])
+# Enter into the main agent with a user input.
+@bp.route('/enter', methods=['POST', 'PATCH'])
 @login_required
-def test_main_agent():
-    # Input is a json.
-    data = request.get_json()
-    results = run_main_agent(data)
+def test_enter_main_agent(delete_all_user_schedules=False):
+    user_id = current_user.id
+
+    # If deletion is desired, remove all previous schedule and availabilities.
+    if delete_all_user_schedules:
+        run_delete_schedules(user_id)
+
+    # Results of the inital agent entry.
+    results = enter_main_agent(user_id)
     return jsonify({"status": "success", "states": results}), 200
 
-# Resume the main agent with a user input.
+# Enter the main agent with a user input and no pre-existing data.
+@bp.route('/enter/clean', methods=['POST', 'PATCH'])
+@login_required
+def test_enter_main_agent_clean():
+    return test_enter_main_agent(delete_all_user_schedules=True)
+
+# Resumes the main agent with a user input.
 @bp.route('/resume', methods=['POST', 'PATCH'])
 @login_required
 def test_resume_main_agent():
+    user_id = current_user.id
+
     # Input is a json.
     data = request.get_json()
-    results = resume_main_agent(data)
+    user_input = retrieve_user_input_from_json_input(data)
+
+    # Results of the user input.
+    results = resume_main_agent(user_id, user_input)
     return jsonify({"status": "success", "states": results}), 200
+
+# Exit the Main Agent.
+@bp.route('/exit', methods=['POST', 'PATCH'])
+@login_required
+def test_exit_main_agent():
+    user_id = current_user.id
+
+    # Results of the user input.
+    results = resume_main_agent(user_id, "")
+    return jsonify({"status": "success", "states": results}), 200
+
+# Enter the main agent and test it with a user input.
+@bp.route('/', methods=['POST', 'PATCH'])
+@login_required
+def test_main_agent(delete_all_user_schedules=False):
+    user_id = current_user.id
+
+    # If deletion is desired, remove all previous schedule and availabilities.
+    if delete_all_user_schedules:
+        run_delete_schedules(user_id)
+
+    # Results of the inital agent entry.
+    results = enter_main_agent(user_id)
+
+    # Input is a json.
+    data = request.get_json()
+    user_input = retrieve_user_input_from_json_input(data)
+
+    # Results of the user input.
+    results = resume_main_agent(user_id, user_input)
+    return jsonify({"status": "success", "states": results}), 200
+
+# Enter the main agent and test it with a user input and no pre-existing data.
+@bp.route('/clean', methods=['POST', 'PATCH'])
+@login_required
+def test_main_agent_clean():
+    return test_main_agent(delete_all_user_schedules=True)
 
 # Delete all schedules belonging to the user.
 @bp.route('/', methods=['DELETE'])
@@ -115,7 +118,6 @@ def test_resume_main_agent():
 def delete_schedules():
     results = run_delete_schedules(current_user.id)
     return jsonify({"status": "success", "states": results}), 200
-
 
 # Retrieve current state.
 @bp.route('/state', methods=['GET'])
@@ -132,12 +134,3 @@ def get_current_state():
         snapshot_of_agent = main_agent_app.get_state(thread)
 
     return jsonify({"status": "success", "agent_snapshot": snapshot_of_agent}), 200
-
-# Test the main agent with a user input and no pre-existing data.
-@bp.route('/clean', methods=['POST', 'PATCH'])
-@login_required
-def test_clean_main_agent():
-    # Input is a json.
-    data = request.get_json()
-    results = run_main_agent(data, delete_old_schedules=True)
-    return jsonify({"status": "success", "states": results}), 200

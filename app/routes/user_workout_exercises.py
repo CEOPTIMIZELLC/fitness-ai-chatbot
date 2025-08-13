@@ -1,4 +1,4 @@
-from config import verbose
+from logging_config import LogRoute
 
 from flask import jsonify, Blueprint, abort
 from flask_login import current_user, login_required
@@ -8,16 +8,112 @@ from app.models import User_Weekday_Availability
 from app.agents.exercises import exercise_pc_main
 
 from app.utils.common_table_queries import current_workout_day
-from app.utils.print_long_output import print_long_output
 
 from app.main_agent.utils import retrieve_total_time_needed
 from app.main_agent.utils import construct_user_workout_components_list, construct_available_exercises_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
-from app.main_agent.user_workout_exercises import WorkoutActions
+from app.main_agent.user_workout_exercises import create_workout_agent
+from app.main_agent.user_workout_completion import create_workout_completion_agent
 
 bp = Blueprint('user_workout_exercises', __name__)
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
+
+# Retrieve current user's workout exercises
+@bp.route('/', methods=['GET'])
+@login_required
+def get_user_workout_exercises_list():
+    state = {
+        "user_id": current_user.id,
+        "workout_schedule_impacted": True,
+        "workout_schedule_is_altered": False,
+        "workout_schedule_read_plural": True,
+        "workout_schedule_read_current": False,
+        "workout_schedule_message": "Perform workout scheduling."
+    }
+    workout_agent = create_workout_agent()
+
+    result = workout_agent.invoke(state)
+    return jsonify({"status": "success", "exercises": result}), 200
+
+# Retrieve user's current microcycle's workout exercises
+@bp.route('/current_list', methods=['GET'])
+@login_required
+def get_user_current_exercises_list():
+    state = {
+        "user_id": current_user.id,
+        "workout_schedule_impacted": True,
+        "workout_schedule_is_altered": False,
+        "workout_schedule_read_plural": True,
+        "workout_schedule_read_current": True,
+        "workout_schedule_message": "Perform workout scheduling."
+    }
+    workout_agent = create_workout_agent()
+
+    result = workout_agent.invoke(state)
+    return jsonify({"status": "success", "exercises": result}), 200
+
+# Assigns exercises to workouts.
+@bp.route('/', methods=['POST', 'PATCH'])
+@login_required
+def exercise_initializer():
+    state = {
+        "user_id": current_user.id,
+        "workout_schedule_impacted": True,
+        "workout_schedule_is_altered": True,
+        "workout_schedule_read_plural": False,
+        "workout_schedule_read_current": False,
+        "workout_schedule_message": "Perform workout scheduling."
+    }
+    workout_agent = create_workout_agent()
+
+    result = workout_agent.invoke(state)
+    return jsonify({"status": "success", "exercises": result}), 200
+
+# Update user exercises if workout is completed.
+@bp.route('/workout_completed', methods=['POST', 'PATCH'])
+@login_required
+def complete_workout():
+    state = {
+        "user_id": current_user.id,
+        "workout_completion_impacted": True,
+        "workout_completion_is_altered": True,
+        "workout_completion_read_plural": False,
+        "workout_completion_read_current": False,
+        "workout_completion_message": "Perform workout scheduling."
+    }
+    workout_completion_agent = create_workout_completion_agent()
+
+    result = workout_completion_agent.invoke(state)
+    return jsonify({"status": "success", "exercises": result}), 200
+
+# Combine Exercise Initializer and Complete Workout for testing.
+@bp.route('/initialize_and_complete', methods=['POST', 'PATCH'])
+@login_required
+def initialize_and_complete():
+    result = {}
+
+    state = {
+        "user_id": current_user.id,
+        "workout_schedule_impacted": True,
+        "workout_schedule_is_altered": True,
+        "workout_schedule_read_plural": False,
+        "workout_schedule_read_current": False,
+        "workout_schedule_message": "Perform workout scheduling.",
+        "workout_completion_impacted": True,
+        "workout_completion_is_altered": True,
+        "workout_completion_read_plural": False,
+        "workout_completion_read_current": False,
+        "workout_completion_message": "Perform workout scheduling."
+    }
+    workout_agent = create_workout_agent()
+    workout_completion_agent = create_workout_completion_agent()
+
+    result["workout_exercises"] = workout_agent.invoke(state)
+    result["exercises"] = workout_completion_agent.invoke(state)
+    return jsonify({"status": "success", "output": result}), 200
+
+# ---------- TEST ROUTES --------------
 
 def retrieve_availability_for_day(user_workout_day):
     # Retrieve availability for day.
@@ -84,54 +180,6 @@ def retrieve_pc_parameters(user_workout_day):
     parameters["projected_duration"] = retrieve_projected_duration(parameters["phase_components"][1:], parameters["phase_components"][1:])
     return parameters
 
-# Retrieve current user's workout exercises
-@bp.route('/', methods=['GET'])
-@login_required
-def get_user_workout_exercises_list():
-    exercises = WorkoutActions.get_user_list()
-    return jsonify({"status": "success", "exercises": exercises}), 200
-
-# Retrieve user's current microcycle's workout exercises
-@bp.route('/current_list', methods=['GET'])
-@login_required
-def get_user_current_exercises_list():
-    exercises = WorkoutActions.get_user_current_list()
-    return jsonify({"status": "success", "exercises": exercises}), 200
-
-# Retrieve user's current microcycle's workout exercises
-@bp.route('/current_formatted_list', methods=['GET'])
-@login_required
-def get_user_current_exercises_formatted_list():
-    exercises = WorkoutActions.get_formatted_list()
-    return jsonify({"status": "success", "exercises": exercises}), 200
-
-# Assigns exercises to workouts.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def exercise_initializer():
-    result = WorkoutActions.scheduler()
-    result["formatted_schedule"] = WorkoutActions.get_formatted_list()
-    return jsonify({"status": "success", "exercises": result}), 200
-
-# Update user exercises if workout is completed.
-@bp.route('/workout_completed', methods=['POST', 'PATCH'])
-@login_required
-def complete_workout():
-    result = WorkoutActions.complete_workout()
-    return jsonify({"status": "success", "exercises": result}), 200
-
-# Combine Exercise Initializer and Complete Workout for testing.
-@bp.route('/initialize_and_complete', methods=['POST', 'PATCH'])
-@login_required
-def initialize_and_complete():
-    result = {}
-    result["workout_exercises"] = WorkoutActions.scheduler()
-    result["formatted_schedule"] = WorkoutActions.get_formatted_list()
-    result["exercises"] = WorkoutActions.complete_workout()
-    return jsonify({"status": "success", "output": result}), 200
-
-# ---------- TEST ROUTES --------------
-
 # This is simply for the purposes of testing the phase component assignment stage.
 @bp.route('/test_exercise_phase_components', methods=['POST', 'PATCH'])
 @login_required
@@ -144,8 +192,7 @@ def exercise_phase_components_test():
     constraints={"vertical_loading": user_workout_day.loading_systems.id == 1}
 
     result = exercise_pc_main(parameters, constraints)
-    if verbose:
-        print_long_output(result["formatted"])
+    LogRoute.verbose(result["formatted"])
     return jsonify({"status": "success", "exercises": result}), 200
 
 # Assigns exercises to workouts.

@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 import pandas as pd
 import numpy as np
 
@@ -24,9 +25,10 @@ class Data_Importer:
         self.exercises_df.drop_duplicates(subset=["Exercise"], inplace=True)
 
     def _general_exercises(self):
+        LogDBInit.introductions(f"Initializing General_Exercise_Library table.")
         # Ensure that the ids neccessary have been initialized.
         if not self.exercise_ids:
-            print("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         system = """You are a helpful assistant trained in fitness and exercise terminology.
@@ -51,9 +53,10 @@ class Data_Importer:
         return None
 
     def _exercises(self):
+        LogDBInit.introductions(f"Initializing Exercise_Library table.")
         # Ensure that the ids neccessary have been initialized.
         if not (self.exercise_ids and self.general_exercise_ids):
-            print("IDs not initialized.")
+            LogDBInit.data_errors("IDs not initialized.")
             return None
 
         # Create a list of entries for the exercises

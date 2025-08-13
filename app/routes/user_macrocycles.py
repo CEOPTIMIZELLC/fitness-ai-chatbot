@@ -1,15 +1,113 @@
+from logging_config import LogRoute
 from flask import request, jsonify, Blueprint, abort
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from app import db
 from app.models import Goal_Library
 
 from app.agents.goals import create_goal_classification_graph
-from app.main_agent.user_macrocycles import MacrocycleActions
+from app.main_agent.user_macrocycles import create_goal_agent
 
 bp = Blueprint('user_macrocycles', __name__)
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
+
+# Retrieve current user's macrocycles
+@bp.route('/', methods=['GET'])
+@login_required
+def get_user_macrocycle_list():
+    state = {
+        "user_id": current_user.id,
+        "macrocycle_impacted": True,
+        "macrocycle_is_altered": False,
+        "macrocycle_read_plural": True,
+        "macrocycle_read_current": True,
+        "macrocycle_message": "Retrieve current macrocycle.",
+        "macrocycle_alter_old": None
+    }
+    goal_agent = create_goal_agent()
+
+    result = goal_agent.invoke(state)
+    return jsonify({"status": "success", "macrocycles": result}), 200
+
+
+# Retrieve current user's macrocycles
+@bp.route('/current', methods=['GET'])
+@login_required
+def read_user_current_macrocycle():
+    state = {
+        "user_id": current_user.id,
+        "macrocycle_impacted": True,
+        "macrocycle_is_altered": False,
+        "macrocycle_read_plural": False,
+        "macrocycle_read_current": True,
+        "macrocycle_message": "Retrieve current macrocycle.",
+        "macrocycle_alter_old": None
+    }
+    goal_agent = create_goal_agent()
+
+    result = goal_agent.invoke(state)
+    return jsonify({"status": "success", "macrocycles": result}), 200
+
+# Change the current user's macrocycle.
+@bp.route('/', methods=['POST', 'PATCH'])
+@login_required
+def change_macrocycle():
+    # Input is a json.
+    data = request.get_json()
+    if not data:
+        abort(404, description="Invalid request")
+    
+    if ('goal' not in data):
+        abort(400, description="Please fill out the form!")
+    
+    # Determine if a new macrocycle should be made instead of changing the current one.
+    if (request.method == 'PATCH'):
+        alter_old = True
+    else:
+        alter_old = False
+
+    state = {
+        "user_id": current_user.id,
+        "macrocycle_impacted": True,
+        "macrocycle_is_altered": True,
+        "macrocycle_read_plural": False,
+        "macrocycle_read_current": False,
+        "macrocycle_message": data.get("goal", ""),
+        "macrocycle_alter_old": alter_old
+    }
+    goal_agent = create_goal_agent()
+
+    result = goal_agent.invoke(state)
+    return jsonify({"status": "success", "macrocycles": result}), 200
+
+# Change the current user's macrocycle by the id (doesn't restrict what can be assigned).
+@bp.route('/<goal_id>', methods=['POST', 'PATCH'])
+@login_required
+def change_macrocycle_by_id(goal_id):
+    # Determine if a new macrocycle should be made instead of changing the current one.
+    if (request.method == 'PATCH'):
+        alter_old = True
+    else:
+        alter_old = False
+
+    state = {
+        "user_id": current_user.id,
+        "macrocycle_impacted": True,
+        "macrocycle_is_altered": True,
+        "macrocycle_read_plural": False,
+        "macrocycle_read_current": False,
+        "macrocycle_message": f"Goal of id {goal_id}.",
+        "macrocycle_perform_with_parent_id": goal_id,
+        "macrocycle_alter_old": alter_old,
+    }
+    goal_agent = create_goal_agent()
+
+    result = goal_agent.invoke(state)
+    return jsonify({"status": "success", "macrocycles": result}), 200
+
+# ---------- TEST ROUTES --------------
+
 # Retrieve possible goal types.
 def retrieve_goal_types():
     goals = db.session.query(Goal_Library.id, Goal_Library.name).all()
@@ -29,51 +127,12 @@ def goal_classification_test_run(goal_app, goal_types, user_goal):
             "goal_types": goal_types, 
             "attempts": 0
         })
-    print(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
-    print("")
+    LogRoute.verbose(f"Result: '{result_temp["goal_class"]}' with id of '{str(result_temp["goal_id"])}'")
+    LogRoute.verbose("")
     return {
         "new_goal": user_goal,
         "goal_classification": result_temp["goal_class"],
         "goal_id": result_temp["goal_id"]}
-
-# Retrieve current user's macrocycles
-@bp.route('/', methods=['GET'])
-@login_required
-def get_user_macrocycle_list():
-    macrocycles = MacrocycleActions.get_user_list()
-    return jsonify({"status": "success", "macrocycles": macrocycles}), 200
-
-
-# Retrieve current user's macrocycles
-@bp.route('/current', methods=['GET'])
-@login_required
-def read_user_current_macrocycle():
-    macrocycles = MacrocycleActions.read_user_current_element()
-    return jsonify({"status": "success", "macrocycles": macrocycles}), 200
-
-# Change the current user's macrocycle.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def change_macrocycle():
-    # Input is a json.
-    data = request.get_json()
-    if not data:
-        abort(404, description="Invalid request")
-    
-    if ('goal' not in data):
-        abort(400, description="Please fill out the form!")
-    
-    macrocycles = MacrocycleActions.scheduler(data.get("goal", ""))
-    return jsonify({"status": "success", "macrocycles": macrocycles}), 200
-
-# Change the current user's macrocycle by the id (doesn't restrict what can be assigned).
-@bp.route('/<goal_id>', methods=['POST', 'PATCH'])
-@login_required
-def change_macrocycle_by_id(goal_id):
-    macrocycles = MacrocycleActions.change_by_id(goal_id)
-    return jsonify({"status": "success", "macrocycles": macrocycles}), 200
-
-# ---------- TEST ROUTES --------------
 
 # Testing for goal classification.
 @bp.route('/test', methods=['GET', 'POST'])

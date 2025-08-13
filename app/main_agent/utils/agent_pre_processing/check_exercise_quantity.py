@@ -1,4 +1,4 @@
-from config import verbose_agent_preprocessing
+from logging_config import LogSolverPreProcessing
 from .utils import check_for_required, remove_impossible_not_required_phase_components
 
 # Step 1: Remove Empty Phase Components
@@ -81,19 +81,16 @@ def Main(pcs, exercises_for_pcs, check_globally=False):
     unsatisfiable = []
 
     # Step 1: Initial check for empty phase components
-    if verbose_agent_preprocessing:
-        print("EMPTY")
+    LogSolverPreProcessing.verbose("EMPTY")
     unsatisfiable += _check_if_there_are_no_exercises(pcs, exercises_for_pcs)
 
     # Step 2: Initial check for local feasibility
-    if verbose_agent_preprocessing:
-        print("LOCALLY")
+    LogSolverPreProcessing.verbose("LOCALLY")
     unsatisfiable += _check_if_there_are_enough_exercises_individually(pcs, exercises_for_pcs)
 
     # Step 3: Check for global feasibility
     if check_globally:
-        if verbose_agent_preprocessing:
-            print("GLOBALLY")
+        LogSolverPreProcessing.verbose("GLOBALLY")
         unsatisfiable += _check_if_there_are_enough_exercises_globally(pcs, exercises_for_pcs)
 
     if unsatisfiable:

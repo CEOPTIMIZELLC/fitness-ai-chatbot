@@ -25,6 +25,9 @@ def link_entry_and_item(model, items, entry_vars, number_of_entries, used_vars):
             model.Add(entry_vars[i] != j).OnlyEnforceIf(used_vars[i][j].Not())
     return None
 
+# Sets the constraints for an optional integer variable
+# Set the value to be 0 when inactive. 
+# Give the variable a min and a max when active.
 def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_active=1, value_if_inactive=0):
     # Enforce entry = 0 if the activator is off.
     model.Add(entry == value_if_inactive).OnlyEnforceIf(activator.Not())
@@ -36,14 +39,15 @@ def constrain_active_entry(model, entry, activator, min_if_active=0, max_if_acti
     return None
 
 # Method for the creation of what is essentially an optional variable. 
-# This was created to reduce repetition of code
 def create_optional_intvar(model, name_of_entry_var, activator, min_if_active=0, max_if_active=1, value_if_inactive=0):
     var_entry = model.NewIntVar(value_if_inactive, max_if_active, name_of_entry_var)
-    model = constrain_active_entry(model, entry=var_entry, activator=activator, 
-                                   min_if_active=min_if_active, max_if_active=max_if_active, 
-                                   value_if_inactive=value_if_inactive)
+    model = constrain_active_entry(
+        model, entry=var_entry, activator=activator, 
+        min_if_active=min_if_active, max_if_active=max_if_active, 
+        value_if_inactive=value_if_inactive)
     return var_entry
 
+# Method for creating a list of model variables.
 def declare_model_vars(model, name, active_vars, max_entries, min_if_active, max_if_active):
     return [
         create_optional_intvar(
@@ -90,10 +94,12 @@ def constrain_active_entries_vars(model, entry_vars, number_of_entries, duration
     
     return None
 
-def entry_equals(model, agent_var, item, key, condition=None):
+# Sets the variable to be equal to a value. 
+# Only applied when the given condition(s) is true, if applicable.
+def entry_equals(model, agent_var, item_value, condition=None):
     """Generic function to add equals constraints with optional condition."""
-    if (key in item) and (item[key] is not None):
-        constraint = model.Add(agent_var == item[key])
+    if item_value is not None:
+        constraint = model.Add(agent_var == item_value)
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
 
@@ -101,21 +107,24 @@ def entry_equals(model, agent_var, item, key, condition=None):
 def entries_equal(model, items, key, number_of_entries, used_vars, duration_vars):
     for i in range(number_of_entries):
         for j, item in enumerate(items):
+            item_value = item.get(key)
             # The duration_vars[i] must be within the allowed range of the item.
             entry_equals(
-                model, duration_vars[i], item,
-                key, used_vars[i][j]
+                model, duration_vars[i],
+                item_value, used_vars[i][j]
             )
     return None
 
-def entry_within_min_max(model, agent_var, item, min_key, max_key, condition=None):
+# Sets the variable to be within the range allowed. 
+# Only applied when the given condition(s) is true, if applicable.
+def entry_within_min_max(model, agent_var, min_val=None, max_val=None, condition=None):
     """Generic function to add min/max constraints with optional condition."""
-    if (min_key in item) and (item[min_key] is not None):
-        constraint = model.Add(agent_var >= item[min_key])
+    if min_val is not None:
+        constraint = model.Add(agent_var >= min_val)
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
-    if (max_key in item) and (item[max_key] is not None):
-        constraint = model.Add(agent_var <= item[max_key])
+    if max_val is not None:
+        constraint = model.Add(agent_var <= max_val)
         if condition is not None:
             constraint.OnlyEnforceIf(condition)
 
@@ -123,18 +132,23 @@ def entry_within_min_max(model, agent_var, item, min_key, max_key, condition=Non
 def entries_within_min_max(model, items, minimum_key, maximum_key, number_of_entries, used_vars, duration_vars):
     for i in range(number_of_entries):
         for j, item in enumerate(items):
+            minimum_value = item.get(minimum_key)
+            maximum_value = item.get(maximum_key)
+
             # The duration_vars[i] must be within the allowed range of the item.
             entry_within_min_max(
-                model, duration_vars[i], item,
-                minimum_key, maximum_key, used_vars[i][j]
+                model, duration_vars[i], 
+                minimum_value, maximum_value, used_vars[i][j]
             )
     return None
 
+# Forces all items in the list to be equal without a condition.
 def _ensure_all_vars_equal_no_activator(model, agent_vars):
     for agent_var, var_next in zip(agent_vars, agent_vars[1:]):
         model.Add(agent_var == var_next)
     return None
 
+# Forces all items in the list to be equal for a condition.
 def _ensure_all_vars_equal_with_activator(model, agent_vars, active_vars):
     for agent_var, active_var, var_next, active_var_next in zip(agent_vars, active_vars, agent_vars[1:], active_vars[1:]):
         model.Add(agent_var == var_next).OnlyEnforceIf(active_var, active_var_next)
@@ -168,10 +182,13 @@ def frequency_within_min_max(model, phase_components, active_phase_components, m
         # Ensure that the phase component has been used more than once
         model.Add(sum(active_window) == 0).OnlyEnforceIf(used_phase_components[phase_component_index].Not())
 
+        minimum_value = phase_component.get(minimum_key)
+        maximum_value = phase_component.get(maximum_key)
+
         # Constrain to be between the minimum and maximum allowed (if one exists)
         entry_within_min_max(
-            model, sum(active_window), phase_component,
-            minimum_key, maximum_key,
+            model, sum(active_window),
+            minimum_value, maximum_value,
             used_phase_components[phase_component_index]
         )
     return None
@@ -181,10 +198,14 @@ def exercises_per_bodypart_within_min_max(model, required_items, items, minimum_
     for item_index in required_items:
         exercises_of_phase = [row[item_index] for row in used_vars]
 
+        required_item = items[item_index]
+        minimum_value = required_item.get(minimum_key)
+        maximum_value = required_item.get(maximum_key)
+
         # Constrain to be between the minimum and maximum allowed (if one exists)
         entry_within_min_max(
-            model, sum(exercises_of_phase), items[item_index],
-            minimum_key, maximum_key
+            model, sum(exercises_of_phase), 
+            minimum_value, maximum_value
         )
     return None
 
@@ -327,27 +348,3 @@ def add_tight_bounds(model, entry_vars, used_vars, items, name="", minimum_key=N
         
     return phase_component_counts
 
-def retrieve_indication_of_increase(model, items, max_performance, var_index, performance_var, used_item):
-    # Booleans to check if the performance increased for whichever item was selected.
-    performance_increase_for_pc_met = [model.NewBoolVar(f'item_{i}_performance_increase_for_{var_index}')
-                                       for i in range(1, len(items))]
-
-    # Boolean to check if a performance increase occurred for the phase component.
-    performance_penalty = model.NewIntVar(0, max_performance // 100, f'performance_penalty_for_{var_index}')
-    performance_difference = model.NewIntVar(0, max_performance, f'performance_difference_for_{var_index}')
-
-    for (performance_increase_met_for_item, item, item_selected) in zip(performance_increase_for_pc_met[1:], items[1:], used_item[1:]):
-
-        # Ensure the check is off if the item isn't picked.
-        model.Add(performance_increase_met_for_item == 0).OnlyEnforceIf(item_selected.Not())
-
-        # If the maximum is going to be reached, do not exceed it.
-        model.Add(performance_var > item["performance"]).OnlyEnforceIf(item_selected, performance_increase_met_for_item)
-        model.Add(performance_var <= item["performance"]).OnlyEnforceIf(item_selected, performance_increase_met_for_item.Not())
-
-        # Calculate penalty if increase isn't met.
-        model.Add(performance_difference == 0).OnlyEnforceIf(item_selected, performance_increase_met_for_item)
-        model.Add(performance_difference == (100 + item["performance"] - performance_var)).OnlyEnforceIf(item_selected, performance_increase_met_for_item.Not())
-
-    model.AddDivisionEquality(performance_penalty, performance_difference, 100)
-    return performance_penalty

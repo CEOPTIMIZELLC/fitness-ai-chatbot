@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 import numpy as np
 from flask import current_app
 
@@ -39,6 +40,7 @@ class Data_Clustering:
 
     # Step 1: Get embeddings from OpenAI
     def _get_embeddings(self):
+        LogDBInit.clustering(f"Getting embeddings.")
         # Get embeddings for all items
         items = self.df[self.name_column].tolist()
         embed = OpenAIEmbeddings(model=current_app.config["EMBEDDING_MODEL"])
@@ -48,11 +50,13 @@ class Data_Clustering:
 
     # Retrieve the generated embeddings as a numpy arrays
     def _retrieve_embedding_matrix(self):
+        LogDBInit.clustering(f"Retrieving embedding matrix as a numpy matrix.")
         embedding_matrix = np.vstack(self.df["embedding"].values)
         return embedding_matrix
 
     # Perform the clustering algorithm on the items based on the embeddings.
     def _cluster_df_by_embeddings(self, embedding_matrix):
+        LogDBInit.clustering(f"Performing clustering algorithm on items.")
         # Compute linkage matrix
         Z = linkage(embedding_matrix, method="ward")  # 'ward' works well for embeddings
 
@@ -78,6 +82,7 @@ class Data_Clustering:
 
     # Generate the names for all of the clusters.
     def _generate_cluster_names(self):
+        LogDBInit.clustering(f"Generating cluster names.")
         clustered_items = self.df.groupby("General Cluster")[self.name_column].apply(list).to_dict()
         cluster_names = {}
 
@@ -94,7 +99,7 @@ class Data_Clustering:
         
         # Check that embeddings were made before executing.
         if 'embedding' not in self.df.columns:
-            print("No embeddings present")
+            LogDBInit.data_errors("No embeddings present")
             return None
         
         embedding_matrix = self._retrieve_embedding_matrix()

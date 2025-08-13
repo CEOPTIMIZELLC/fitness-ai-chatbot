@@ -1,4 +1,5 @@
-from config import ortools_solver_time_in_seconds, log_schedule, log_counts, log_details
+from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
+from logging_config import LogSolver
 from collections import defaultdict
 from ortools.sat.python import cp_model
 from typing import Set, Optional
@@ -14,15 +15,15 @@ from app.agents.constraints import (
     use_all_required_items, 
     exercises_per_bodypart_within_min_max, 
     symmetry_breaking_constraints, 
-    add_tight_bounds, 
-    retrieve_indication_of_increase)
+    add_tight_bounds)
 
 from app.agents.exercises.exercise_model_specific_constraints import (
     constrain_volume_vars, 
     constrain_density_vars, 
     constrain_performance_vars,
     constrain_non_warmup_vars,
-    resistances_of_same_bodypart_have_equal_sets)
+    resistances_of_same_bodypart_have_equal_sets, 
+    retrieve_indication_of_increase)
 
 from app.agents.exercises.exercise_model_specific_constraints import create_duration_var
 
@@ -85,6 +86,7 @@ class State(BaseAgentState):
     parameter_input: dict
 
 class ExercisePhaseComponentAgent(BaseAgent):
+    schedule_title = "Exercise Phase Component Subagent"
     available_constraints = available_constraints
 
     def __init__(self, parameters={}, constraints={}):
@@ -94,6 +96,7 @@ class ExercisePhaseComponentAgent(BaseAgent):
             "constraints": constraints}
 
     def setup_params_node(self, state: State, config=None) -> dict:
+        LogSolver.agent_steps(f"{self.schedule_title}: Setting up the parameters and configurations.")
         """Initialize optimization parameters and constraints."""
 
         parameter_input = state.get("parameter_input", {})
@@ -154,6 +157,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         }
     
     def create_model_vars(self, model, phase_components, workout_availability, phase_component_amount, general_exercise_amount, pc_bounds, min_exercises, max_exercises):
+        LogSolver.agent_steps(f"{self.schedule_title}: Create the model variables for the solver.")
+
         seconds_per_exercise_bounds = pc_bounds["seconds_per_exercise"]
         reps_bounds, sets_bounds, rest_bounds = pc_bounds["reps"], pc_bounds["sets"], pc_bounds["rest"]
         volume_bounds, density_bounds, duration_bounds = pc_bounds["volume"], pc_bounds["density"], pc_bounds["duration"]
@@ -246,6 +251,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return agent_vars
     
     def apply_model_constraints(self, constraints, model, agent_vars, phase_components, general_exercise_amount, workout_availability, max_exercises, projected_duration):
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model constraints.")
+
         # Apply active constraints ======================================
         logs = "\nBuilding model with constraints:\n"
 
@@ -471,6 +478,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
     
     def app_model_objective(self, constraints, model, model_with_divided_strain, agent_vars, workout_availability, pc_bounds, min_exercises, max_exercises, ):
+        LogSolver.agent_steps(f"{self.schedule_title}: Apply model objective.")
+
         logs = ""
         # Objective: Minimize total strain of microcycle
         if constraints["minimize_strain"]:
@@ -480,7 +489,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return logs
 
     def build_opt_model_node(self, state: State, config=None) -> dict:
-        self._log_steps("Building First Step")
+        LogSolver.agent_steps(f"{self.schedule_title}: Building Model For First Step")
+
         """Build the optimization model with active constraints."""
         parameters = state["parameters"]
         constraints = state["constraints"]
@@ -537,7 +547,8 @@ class ExercisePhaseComponentAgent(BaseAgent):
         return sorted_schedule
 
     def solve_model_node(self, state: State, config=None) -> dict:
-        self._log_steps("Solving First Step")
+        LogSolver.agent_steps(f"{self.schedule_title}: Solving Model For First Step")
+
         """Solve model and record relaxation attempt results."""
         #return {"solution": "None"}
         model, model_with_divided_strain, agent_vars = state["opt_model"]
@@ -738,13 +749,13 @@ class ExercisePhaseComponentAgent(BaseAgent):
         headers = self._create_header_fields(longest_sizes)
         
         # Create header line
-        if log_schedule: 
+        if SchedulerLoggingConfig.schedule: 
             formatted += self.schedule_title_line
             formatted += self.formatted_header_line(headers)
 
         for component_count, (i, phase_component_index, general_exercise_index, _, _, _, *metrics) in enumerate(schedule):
             pc = phase_components[phase_component_index]
-            general_exercise = general_exercises[general_exercise_index]
+            general_exercise = general_exercises.get(general_exercise_index, "Included after 1st attempt.")
 
             (active_exercises, seconds_per_exercise, 
              reps_var, sets_var, rest_var, 
@@ -769,17 +780,17 @@ class ExercisePhaseComponentAgent(BaseAgent):
 
                 # Count the number of occurrences of each phase component
                 phase_component_count[phase_component_index] += 1
-                if log_schedule:
+                if SchedulerLoggingConfig.schedule:
                     line_fields = self.line_fields(component_count, pc, general_exercise, metrics)
                     formatted += self.formatted_schedule_line(headers, line_fields)
 
             else:
-                if log_schedule:
+                if SchedulerLoggingConfig.schedule:
                     formatted += (f"| {(component_count + 1):<{2}} ----\n")
 
-        if log_counts:
+        if SchedulerLoggingConfig.counts:
             formatted += self.formatted_counts(phase_components, solution, longest_sizes)
-        if log_details:
+        if SchedulerLoggingConfig.details:
             formatted += f"Total Strain: {solution['strain_ratio']}\n"
             formatted += f"Projected Duration: {self._format_duration(projected_duration)}\n"
             formatted += f"Total Duration: {self._format_duration(solution['duration'])}\n"

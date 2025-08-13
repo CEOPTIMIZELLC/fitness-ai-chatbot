@@ -18,98 +18,190 @@ OPENAI_API_KEY=
 
 ## Configuration Variables
 ```bash
-distance_threshold = 1.5                                    # Distance threshold for if semantic clustering of exercises (smaller number means more precise).
-user_equipment_population_default = [1-3]                   # If a dummy user is created in the database initialization, there are three presets for equipment to be included, each including more equipment and more varieties of measurements.
-ortools_solver_time_in_seconds = 5                          # The maximum number of seconds that the solver is allowed to take on default.
-vertical_loading = True                                     # Whether the workout schedule will use vertical loading.
+# How many iterations of a loop are allowed before some interruption.
+agent_recursion_limit = 30
+
+# Distance threshold for if semantic clustering of exercises (smaller number means more precise).
+distance_threshold = 1.1
+
+# If a dummy user is created in the database initialization, which preset for equipment to be included.
+# [1-3]
+user_equipment_population_default = 2
+
+# The maximum number of seconds that the solver is allowed to take on default.
+ortools_solver_time_in_seconds = 5
+
+# Whether the workout schedule will use vertical loading.
+vertical_loading = True
+
+# Whether the main agent will loop after finishing.
+loop_main_agent = True
 
 # Configurations for exercise performance decay.
-performance_decay_grace_period = 14                         # The number of days before the performance of an exercise will begin to decay.
-performance_decay_rate = -0.05                              # The rate at which the performance will decay after the grace period.
-one_rep_max_decay_grace_period = 14                         # The number of days before the 1RM of an exercise will begin to decay.
-one_rep_max_decay_rate = -0.05                              # The rate at which the 1RM will decay after the grace period.
-exponential_decay = True                                    # Whether the rate of decay will be exponential (linear decay if false).
+class ExercisePerformanceDecayConfig:
+    # The number of days before the performance of an exercise will begin to decay.
+    grace_period = 14
 
-# Configurations for verbose options.
-verbose = True                                              # Print various messages throughout project.
-verbose_agent_preprocessing = True                          # Whether the various steps taken before the agent processing (time correction, exercises for phase components) will be printed.
-verbose_exercises_for_pc_steps = False                      # Whether ALL of the steps taken when finding the exercises for phase components will be printed.
-verbose_agent_time = True                                   # Whether the time taken for an agent to be completed will be printed.
-verbose_agent_steps = True                                  # Whether the current steps for the agent will be printed as they are reached.
+    # The rate at which the performance will decay after the grace period.
+    decay_rate = -0.05
 
-# Configurations for agent logging (the schedule printed).
-log_schedule = True                                         # Log the schedule itself.
-log_counts = True                                           # Log the number of elements included in the schedule.
-log_constraints = True                                      # Log the final constraints used by the solver.
-log_details = True                                          # Log the values relevant to the schedule (total time, total strain).
+    # Whether the rate of decay will be exponential (linear decay if false).
+    exponential_decay = True
 
-# Configuration for phase components to be removed during preprocessing.
-change_min_max_exercises_for_those_available = True         # If a phase component has fewer exercises available to it than the minimum required, change the minimum and maximum to the be quantity available.
-turn_off_invalid_phase_components = True                    # If a phase component is completely impossible, turn it off as required.
-turn_off_required_resistances = True                        # If a required resistance phase component is completely impossible, turn it off.
+# Configurations for exercise performance decay.
+class ExerciseOneRepMaxDecayConfig:
+    # The number of days before the 1RM of an exercise will begin to decay.
+    grace_period = 14
 
-# Configuration for exerecise inclusion for phase components upon initial failure. 
+    # The rate at which the 1RM will decay after the grace period.
+    decay_rate = -0.05
+
+    # Whether the rate of decay will be exponential (linear decay if false).
+    exponential_decay = True
+
+# General option for verbose logging.
+verbose = True
+
+# Logging configurations for general application.
+class VerbosityConfig:
+    # Log results throughout project.
+    verbose = True
+
+    # Log if an error occurs in the initial database population.
+    existing_data_errors = True
+
+# Logging configurations options for the routes.
+class RouteVerbosityConfig:
+    # Log route outputs.
+    verbose = True
+
+# Logging configurations options for the main agent.
+class MainAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the main agent.
+    agent_introductions = True
+
+    # Log node introductions in the main agent.
+    agent_steps = True
+
+    # Log the output of main agent.
+    agent_output = True
+
+    # Log information regarding user input in the main agent.
+    input_info = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+# Logging configurations options for the main sub agents.
+class MainSubAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the sub agents.
+    agent_introductions = True
+
+    # Log node introductions in the sub agents.
+    agent_steps = True
+
+    # Log the output of the sub agents.
+    agent_output = True
+
+    # Log the parsed user input for the sub agents.
+    parsed_goal = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+# Logging configurations options for the solver preprocessing verbosity.
+class SchedulerPreProcessingVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log ALL steps taken when finding the exercises for phase components.
+    exercises_for_pc_steps = True
+
+# Logging configurations options for the solver agent verbosity.
+class SchedulerVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log the time taken for an agent to be completed will be printed.
+    agent_time = True
+
+    # Log node introductions in the solver agents.
+    agent_steps = True
+
+    # Log the output of the solver agents.
+    agent_output = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+# Configurations for agent logging.
+class SchedulerLoggingConfig:
+    # Add the schedule itself to the logged output.
+    schedule = True
+
+    # Add the node introductions to the logged output.
+    agent_steps = True
+
+    # Add the number of elements included in the schedule to the logged output.
+    counts = True
+
+    # Add the final constraints used by the solver to the logged output.
+    constraints = True
+
+    # Add the values relevant to the schedule (total time, total strain) to the logged output.
+    details = True
+
+# Configuration for phase components to be removed.
+change_min_max_exercises_for_those_available = True
+turn_off_invalid_phase_components = True
+turn_off_required_resistances = True
+
+# Configurations for exerecises to be included for phase components upon initial failure.
 # When determining what exercises are allowed for a phase component, 
 # various options can be taken to attempt to fill in exercises. The 
 # configurations will not be applied all at once, but will rather 
 # be carried out in order: 
-# (if no exercises are found --> look for all exercises for full body --> if no exercises are found, look for all exercises for the bodypart)`
-include_all_exercises_for_desired_full_body = True          # All exercises for the phase component will be included if the bodypart is full body.
-include_all_exercises_for_desired_bodypart = True           # All exercises for the desired bodypart will be included.
-incude_all_exercises_for_desired_phase_component = False    # All exercises for the desired phase compoent will be included.
-include_all_exercises = False                               # All exercises in the database will be inlcuded.
+# (if no exercises are found --> look for all exercises for full body --> if no exercises are found, look for all exercises for the bodypart)
+class BackupExerciseRetrieval:
+    # All exercises for the phase component will be included if the bodypart is full body.
+    for_desired_full_body = True
+
+    # All exercises for the desired bodypart will be included.
+    for_desired_bodypart = True
+
+    # All exercises for the desired phase compoent will be included.
+    for_desired_phase_component = False
+
+    # All exercises in the database will be inlcuded.
+    all_exercises = False
 ```
 
-# Database Initial Setup
-If significant changes have been made to the models, it may be necessary to run the following from the parent directory to restart the database. As of right now, if you remove models that map to tables that would have foreign keys that rely on it, the code may not be able to drop them from the database with the current restarting route in the application. To get around this, a script has been created that will simply delete the old database and make a new empty one that can be used. 
-```bash
-poetry run python reinitialize_db_script.py
-```
+***
 
 # How to Run
 ```bash
 poetry run python run.py
 ```
 
-# Test Main Agent
-**Test Main Agent (If logged in)**
-```
-[POST, PATCH]
-localhost:5000/main_agent
+***
 
-BODY (form-data):
-user_input: [string; OPTIONAL; If not included, will run multiple test cases.]
-```
-
-**Delete Old Schedules (If logged in)**
-```
-[DELETE]
-localhost:5000/main_agent
-```
-
-**Delete Old Schedules and Test Main Agent (If logged in)**
-```
-[POST, PATCH]
-localhost:5000/main_agent/clean
-
-BODY (form-data):
-user_input: [string; OPTIONAL; If not included, will run multiple test cases.]
-```
-
-# Routes To Run
-## Run Steps
-**Logout User (If logged in)**
-```
-[POST]
-localhost:5000/logout
-```
-
+## Set Up Database
 **Initialize Database (If you want to reset the database)**
+Ideally done after logging out.
 ```
 [POST]
 localhost:5000/database_manipulation/init_db
 ```
 
+***
+
+## User Authentication
 **Register User**
 ```
 [POST]
@@ -136,59 +228,65 @@ email: [string; REQUIRED; Must be a valid email address that exists in the datab
 password: [string; REQUIRED; Must be the same as the password that was used to register the user with the given email address.]
 ```
 
-**Set Availability for Each Weekday**
+**Logout User (If logged in)**
 ```
 [POST]
-localhost:5000/user_weekday_availability/
+localhost:5000/logout
+```
+
+***
+
+## Test Main Agent 
+(Perform after registering user and logging in.)
+
+**Enter Main Agent (If logged in)**
+```
+[POST, PATCH]
+localhost:5000/main_agent/enter
+```
+
+**Test User Input (If logged in; AFTER entering the agent)**
+```
+[POST, PATCH]
+localhost:5000/main_agent/resume
 
 BODY (raw) [JSON]:
 {
-    "availability": "[string; REQUIRED; Message to send to the AI to extract your availability for each weekday.]"
+    "user_input": "[string; REQUIRED; Message to be parsed by the agent to determine which goals to perform.]"
 }
 ```
 
-**Set Current Goal/Create New Macrocycle**
+**Delete Old Schedules (If logged in)**
 ```
-[POST]
-localhost:5000/user_macrocycles/
+[DELETE]
+localhost:5000/main_agent
+```
+
+**Enter Main Agent and Test User Input (If logged in)**
+```
+[POST, PATCH]
+localhost:5000/main_agent
 
 BODY (raw) [JSON]:
 {
-    "goal": "[string; REQUIRED; Message to send to the AI to extract your current goal and determine its type.]"
+    "user_input": "[string; REQUIRED; Message to be parsed by the agent to determine which goals to perform.]"
 }
 ```
 
-**Assign Phase Components to the Current Macrocycle/Create Mesocycles for the Current Macrocycle**
+**Delete Old Schedules, Enter Main Agent, and Test User Input (If logged in)**
 ```
-[POST]
-localhost:5000/user_mesocycles/
+[POST, PATCH]
+localhost:5000/main_agent/clean
+
+BODY (raw) [JSON]:
+{
+    "user_input": "[string; REQUIRED; Message to be parsed by the agent to determine which goals to perform.]"
+}
 ```
 
-**Create a Microcycle for Each Week in the Current Mesocycle/Create Microcycles for the Current Mesocycle**
-```
-[POST]
-localhost:5000/user_microcycles/
-```
+***
 
-**Determine which phase components to assign to each day in the microcycle/Create Workout Days for the Current Microcycle**
-```
-[POST]
-localhost:5000/user_workout_days/
-```
-
-**Determine which exercises to assign to each phase component in each day in the microcycle/Create Exercises for the Current Workout Days**
-```
-[POST]
-localhost:5000/user_workout_exercises/
-```
-
-**Indicate that the workout has been completed/Update User Exercises**
-```
-[POST]
-localhost:5000/user_workout_exercises/complete_workout
-```
-
-
+# Routes To Run
 ## Quick Run Steps
 **Logout User (If logged in)**
 ```
@@ -222,113 +320,26 @@ email: [string; REQUIRED; Must be a valid email address that exists in the datab
 password: [string; REQUIRED; Must be the same as the password that was used to register the user with the given email address.]
 ```
 
-**Run Pipeline**
+**Enter Main Agent**
 ```
-[POST]
-localhost:5000/dev_tests/pipeline
+[POST, PATCH]
+localhost:5000/main_agent/enter
+```
+
+**Test User Input**
+```
+[POST, PATCH]
+localhost:5000/main_agent/resume
 
 BODY (raw) [JSON]:
 {
-    "availability": "[string; REQUIRED; Message to send to the AI to extract your availability for each weekday.]",
-    "goal": "[string; REQUIRED; Message to send to the AI to extract your current goal and determine its type.]"
+    "user_input": "[string; REQUIRED; Message to be parsed by the agent to determine which goals to perform.]"
 }
 ```
 
 ***
-# Example Fields
-## Example Run
-**Logout User (If logged in)**
-```
-[POST]
-localhost:5000/logout
-```
 
-**Initialize Database (If you want to reset the database)**
-```
-[POST]
-localhost:5000/database_manipulation/init_db
-```
-
-**Register User**
-```
-[POST]
-localhost:5000/database_manipulation/init_db
-
-BODY (form-data):
-    email: email2@gmail.com
-    password: password?2
-    password_confirm: password?2
-    first_name: Debra
-    last_name: Grey
-    age: 20
-    gender: female
-    goal: "I want to increase my upper body strength."
-```
-
-**Login User**
-```
-[POST]
-localhost:5000/login
-
-BODY (form-data):
-    email: email2@gmail.com
-    password: password?2
-```
-
-**Set Availability for Each Weekday**
-```
-[POST]
-localhost:5000/user_weekday_availability/
-
-BODY (raw) [JSON]:
-{
-    "availability": "I will be available for 35 minutes on Tuesday, 30 minutes on Thurday, 45 minutes on Wednesday and Friday, and 12 hours on Sunday. I will also be able to come on Monday for 14 hours."
-}
-```
-
-**Set Current Goal/Create New Macrocycle**
-```
-[POST]
-localhost:5000/user_macrocycles/
-
-BODY (raw) [JSON]:
-{
-    "goal": "I would like to prepare for my soccer tournament."
-}
-```
-
-**Assign Phase Components to the Current Macrocycle/Create Mesocycles for the Current Macrocycle**
-```
-[POST]
-localhost:5000/user_mesocycles/
-```
-
-**Create a Microcycle for Each Week in the Current Mesocycle/Create Microcycles for the Current Mesocycle**
-```
-[POST]
-localhost:5000/user_microcycles/
-```
-
-**Determine which phase components to assign to each day in the microcycle/Create Workout Days for the Current Microcycle**
-```
-[POST]
-localhost:5000/user_workout_days/
-```
-
-**Determine which exercises to assign to each phase component in each day in the microcycle/Create Exercises for the Current Workout Days**
-```
-[POST]
-localhost:5000/user_workout_exercises/
-```
-
-**Indicate that the workout has been completed/Update User Exercises**
-```
-[POST]
-localhost:5000/user_workout_exercises/complete_workout
-```
-
-
-## Example Quick Run
+## Example Fields
 **Logout User (If logged in)**
 ```
 [POST]
@@ -361,14 +372,20 @@ BODY (form-data):
     password: password?2
 ```
 
-**Run Pipeline**
+
+**Enter Main Agent**
+```
+[POST, PATCH]
+localhost:5000/main_agent/enter
+```
+
+**Test User Input**
 ```
 [POST]
 localhost:5000/dev_tests/pipeline
 
 BODY (raw) [JSON]:
 {
-    "goal": "I would like to prepare for my soccer tournament.",
-    "availability": "I will be available for 35 minutes on Tuesday, 30 minutes on Thurday, 45 minutes on Wednesday and Friday, and 12 hours on Sunday. I will also be able to come on Monday for 14 hours."
+    "user_input": "I want to train four times a week instead of three, and can we swap squats for leg press on leg day? I should have 30 minutes every day now. My goal to prepare for my soccer tournament. I would like you to schedule the mesoscycles, microcycles, the phase components, and the workouts as well."
 }
 ```
