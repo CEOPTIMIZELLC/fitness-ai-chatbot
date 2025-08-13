@@ -88,12 +88,18 @@ class User_Exercises(db.Model, TableNameMixin):
 
         return round(decayed_performance, 2)
 
-    def has_equipment(self, required_equipment):
+    def _user_equipment_map(self):
+        m = defaultdict(list)
+        for eq in self.users.equipment:
+            m[eq.equipment_id].append(eq.measurement)
+        return m
+
+    def has_equipment(self, required_equipment, _user_map=None):
         if not required_equipment:
             return True, {}
 
         # Group user equipment by equipment_id and count measurements
-        user_equipment = defaultdict(list)
+        user_equipment = _user_map or self._user_equipment_map()
         for eq in self.users.equipment:
             user_equipment[eq.equipment_id].append(eq.measurement)
 
@@ -138,6 +144,17 @@ class User_Exercises(db.Model, TableNameMixin):
 
         return True, dict(valid_measurements)
 
+    def has_all_equipment_fast(self):
+        user_map = self._user_equipment_map()
+        checks = (
+            self.has_equipment(self.exercises.supportive_equipment, user_map)[0],
+            self.has_equipment(self.exercises.assistive_equipment, user_map)[0],
+            self.has_equipment(self.exercises.weighted_equipment, user_map)[0],
+            self.has_equipment(self.exercises.marking_equipment, user_map)[0],
+            self.has_equipment(self.exercises.other_equipment, user_map)[0],
+        )
+        return all(checks)
+
     @hybrid_property
     def has_supportive_equipment(self):
         return self.has_equipment(self.exercises.supportive_equipment)
@@ -157,14 +174,6 @@ class User_Exercises(db.Model, TableNameMixin):
     @hybrid_property
     def has_other_equipment(self):
         return self.has_equipment(self.exercises.other_equipment)
-
-    @hybrid_property
-    def has_all_equipment(self):
-        return (self.has_supportive_equipment[0] and 
-                self.has_assistive_equipment[0] and 
-                self.has_weighted_equipment[0] and 
-                self.has_marking_equipment[0] and 
-                self.has_other_equipment[0])
 
     def to_dict(self):
         return {
@@ -189,5 +198,4 @@ class User_Exercises(db.Model, TableNameMixin):
             "has_weighted_equipment": self.has_weighted_equipment,
             "has_marking_equipment": self.has_marking_equipment,
             "has_other_equipment": self.has_other_equipment,
-            # "has_all_equipment": self.has_all_equipment,
         }

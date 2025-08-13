@@ -1,6 +1,9 @@
 from datetime import date
+from sqlalchemy.orm import joinedload, selectinload
+
 from app.models import (
     Goal_Library, 
+    Users, 
     User_Macrocycles, 
     User_Mesocycles, 
     User_Microcycles, 
@@ -89,6 +92,16 @@ def current_workout_day(user_id):
         .first())
     return active_workout_day
 
+# Check if an exercise has all of the equipment required.
+def check_for_all_equipment(ex):
+    return (
+        ex.has_supportive_equipment[0] and 
+        ex.has_assistive_equipment[0] and 
+        ex.has_weighted_equipment[0] and 
+        ex.has_marking_equipment[0] and 
+        ex.has_other_equipment[0]
+    )
+
 # Retrieve all exercises that the user is able to perform.
 def user_possible_exercises(user_id):
     user_exercises = (
@@ -101,23 +114,35 @@ def user_possible_exercises(user_id):
 
     available_exercises = []
     for user_exercise in user_exercises:
-        if user_exercise.has_all_equipment:
+        if check_for_all_equipment(user_exercise):
             available_exercises.append(user_exercise)
     return available_exercises
 
+# Retrieve all exercises that the user is able to perform with the necessary information about it.
 def user_possible_exercises_with_user_exercise_info(user_id):
     user_exercises = (
         db.session.query(Exercise_Library, User_Exercises)
         .join(User_Exercises, Exercise_Library.id == User_Exercises.exercise_id)
         .filter(User_Exercises.user_id == user_id)
         .order_by(Exercise_Library.id.asc())
-        .distinct()
+        .options(
+            # user -> their equipment
+            joinedload(User_Exercises.users).selectinload(Users.equipment),
+
+            # exercise -> each equipment bucket
+            joinedload(User_Exercises.exercises).selectinload(Exercise_Library.supportive_equipment),
+            joinedload(User_Exercises.exercises).selectinload(Exercise_Library.assistive_equipment),
+            joinedload(User_Exercises.exercises).selectinload(Exercise_Library.weighted_equipment),
+            joinedload(User_Exercises.exercises).selectinload(Exercise_Library.marking_equipment),
+            joinedload(User_Exercises.exercises).selectinload(Exercise_Library.other_equipment),
+        )
         .all()
     )
 
+    # Access each has_* once; or better, call your single combined checker if you added it.
     available_exercises = []
     for user_exercise in user_exercises:
-        if user_exercise[1].has_all_equipment:
+        if check_for_all_equipment(user_exercise[1]):
             available_exercises.append(user_exercise)
     return available_exercises
 
