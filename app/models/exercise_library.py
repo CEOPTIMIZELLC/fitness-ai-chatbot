@@ -188,16 +188,6 @@ class Exercise_Library(BaseModel, TableNameMixin, NameMixin):
     def all_other_equipment(self):
         return [equipment.to_dict() for equipment in self.other_equipment]
 
-    @hybrid_property
-    def all_equipment(self):
-        return {
-            "supportive_equipment": self.all_supportive_equipment, 
-            "assistive_equipment": self.all_assistive_equipment, 
-            "weighted_equipment": self.all_weighted_equipment, 
-            "marking_equipment": self.all_marking_equipment, 
-            "other_equipment": self.all_other_equipment, 
-        }
-
     def to_dict(self):
         return {
             "id": self.id, 
