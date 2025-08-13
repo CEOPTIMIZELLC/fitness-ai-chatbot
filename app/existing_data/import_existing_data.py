@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 from pathlib import Path
 import pandas as pd
 
@@ -25,6 +26,7 @@ class Data_Importer(
         PC_Data.__init__(self, xls)
     
     def run(self):
+        LogDBInit.introductions(f"Beginning database initialization.")
         Loading_Systems_Data.run(self)
         Weekday_Data.run(self)
         MC_Data.run(self)
@@ -35,6 +37,7 @@ class Data_Importer(
         Equipment_Data.run(self)
         Exercise_Equipment_Data.run(self)
         Exercise_MC_Data.run(self)
+        LogDBInit.introductions(f"Ending database initialization.")
         return None
 
 def Main(excel_file):
