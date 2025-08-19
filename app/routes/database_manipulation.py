@@ -42,6 +42,7 @@ def get_table_schema():
 @bp.route('/drop_db', methods=['GET','POST'])
 def drop_db():
     """Drops the database."""
+    LogDBInit.introductions(f"Dropping old database.")
     db.drop_all()
 
     return jsonify({"status": "success", "message": "Database DROPPED!"}), 200
@@ -50,6 +51,7 @@ def drop_db():
 @bp.route('/create_db', methods=['GET','POST'])
 def create_db():
     """Creates the database."""
+    LogDBInit.introductions(f"Initializing database.")
     db.create_all()
 
     from app.existing_data.import_existing_data import Main as import_data_main
@@ -82,6 +84,7 @@ def create_db():
 # Database reinitialization
 @bp.route('/init_db', methods=['GET','POST'])
 def initialize_db():
+    LogDBInit.introductions(f"Dropping old database and reinitializing with new database structure.")
 
     results = []
     
