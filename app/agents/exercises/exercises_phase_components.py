@@ -771,9 +771,9 @@ class ExercisePhaseComponentAgent(BaseAgent):
                     "bodypart_id": pc["bodypart_id"],
                     "seconds_per_exercise": seconds_per_exercise, 
                     "active_exercises": active_exercises, 
-                    "reps_var": reps_var, 
-                    "sets_var": sets_var, 
-                    "rest_var": rest_var, 
+                    "reps": reps_var, 
+                    "sets": sets_var, 
+                    "rest": rest_var, 
                     "duration": duration,
                     "working_duration": working_duration
                 })

@@ -262,10 +262,10 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
                 exercise_id = exercise["exercise_id"],
                 bodypart_id = exercise["bodypart_id"],
                 order = i,
-                reps = exercise["reps_var"],
-                sets = exercise["sets_var"],
-                intensity = exercise["intensity_var"],
-                rest = exercise["rest_var"],
+                reps = exercise["reps"],
+                sets = exercise["sets"],
+                intensity = exercise["intensity"],
+                rest = exercise["rest"],
                 weight = exercise["training_weight"],
                 true_exercise_flag = exercise["true_exercise_flag"]
             )
