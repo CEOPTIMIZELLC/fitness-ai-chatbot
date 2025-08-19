@@ -62,7 +62,8 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
             self.availability_names["is_altered"]: True,
             self.availability_names["read_plural"]: False,
             self.availability_names["read_current"]: False,
-            self.availability_names["message"]: goal_class.detail
+            self.availability_names["message"]: goal_class.detail, 
+            "availability_other_requests": goal_class.other_requests,
         }
 
     # Request is unique for Availability retrieval
