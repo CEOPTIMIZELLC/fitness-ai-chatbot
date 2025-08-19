@@ -172,6 +172,52 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         return edit_prompt
 
     # Items extracted from the edit request.
+    def goal_edits_parser(self, goal_edits=None):
+        # Return an empty dictionary of edits if no edits were made.
+        if not goal_edits:
+            return {}
+    
+        goal_edits_dict={}
+        
+        # Convert goal edits to a dictionary format
+        for goal_edit in goal_edits:
+            goal_edit_information = {
+                "exercise_index": goal_edit.id, 
+                "remove": goal_edit.remove, 
+                "reps": goal_edit.reps, 
+                "sets": goal_edit.sets, 
+                "rest": goal_edit.rest, 
+                "training_weight": goal_edit.weight, 
+            }
+
+            goal_edits_dict[goal_edit.id] = goal_edit_information
+
+        return goal_edits_dict
+
+    # Retrieve entry for the edit.
+    def compare_edits(self, original_schedule, altered_schedule):
+        edits_to_be_applyed = {}
+        for original_schedule_item in original_schedule:
+            original_schedule_item_id = original_schedule_item["exercise_index"]
+
+            # Skip the entry if the schedule item isn't present.
+            if original_schedule_item_id not in altered_schedule.keys():
+                continue
+
+            altered_schedule_item = altered_schedule[original_schedule_item_id]
+
+            common_keys = set(original_schedule_item.keys()) & set(altered_schedule_item.keys())
+
+            # Include the item if it has been indicated to be removed.
+            if altered_schedule_item["remove"]:
+                edits_to_be_applyed[original_schedule_item_id] = altered_schedule[original_schedule_item_id]
+
+            # Only include the item if any value has been changed from the original.
+            elif any(original_schedule_item[key] != altered_schedule_item[key] for key in common_keys):
+                edits_to_be_applyed[original_schedule_item_id] = altered_schedule[original_schedule_item_id]
+        return edits_to_be_applyed
+
+    # Items extracted from the edit request.
     def goal_edit_request_parser(self, goal_class, edits_to_be_applyed):
         return {
             "is_edited": True if edits_to_be_applyed else False,
@@ -199,9 +245,16 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         # Retrieve the new input for the parent item.
         goal_class = new_input_request(user_input, edit_prompt, EditGoal)
 
-        edits_to_be_applyed = {}
+        new_schedule = goal_class.schedule
+        if new_schedule: 
+            # Convert to dictionary form.
+            goal_edits_dict = self.goal_edits_parser(new_schedule)
 
-        # Parse the structured output values to a dictionary.
+            # Refine and remove entries that weren't edited.
+            edits_to_be_applyed = self.compare_edits(state["agent_output"], goal_edits_dict)
+        else: 
+            edits_to_be_applyed = {}
+
         return self.goal_edit_request_parser(goal_class, edits_to_be_applyed)
 
     # Confirm that the desired section should be edited.
@@ -217,35 +270,30 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
     def perform_edits(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for {self.sub_agent_title}---------")
 
+        # Retrieve the schedule and format it for the prompt.
+        schedule_list = state["agent_output"]
         schedule_edits = state["edits"]
 
-        # Retrieve the workout day id for more security in retrieval.
-        user_workout_day = state[self.parent_names["entry"]]
-        workout_day_id = user_workout_day["id"]
-
         # Apply the schedule edits to the workout exercises.
-        for schedule_edit in schedule_edits:
-            # If there is a desire to remove the entry, remove it.
-            if schedule_edit["remove"]:
-                db.session.query(User_Workout_Exercises).filter_by(id=schedule_edit["id"], workout_day_id=workout_day_id).delete()
+        for schedule_item in schedule_list:
+            # Skip the entry if the schedule item isn't present.
+            if schedule_item["exercise_index"] not in schedule_edits.keys():
                 continue
 
-            schedule_entry = db.session.query(User_Workout_Exercises).filter_by(id=schedule_edit["id"], workout_day_id=workout_day_id).first()
-            if not schedule_entry:
-                continue
+            schedule_edit = schedule_edits[schedule_item["exercise_index"]]
 
-            schedule_entry.reps = schedule_edit["reps"]
-            schedule_entry.sets = schedule_edit["sets"]
-            schedule_entry.rest = schedule_edit["rest"]
+            schedule_item["reps"] = schedule_edit["reps"]
+            schedule_item["sets"] = schedule_edit["sets"]
+            schedule_item["rest"] = schedule_edit["rest"]
 
             # In case a weight is accidentally applied to a non-weighted exercises
-            if schedule_entry.exercises.is_weighted:
-                schedule_entry.weight = schedule_edit["weight"]
+            if schedule_item["training_weight"]:
+                schedule_item["training_weight"] = schedule_edit["training_weight"]
 
                 # Calculate new intensity.
-                schedule_entry.intensity = schedule_entry.weight / schedule_entry.one_rep_max
+                schedule_item["intensity"] = schedule_item["training_weight"] / schedule_item["one_rep_max"]
         
-        return {}
+        return {"agent_output": schedule_list}
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
