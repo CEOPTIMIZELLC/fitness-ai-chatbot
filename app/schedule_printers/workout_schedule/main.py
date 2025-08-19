@@ -1,7 +1,10 @@
 from app.utils.longest_string import longest_string_size_for_key
-from .base import BaseSchedulePrinter
+from ..base import BaseSchedulePrinter
+from .vertical import VerticalSchedulePrinter
+from .horizontal import HorizontalSchedulePrinter
 
-class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter):
+class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter, HorizontalSchedulePrinter, VerticalSchedulePrinter):
+
     def _create_final_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
@@ -27,8 +30,7 @@ class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter):
             "performance": ("Performance", 14),
             "end": ("", 2),
         }
-
-
+    
     def _line_fields(self, i, exercise, set_count, superset_var):
         new_weight = exercise["weight"] or 0
 
@@ -73,55 +75,24 @@ class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter):
             superset_var["is_resistance"] = False
         return superset_var
 
-    def _log_sub_schedule(self, sub_schedule_name, headers, header_line, schedule, warmup=False, set_count=None):
-        sub_schedule_string = ""
-        # Create header line
-        sub_schedule_string += f"\n| {sub_schedule_name} |\n"
-        sub_schedule_string += header_line
-
-        superset_var = {
-            "not_a_superset": "-", 
-            "superset_current": 0, 
-            "superset_previous": 0, 
-            "bodypart_id": 0,
-            "is_resistance": False}
-
-        for component_count, exercise in enumerate(schedule):
-            sub_schedule_part = exercise["is_warmup"] if warmup else not exercise["is_warmup"]
-            if sub_schedule_part:
-                # Count the number of occurrences of each phase component
-                superset_var["superset_previous"] = superset_var["superset_current"]
-
-                # Check if the current component is resistance.
-                superset_var = self._check_if_component_is_resistance(exercise["component_id"], exercise["bodypart_id"], superset_var)
-
-                if set_count:
-                    _line_fields = self._line_fields(component_count, exercise, set_count, superset_var)
-                    sub_schedule_string += self._formatted_entry_line(headers, _line_fields)
-                else:
-                    set_var = exercise["sets"]
-                    for set in range(1, set_var+1):
-                        _line_fields = self._line_fields(component_count, exercise, set, superset_var)
-                        sub_schedule_string += self._formatted_entry_line(headers, _line_fields)
-        return sub_schedule_string
 
     def _log_schedule(self, headers, header_line, loading_system_id, schedule):
         schedule_string = ""
-        max_sets = max(exercise["sets"] if not exercise["is_warmup"] else 1 for exercise in schedule)
 
         # Create header line
-        sub_schedule_name = "Warm-Up"
-
-        schedule_string += self._log_sub_schedule(sub_schedule_name, headers, header_line, schedule, True)
+        schedule_string += self._log_horizontal_sub_schedule(
+            sub_schedule_name="Warm-Up", 
+            headers=headers, 
+            header_line=header_line, 
+            schedule=schedule, 
+            warmup=True
+        )
 
         # Different logging method depending on if the schedule is vertical.
         if loading_system_id == 1:
-            for set_count in range(1, max_sets+1):
-                sub_schedule_name = f"Vertical Set {set_count}"
-                schedule_string += self._log_sub_schedule(sub_schedule_name, headers, header_line, schedule, False, set_count)
+            schedule_string += self._log_vertical_main_schedule(headers, header_line, schedule)
         else:
-            sub_schedule_name = f"Workout"
-            schedule_string += self._log_sub_schedule(sub_schedule_name, headers, header_line, schedule, False)
+            schedule_string += self._log_horizontal_main_schedule(headers, header_line, schedule)
         return schedule_string
 
     def run_schedule_printer(self, workout_date, loading_system_id, schedule):
