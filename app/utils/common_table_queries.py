@@ -14,6 +14,14 @@ from app.models import (
     User_Weekday_Availability, 
     Exercise_Component_Phases, 
     Exercise_Library, 
+    Muscle_Library,
+    Muscle_Group_Library,
+    Bodypart_Library,
+    Body_Region_Library,
+    Exercise_Body_Regions, 
+    Exercise_Bodyparts, 
+    Exercise_Muscle_Groups, 
+    Exercise_Muscles,
     Exercise_Supportive_Equipment, 
     Exercise_Assistive_Equipment, 
     Exercise_Weighted_Equipment, 
@@ -136,6 +144,26 @@ def user_possible_exercises_with_user_exercise_info(user_id):
             joinedload(User_Exercises.exercises).selectinload(Exercise_Library.weighted_equipment),
             joinedload(User_Exercises.exercises).selectinload(Exercise_Library.marking_equipment),
             joinedload(User_Exercises.exercises).selectinload(Exercise_Library.other_equipment),
+        )
+        .options(
+            # 1. exercise -> association rows (e.g., Exercise_Muscles)
+            selectinload(Exercise_Library.muscles)
+                # 2. association -> taxonomy entity (e.g., Muscle)
+                .selectinload(Exercise_Muscles.muscles)
+                    # 3. taxonomy -> categories used in your properties
+                    .selectinload(Muscle_Library.categories),
+
+            selectinload(Exercise_Library.muscle_groups)
+                .selectinload(Exercise_Muscle_Groups.muscle_groups)
+                    .selectinload(Muscle_Group_Library.categories),
+
+            selectinload(Exercise_Library.bodyparts)
+                .selectinload(Exercise_Bodyparts.bodyparts)
+                    .selectinload(Bodypart_Library.categories),
+
+            selectinload(Exercise_Library.body_regions)
+                .selectinload(Exercise_Body_Regions.body_regions)
+                    .selectinload(Body_Region_Library.categories),
         )
         .all()
     )
