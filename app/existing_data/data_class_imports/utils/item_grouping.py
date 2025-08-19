@@ -1,5 +1,6 @@
 from config import generate_cluster_names
 from logging_config import LogDBInit
+from tqdm import tqdm
 import numpy as np
 from flask import current_app
 
@@ -87,8 +88,8 @@ class Data_Clustering:
         clustered_items = self.df.groupby("General Cluster")[self.name_column].apply(list).to_dict()
         cluster_names = {}
 
-        for cluster_id, items in clustered_items.items():
-            # Whether the cluster name should be generated or if the clusters should be given simple names.
+        # Wrap your items in tqdm to get a progress bar
+        for cluster_id, items in tqdm(clustered_items.items(), total=len(clustered_items), desc="Processing clusters"):
             if generate_cluster_names:
                 name = self._generate_cluster_name(items)
             else:

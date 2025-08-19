@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from app.models import Phase_Library, Phase_Component_Library, Phase_Component_Bodyparts
 
 # Retrieve the phase types and their corresponding constraints for a goal.
@@ -77,7 +78,7 @@ def construct_phase_component_list(possible_phase_components, possible_phase_com
     possible_phase_components_list = []
 
     # Convert the query into a list of dictionaries.
-    for possible_phase_component in possible_phase_components:
+    for possible_phase_component in tqdm(possible_phase_components, total=len(possible_phase_components), desc="Creating phase component list from entries"):
         # If the phase component is resistance, append it multiple times.
         if possible_phase_component.component_id == 6:
             for pc_bodypart in possible_phase_component_bodyparts:

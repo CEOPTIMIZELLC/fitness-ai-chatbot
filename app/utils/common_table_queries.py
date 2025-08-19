@@ -1,4 +1,5 @@
 from datetime import date
+from tqdm import tqdm
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.models import (
@@ -141,7 +142,7 @@ def user_possible_exercises_with_user_exercise_info(user_id):
 
     # Access each has_* once; or better, call your single combined checker if you added it.
     available_exercises = []
-    for user_exercise in user_exercises:
+    for user_exercise in tqdm(user_exercises, total=len(user_exercises), desc="Creating available exercise information list"):
         if check_for_all_equipment(user_exercise[1]):
             available_exercises.append(user_exercise)
     return available_exercises

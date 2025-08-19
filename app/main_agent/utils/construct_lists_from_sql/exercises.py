@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from app.utils.common_table_queries import user_possible_exercises_with_user_exercise_info
 
 dummy_exercise = {
@@ -98,7 +99,7 @@ def exercise_dict(exercise, user_exercise):
 # Retrieve the phase types and their corresponding constraints for a goal.
 def construct_available_exercises_list(exercises_with_component_phases):
     possible_exercises_list = [dummy_exercise]
-    for exercise, user_exercise in exercises_with_component_phases:
+    for exercise, user_exercise in tqdm(exercises_with_component_phases, total=len(exercises_with_component_phases), desc="Creating exercise list from entries"):
         possible_exercises_list.append(exercise_dict(exercise, user_exercise))
     return possible_exercises_list
 
