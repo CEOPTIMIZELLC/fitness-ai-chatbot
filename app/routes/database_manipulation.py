@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 from flask import request, jsonify, current_app, Blueprint, abort
 
 from app import db
@@ -63,13 +64,16 @@ def create_db():
         and 'age' in request.form
         and 'gender' in request.form
         and 'goal' in request.form):
+        LogDBInit.introductions(f"Adding User.")
         register()
     
         from app.existing_data.user_equipment import get_default_user_equipment
         user_equipment = get_default_user_equipment()
         if user_equipment:
+            LogDBInit.introductions(f"Adding User equipment.")
             db.session.add_all(user_equipment)
             db.session.commit()
+        LogDBInit.introductions(f"User added.")
 
     current_app.table_schema = get_database_schema(db)
 
