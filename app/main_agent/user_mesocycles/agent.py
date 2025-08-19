@@ -27,6 +27,7 @@ class AgentState(MainAgentState):
     macrocycle_allowed_weeks: int
     possible_phases: list
     agent_output: list
+    schedule_printed: str
 
 class SubAgent(MacrocycleAgentNode, BaseAgent, MesocycleSchedulePrinter):
     focus = "mesocycle"
@@ -109,10 +110,11 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, MesocycleSchedulePrinter):
         parameters["possible_phases"] = construct_phases_list(int(goal_id))
 
         result = phase_main(parameters, constraints)
-
         LogMainSubAgent.agent_output(result["formatted"])
+
         return {
-            "agent_output": result["output"]
+            "agent_output": result["output"],
+            "schedule_printed": result["formatted"]
         }
 
     # Convert output from the agent to SQL models.

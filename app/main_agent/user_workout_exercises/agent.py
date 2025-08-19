@@ -30,6 +30,7 @@ class AgentState(MainAgentState):
     user_availability: int
     start_date: any
     agent_output: list
+    schedule_printed: str
 
 class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
     focus = "workout_schedule"
@@ -101,8 +102,10 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         LogMainSubAgent.agent_output(result["formatted"])
 
         return {
-            "agent_output": result["output"]
+            "agent_output": result["output"],
+            "schedule_printed": result["formatted"]
         }
+
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
