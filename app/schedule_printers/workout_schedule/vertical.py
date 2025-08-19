@@ -20,8 +20,10 @@ class VerticalSchedulePrinter:
                 # Check if the current component is resistance.
                 superset_var = self._check_if_component_is_resistance(exercise["component_id"], exercise["bodypart_id"], superset_var)
 
-                _line_fields = self._line_fields(component_count, exercise, set_count, superset_var)
-                sub_schedule_string += self._formatted_entry_line(headers, _line_fields)
+                # Check for if the set count for the workout exceeds the set count for the exercise.
+                if exercise["sets"] >= set_count:
+                    _line_fields = self._line_fields(component_count, exercise, set_count, superset_var)
+                    sub_schedule_string += self._formatted_entry_line(headers, _line_fields)
         return sub_schedule_string
 
     def _log_vertical_main_schedule(self, headers, header_line, schedule):
