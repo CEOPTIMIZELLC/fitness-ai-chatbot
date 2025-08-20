@@ -710,7 +710,7 @@ class ExerciseAgent(ExercisePhaseComponentAgent):
                 "rest": rest_var, 
                 "intensity": intensity_var, 
                 "one_rep_max": one_rep_max_var,
-                "training_weight": training_weight_var,
+                "weight": training_weight_var,
                 "volume": volume_var,
                 "density": density_var,
                 "performance": performance_var,
