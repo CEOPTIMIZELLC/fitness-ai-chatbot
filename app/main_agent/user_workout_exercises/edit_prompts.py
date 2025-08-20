@@ -1,6 +1,6 @@
-
-def workout_edit_system_prompt(current_schedule, allowed_list):
-    return f"""
+class WorkoutScheduleEditPrompt:
+    def edit_system_prompt_constructor(self, current_schedule, allowed_list):
+        return f"""
 You are an expert on fitness and exercise routines, terminology, and understanding of the macro and micro scale of a workout routine.
 A user has previously been presented with a schedule and may request edits to the schedule.
 You are extracting structured information from the user's input regarding if the user wants to make edits to the current schedule, what edits they would like to make to the schedule, and any miscellaneous information from the request that isn't related.

@@ -22,7 +22,7 @@ from app.goal_prompts import phase_component_system_prompt
 
 from .actions import retrieve_availability_for_day, retrieve_parameters
 from .edit_goal_model import EditGoal
-from .edit_prompts import workout_edit_system_prompt
+from .edit_prompts import WorkoutScheduleEditPrompt
 from app.schedule_printers import WorkoutScheduleSchedulePrinter
 from app.list_printers import workout_schedule_list_printer_main
 
@@ -110,7 +110,7 @@ class AgentState(MainAgentState):
     agent_output: list
     schedule_printed: str
 
-class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
+class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter, WorkoutScheduleEditPrompt):
     focus = "workout_schedule"
     parent = "phase_component"
     sub_agent_title = "User Workout"
@@ -201,7 +201,7 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         allowed_list = get_ids_and_names(schedule_list_original)
         schedule_list = remove_unnecessary_keys_from_workout_schedule(schedule_list_original)
         schedule_summary = list_of_dicts_to_string(schedule_list)
-        edit_prompt = workout_edit_system_prompt(schedule_summary, allowed_list)
+        edit_prompt = self.edit_system_prompt_constructor(schedule_summary, allowed_list)
         return edit_prompt
 
     # Items extracted from the edit request.

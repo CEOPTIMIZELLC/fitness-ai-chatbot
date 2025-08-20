@@ -17,7 +17,7 @@ from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as 
 from app.main_agent.base_sub_agents.utils import new_input_request
 
 from .edit_goal_model import EditGoal
-from .edit_prompts import workout_edit_system_prompt
+from .edit_prompts import WorkoutCompletionEditPrompt
 from app.schedule_printers import WorkoutCompletionSchedulePrinter
 from app.list_printers import workout_completion_list_printer_main
 
@@ -100,7 +100,7 @@ class AgentState(MainAgentState):
     schedule_list: list
     schedule_printed: str
 
-class SubAgent(BaseAgent, WorkoutCompletionSchedulePrinter):
+class SubAgent(BaseAgent, WorkoutCompletionSchedulePrinter, WorkoutCompletionEditPrompt):
     focus = "workout_completion"
     parent = "workout_day"
     sub_agent_title = "Workout Completion"
@@ -161,7 +161,7 @@ class SubAgent(BaseAgent, WorkoutCompletionSchedulePrinter):
         schedule_list = remove_unnecessary_keys_from_workout_schedule(schedule_list_original)
         allowed_list = get_ids_and_names(schedule_list)
         schedule_summary = list_of_dicts_to_string(schedule_list)
-        edit_prompt = workout_edit_system_prompt(schedule_summary, allowed_list)
+        edit_prompt = self.edit_system_prompt_constructor(schedule_summary, allowed_list)
         return edit_prompt
 
     # Items extracted from the edit request.
