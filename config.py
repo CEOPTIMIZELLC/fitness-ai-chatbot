@@ -27,6 +27,11 @@ loop_main_agent = True
 # Whether the agent should request edits to the schedule after generation.
 request_schedule_edits = True
 
+# Configurations for displayed information for logged schedules.
+class ScheduleDisplayConfig:
+    # Whether the logged schedule should include the reason that an exercise has been included.
+    specific_true_exercise_flag = True
+
 # Configurations for exercise performance decay.
 class ExercisePerformanceDecayConfig:
     # The number of days before the performance of an exercise will begin to decay.
