@@ -1,6 +1,7 @@
 from flask import abort
 import copy
 
+from config import request_schedule_edits
 from logging_config import LogMainSubAgent
 
 from langgraph.graph import StateGraph, START, END
@@ -220,6 +221,13 @@ class SubAgent(BaseAgent, WorkoutCompletionSchedulePrinter):
     # Request permission from user to execute the parent initialization.
     def ask_for_edits(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Ask user if Workout Performance is Accurate---------")
+        if not request_schedule_edits:
+            LogMainSubAgent.agent_steps(f"\t---------Agent settings do not request edits.---------")
+            return {
+                "is_edited": False,
+                "edits": [],
+                "other_requests": None
+            }
         # Get a copy of the current schedule and remove the items not useful for the AI.
         formatted_schedule_list = state["schedule_printed"]
 

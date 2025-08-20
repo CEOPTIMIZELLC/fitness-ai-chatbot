@@ -1,3 +1,4 @@
+from config import request_schedule_edits
 from logging_config import LogMainSubAgent
 from flask import abort
 import copy
@@ -261,6 +262,14 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
     # Request permission from user to execute the parent initialization.
     def ask_for_edits(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Ask user if edits should be made to the schedule---------")
+        if not request_schedule_edits:
+            LogMainSubAgent.agent_steps(f"\t---------Agent settings do not request edits.---------")
+            return {
+                "is_edited": False,
+                "edits": {},
+                # "should_regenerate": False,
+                "other_requests": None
+            }
         # Get a copy of the current schedule and remove the items not useful for the AI.
         formatted_schedule_list = state["schedule_printed"]
 
