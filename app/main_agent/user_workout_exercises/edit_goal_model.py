@@ -22,7 +22,7 @@ class Exercise(BaseModel):
         ..., description="The sets for the exercise in question."
     )
     rest: int = Field(
-        ..., description="The rest for the exercise in question."
+        ..., description="The rest for the exercise in question. Can be 0."
     )
     weight: float = Field(
         ..., description="The weight for the exercise in question."

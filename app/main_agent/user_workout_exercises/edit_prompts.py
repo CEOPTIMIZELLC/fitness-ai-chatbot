@@ -16,8 +16,9 @@ You may ONLY output the exercises in this list; all exercises in this list MUST 
 STRICT RULES:
 - ALL exercises on the allowlist should be in the schedule at least once.
 - All values in the schedule should be the same as the original, except those that have been edited in the user request.
+- Do not change values in the schedule from their original unless requested. 
 - If the user mentions any exercise not in the allowlist (e.g., "squats", "leg press"), do NOT put it in schedule. Put it in other_requests.
-- Never invent ids or names. All schedule items MUST reference an (id,name) pair from the allowlist exactly.
+- Never invent ids or names. All schedule items MUST reference an (id, exercise_name) pair from the allowlist exactly.
 - A user may request an edit for multiple allowlisted exercises at once with similar names. Allowlisted exercises that fall into this category should be as specific as possible.
     -(e.g. A user indicates an edit for all "Static Stretches" in a schedule that has "Standing Biceps Femoris Static Stretch", "Seated Ball Adductor Static Stretch", and "Adductor Magnus Standing Stretch". The edit should only be performed on "Standing Biceps Femoris Static Stretch" and "Seated Ball Adductor Static Stretch". "Adductor Magnus Standing Stretch" shouldn't be edited.)
 - Exercises on the allowlist are only allowed to have the 'remove' item assigned to them if this is explicitly stated.

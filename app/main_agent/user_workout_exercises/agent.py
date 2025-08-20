@@ -33,10 +33,19 @@ keys_to_remove = [
     "phase_component_id", 
     "bodypart_id", 
     "exercise_id", 
+    "exercise_index", 
     "date", 
     "phase_component_index", 
 
+    "phase_component_name", 
+    "bodypart_name", 
+
+    "volume", 
+    "performance", 
+    "density", 
+
     "true_exercise_flag", 
+    "is_warmup", 
     "working_duration", 
     "intensity", 
     "one_rep_max", 
@@ -45,11 +54,21 @@ keys_to_remove = [
     "strained_working_duration", 
     "base_strain", 
     "component_id", 
+    "warmup", 
+    "i", 
 ]
 
 # Method to remove keys from the schedule that aren't useful for the LLM.
 def remove_unnecessary_keys_from_workout_schedule(schedule_list):
     for exercise in schedule_list:
+        # Add unit of measurementforrequired fields.
+        exercise["seconds_per_exercise"] = f"{exercise["seconds_per_exercise"]} seconds"
+        exercise["reps"] = f"{exercise["reps"]} reps"
+        exercise["sets"] = f"{exercise["sets"]} sets"
+        exercise["rest"] = f"{exercise["rest"]} seconds"
+        exercise["duration"] = f"{exercise["duration"]} seconds"
+        exercise["weight"] = f"{exercise["weight"]} lbs"
+
         # Remove all items not useful for the AI
         for key_to_remove in keys_to_remove:
             exercise.pop(key_to_remove, None)
@@ -58,7 +77,7 @@ def remove_unnecessary_keys_from_workout_schedule(schedule_list):
 # Method to get the list names and ids.
 def get_ids_and_names(list_of_dicts):
     string_output = ", \n".join(
-        f"{{{{'id': {e["exercise_id"]}, 'exercise_name': {e["exercise_name"]}}}}}"
+        f"{{{{'id': {e["exercise_index"]}, 'exercise_name': {e["exercise_name"]}}}}}"
         for e in list_of_dicts
     )
     return f"[{string_output}]"
@@ -68,8 +87,9 @@ def dict_to_string(dict_item):
     string_output = ", ".join(
         f"'{key}': '{value}'" 
         for key, value in dict_item.items()
+        if key != "id"
     )
-    return string_output
+    return f"'id': {dict_item["id"]}, {string_output}"
 
 # Method to format the workout summary for the LLM.
 def list_of_dicts_to_string(list_of_dicts):
@@ -97,7 +117,6 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
     parent_system_prompt = phase_component_system_prompt
     parent_goal = PhaseComponentGoal
     parent_scheduler_agent = create_microcycle_scheduler_agent()
-
 
     # Retrieve the Exercises belonging to the Workout.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -158,10 +177,23 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         result = exercises_main(parameters, constraints)
         LogMainSubAgent.agent_output(result["formatted"])
 
-        return {
-            "agent_output": result["output"],
-            "schedule_printed": result["formatted"]
-        }
+        return {"agent_output": result["output"]}
+
+    # Format the structured schedule.
+    def format_proposed_list(self, state: AgentState):
+        LogMainSubAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
+        schedule_list = state["agent_output"]
+
+        for schedule_item in schedule_list:
+            schedule_item["id"] = schedule_item["exercise_index"]
+            schedule_item["phase_component_subcomponent"] = schedule_item["phase_component_name"]
+            schedule_item["bodypart"] = schedule_item["bodypart_name"]
+            schedule_item["is_warmup"] = schedule_item["warmup"]
+
+        formatted_schedule = workout_schedule_list_printer_main(schedule_list)
+        LogMainSubAgent.formatted_schedule(formatted_schedule)
+
+        return {"schedule_printed": formatted_schedule}
 
     # Create prompt to request schedule edits.
     def edit_prompt_creator(self, schedule_list_original):
@@ -187,7 +219,7 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
                 "reps": goal_edit.reps, 
                 "sets": goal_edit.sets, 
                 "rest": goal_edit.rest, 
-                "training_weight": goal_edit.weight, 
+                "weight": goal_edit.weight, 
             }
 
             goal_edits_dict[goal_edit.id] = goal_edit_information
@@ -210,11 +242,11 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
 
             # Include the item if it has been indicated to be removed.
             if altered_schedule_item["remove"]:
-                edits_to_be_applyed[original_schedule_item_id] = altered_schedule[original_schedule_item_id]
+                edits_to_be_applyed[original_schedule_item_id] = altered_schedule_item
 
             # Only include the item if any value has been changed from the original.
             elif any(original_schedule_item[key] != altered_schedule_item[key] for key in common_keys):
-                edits_to_be_applyed[original_schedule_item_id] = altered_schedule[original_schedule_item_id]
+                edits_to_be_applyed[original_schedule_item_id] = altered_schedule_item
         return edits_to_be_applyed
 
     # Items extracted from the edit request.
@@ -222,7 +254,7 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         return {
             "is_edited": True if edits_to_be_applyed else False,
             "edits": edits_to_be_applyed,
-            "should_regenerate": goal_class.regenerate,
+            # "should_regenerate": goal_class.regenerate,
             "other_requests": goal_class.other_requests
         }
 
@@ -287,11 +319,11 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
             schedule_item["rest"] = schedule_edit["rest"]
 
             # In case a weight is accidentally applied to a non-weighted exercises
-            if schedule_item["training_weight"]:
-                schedule_item["training_weight"] = schedule_edit["training_weight"]
+            if schedule_item["weight"]:
+                schedule_item["weight"] = schedule_edit["weight"]
 
                 # Calculate new intensity.
-                schedule_item["intensity"] = schedule_item["training_weight"] / schedule_item["one_rep_max"]
+                schedule_item["intensity"] = schedule_item["weight"] / schedule_item["one_rep_max"]
         
         return {"agent_output": schedule_list}
 
@@ -314,7 +346,7 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
                 sets = exercise["sets"],
                 intensity = exercise["intensity"],
                 rest = exercise["rest"],
-                weight = exercise["training_weight"],
+                weight = exercise["weight"],
                 true_exercise_flag = exercise["true_exercise_flag"]
             )
 
@@ -381,7 +413,7 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
-        # workflow.add_node("scheduler_edit_pitstop", self.chained_conditional_inbetween)
+        workflow.add_node("format_proposed_list", self.format_proposed_list)
         workflow.add_node("ask_for_edits", self.ask_for_edits)
         workflow.add_node("perform_edits", self.perform_edits)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
@@ -464,7 +496,8 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         )
 
         workflow.add_edge("delete_old_children", "perform_scheduler")
-        workflow.add_edge("perform_scheduler", "ask_for_edits")
+        workflow.add_edge("perform_scheduler", "format_proposed_list")
+        workflow.add_edge("format_proposed_list", "ask_for_edits")
 
         workflow.add_conditional_edges(
             "ask_for_edits",
@@ -474,7 +507,7 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
                 "not_edited": "agent_output_to_sqlalchemy_model"
             }
         )
-        workflow.add_edge("perform_edits", "ask_for_edits")
+        workflow.add_edge("perform_edits", "format_proposed_list")
 
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
         workflow.add_edge("permission_denied", "end_node")
