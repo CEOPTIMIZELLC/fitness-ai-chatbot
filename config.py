@@ -90,6 +90,9 @@ class MainAgentVerbosityConfig:
     # Log information regarding user input in the main agent.
     input_info = True
 
+    # Log system messages for LLM calls in the main agent.
+    system_message = True
+
     # Log final formatted schedule produced.
     formatted_schedule = True
 
@@ -109,6 +112,9 @@ class MainSubAgentVerbosityConfig:
 
     # Log information regarding user input in the sub agents.
     input_info = True
+
+    # Log system messages for LLM calls in the sub agent.
+    system_message = True
 
     # Log the parsed user input for the sub agents.
     parsed_goal = True

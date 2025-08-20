@@ -21,6 +21,7 @@ def sub_agent_focused_items(sub_agent_focus):
 
 # Request permission from user to execute the parent initialization.
 def new_input_request(user_input, item_system_prompt, item_goal):
+    LogMainSubAgent.system_message(item_system_prompt)
     human = f"Extract the goals from the following message: {user_input}"
     check_prompt = ChatPromptTemplate.from_messages(
         [
