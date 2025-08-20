@@ -412,6 +412,7 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
+        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_availability", self.retrieve_availability)
         workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
         workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
@@ -419,7 +420,6 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
         workflow.add_node("format_proposed_list", self.format_proposed_list)
@@ -446,9 +446,11 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter):
             self.confirm_parent,
             {
                 "no_parent": "ask_for_permission",                      # No parent element exists.
-                "parent": "retrieve_availability"                       # Retreive the availability for the alteration.
+                "parent": "parent_retrieved"                            # Retreive the availability for the alteration.
             }
         )
+        workflow.add_edge("parent_retrieved", "retrieve_availability")
+
 
         # Whether a parent element is allowed to be created where one doesn't already exist.
         workflow.add_edge("ask_for_permission", "parent_requests_extraction")
