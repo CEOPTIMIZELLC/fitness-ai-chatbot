@@ -18,10 +18,10 @@ from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvaila
 from app.main_agent.base_sub_agents.utils import new_input_request
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 from app.impact_goal_models import PhaseComponentGoal
+from app.edit_goal_models import WorkoutScheduleEditGoal
 from app.goal_prompts import phase_component_system_prompt
 
 from .actions import retrieve_availability_for_day, retrieve_parameters
-from .edit_goal_model import EditGoal
 from .edit_prompts import WorkoutScheduleEditPrompt
 from app.schedule_printers import WorkoutScheduleSchedulePrinter
 from app.list_printers import workout_schedule_list_printer_main
@@ -284,7 +284,7 @@ class SubAgent(BaseAgent, WorkoutScheduleSchedulePrinter, WorkoutScheduleEditPro
         edit_prompt = self.edit_prompt_creator(copy.deepcopy(schedule_list))
 
         # Retrieve the new input for the parent item.
-        goal_class = new_input_request(user_input, edit_prompt, EditGoal)
+        goal_class = new_input_request(user_input, edit_prompt, WorkoutScheduleEditGoal)
 
         new_schedule = goal_class.schedule
         if new_schedule: 
