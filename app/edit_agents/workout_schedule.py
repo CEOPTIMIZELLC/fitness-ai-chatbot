@@ -107,11 +107,9 @@ class AgentState(TypedDict):
 
 
 class SubAgent(WorkoutScheduleEditPrompt):
-    sub_agent_title = "User Workout"
     edit_goal = WorkoutScheduleEditGoal
     schedule_printer_class = WorkoutScheduleSchedulePrinter()
     list_printer_class = WorkoutScheduleListPrinter()
-
 
     # Format the structured schedule.
     def format_proposed_list(self, state: AgentState):
@@ -210,7 +208,7 @@ class SubAgent(WorkoutScheduleEditPrompt):
             "task": f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"
         })
         user_input = result["user_input"]
-        LogMainSubAgent.verbose(f"Extract the {self.sub_agent_title} Goal the following message: {user_input}")
+        LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         # Retrieve the schedule and format it for the prompt.
         schedule_list = state["agent_output"]
@@ -233,7 +231,7 @@ class SubAgent(WorkoutScheduleEditPrompt):
 
     # Perform the edits.
     def perform_edits(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for {self.sub_agent_title}---------")
+        LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for the Schedule---------")
 
         # Retrieve the schedule and format it for the prompt.
         schedule_list = state["agent_output"]
