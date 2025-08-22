@@ -19,7 +19,7 @@ from app.edit_goal_models import WorkoutCompletionEditGoal
 from app.edit_prompts import WorkoutCompletionEditPrompt
 
 from app.schedule_printers import WorkoutCompletionSchedulePrinter
-from app.list_printers import workout_completion_list_printer_main
+from app.list_printers import WorkoutCompletionListPrinter
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
 
@@ -105,6 +105,7 @@ class SubAgent(BaseAgent, WorkoutCompletionSchedulePrinter, WorkoutCompletionEdi
     parent = "workout_day"
     sub_agent_title = "Workout Completion"
     parent_title = "Workout Day"
+    list_printer_class = WorkoutCompletionListPrinter()
 
     # def focus_retriever_agent(self, user_id):
     #     return current_workout_day(user_id)
@@ -151,7 +152,7 @@ class SubAgent(BaseAgent, WorkoutCompletionSchedulePrinter, WorkoutCompletionEdi
         LogMainSubAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
         schedule_list = state["schedule_list"]
 
-        formatted_schedule = workout_completion_list_printer_main(schedule_list)
+        formatted_schedule = self.list_printer_class.run_list_printer(schedule_list)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
 
         return {"schedule_printed": formatted_schedule}

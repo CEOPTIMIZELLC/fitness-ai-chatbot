@@ -1,2 +1,2 @@
-from .workout_schedule import Main as workout_schedule_list_printer_main
-from .workout_completion import Main as workout_completion_list_printer_main
+from .workout_schedule import WorkoutScheduleListPrinter
+from .workout_completion import WorkoutCompletionListPrinter
