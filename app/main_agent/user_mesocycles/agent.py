@@ -11,6 +11,7 @@ from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.impact_goal_models import MacrocycleGoal
 from app.goal_prompts import macrocycle_system_prompt
+from app.edit_agents import create_mesocycle_edit_agent
 from app.main_agent.utils import construct_phases_list
 
 from app.schedule_printers import MesocycleSchedulePrinter
@@ -113,8 +114,21 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         result = phase_main(parameters, constraints)
         LogMainSubAgent.agent_output(result["formatted"])
 
+        agent_output = result["output"]
+        mesocycle_start_date = state["start_date"]
+
+        # Add the startdates and enddates to the schedule items.
+        for i, schedule_item in enumerate(agent_output, start=1):
+            phase_duration = schedule_item["duration"]
+            schedule_item["start_date"] = mesocycle_start_date
+            schedule_item["end_date"] = mesocycle_start_date + timedelta(weeks=phase_duration)
+            schedule_item["order"] = i
+
+            # Set startdate of next phase to be at the end of the current one.
+            mesocycle_start_date +=timedelta(weeks=phase_duration)
+
         return {
-            "agent_output": result["output"],
+            "agent_output": agent_output,
             "schedule_printed": result["formatted"]
         }
 
@@ -123,24 +137,20 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         LogMainSubAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         phases_output = state["agent_output"]
         macrocycle_id = state["macrocycle_id"]
-        mesocycle_start_date = state["start_date"]
 
         # Convert output to form that may be stored.
         user_phases = []
-        for i, phase in enumerate(phases_output, start=1):
+        for phase in phases_output:
             new_phase = User_Mesocycles(
                 macrocycle_id = macrocycle_id,
                 phase_id = phase["id"],
                 is_goal_phase = phase["is_goal_phase"],
-                order = i,
-                start_date = mesocycle_start_date,
-                end_date = mesocycle_start_date + timedelta(weeks=phase["duration"])
+                order = phase["order"],
+                start_date = phase["start_date"],
+                end_date = phase["end_date"]
             )
 
             user_phases.append(new_phase)
-
-            # Set startdate of next phase to be at the end of the current one.
-            mesocycle_start_date +=timedelta(weeks=phase["duration"])
 
         db.session.add_all(user_phases)
         db.session.commit()
