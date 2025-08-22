@@ -1,2 +1,3 @@
+from .mesocycles import MesocycleScheduleEditGoal
 from .workout_schedule import WorkoutScheduleEditGoal
 from .workout_completion import WorkoutCompletionEditGoal

@@ -1,2 +1,3 @@
+from .mesocycles import MesocycleEditPrompt
 from .workout_schedule import WorkoutScheduleEditPrompt
 from .workout_completion import WorkoutCompletionEditPrompt

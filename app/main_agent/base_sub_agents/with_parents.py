@@ -22,6 +22,7 @@ class BaseAgentWithParents(BaseAgent):
     parent_system_prompt = None
     parent_goal = None
     parent_scheduler_agent = None
+    focus_edit_agent = None
 
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
@@ -188,6 +189,7 @@ class BaseAgentWithParents(BaseAgent):
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
+        workflow.add_node("editor_agent", self.focus_edit_agent)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
@@ -258,7 +260,8 @@ class BaseAgentWithParents(BaseAgent):
 
         workflow.add_edge("retrieve_information", "delete_old_children")
         workflow.add_edge("delete_old_children", "perform_scheduler")
-        workflow.add_edge("perform_scheduler", "agent_output_to_sqlalchemy_model")
+        workflow.add_edge("perform_scheduler", "editor_agent")
+        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")

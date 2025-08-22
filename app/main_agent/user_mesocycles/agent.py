@@ -40,6 +40,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
     parent_system_prompt = macrocycle_system_prompt
     parent_goal = MacrocycleGoal
     parent_scheduler_agent = MacrocycleAgentNode.macrocycle_node
+    focus_edit_agent = create_mesocycle_edit_agent()
     schedule_printer_class = MesocycleSchedulePrinter()
 
     # Retrieve the Mesocycles belonging to the Macrocycle.
