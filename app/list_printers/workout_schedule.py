@@ -79,7 +79,7 @@ class WorkoutScheduleListPrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_schedule_printer(self, schedule):
+    def run_list_printer(self, schedule):
         formatted = ""
 
         # Calculate longest string sizes
@@ -108,4 +108,4 @@ class WorkoutScheduleListPrinter(BaseSchedulePrinter):
 
 def Main(schedule):
     exercise_schedule_printer = WorkoutScheduleListPrinter()
-    return exercise_schedule_printer.run_schedule_printer(schedule)
+    return exercise_schedule_printer.run_list_printer(schedule)
