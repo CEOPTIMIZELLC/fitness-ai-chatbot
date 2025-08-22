@@ -2,7 +2,7 @@ from config import request_schedule_edits
 from logging_config import LogMainSubAgent
 import copy
 
-from typing_extensions import TypedDict
+from typing_extensions import TypeVar, TypedDict
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
@@ -15,6 +15,9 @@ class AgentState(TypedDict):
     other_requests: str
     agent_output: list
     schedule_printed: str
+
+# Create a generic type variable that must be a subclass of MainAgentState
+TState = TypeVar('TState', bound=AgentState)
 
 class ScheduleFormatterMethods:
     keys_to_remove = []
@@ -46,9 +49,9 @@ class ScheduleFormatterMethods:
         string_output = ", ".join(
             f"'{key}': '{value}'" 
             for key, value in dict_item.items()
-            if key != "id"
+            if key != "id" and key != self.schedule_name_key
         )
-        return f"'id': {dict_item["id"]}, {string_output}"
+        return f"'id': {dict_item["id"]}, '{self.schedule_name_key}': {dict_item[self.schedule_name_key]}, {string_output}"
 
     # Method to format the workout summary for the LLM.
     def list_of_dicts_to_string(self, list_of_dicts):
@@ -80,7 +83,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         return schedule_list
 
     # Format the structured schedule.
-    def format_proposed_list(self, state: AgentState):
+    def format_proposed_list(self, state: TState):
         LogMainSubAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
         schedule_list = state["agent_output"]
 
@@ -151,7 +154,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         }
 
     # Request permission from user to execute the parent initialization.
-    def ask_for_edits(self, state: AgentState):
+    def ask_for_edits(self, state: TState):
         LogMainSubAgent.agent_steps(f"\t---------Ask user if edits should be made to the schedule---------")
         if not request_schedule_edits:
             LogMainSubAgent.agent_steps(f"\t---------Agent settings do not request edits.---------")
@@ -194,7 +197,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         pass
 
     # Perform the edits.
-    def perform_edits(self, state):
+    def perform_edits(self, state: TState):
         LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for the Schedule---------")
 
         # Retrieve the schedule and format it for the prompt.
@@ -221,8 +224,8 @@ class BaseSubAgent(ScheduleFormatterMethods):
         return {}
 
     # Create main agent.
-    def create_main_agent_graph(self):
-        workflow = StateGraph(AgentState)
+    def create_main_agent_graph(self, state_class: type[TState] = AgentState):
+        workflow = StateGraph(state_class)
         workflow.add_node("format_proposed_list", self.format_proposed_list)
         workflow.add_node("ask_for_edits", self.ask_for_edits)
         workflow.add_node("perform_edits", self.perform_edits)
