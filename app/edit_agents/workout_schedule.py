@@ -1,7 +1,6 @@
 from app.edit_goal_models import WorkoutScheduleEditGoal
 from app.edit_prompts import WorkoutScheduleEditPrompt
 from app.list_printers import WorkoutScheduleListPrinter
-from app.schedule_printers import WorkoutScheduleSchedulePrinter
 from .base import BaseSubAgent
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
@@ -39,7 +38,6 @@ keys_to_remove = [
 
 class SubAgent(BaseSubAgent, WorkoutScheduleEditPrompt):
     edit_goal = WorkoutScheduleEditGoal
-    schedule_printer_class = WorkoutScheduleSchedulePrinter()
     list_printer_class = WorkoutScheduleListPrinter()
     schedule_id_key = "exercise_index"
     schedule_name_key = "exercise_name"

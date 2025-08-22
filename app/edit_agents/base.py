@@ -69,7 +69,6 @@ def confirm_edits(state):
 
 class BaseSubAgent(ScheduleFormatterMethods):
     edit_goal = None
-    schedule_printer_class = None
     list_printer_class = None
 
     # The key used to identify items from the original schedule.
