@@ -72,7 +72,8 @@ class BaseSubAgent(ScheduleFormatterMethods):
     list_printer_class = None
 
     # The key used to identify items from the original schedule.
-    schedule_id_key = None
+    schedule_id_key = "id"
+    schedule_name_key = "name"
 
     # Adds necessary keys for the formatter to the schedule item. 
     def add_necessary_keys_to_schedule_item(self, schedule_list):
