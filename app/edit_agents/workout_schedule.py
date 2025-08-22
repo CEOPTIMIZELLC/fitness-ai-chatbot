@@ -47,46 +47,47 @@ keys_to_remove = [
     "i", 
 ]
 
-# Method to remove keys from the schedule that aren't useful for the LLM.
-def remove_unnecessary_keys_from_workout_schedule(schedule_list):
-    for exercise in schedule_list:
-        # Add unit of measurementforrequired fields.
-        exercise["seconds_per_exercise"] = f"{exercise["seconds_per_exercise"]} seconds"
-        exercise["reps"] = f"{exercise["reps"]} reps"
-        exercise["sets"] = f"{exercise["sets"]} sets"
-        exercise["rest"] = f"{exercise["rest"]} seconds"
-        exercise["duration"] = f"{exercise["duration"]} seconds"
-        exercise["weight"] = f"{exercise["weight"]} lbs"
+class ScheduleFormatterMethods:
+    # Method to remove keys from the schedule that aren't useful for the LLM.
+    def remove_unnecessary_keys_from_workout_schedule(self, schedule_list):
+        for exercise in schedule_list:
+            # Add unit of measurementforrequired fields.
+            exercise["seconds_per_exercise"] = f"{exercise["seconds_per_exercise"]} seconds"
+            exercise["reps"] = f"{exercise["reps"]} reps"
+            exercise["sets"] = f"{exercise["sets"]} sets"
+            exercise["rest"] = f"{exercise["rest"]} seconds"
+            exercise["duration"] = f"{exercise["duration"]} seconds"
+            exercise["weight"] = f"{exercise["weight"]} lbs"
 
-        # Remove all items not useful for the AI
-        for key_to_remove in keys_to_remove:
-            exercise.pop(key_to_remove, None)
-    return schedule_list
+            # Remove all items not useful for the AI
+            for key_to_remove in keys_to_remove:
+                exercise.pop(key_to_remove, None)
+        return schedule_list
 
-# Method to get the list names and ids.
-def get_ids_and_names(list_of_dicts):
-    string_output = ", \n".join(
-        f"{{{{'id': {e["exercise_index"]}, 'exercise_name': {e["exercise_name"]}}}}}"
-        for e in list_of_dicts
-    )
-    return f"[{string_output}]"
+    # Method to get the list names and ids.
+    def get_ids_and_names(self, list_of_dicts):
+        string_output = ", \n".join(
+            f"{{{{'id': {e["exercise_index"]}, 'exercise_name': {e["exercise_name"]}}}}}"
+            for e in list_of_dicts
+        )
+        return f"[{string_output}]"
 
-# Method to format a dictionary element to a string.
-def dict_to_string(dict_item):
-    string_output = ", ".join(
-        f"'{key}': '{value}'" 
-        for key, value in dict_item.items()
-        if key != "id"
-    )
-    return f"'id': {dict_item["id"]}, {string_output}"
+    # Method to format a dictionary element to a string.
+    def dict_to_string(self, dict_item):
+        string_output = ", ".join(
+            f"'{key}': '{value}'" 
+            for key, value in dict_item.items()
+            if key != "id"
+        )
+        return f"'id': {dict_item["id"]}, {string_output}"
 
-# Method to format the workout summary for the LLM.
-def list_of_dicts_to_string(list_of_dicts):
-    string_output = ", \n".join(
-        f"{{{{{dict_to_string(list_item)}}}}}"
-        for list_item in list_of_dicts
-    )
-    return f"[{string_output}]"
+    # Method to format the workout summary for the LLM.
+    def list_of_dicts_to_string(self, list_of_dicts):
+        string_output = ", \n".join(
+            f"{{{{{self.dict_to_string(list_item)}}}}}"
+            for list_item in list_of_dicts
+        )
+        return f"[{string_output}]"
 
 
 # Confirm that the desired section should be edited.
@@ -106,7 +107,7 @@ class AgentState(TypedDict):
     schedule_printed: str
 
 
-class SubAgent(WorkoutScheduleEditPrompt):
+class SubAgent(ScheduleFormatterMethods, WorkoutScheduleEditPrompt):
     edit_goal = WorkoutScheduleEditGoal
     schedule_printer_class = WorkoutScheduleSchedulePrinter()
     list_printer_class = WorkoutScheduleListPrinter()
@@ -129,9 +130,9 @@ class SubAgent(WorkoutScheduleEditPrompt):
 
     # Create prompt to request schedule edits.
     def edit_prompt_creator(self, schedule_list_original):
-        allowed_list = get_ids_and_names(schedule_list_original)
-        schedule_list = remove_unnecessary_keys_from_workout_schedule(schedule_list_original)
-        schedule_summary = list_of_dicts_to_string(schedule_list)
+        allowed_list = self.get_ids_and_names(schedule_list_original)
+        schedule_list = self.remove_unnecessary_keys_from_workout_schedule(schedule_list_original)
+        schedule_summary = self.list_of_dicts_to_string(schedule_list)
         edit_prompt = self.edit_system_prompt_constructor(schedule_summary, allowed_list)
         return edit_prompt
 
