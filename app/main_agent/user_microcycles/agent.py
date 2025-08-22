@@ -22,7 +22,7 @@ class AgentState(MainAgentState):
     microcycle_duration: any
     start_date: any
 
-class SubAgent(BaseAgent, MicrocycleSchedulePrinter):
+class SubAgent(BaseAgent):
     focus = "microcycle"
     parent = "mesocycle"
     sub_agent_title = "Microcycle"
@@ -30,6 +30,7 @@ class SubAgent(BaseAgent, MicrocycleSchedulePrinter):
     parent_system_prompt = mesocycle_system_prompt
     parent_goal = MesocycleGoal
     parent_scheduler_agent = create_mesocycle_agent()
+    schedule_printer_class = MicrocycleSchedulePrinter()
 
     # Retrieve the Microcycles belonging to the Mesocycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):

@@ -100,11 +100,12 @@ class AgentState(MainAgentState):
     schedule_list: list
     schedule_printed: str
 
-class SubAgent(BaseAgent, WorkoutCompletionSchedulePrinter, WorkoutCompletionEditPrompt):
+class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
     focus = "workout_completion"
     parent = "workout_day"
     sub_agent_title = "Workout Completion"
     parent_title = "Workout Day"
+    schedule_printer_class = WorkoutCompletionSchedulePrinter()
     list_printer_class = WorkoutCompletionListPrinter()
 
     # def focus_retriever_agent(self, user_id):
@@ -348,7 +349,7 @@ class SubAgent(BaseAgent, WorkoutCompletionSchedulePrinter, WorkoutCompletionEdi
         user_exercises = state["user_exercises"]
         old_user_exercises = state["old_user_exercises"]
 
-        formatted_schedule = self.run_schedule_printer(old_user_exercises, user_exercises)
+        formatted_schedule = self.schedule_printer_class.run_schedule_printer(old_user_exercises, user_exercises)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 

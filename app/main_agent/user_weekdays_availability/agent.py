@@ -33,11 +33,12 @@ class AgentState(TypedDict):
 
     agent_output: list
 
-class SubAgent(BaseAgent, AvailabilitySchedulePrinter):
+class SubAgent(BaseAgent):
     focus = "availability"
     sub_agent_title = "Weekday Availability"
     focus_system_prompt = availability_system_prompt
     focus_goal = AvailabilityGoal
+    schedule_printer_class = AvailabilitySchedulePrinter()
 
     def user_list_query(self, user_id):
         return User_Weekday_Availability.query.filter_by(user_id=user_id).all()

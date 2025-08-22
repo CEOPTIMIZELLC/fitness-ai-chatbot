@@ -38,11 +38,12 @@ class AgentState(TypedDict):
     goal_id: int
 
 
-class SubAgent(BaseAgent, MacrocycleSchedulePrinter):
+class SubAgent(BaseAgent):
     focus = "macrocycle"
     sub_agent_title = "Macrocycle"
     focus_system_prompt = macrocycle_system_prompt
     focus_goal = MacrocycleGoal
+    schedule_printer_class = MacrocycleSchedulePrinter()
 
     def user_list_query(self, user_id):
         return User_Macrocycles.query.filter_by(user_id=user_id).all()

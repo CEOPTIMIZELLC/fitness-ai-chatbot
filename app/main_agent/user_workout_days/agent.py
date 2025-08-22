@@ -48,7 +48,7 @@ class AgentState(MainAgentState):
     agent_output: list
     schedule_printed: str
 
-class SubAgent(BaseAgent, PhaseComponentSchedulePrinter):
+class SubAgent(BaseAgent):
     focus = "phase_component"
     parent = "microcycle"
     sub_agent_title = "Phase Component"
@@ -56,6 +56,7 @@ class SubAgent(BaseAgent, PhaseComponentSchedulePrinter):
     parent_system_prompt = microcycle_system_prompt
     parent_goal = MicrocycleGoal
     parent_scheduler_agent = create_microcycle_agent()
+    schedule_printer_class = PhaseComponentSchedulePrinter()
 
     # Retrieve the Workout Days belonging to the Microcycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):

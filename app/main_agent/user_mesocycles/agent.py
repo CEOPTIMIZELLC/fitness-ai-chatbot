@@ -29,7 +29,7 @@ class AgentState(MainAgentState):
     agent_output: list
     schedule_printed: str
 
-class SubAgent(MacrocycleAgentNode, BaseAgent, MesocycleSchedulePrinter):
+class SubAgent(MacrocycleAgentNode, BaseAgent):
     focus = "mesocycle"
     parent = "macrocycle"
     sub_agent_title = "Mesocycle"
@@ -37,6 +37,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, MesocycleSchedulePrinter):
     parent_system_prompt = macrocycle_system_prompt
     parent_goal = MacrocycleGoal
     parent_scheduler_agent = MacrocycleAgentNode.macrocycle_node
+    schedule_printer_class = MesocycleSchedulePrinter()
 
     # Retrieve the Mesocycles belonging to the Macrocycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
