@@ -20,9 +20,9 @@ from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 from app.impact_goal_models import PhaseComponentGoal
 from app.edit_goal_models import WorkoutScheduleEditGoal
 from app.goal_prompts import phase_component_system_prompt
+from app.edit_prompts import WorkoutScheduleEditPrompt
 
 from .actions import retrieve_availability_for_day, retrieve_parameters
-from .edit_prompts import WorkoutScheduleEditPrompt
 from app.schedule_printers import WorkoutScheduleSchedulePrinter
 from app.list_printers import workout_schedule_list_printer_main
 

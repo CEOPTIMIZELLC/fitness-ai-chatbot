@@ -16,8 +16,8 @@ from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.utils import new_input_request
 from app.edit_goal_models import WorkoutCompletionEditGoal
+from app.edit_prompts import WorkoutCompletionEditPrompt
 
-from .edit_prompts import WorkoutCompletionEditPrompt
 from app.schedule_printers import WorkoutCompletionSchedulePrinter
 from app.list_printers import workout_completion_list_printer_main
 
