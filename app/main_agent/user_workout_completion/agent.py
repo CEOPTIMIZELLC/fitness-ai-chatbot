@@ -105,6 +105,7 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
     parent = "workout_day"
     sub_agent_title = "Workout Completion"
     parent_title = "Workout Day"
+    edit_goal = WorkoutCompletionEditGoal
     schedule_printer_class = WorkoutCompletionSchedulePrinter()
     list_printer_class = WorkoutCompletionListPrinter()
 
@@ -244,7 +245,7 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
         edit_prompt = self.edit_prompt_creator(copy.deepcopy(schedule_list))
 
         # Retrieve the new input for the parent item.
-        goal_class = new_input_request(user_input, edit_prompt, WorkoutCompletionEditGoal)
+        goal_class = new_input_request(user_input, edit_prompt, self.edit_goal)
 
         new_schedule = goal_class.schedule
         if new_schedule: 

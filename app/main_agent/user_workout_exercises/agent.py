@@ -117,6 +117,7 @@ class SubAgent(BaseAgent, WorkoutScheduleEditPrompt):
     parent_title = "Phase Component"
     parent_system_prompt = phase_component_system_prompt
     parent_goal = PhaseComponentGoal
+    edit_goal = WorkoutScheduleEditGoal
     parent_scheduler_agent = create_microcycle_scheduler_agent()
     schedule_printer_class = WorkoutScheduleSchedulePrinter()
     list_printer_class = WorkoutScheduleListPrinter()
@@ -286,7 +287,7 @@ class SubAgent(BaseAgent, WorkoutScheduleEditPrompt):
         edit_prompt = self.edit_prompt_creator(copy.deepcopy(schedule_list))
 
         # Retrieve the new input for the parent item.
-        goal_class = new_input_request(user_input, edit_prompt, WorkoutScheduleEditGoal)
+        goal_class = new_input_request(user_input, edit_prompt, self.edit_goal)
 
         new_schedule = goal_class.schedule
         if new_schedule: 
