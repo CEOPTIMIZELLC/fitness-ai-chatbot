@@ -29,7 +29,7 @@ class MacrocycleSchedulePrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_schedule_printer(self, schedule):
+    def run_printer(self, schedule):
         formatted = ""
 
         # Calculate longest string sizes
@@ -46,4 +46,4 @@ class MacrocycleSchedulePrinter(BaseSchedulePrinter):
 
 def Main(schedule):
     macrocycle_schedule_printer = MacrocycleSchedulePrinter()
-    return macrocycle_schedule_printer.run_schedule_printer(schedule)
+    return macrocycle_schedule_printer.run_printer(schedule)

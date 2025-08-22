@@ -84,7 +84,7 @@ class BaseAgent():
             abort(404, description=f"No active {self.sub_agent_title} found.")
 
         schedule_dict = [entry_from_db.to_dict()]
-        formatted_schedule = self.schedule_printer_class.run_schedule_printer(schedule_dict)
+        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
@@ -96,7 +96,7 @@ class BaseAgent():
 
         schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
 
-        formatted_schedule = self.schedule_printer_class.run_schedule_printer(schedule_dict)
+        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
@@ -111,7 +111,7 @@ class BaseAgent():
 
         schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
 
-        formatted_schedule = self.schedule_printer_class.run_schedule_printer(schedule_dict)
+        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 

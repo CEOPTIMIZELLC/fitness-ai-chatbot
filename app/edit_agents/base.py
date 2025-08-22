@@ -86,7 +86,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         # Add necessary keys for the formatter to the schedule items 
         schedule_list = self.add_necessary_keys_to_schedule_item(schedule_list)
 
-        formatted_schedule = self.list_printer_class.run_list_printer(schedule_list)
+        formatted_schedule = self.list_printer_class.run_printer(schedule_list)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
 
         return {"schedule_printed": formatted_schedule}

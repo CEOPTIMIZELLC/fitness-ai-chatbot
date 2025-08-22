@@ -31,7 +31,7 @@ class MesocycleSchedulePrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_schedule_printer(self, schedule):
+    def run_printer(self, schedule):
         formatted = ""
 
         # Calculate longest string sizes
@@ -48,4 +48,4 @@ class MesocycleSchedulePrinter(BaseSchedulePrinter):
 
 def Main(schedule):
     mesocycle_schedule_printer = MesocycleSchedulePrinter()
-    return mesocycle_schedule_printer.run_schedule_printer(schedule)
+    return mesocycle_schedule_printer.run_printer(schedule)

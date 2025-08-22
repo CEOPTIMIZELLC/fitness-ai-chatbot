@@ -27,7 +27,7 @@ class MicrocycleSchedulePrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_schedule_printer(self, schedule):
+    def run_printer(self, schedule):
         formatted = ""
 
         # Create headers
@@ -41,4 +41,4 @@ class MicrocycleSchedulePrinter(BaseSchedulePrinter):
 
 def Main(schedule):
     mesocycle_schedule_printer = MicrocycleSchedulePrinter()
-    return mesocycle_schedule_printer.run_schedule_printer(schedule)
+    return mesocycle_schedule_printer.run_printer(schedule)

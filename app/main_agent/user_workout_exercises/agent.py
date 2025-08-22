@@ -152,7 +152,7 @@ class SubAgent(BaseAgent):
                                     {"component_id": user_workout_exercise.phase_components.components.id}
                                     for user_workout_exercise in schedule_from_db]
 
-        formatted_schedule = self.schedule_printer_class.run_schedule_printer(workout_date, loading_system_id, user_workout_exercises_dict)
+        formatted_schedule = self.schedule_printer_class.run_printer(workout_date, loading_system_id, user_workout_exercises_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
@@ -170,7 +170,7 @@ class SubAgent(BaseAgent):
                                     {"component_id": user_workout_exercise.phase_components.components.id}
                                     for user_workout_exercise in schedule_from_db]
 
-        formatted_schedule = self.list_printer_class.run_list_printer(user_workout_exercises_dict)
+        formatted_schedule = self.list_printer_class.run_printer(user_workout_exercises_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 

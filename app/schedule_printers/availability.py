@@ -25,7 +25,7 @@ class AvailabilitySchedulePrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_schedule_printer(self, schedule):
+    def run_printer(self, schedule):
         formatted = ""
 
         # Calculate longest string sizes
@@ -42,4 +42,4 @@ class AvailabilitySchedulePrinter(BaseSchedulePrinter):
 
 def Main(schedule):
     availability_schedule_printer = AvailabilitySchedulePrinter()
-    return availability_schedule_printer.run_schedule_printer(schedule)
+    return availability_schedule_printer.run_printer(schedule)

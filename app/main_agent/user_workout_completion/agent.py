@@ -154,7 +154,7 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
         LogMainSubAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
         schedule_list = state["schedule_list"]
 
-        formatted_schedule = self.list_printer_class.run_list_printer(schedule_list)
+        formatted_schedule = self.list_printer_class.run_printer(schedule_list)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
 
         return {"schedule_printed": formatted_schedule}
@@ -350,7 +350,7 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
         user_exercises = state["user_exercises"]
         old_user_exercises = state["old_user_exercises"]
 
-        formatted_schedule = self.schedule_printer_class.run_schedule_printer(old_user_exercises, user_exercises)
+        formatted_schedule = self.schedule_printer_class.run_printer(old_user_exercises, user_exercises)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 

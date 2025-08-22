@@ -42,7 +42,7 @@ class PhaseComponentSchedulePrinter(BaseSchedulePrinter):
                     schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_schedule_printer(self, schedule):
+    def run_printer(self, schedule):
         phase_components = get_all_items(Phase_Component_Library)
         bodyparts = get_all_items(Bodypart_Library)
 
@@ -66,4 +66,4 @@ class PhaseComponentSchedulePrinter(BaseSchedulePrinter):
 
 def Main(phase_components):
     workout_day_schedule_printer = PhaseComponentSchedulePrinter()
-    return workout_day_schedule_printer.run_schedule_printer(phase_components)
+    return workout_day_schedule_printer.run_printer(phase_components)
