@@ -41,15 +41,6 @@ class SubAgent(BaseSubAgent, MesocycleEditPrompt):
             "end_date": goal_edit.end_date, 
         }
 
-    # Items extracted from the edit request.
-    def goal_edit_request_parser(self, goal_class, edits_to_be_applyed):
-        return {
-            "is_edited": True if edits_to_be_applyed else False,
-            "edits": edits_to_be_applyed,
-            # "should_regenerate": goal_class.regenerate,
-            "other_requests": goal_class.other_requests
-        }
-
     # Specific code for extracting information from the edited schedule into the new one.
     def apply_edit_to_schedule_item(self, schedule_item, schedule_edit):
         schedule_item["start_date"] = schedule_edit["start_date"]
