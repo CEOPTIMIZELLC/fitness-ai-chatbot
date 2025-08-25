@@ -1,5 +1,6 @@
 from logging_config import LogMainSubAgent
 from typing_extensions import TypedDict
+from datetime import timedelta
 
 from langgraph.graph import StateGraph, START, END
 
@@ -78,7 +79,7 @@ class SubAgent(BaseAgent):
             db_entry = User_Weekday_Availability(
                 user_id=user_id, 
                 weekday_id=i["weekday_id"], 
-                availability=i["availability"])
+                availability=timedelta(seconds=i["availability"]))
             db.session.merge(db_entry)
         db.session.commit()
         return {}
