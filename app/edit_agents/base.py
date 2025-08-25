@@ -93,7 +93,10 @@ class BaseSubAgent(ScheduleFormatterMethods):
         formatted_schedule = self.list_printer_class.run_printer(schedule_list)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
 
-        return {"schedule_printed": formatted_schedule}
+        return {
+            "agent_output": schedule_list, 
+            "schedule_printed": formatted_schedule
+        }
 
     # Create prompt to request schedule edits.
     def edit_prompt_creator(self, schedule_list_original):
