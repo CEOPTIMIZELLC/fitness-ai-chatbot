@@ -12,6 +12,7 @@ from app.utils.common_table_queries import current_weekday_availability, current
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 from app.impact_goal_models import AvailabilityGoal
 from app.goal_prompts import availability_system_prompt
+from app.edit_agents import create_availability_edit_agent
 
 from .actions import retrieve_weekday_types
 from app.schedule_printers import AvailabilitySchedulePrinter
@@ -39,6 +40,7 @@ class SubAgent(BaseAgent):
     sub_agent_title = "Weekday Availability"
     focus_system_prompt = availability_system_prompt
     focus_goal = AvailabilityGoal
+    focus_edit_agent = create_availability_edit_agent()
     schedule_printer_class = AvailabilitySchedulePrinter()
 
     def user_list_query(self, user_id):
@@ -105,6 +107,7 @@ class SubAgent(BaseAgent):
         workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
+        workflow.add_node("editor_agent", self.focus_edit_agent)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
@@ -163,7 +166,8 @@ class SubAgent(BaseAgent):
         )
 
         workflow.add_edge("delete_old_children", "perform_input_parser")
-        workflow.add_edge("perform_input_parser", "agent_output_to_sqlalchemy_model")
+        workflow.add_edge("perform_input_parser", "editor_agent")
+        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
         workflow.add_edge("no_new_input_requested", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")

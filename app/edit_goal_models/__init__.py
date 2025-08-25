@@ -1,3 +1,4 @@
+from .availability import AvailabilityScheduleEditGoal
 from .mesocycles import MesocycleScheduleEditGoal
 from .workout_schedule import WorkoutScheduleEditGoal
 from .workout_completion import WorkoutCompletionEditGoal
