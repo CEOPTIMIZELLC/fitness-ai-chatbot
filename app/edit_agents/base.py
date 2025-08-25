@@ -136,7 +136,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
             common_keys = set(original_schedule_item.keys()) & set(altered_schedule_item.keys())
 
             # Include the item if it has been indicated to be removed.
-            if altered_schedule_item["remove"]:
+            if altered_schedule_item.get("remove", False):
                 edits_to_be_applyed[original_schedule_item_id] = altered_schedule_item
 
             # Only include the item if any value has been changed from the original.
