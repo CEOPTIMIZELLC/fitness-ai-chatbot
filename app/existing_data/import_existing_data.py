@@ -1,4 +1,4 @@
-from logging_config import LogDBInit
+from app.logging_config import LogDBInit
 from pathlib import Path
 import pandas as pd
 

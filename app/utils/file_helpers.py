@@ -1,5 +1,5 @@
 import os
-from logging_config import logger
+from app.logging_config import logger
 
 def get_relative_path(file):
 

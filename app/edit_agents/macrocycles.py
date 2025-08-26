@@ -1,5 +1,5 @@
 from config import request_schedule_edits
-from logging_config import LogMainSubAgent
+from app.logging_config import LogMainSubAgent
 
 from datetime import date, timedelta
 from typing_extensions import TypedDict

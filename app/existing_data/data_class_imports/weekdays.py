@@ -1,4 +1,4 @@
-from logging_config import LogDBInit
+from app.logging_config import LogDBInit
 from app import db
 from app.models import Weekday_Library
 

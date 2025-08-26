@@ -1,5 +1,5 @@
 from config import SchedulerLoggingConfig
-from logging_config import LogSolver
+from app.logging_config import LogSolver
 from time import perf_counter
 from typing_extensions import TypedDict, TypeVar
 from langgraph.graph import StateGraph, START, END

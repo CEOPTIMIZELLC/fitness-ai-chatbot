@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from app.logging_config import LogMainSubAgent
 
 from langgraph.graph import StateGraph, START, END
 

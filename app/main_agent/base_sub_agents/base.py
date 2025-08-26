@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from app.logging_config import LogMainSubAgent
 from flask import abort
 from typing_extensions import TypeVar
 

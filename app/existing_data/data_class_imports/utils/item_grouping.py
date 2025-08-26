@@ -1,5 +1,5 @@
 from config import generate_cluster_names
-from logging_config import LogDBInit
+from app.logging_config import LogDBInit
 from tqdm import tqdm
 import numpy as np
 from flask import current_app

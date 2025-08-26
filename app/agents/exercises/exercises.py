@@ -1,5 +1,5 @@
 from config import ortools_solver_time_in_seconds, SchedulerLoggingConfig
-from logging_config import LogSolver
+from app.logging_config import LogSolver
 from langgraph.graph import StateGraph, START, END
 from ortools.sat.python import cp_model
 from dotenv import load_dotenv

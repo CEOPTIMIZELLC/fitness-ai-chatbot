@@ -1,4 +1,4 @@
-from logging_config import LogSolver
+from app.logging_config import LogSolver
 
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field

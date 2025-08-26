@@ -1,4 +1,4 @@
-from logging_config import LogDBInit
+from app.logging_config import LogDBInit
 from flask import request, jsonify, current_app, Blueprint, abort
 
 from app import db

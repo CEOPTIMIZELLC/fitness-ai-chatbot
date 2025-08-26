@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from app.logging_config import LogMainSubAgent
 from typing_extensions import TypeVar
 from app.main_agent.main_agent_state import MainAgentState
 

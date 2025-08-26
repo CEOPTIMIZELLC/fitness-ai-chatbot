@@ -1,5 +1,5 @@
 from config import turn_off_invalid_phase_components, turn_off_required_resistances
-from logging_config import LogSolverPreProcessing
+from app.logging_config import LogSolverPreProcessing
 
 def turn_off_impossible_pcs(pc):
     pc["frequency_per_microcycle_min"]=0

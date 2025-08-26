@@ -1,7 +1,15 @@
 import logging
 from functools import partial
 
-from config import VerbosityConfig, RouteVerbosityConfig, DatabaseInitVerbosityConfig, MainAgentVerbosityConfig, MainSubAgentVerbosityConfig, SchedulerVerbosityConfig, SchedulerPreProcessingVerbosityConfig
+from flask import current_app
+
+verbosity_config = current_app.config["VERBOSITY_CONFIG"]
+DatabaseInitVerbosityConfig = verbosity_config.DatabaseInit
+RouteVerbosityConfig = verbosity_config.Route
+MainAgentVerbosityConfig = verbosity_config.MainAgent
+MainSubAgentVerbosityConfig = verbosity_config.MainSubAgent
+SchedulerPreProcessingVerbosityConfig = verbosity_config.SchedulerPreProcessing
+SchedulerVerbosityConfig = verbosity_config.Scheduler
 
 # Set Up the Logger
 logger = logging.getLogger("my_app")
@@ -21,12 +29,12 @@ def log_long_output(level, message):
 
 # Verbose Logging Utility
 def verbose_log(enabled: bool, message: str, level=logging.INFO):
-    if enabled and VerbosityConfig.verbose:
+    if enabled and verbosity_config.verbose:
         # logger.log(level, message)
         log_long_output(level, message)
 
 # Partial Functions for Each Verbosity Type
-log_verbose = partial(verbose_log, VerbosityConfig.verbose)
+log_verbose = partial(verbose_log, verbosity_config.verbose)
 
 class LogRoute:
     verbose = partial(verbose_log, RouteVerbosityConfig.verbose)

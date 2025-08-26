@@ -1,5 +1,5 @@
 from config import change_min_max_exercises_for_those_available
-from logging_config import LogSolverPreProcessing
+from app.logging_config import LogSolverPreProcessing
 from app.utils.get_all_exercises_for_pc import get_exercises_for_all_pcs
 from .check_exercise_quantity import Main as check_exercise_quantity
 from .check_for_enough_time import Main as check_for_enough_time

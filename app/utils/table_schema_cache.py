@@ -1,6 +1,6 @@
 from sqlalchemy import inspect
 
-from logging_config import log_verbose
+from app.logging_config import log_verbose
 
 def get_foreign_keys(inspector, table_name):
     foreign_keys_map = {}

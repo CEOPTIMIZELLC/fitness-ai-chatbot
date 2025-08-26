@@ -1,5 +1,5 @@
 from config import agent_recursion_limit
-from logging_config import log_verbose
+from app.logging_config import log_verbose
 
 from flask import current_app
 

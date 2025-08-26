@@ -1,4 +1,4 @@
-from logging_config import log_verbose, logger
+from app.logging_config import log_verbose, logger
 
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field

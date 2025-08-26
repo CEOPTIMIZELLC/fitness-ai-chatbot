@@ -1,5 +1,5 @@
 from config import loop_main_agent
-from logging_config import LogMainAgent
+from app.logging_config import LogMainAgent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, START, END

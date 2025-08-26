@@ -1,7 +1,7 @@
 import heapq
 from .utils import check_for_required, remove_impossible_not_required_phase_components
 from config import change_min_max_exercises_for_those_available
-from logging_config import LogSolverPreProcessing
+from app.logging_config import LogSolverPreProcessing
 
 def correct_available_exercises_with_possible_weights(pcs, exercises_for_pcs, exercises):
     unsatisfiable = []

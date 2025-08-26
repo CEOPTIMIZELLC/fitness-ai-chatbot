@@ -1,4 +1,4 @@
-from logging_config import LogDBInit
+from app.logging_config import LogDBInit
 import numpy as np
 
 from app import db

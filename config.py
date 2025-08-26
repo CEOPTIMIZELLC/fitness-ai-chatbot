@@ -57,11 +57,6 @@ class ExerciseOneRepMaxDecayConfig:
 # General option for verbose logging.
 verbose = True
 
-# Logging configurations for general application.
-class VerbosityConfig:
-    # Log results throughout project.
-    verbose = True
-
 # Logging configurations options for the database initialization.
 class DatabaseInitVerbosityConfig:
     # Log any items in this configuration set.
@@ -155,6 +150,17 @@ class SchedulerVerbosityConfig:
     # Log final formatted schedule produced.
     formatted_schedule = True
 
+# Logging configurations for general application.
+class VerbosityConfig:
+    # Log results throughout project.
+    verbose = True
+    DatabaseInit = DatabaseInitVerbosityConfig
+    Route = RouteVerbosityConfig
+    MainAgent = MainAgentVerbosityConfig
+    MainSubAgent = MainSubAgentVerbosityConfig
+    SchedulerPreProcessing = SchedulerPreProcessingVerbosityConfig
+    Scheduler = SchedulerVerbosityConfig
+
 # Configurations for agent logging.
 class SchedulerLoggingConfig:
     # Add the schedule itself to the logged output.
@@ -203,3 +209,4 @@ class Config:
     LANGUAGE_MODEL = os.environ.get("LANGUAGE_MODEL")
     EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL")
     #PERMANENT_SESSION_LIFETIME = timedelta(minutes=1)
+    VERBOSITY_CONFIG = VerbosityConfig

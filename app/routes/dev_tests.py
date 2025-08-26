@@ -1,4 +1,4 @@
-from logging_config import LogRoute
+from app.logging_config import LogRoute
 from random import randint
 from datetime import timedelta, date
 from flask import request, jsonify, Blueprint, abort

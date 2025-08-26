@@ -1,5 +1,5 @@
 from config import request_schedule_edits
-from logging_config import LogMainSubAgent
+from app.logging_config import LogMainSubAgent
 import copy
 
 from typing_extensions import TypeVar, TypedDict

@@ -1,4 +1,4 @@
-from logging_config import LogRoute
+from app.logging_config import LogRoute
 from flask import jsonify, Blueprint
 from flask_login import current_user, login_required
 

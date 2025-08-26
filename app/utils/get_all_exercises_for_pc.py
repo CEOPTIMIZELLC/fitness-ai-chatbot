@@ -1,5 +1,5 @@
 import copy
-from logging_config import LogSolverPreProcessing
+from app.logging_config import LogSolverPreProcessing
 from config import BackupExerciseRetrieval as BackupRetrieval
 
 def get_exercises_for_pc_conditions(exercises, phase_component, conditions=[]):

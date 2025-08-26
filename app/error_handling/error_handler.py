@@ -1,5 +1,5 @@
 from flask import jsonify
-from logging_config import logger
+from app.logging_config import logger
 
 def not_found_error(e):
     logger.error(str(e))

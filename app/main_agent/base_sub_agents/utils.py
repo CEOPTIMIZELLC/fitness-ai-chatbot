@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from app.logging_config import LogMainSubAgent
 from flask import current_app
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate

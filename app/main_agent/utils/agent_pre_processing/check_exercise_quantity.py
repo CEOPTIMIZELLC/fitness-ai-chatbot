@@ -1,4 +1,4 @@
-from logging_config import LogSolverPreProcessing
+from app.logging_config import LogSolverPreProcessing
 from .utils import check_for_required, remove_impossible_not_required_phase_components
 
 # Step 1: Remove Empty Phase Components
