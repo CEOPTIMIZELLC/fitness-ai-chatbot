@@ -2,7 +2,7 @@ from logging_config import LogDBInit
 import pandas as pd
 import numpy as np
 
-from app import db
+from app.db_session import session_scope
 from app.models import Exercise_Library, General_Exercise_Library
 from .utils import create_list_of_table_entries, cluster_main
 
@@ -60,21 +60,22 @@ class Data_Importer:
             return None
 
         # Create a list of entries for the exercises
-        for i, row in self.exercises_df.iterrows():
-            db_entry = Exercise_Library(
-                id=row["Exercise ID"], 
-                general_exercise_id=row["General Exercise ID"], 
-                name=row["Exercise"], 
-                base_strain=row["Base Strain"], 
-                technical_difficulty=row["Technical Difficulty"], 
-                tags=row["Tags"], 
-                sides=row["Sides"], 
-                body_position=row["Body Position"], 
-                option_for_added_weight=row["Option for added weight"], 
-                # is_weighted=pd.notna(row["Weighted Equipment"]),
-                proprioceptive_progressions=row["Proprioceptive Progressions"])
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for i, row in self.exercises_df.iterrows():
+                db_entry = Exercise_Library(
+                    id=row["Exercise ID"], 
+                    general_exercise_id=row["General Exercise ID"], 
+                    name=row["Exercise"], 
+                    base_strain=row["Base Strain"], 
+                    technical_difficulty=row["Technical Difficulty"], 
+                    tags=row["Tags"], 
+                    sides=row["Sides"], 
+                    body_position=row["Body Position"], 
+                    option_for_added_weight=row["Option for added weight"], 
+                    # is_weighted=pd.notna(row["Weighted Equipment"]),
+                    proprioceptive_progressions=row["Proprioceptive Progressions"])
+                s.merge(db_entry)
+            # s.commit()
         return None
 
     def general_exercises_and_exercises(self):

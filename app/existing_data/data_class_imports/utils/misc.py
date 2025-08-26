@@ -1,18 +1,19 @@
 import re
-from app import db
+from app.db_session import session_scope
 
 def set_keys_to_lowercase(d):
     return {k.lower(): v for k, v in d.items()}
 
 def create_list_of_table_entries(ids, names, model_type):
     # Create list of Components
-    for i, name in enumerate(names, start=1):
-        ids[name] = i
-        db_entry = model_type(id=i, name=name)
+    with session_scope() as s:
+        for i, name in enumerate(names, start=1):
+            ids[name] = i
+            db_entry = model_type(id=i, name=name)
 
-        # Using merge to handle duplicates gracefully
-        db.session.merge(db_entry)
-    db.session.commit()
+            # Using merge to handle duplicates gracefully
+            s.merge(db_entry)
+        # s.commit()
     return ids
 
 # Function to determine the connector for new column value

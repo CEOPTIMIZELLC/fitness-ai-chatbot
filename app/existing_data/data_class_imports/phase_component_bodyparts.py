@@ -1,7 +1,7 @@
 from logging_config import LogDBInit
 import numpy as np
 
-from app import db
+from app.db_session import session_scope
 from app.models import Phase_Component_Bodyparts
 
 class Data_Importer:
@@ -28,15 +28,16 @@ class Data_Importer:
         self.phase_component_bodyparts_df['bodypart ID'] = self.phase_component_bodyparts_df['bodypart'].map(self.bodypart_ids)
 
         # Create a list of entries for the Phase Component Bodyparts table
-        for i, row in self.phase_component_bodyparts_df.iterrows():
-            db_entry = Phase_Component_Bodyparts(
-                id=i+1, 
-                phase_id=row["phase ID"], 
-                component_id=row["component ID"], 
-                bodypart_id=row["bodypart ID"], 
-                required_within_microcycle=row["Required in a microcycle"])
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for i, row in self.phase_component_bodyparts_df.iterrows():
+                db_entry = Phase_Component_Bodyparts(
+                    id=i+1, 
+                    phase_id=row["phase ID"], 
+                    component_id=row["component ID"], 
+                    bodypart_id=row["bodypart ID"], 
+                    required_within_microcycle=row["Required in a microcycle"])
+                s.merge(db_entry)
+            # s.commit()
 
         return None
 

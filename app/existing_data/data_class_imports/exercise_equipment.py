@@ -1,7 +1,7 @@
 from logging_config import LogDBInit
 import re
 
-from app import db
+from app.db_session import session_scope
 from app.models import (
     Exercise_Supportive_Equipment,
     Exercise_Assistive_Equipment,
@@ -9,7 +9,7 @@ from app.models import (
     Exercise_Marking_Equipment,
     Exercise_Other_Equipment,
 )
-from .utils import determine_connector, extract_number
+from .utils import determine_connector, extract_number, run_parallel_queries
 
 
 class Data_Importer:
@@ -44,15 +44,15 @@ class Data_Importer:
         exercise_equipment_df["Equipment ID"] = exercise_equipment_df["Equipment"].map(self.equipment_ids)
 
         # Create a list of entries for the exercises
-        for _, row in exercise_equipment_df.iterrows():
-            db_entry = model_type(
-                exercise_id=row["Exercise ID"], 
-                equipment_id=row["Equipment ID"],
-                quantity=row["Quantity"],
-                equipment_relationship=row["Equipment Relationship"],
-            )
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for _, row in exercise_equipment_df.iterrows():
+                db_entry = model_type(
+                    exercise_id=row["Exercise ID"], 
+                    equipment_id=row["Equipment ID"],
+                    quantity=row["Quantity"],
+                    equipment_relationship=row["Equipment Relationship"],
+                )
+                s.merge(db_entry)
 
         return exercise_equipment_df
 
@@ -97,9 +97,12 @@ class Data_Importer:
         return None
 
     def run(self):
-        self.exercise_supportive_equipment()
-        self.exercise_assistive_equipment()
-        self.exercise_weighted_equipment()
-        self.exercise_marking_equipment()
-        self.exercise_other_equipment()
+        tasks = [
+            self.exercise_supportive_equipment, 
+            self.exercise_assistive_equipment, 
+            self.exercise_weighted_equipment, 
+            self.exercise_marking_equipment, 
+            self.exercise_other_equipment, 
+        ]
+        run_parallel_queries(tasks)
         return None

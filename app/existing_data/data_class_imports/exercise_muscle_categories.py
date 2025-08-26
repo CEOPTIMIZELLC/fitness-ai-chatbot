@@ -1,13 +1,14 @@
 from logging_config import LogDBInit
 import numpy as np
 
-from app import db
+from app.db_session import session_scope
 from app.models import (
     Exercise_Body_Regions,
     Exercise_Bodyparts,
     Exercise_Muscle_Groups,
     Exercise_Muscles,
 )
+from .utils import run_parallel_queries
 
 class Data_Importer:
     def exercise_muscles(self):
@@ -27,15 +28,16 @@ class Data_Importer:
         exercise_muscle_df['Target Muscle ID'] = exercise_muscle_df['Target Muscle'].map(self.muscle_ids)
 
         # Create a list of entries for Exercise Phase Components table.
-        for _, row in exercise_muscle_df.iterrows():
-            if np.isnan(row["Exercise ID"]) or np.isnan(row["Target Muscle ID"]):
-                LogDBInit.data_errors(row["Exercise"], "has ID of", row["Exercise ID"], "while", row["Target Muscle"], "has id of", row["Target Muscle ID"])
-            else:
-                db_entry = Exercise_Muscles(
-                    exercise_id=row["Exercise ID"], 
-                    muscle_id=row["Target Muscle ID"])
-                db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for _, row in exercise_muscle_df.iterrows():
+                if np.isnan(row["Exercise ID"]) or np.isnan(row["Target Muscle ID"]):
+                    LogDBInit.data_errors(row["Exercise"], "has ID of", row["Exercise ID"], "while", row["Target Muscle"], "has id of", row["Target Muscle ID"])
+                else:
+                    db_entry = Exercise_Muscles(
+                        exercise_id=row["Exercise ID"], 
+                        muscle_id=row["Target Muscle ID"])
+                    s.merge(db_entry)
+            # s.commit()
         return None
 
     def exercise_muscle_groups(self):
@@ -55,12 +57,13 @@ class Data_Importer:
         exercise_muscle_group_df['Target Muscle Group ID'] = exercise_muscle_group_df['Target Muscle Group'].map(self.muscle_group_ids)
 
         # Create a list of entries for Exercise Phase Components table.
-        for _, row in exercise_muscle_group_df.iterrows():
-            db_entry = Exercise_Muscle_Groups(
-                exercise_id=row["Exercise ID"], 
-                muscle_group_id=row["Target Muscle Group ID"])
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for _, row in exercise_muscle_group_df.iterrows():
+                db_entry = Exercise_Muscle_Groups(
+                    exercise_id=row["Exercise ID"], 
+                    muscle_group_id=row["Target Muscle Group ID"])
+                s.merge(db_entry)
+            # s.commit()
         return None
 
     def exercise_body_regions(self):
@@ -80,12 +83,13 @@ class Data_Importer:
         exercise_body_region_df['Target Body Region ID'] = exercise_body_region_df['Target Body Region'].map(self.body_region_ids)
 
         # Create a list of entries for Exercise Phase Components table.
-        for _, row in exercise_body_region_df.iterrows():
-            db_entry = Exercise_Body_Regions(
-                exercise_id=row["Exercise ID"], 
-                body_region_id=row["Target Body Region ID"])
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for _, row in exercise_body_region_df.iterrows():
+                db_entry = Exercise_Body_Regions(
+                    exercise_id=row["Exercise ID"], 
+                    body_region_id=row["Target Body Region ID"])
+                s.merge(db_entry)
+            # s.commit()
         return None
 
     def exercise_bodyparts(self):
@@ -105,17 +109,21 @@ class Data_Importer:
         exercise_bodypart_df['Target General Body Area ID'] = exercise_bodypart_df['Target General Body Area'].map(self.bodypart_ids)
 
         # Create a list of entries for Exercise Phase Components table.
-        for _, row in exercise_bodypart_df.iterrows():
-            db_entry = Exercise_Bodyparts(
-                exercise_id=row["Exercise ID"], 
-                bodypart_id=row["Target General Body Area ID"])
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for _, row in exercise_bodypart_df.iterrows():
+                db_entry = Exercise_Bodyparts(
+                    exercise_id=row["Exercise ID"], 
+                    bodypart_id=row["Target General Body Area ID"])
+                s.merge(db_entry)
+            # s.commit()
         return None
 
     def run(self):
-        self.exercise_muscles()
-        self.exercise_muscle_groups()
-        self.exercise_body_regions()
-        self.exercise_bodyparts()
+        tasks = [
+            self.exercise_muscles, 
+            self.exercise_muscle_groups, 
+            self.exercise_body_regions, 
+            self.exercise_bodyparts, 
+        ]
+        run_parallel_queries(tasks)
         return None
