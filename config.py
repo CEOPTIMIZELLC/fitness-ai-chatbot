@@ -1,6 +1,15 @@
 import os
 import load_env_var
 from datetime import timedelta
+from verbosity_config import (
+    VerbosityConfigDefault, 
+    VerbosityConfigLoud, 
+    VerbosityConfigQuiet, 
+    VerbosityConfigMainAgentFocus, 
+    VerbosityConfigMainSubAgentFocus, 
+    VerbosityConfigSchedulerFocus, 
+    VerbosityConfigSchedulerPreProcessingFocus
+)
 
 # How many iterations of a loop are allowed before some interruption.
 agent_recursion_limit = 30
@@ -25,7 +34,7 @@ vertical_loading = True
 loop_main_agent = True
 
 # Whether the agent should request edits to the schedule after generation.
-request_schedule_edits = True
+request_schedule_edits = False
 
 # Configurations for displayed information for logged schedules.
 class ScheduleDisplayConfig:
@@ -202,11 +211,57 @@ class BackupExerciseRetrieval:
     # All exercises in the database will be inlcuded.
     all_exercises = False
 
-class Config:
+class ConfigBase:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://'+os.environ["POSTRGRES_USER"]+':'+os.environ["POSTRGRES_PASSWORD"]+'@'+os.environ["POSTRGRES_HOST"]+'/'+os.environ["POSTRGRES_DATABASE"]
     SQLALCHEMY_DATABASE_URI = "postgresql://postgres:" + os.environ["SUPABASE_PASSWORD"] + "@db.ibjmsnuozqlwcdaqtcwh.supabase.co:5432/postgres"
     LANGUAGE_MODEL = os.environ.get("LANGUAGE_MODEL")
     EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL")
     #PERMANENT_SESSION_LIFETIME = timedelta(minutes=1)
+    VERBOSITY_CONFIG = None
+
+class ConfigDefault(ConfigBase):
+    VERBOSITY_CONFIG = VerbosityConfigDefault
+
+class ConfigCustomFocus(ConfigBase):
     VERBOSITY_CONFIG = VerbosityConfig
+
+# Configuration for verbose logging for all items.
+class ConfigLoud(ConfigBase):
+    VERBOSITY_CONFIG = VerbosityConfigLoud
+
+# Configuration for verbose logging for all items.
+class ConfigQuiet(ConfigBase):
+    VERBOSITY_CONFIG = VerbosityConfigQuiet
+
+# Configuration for verbose logging for main agent messages.
+class ConfigMainAgentFocus(ConfigBase):
+    VERBOSITY_CONFIG = VerbosityConfigMainAgentFocus
+
+# Configuration for verbose logging for main sub agent messages.
+class ConfigMainSubAgentFocus(ConfigBase):
+    VERBOSITY_CONFIG = VerbosityConfigMainSubAgentFocus
+
+# Configuration for verbose logging for solver agent messages.
+class ConfigSchedulerFocus(ConfigBase):
+    VERBOSITY_CONFIG = VerbosityConfigSchedulerFocus
+
+# Configuration for verbose logging for solver pre processing messages.
+class ConfigSchedulerPreProcessingFocus(ConfigBase):
+    VERBOSITY_CONFIG = VerbosityConfigSchedulerPreProcessingFocus
+
+CONFIG_BY_ENV = {
+    "default": ConfigDefault,
+    "custom": ConfigCustomFocus,
+    "loud": ConfigLoud,
+    "quiet": ConfigQuiet,
+    "main_agent": ConfigMainAgentFocus,
+    "mainagent": ConfigMainAgentFocus,
+    "main_sub_agent": ConfigMainSubAgentFocus,
+    "main_subagent": ConfigMainSubAgentFocus,
+    "mainsubagent": ConfigMainSubAgentFocus,
+    "scheduler": ConfigSchedulerFocus,
+    "scheduler_pre_processing": ConfigSchedulerPreProcessingFocus,
+    "scheduler_preprocessing": ConfigSchedulerPreProcessingFocus,
+    "schedulerpreprocessing": ConfigSchedulerPreProcessingFocus,
+}

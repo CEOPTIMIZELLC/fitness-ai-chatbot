@@ -24,3 +24,7 @@ class postgresBase:
 class ai_credentials:
     def __init__(self):
         os.environ["LANGUAGE_MODEL"] = environment_variable_retrieve("LANGUAGE_MODEL")
+
+class config_mode:
+    def __init__(self):
+        os.environ["CONFIG_MODE"] = os.getenv("CONFIG_MODE", "default").lower()

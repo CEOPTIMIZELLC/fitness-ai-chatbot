@@ -1,9 +1,10 @@
+import os
 from flask import Flask
 from flask_login import LoginManager
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from config import Config
+from config import CONFIG_BY_ENV, ConfigDefault, verbose
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -13,7 +14,14 @@ login_manager.login_view = 'auth.login'
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
+    
+    # Retrieve the chosen Config
+    config_mode = os.environ.get("CONFIG_MODE")
+    if verbose:
+        print(f"Loading {config_mode} Configuration class")
+    config_class = CONFIG_BY_ENV.get(config_mode, ConfigDefault)
+
+    app.config.from_object(config_class)
     CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5173"}})
     bcrypt.init_app(app)
     db.init_app(app)
