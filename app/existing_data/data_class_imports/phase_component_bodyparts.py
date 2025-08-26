@@ -38,7 +38,7 @@ class Data_Importer:
                     required_within_microcycle=row["Required in a microcycle"])
                 s.merge(db_entry)
             # s.commit()
-
+        LogDBInit.introductions(f"Initialized Phase_Component_Bodyparts table.")
         return None
 
     def run(self):

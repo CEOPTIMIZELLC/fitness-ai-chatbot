@@ -38,6 +38,7 @@ class Data_Importer:
                         muscle_id=row["Target Muscle ID"])
                     s.merge(db_entry)
             # s.commit()
+        LogDBInit.introductions(f"Initialized Exercise_Muscles table.")
         return None
 
     def exercise_muscle_groups(self):
@@ -64,6 +65,7 @@ class Data_Importer:
                     muscle_group_id=row["Target Muscle Group ID"])
                 s.merge(db_entry)
             # s.commit()
+        LogDBInit.introductions(f"Initialized Exercise_Muscle_Groups table.")
         return None
 
     def exercise_body_regions(self):
@@ -90,6 +92,7 @@ class Data_Importer:
                     body_region_id=row["Target Body Region ID"])
                 s.merge(db_entry)
             # s.commit()
+        LogDBInit.introductions(f"Initialized Exercise_Body_Regions table.")
         return None
 
     def exercise_bodyparts(self):
@@ -116,6 +119,7 @@ class Data_Importer:
                     bodypart_id=row["Target General Body Area ID"])
                 s.merge(db_entry)
             # s.commit()
+        LogDBInit.introductions(f"Initialized Exercise_Bodyparts table.")
         return None
 
     def run(self):

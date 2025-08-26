@@ -62,6 +62,7 @@ class Data_Importer:
         exercise_supportive_equipment_df = self.exercises_df[["Exercise", "Supportive Equipment"]].copy().dropna()
         exercise_supportive_equipment_df.rename(columns={"Supportive Equipment": "Equipment"}, inplace=True)
         exercise_supportive_equipment_df = self._parse_exercise_join_table(exercise_supportive_equipment_df, Exercise_Supportive_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Supportive_Equipment table.")
         return None
 
     def exercise_assistive_equipment(self):
@@ -70,6 +71,7 @@ class Data_Importer:
         exercise_assistive_equipment_df = self.exercises_df[["Exercise", "Assistive Equipment"]].copy().dropna()
         exercise_assistive_equipment_df.rename(columns={"Assistive Equipment": "Equipment"}, inplace=True)
         exercise_assistive_equipment_df = self._parse_exercise_join_table(exercise_assistive_equipment_df, Exercise_Assistive_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Assistive_Equipment table.")
         return None
 
     def exercise_weighted_equipment(self):
@@ -78,6 +80,7 @@ class Data_Importer:
         exercise_weighted_equipment_df = self.exercises_df[["Exercise", "Weighted Equipment"]].copy().dropna()
         exercise_weighted_equipment_df.rename(columns={"Weighted Equipment": "Equipment"}, inplace=True)
         exercise_weighted_equipment_df = self._parse_exercise_join_table(exercise_weighted_equipment_df, Exercise_Weighted_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Weighted_Equipment table.")
         return None
 
     def exercise_marking_equipment(self):
@@ -86,6 +89,7 @@ class Data_Importer:
         exercise_marking_equipment_df = self.exercises_df[["Exercise", "Marking Equipment"]].copy().dropna()
         exercise_marking_equipment_df.rename(columns={"Marking Equipment": "Equipment"}, inplace=True)
         exercise_marking_equipment_df = self._parse_exercise_join_table(exercise_marking_equipment_df, Exercise_Marking_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Marking_Equipment table.")
         return None
 
     def exercise_other_equipment(self):
@@ -94,6 +98,7 @@ class Data_Importer:
         exercise_other_equipment_df = self.exercises_df[["Exercise", "Other Equipment"]].copy().dropna()
         exercise_other_equipment_df.rename(columns={"Other Equipment": "Equipment"}, inplace=True)
         exercise_other_equipment_df = self._parse_exercise_join_table(exercise_other_equipment_df, Exercise_Other_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Other_Equipment table.")
         return None
 
     def run(self):

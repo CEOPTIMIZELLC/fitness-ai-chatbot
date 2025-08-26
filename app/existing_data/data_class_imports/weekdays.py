@@ -11,6 +11,7 @@ class Data_Importer:
                 db_entry = Weekday_Library(id=i, name=name)
                 s.merge(db_entry)
             # s.commit()
+        LogDBInit.introductions(f"Initialized Weekday_Library table.")
         return None
 
     def run(self):

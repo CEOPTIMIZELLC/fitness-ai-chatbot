@@ -27,7 +27,7 @@ class Data_Importer:
                     description=row["Description"])
                 s.merge(db_entry)
             # s.commit()
-        
+        LogDBInit.introductions(f"Initialized Loading_System_Library table.")
         return None
 
     def run(self):

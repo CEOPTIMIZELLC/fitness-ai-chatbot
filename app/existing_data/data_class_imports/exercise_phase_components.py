@@ -40,6 +40,7 @@ class Data_Importer:
                     subcomponent_id=row["Subcomponent ID"])
                 s.merge(db_entry)
             # s.commit()
+        LogDBInit.introductions(f"Initialized Exercise_Phase_Component table.")
         return None
 
     def run(self):

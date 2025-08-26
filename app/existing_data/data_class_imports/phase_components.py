@@ -47,9 +47,11 @@ class Data_Importer:
             self.goal_ids["Unique Goal"]=unique_goal_index
             s.merge(db_entry)
         # s.commit()
+        LogDBInit.introductions(f"Initialized Goal_Library table.")
+        return None
 
     def phases(self):
-        LogDBInit.introductions(f"Initializing Phase_Library and Goal_Phase_Requirements table.")
+        LogDBInit.introductions(f"Initializing Phase_Library and Goal_Phase_Requirements tables.")
         # Phases, Goal Phase Requirements
         if not (self.goal_ids):
             LogDBInit.data_errors("IDs not initialized.")
@@ -80,7 +82,7 @@ class Data_Importer:
                     )
                     s.merge(db_entry)
             # s.commit()
-
+        LogDBInit.introductions(f"Initialized Phase_Library and Goal_Phase_Requirements tables.")
         return None
 
     def components(self):
@@ -98,7 +100,7 @@ class Data_Importer:
                     is_warmup=True if (name.lower() == "flexibility") else False)
                 s.merge(db_entry)
             # s.commit()
-
+        LogDBInit.introductions(f"Initialized Component_Library table.")
         return None
 
     def subcomponents(self):
@@ -117,7 +119,7 @@ class Data_Importer:
                     explanation=row["Explanation"])
                 s.merge(db_entry)
             # s.commit()
-        
+        LogDBInit.introductions(f"Initialized Subcomponent_Library table.")
         return None
 
     def phase_components(self):
@@ -165,7 +167,7 @@ class Data_Importer:
                     exercise_selection_note=row["exercise_selection_note"])
                 s.merge(db_entry)
             # s.commit()
-
+        LogDBInit.introductions(f"Initialized Phase_Component_Library table.")
         return None
 
     def run(self):

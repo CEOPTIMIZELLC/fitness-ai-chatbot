@@ -28,24 +28,28 @@ class Data_Importer:
         LogDBInit.introductions(f"Initializing Muscle_Library table.")
         muscle_names = self.muscle_groups_df['Muscle'].unique()
         self.muscle_ids = create_list_of_table_entries(self.muscle_ids, muscle_names, Muscle_Library)
+        LogDBInit.introductions(f"Initialized Muscle_Library table.")
         return None
 
     def muscle_groups(self):
         LogDBInit.introductions(f"Initializing Muscle_Group_Library table.")
         muscle_group_names = self.muscle_groups_df['Muscle Group'].unique()
         self.muscle_group_ids = create_list_of_table_entries(self.muscle_group_ids, muscle_group_names, Muscle_Group_Library)
+        LogDBInit.introductions(f"Initialized Muscle_Group_Library table.")
         return None
 
     def body_regions(self):
         LogDBInit.introductions(f"Initializing Body_Region_Library table.")
         body_region_names = self.muscle_groups_df['Body Region'].unique()
         self.body_region_ids = create_list_of_table_entries(self.body_region_ids, body_region_names, Body_Region_Library)
+        LogDBInit.introductions(f"Initialized Body_Region_Library table.")
         return None
 
     def bodyparts(self):
         LogDBInit.introductions(f"Initializing Bodypart_Library table.")
         general_body_area_names = self.muscle_groups_df['General Body Area (Resistance Phase Component)'].unique()
         self.bodypart_ids = create_list_of_table_entries(self.bodypart_ids, general_body_area_names, Bodypart_Library)
+        LogDBInit.introductions(f"Initialized Bodypart_Library table.")
         return None
 
     def muscle_categories(self):
@@ -72,7 +76,7 @@ class Data_Importer:
                     bodypart_id=row["General Body Area ID"])
                 s.merge(db_entry)
             # s.commit()
-        
+        LogDBInit.introductions(f"Initialized Muscle_Categories table.")
         return None
 
     def run(self):

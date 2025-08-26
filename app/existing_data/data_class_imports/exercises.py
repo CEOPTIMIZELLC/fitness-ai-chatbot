@@ -76,6 +76,7 @@ class Data_Importer:
                     proprioceptive_progressions=row["Proprioceptive Progressions"])
                 s.merge(db_entry)
             # s.commit()
+        LogDBInit.introductions(f"Initialized Exercise_Library table.")
         return None
 
     def general_exercises_and_exercises(self):
