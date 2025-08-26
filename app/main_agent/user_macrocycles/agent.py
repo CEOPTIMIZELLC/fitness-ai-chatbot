@@ -5,6 +5,7 @@ from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.agents.goals import create_goal_classification_graph
+from app.db_session import session_scope
 from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
@@ -119,10 +120,19 @@ class SubAgent(BaseAgent):
         user_id = state["user_id"]
         goal_id = state["goal_id"]
         new_goal = state["macrocycle_message"]
-        user_macrocycle = User_Macrocycles(user_id=user_id, goal_id=goal_id, goal=new_goal)
-        db.session.add(user_macrocycle)
-        db.session.commit()
-        return {"user_macrocycle": user_macrocycle.to_dict()}
+        payload = {}
+        with session_scope() as s:
+            user_macrocycle = User_Macrocycles(user_id=user_id, goal_id=goal_id, goal=new_goal)
+            s.add(user_macrocycle)
+
+            # get PKs without committing the transaction
+            s.flush()
+
+            # load defaults/server-side values
+            s.refresh(user_macrocycle)
+            payload = user_macrocycle.to_dict()
+
+        return {"user_macrocycle": payload}
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
@@ -138,7 +148,8 @@ class SubAgent(BaseAgent):
     def delete_old_children(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Delete old items of current Macrocycle---------")
         macrocycle_id = state["macrocycle_id"]
-        db.session.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
+        with session_scope() as s:
+            s.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
         LogMainSubAgent.verbose("Successfully deleted")
         return {}
 
@@ -147,11 +158,20 @@ class SubAgent(BaseAgent):
         goal_id = state["goal_id"]
         new_goal = state["macrocycle_message"]
         macrocycle_id = state["macrocycle_id"]
-        user_macrocycle = db.session.get(User_Macrocycles, macrocycle_id)
-        user_macrocycle.goal = new_goal
-        user_macrocycle.goal_id = goal_id
-        db.session.commit()
-        return {"user_macrocycle": user_macrocycle.to_dict()}
+        payload = {}
+        with session_scope() as s:
+            user_macrocycle = s.get(User_Macrocycles, macrocycle_id)
+            user_macrocycle.goal = new_goal
+            user_macrocycle.goal_id = goal_id
+
+            # get PKs without committing the transaction
+            s.flush()
+
+            # load defaults/server-side values
+            s.refresh(user_macrocycle)
+            payload = user_macrocycle.to_dict()
+
+        return {"user_macrocycle": payload}
 
     # Create main agent.
     def create_main_agent_graph(self, state_class):

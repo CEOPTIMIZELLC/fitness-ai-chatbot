@@ -6,6 +6,7 @@ from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.agents.weekday_availability import create_weekday_availability_extraction_graph
+from app.db_session import session_scope
 from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_weekday_availability, current_microcycle
 
@@ -77,13 +78,13 @@ class SubAgent(BaseAgent):
         user_id = state["user_id"]
         weekday_availability = state["agent_output"]
         # Update each availability entry to the database.
-        for i in weekday_availability:
-            db_entry = User_Weekday_Availability(
-                user_id=user_id, 
-                weekday_id=i["weekday_id"], 
-                availability=timedelta(seconds=i["availability"]))
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for i in weekday_availability:
+                db_entry = User_Weekday_Availability(
+                    user_id=user_id, 
+                    weekday_id=i["weekday_id"], 
+                    availability=timedelta(seconds=i["availability"]))
+                s.merge(db_entry)
         return {}
 
     # Delete the old children belonging to the current item.
@@ -94,7 +95,8 @@ class SubAgent(BaseAgent):
         if user_microcycle:
             microcycle_id = user_microcycle.id
 
-            db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
+            with session_scope() as s:
+                s.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
             LogMainSubAgent.verbose("Successfully deleted")
         return {}
 
