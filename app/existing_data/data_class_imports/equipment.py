@@ -42,6 +42,7 @@ class Data_Importer:
         equipment_names = self.equipment_df["Equipment"].unique()
 
         self.equipment_ids = create_list_of_table_entries(self.equipment_ids, equipment_names, Equipment_Library)
+        LogDBInit.introductions(f"Initialized Equipment table.")
         return None
     
     def run(self):

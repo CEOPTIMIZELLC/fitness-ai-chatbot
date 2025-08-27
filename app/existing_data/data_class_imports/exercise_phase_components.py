@@ -1,5 +1,5 @@
 from app.logging_config import LogDBInit
-from app import db
+from app.db_session import session_scope
 from app.models import Exercise_Component_Phases
 
 class Data_Importer:
@@ -32,13 +32,15 @@ class Data_Importer:
         exercise_component_phase_df['Subcomponent ID'] = exercise_component_phase_df['Subcomponent'].map(self.subcomponent_ids)
 
         # Create a list of entries for Exercise Phase Components table.
-        for _, row in exercise_component_phase_df.iterrows():
-            db_entry = Exercise_Component_Phases(
-                exercise_id=row["Exercise ID"], 
-                component_id=row["Component ID"],
-                subcomponent_id=row["Subcomponent ID"])
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for _, row in exercise_component_phase_df.iterrows():
+                db_entry = Exercise_Component_Phases(
+                    exercise_id=row["Exercise ID"], 
+                    component_id=row["Component ID"],
+                    subcomponent_id=row["Subcomponent ID"])
+                s.merge(db_entry)
+            # s.commit()
+        LogDBInit.introductions(f"Initialized Exercise_Phase_Component table.")
         return None
 
     def run(self):

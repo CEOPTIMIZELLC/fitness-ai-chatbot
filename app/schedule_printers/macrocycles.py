@@ -5,7 +5,7 @@ class MacrocycleSchedulePrinter(BaseSchedulePrinter):
     def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
-            "number": ("Mesocycle", 12),
+            "number": ("Macrocycle", 13),
             "goal_name": ("Goal", longest_sizes["goal_name"] + 4),
             "start_date": ("Start", 17),
             "end_date": ("End", 17),

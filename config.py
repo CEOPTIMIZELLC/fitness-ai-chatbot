@@ -17,6 +17,9 @@ agent_recursion_limit = 30
 # Distance threshold for if semantic clustering of exercises (smaller number means more precise).
 distance_threshold = 1.1
 
+# Maximum workers for the database initialization
+db_max_workers = 8
+
 # When clusters are created for items, should names be generated where not necessary. (Makes database initialization slower.)
 generate_cluster_names = True
 
@@ -215,6 +218,12 @@ class ConfigBase:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://'+os.environ["POSTRGRES_USER"]+':'+os.environ["POSTRGRES_PASSWORD"]+'@'+os.environ["POSTRGRES_HOST"]+'/'+os.environ["POSTRGRES_DATABASE"]
     SQLALCHEMY_DATABASE_URI = "postgresql://postgres:" + os.environ["SUPABASE_PASSWORD"] + "@db.ibjmsnuozqlwcdaqtcwh.supabase.co:5432/postgres"
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_size": 10, 
+        # "max_overflow": 20, 
+        # "pool_recycle": 3600, 
+        # "pool_pre_ping": True, 
+    }
     LANGUAGE_MODEL = os.environ.get("LANGUAGE_MODEL")
     EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL")
     #PERMANENT_SESSION_LIFETIME = timedelta(minutes=1)

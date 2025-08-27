@@ -24,19 +24,37 @@ class Data_Importer(
         MC_Data.__init__(self, xls)
         PC_Bodyparts_Data.__init__(self, xls)
         PC_Data.__init__(self, xls)
+
+    def run_parallel_tasks(self, task_classes):
+        tasks = [
+            task_class.run
+            for task_class in task_classes
+        ]
+
+        run_parallel_queries(
+            tasks, 
+            task_args = [self] * len(tasks)
+        )
     
     def run(self):
         LogDBInit.introductions(f"Beginning database initialization.")
-        Loading_Systems_Data.run(self)
-        Weekday_Data.run(self)
-        MC_Data.run(self)
-        PC_Data.run(self)
-        PC_Bodyparts_Data.run(self)
+        self.run_parallel_tasks([
+            Loading_Systems_Data, 
+            Weekday_Data, 
+            MC_Data, 
+            PC_Data, 
+        ])
+
         Exercise_Data.run(self)
-        Exercise_PC_Data.run(self)
         Equipment_Data.run(self)
-        Exercise_Equipment_Data.run(self)
-        Exercise_MC_Data.run(self)
+
+        self.run_parallel_tasks([
+            PC_Bodyparts_Data, 
+            Exercise_PC_Data, 
+            Exercise_Equipment_Data, 
+            Exercise_MC_Data, 
+        ])
+
         LogDBInit.introductions(f"Ending database initialization.")
         return None
 
