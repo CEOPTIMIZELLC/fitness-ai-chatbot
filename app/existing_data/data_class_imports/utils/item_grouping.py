@@ -1,4 +1,4 @@
-from config import generate_cluster_names
+from config import generate_cluster_names, db_max_workers
 from logging_config import LogDBInit
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
@@ -87,11 +87,10 @@ class Data_Clustering:
     def _generate_cluster_names(self, clustered_items):
         LogDBInit.clustering(f"Generating cluster names.")
         cluster_names = {}
-        max_workers = 8
 
         language_model=current_app.config["LANGUAGE_MODEL"]
 
-        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        with ThreadPoolExecutor(max_workers=db_max_workers) as ex:
             futures = {
                 ex.submit(
                     self._generate_cluster_name, 

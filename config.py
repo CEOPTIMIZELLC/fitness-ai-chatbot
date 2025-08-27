@@ -8,6 +8,9 @@ agent_recursion_limit = 30
 # Distance threshold for if semantic clustering of exercises (smaller number means more precise).
 distance_threshold = 1.1
 
+# Maximum workers for the database initialization
+db_max_workers = 8
+
 # When clusters are created for items, should names be generated where not necessary. (Makes database initialization slower.)
 generate_cluster_names = True
 
