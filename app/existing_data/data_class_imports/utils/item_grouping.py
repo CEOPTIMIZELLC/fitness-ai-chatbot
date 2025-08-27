@@ -67,7 +67,7 @@ class Data_Clustering:
         return None
 
     # Generate the name for the individual cluster of items.
-    def _generate_cluster_name(self, items):
+    def _generate_cluster_name(self, language_model, items):
         item_names = ", ".join(f'"{s}"' for s in items)
         check_prompt = ChatPromptTemplate.from_messages(
             [
@@ -76,7 +76,7 @@ class Data_Clustering:
             ]
         )
 
-        llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"])
+        llm = ChatOpenAI(model=language_model)
         structured_llm = llm.with_structured_output(self.structured_output_class)
         item_classifier = check_prompt | structured_llm
         general_item_name = item_classifier.invoke({})
@@ -88,10 +88,12 @@ class Data_Clustering:
         clustered_items = self.df.groupby("General Cluster")[self.name_column].apply(list).to_dict()
         cluster_names = {}
 
+        language_model=current_app.config["LANGUAGE_MODEL"]
+
         # Wrap your items in tqdm to get a progress bar
         for cluster_id, items in tqdm(clustered_items.items(), total=len(clustered_items), desc="Processing clusters"):
             if generate_cluster_names:
-                name = self._generate_cluster_name(items)
+                name = self._generate_cluster_name(language_model, items)
             else:
                 name = f"cluster_{cluster_id}"
             cluster_names[cluster_id] = name
