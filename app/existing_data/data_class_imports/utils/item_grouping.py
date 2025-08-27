@@ -1,5 +1,6 @@
 from config import generate_cluster_names
 from logging_config import LogDBInit
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import numpy as np
 from flask import current_app
@@ -81,22 +82,51 @@ class Data_Clustering:
         item_classifier = check_prompt | structured_llm
         general_item_name = item_classifier.invoke({})
         return general_item_name.name
-
+    
     # Generate the names for all of the clusters.
-    def _generate_cluster_names(self):
+    def _generate_cluster_names(self, clustered_items):
         LogDBInit.clustering(f"Generating cluster names.")
-        clustered_items = self.df.groupby("General Cluster")[self.name_column].apply(list).to_dict()
         cluster_names = {}
+        max_workers = 8
 
         language_model=current_app.config["LANGUAGE_MODEL"]
 
-        # Wrap your items in tqdm to get a progress bar
-        for cluster_id, items in tqdm(clustered_items.items(), total=len(clustered_items), desc="Processing clusters"):
-            if generate_cluster_names:
-                name = self._generate_cluster_name(language_model, items)
-            else:
-                name = f"cluster_{cluster_id}"
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            futures = {
+                ex.submit(
+                    self._generate_cluster_name, 
+                    language_model, items
+                ): cluster_id
+                for cluster_id, items in clustered_items.items()
+            }
+
+            # Wrap your items in tqdm to get a progress bar
+            for fut in tqdm(as_completed(futures), total=len(futures), desc="Processing clusters"):
+                cluster_id = futures[fut]
+                name = fut.result()
+                cluster_names[cluster_id] = name
+        return cluster_names
+
+    # Create the default names for all of the clusters.
+    def _default_cluster_names(self, clustered_items):
+        LogDBInit.clustering(f"Adding default cluster names.")
+        cluster_names = {}
+        for cluster_id, items in clustered_items.items():
+            name = self._generate_cluster_name(items)
             cluster_names[cluster_id] = name
+        return cluster_names
+
+    # Generate the names for all of the clusters.
+    def _add_cluster_names(self):
+        clustered_items = self.df.groupby("General Cluster")[self.name_column].apply(list).to_dict()
+
+        # Generate names in parallel.
+        if generate_cluster_names:
+            cluster_names = self._generate_cluster_names(clustered_items)
+
+        # Placeholder names if names shouldn't be generated.
+        else:
+            cluster_names = self._default_cluster_names(clustered_items)
 
         self.df[self.cluster_name_column] = self.df["General Cluster"].map(cluster_names)
         return None
@@ -113,7 +143,7 @@ class Data_Clustering:
         embedding_matrix = self._retrieve_embedding_matrix()
         self._cluster_df_by_embeddings(embedding_matrix)
 
-        self._generate_cluster_names()
+        self._add_cluster_names()
         return None
 
 def Main(df, name_column, structured_output_class=None, system_message=None, human_message=None):
