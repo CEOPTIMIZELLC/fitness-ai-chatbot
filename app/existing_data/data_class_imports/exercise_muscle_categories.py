@@ -11,21 +11,28 @@ from app.models import (
 from .utils import run_parallel_queries
 
 class Data_Importer:
-    def exercise_muscles(self):
-        LogDBInit.introductions(f"Initializing Exercise_Muscles table.")
+    def _format_df(self, linked_column, linked_ids=None):
         # Ensure that the ids neccessary have been initialized.
-        if not (self.exercise_ids and self.muscle_ids):
+        if not (self.exercise_ids and linked_ids):
             LogDBInit.data_errors("IDs not initialized.")
             return None
-        # Retrieve relevant information for target muscle classification for exercises, as well as dropping the None values.
-        exercise_muscle_df = self.exercises_df[["Exercise", "Target Muscle"]].copy().dropna()
+        # Retrieve relevant information for target muscle category for exercises, as well as dropping the None values.
+        exercise_linked_df = self.exercises_df[["Exercise", linked_column]].copy().dropna()
 
         # Lowercase to match format of identifier strings
-        exercise_muscle_df["Target Muscle"] = exercise_muscle_df["Target Muscle"].str.lower()
+        exercise_linked_df[linked_column] = exercise_linked_df[linked_column].str.lower()
 
         # Create the id columns
-        exercise_muscle_df['Exercise ID'] = exercise_muscle_df['Exercise'].map(self.exercise_ids)
-        exercise_muscle_df['Target Muscle ID'] = exercise_muscle_df['Target Muscle'].map(self.muscle_ids)
+        exercise_linked_df["Exercise ID"] = exercise_linked_df["Exercise"].map(self.exercise_ids)
+        exercise_linked_df[linked_column + " ID"] = exercise_linked_df[linked_column].map(linked_ids)
+        return exercise_linked_df
+
+    def exercise_muscles(self):
+        LogDBInit.introductions(f"Initializing Exercise_Muscles table.")
+        exercise_muscle_df = self._format_df(
+            linked_column="Target Muscle", 
+            linked_ids=self.muscle_ids
+        )
 
         # Create a list of entries for Exercise Phase Components table.
         with session_scope() as s:
@@ -43,19 +50,10 @@ class Data_Importer:
 
     def exercise_muscle_groups(self):
         LogDBInit.introductions(f"Initializing Exercise_Muscle_Groups table.")
-        # Ensure that the ids neccessary have been initialized.
-        if not (self.exercise_ids and self.muscle_group_ids):
-            LogDBInit.data_errors("IDs not initialized.")
-            return None
-        # Retrieve relevant information for target muscle group classification for exercises, as well as dropping the None values.
-        exercise_muscle_group_df = self.exercises_df[["Exercise", "Target Muscle Group"]].copy().dropna()
-
-        # Lowercase to match format of identifier strings
-        exercise_muscle_group_df["Target Muscle Group"] = exercise_muscle_group_df["Target Muscle Group"].str.lower()
-
-        # Create the id columns
-        exercise_muscle_group_df['Exercise ID'] = exercise_muscle_group_df['Exercise'].map(self.exercise_ids)
-        exercise_muscle_group_df['Target Muscle Group ID'] = exercise_muscle_group_df['Target Muscle Group'].map(self.muscle_group_ids)
+        exercise_muscle_group_df = self._format_df(
+            linked_column="Target Muscle Group", 
+            linked_ids=self.muscle_group_ids
+        )
 
         # Create a list of entries for Exercise Phase Components table.
         with session_scope() as s:
@@ -70,19 +68,10 @@ class Data_Importer:
 
     def exercise_body_regions(self):
         LogDBInit.introductions(f"Initializing Exercise_Body_Regions table.")
-        # Ensure that the ids neccessary have been initialized.
-        if not (self.exercise_ids and self.body_region_ids):
-            LogDBInit.data_errors("IDs not initialized.")
-            return None
-        # Retrieve relevant information for target body region classification for exercises, as well as dropping the None values.
-        exercise_body_region_df = self.exercises_df[["Exercise", "Target Body Region"]].copy().dropna()
-
-        # Lowercase to match format of identifier strings
-        exercise_body_region_df["Target Body Region"] = exercise_body_region_df["Target Body Region"].str.lower()
-
-        # Create the id columns
-        exercise_body_region_df['Exercise ID'] = exercise_body_region_df['Exercise'].map(self.exercise_ids)
-        exercise_body_region_df['Target Body Region ID'] = exercise_body_region_df['Target Body Region'].map(self.body_region_ids)
+        exercise_body_region_df = self._format_df(
+            linked_column="Target Body Region", 
+            linked_ids=self.body_region_ids
+        )
 
         # Create a list of entries for Exercise Phase Components table.
         with session_scope() as s:
@@ -97,19 +86,10 @@ class Data_Importer:
 
     def exercise_bodyparts(self):
         LogDBInit.introductions(f"Initializing Exercise_Bodyparts table.")
-        # Ensure that the ids neccessary have been initialized.
-        if not (self.exercise_ids and self.bodypart_ids):
-            LogDBInit.data_errors("IDs not initialized.")
-            return None
-        # Retrieve relevant information for target general body area classification for exercises, as well as dropping the None values.
-        exercise_bodypart_df = self.exercises_df[["Exercise", "Target General Body Area"]].copy().dropna()
-
-        # Lowercase to match format of identifier strings
-        exercise_bodypart_df["Target General Body Area"] = exercise_bodypart_df["Target General Body Area"].str.lower()
-
-        # Create the id columns
-        exercise_bodypart_df['Exercise ID'] = exercise_bodypart_df['Exercise'].map(self.exercise_ids)
-        exercise_bodypart_df['Target General Body Area ID'] = exercise_bodypart_df['Target General Body Area'].map(self.bodypart_ids)
+        exercise_bodypart_df = self._format_df(
+            linked_column="Target General Body Area", 
+            linked_ids=self.bodypart_ids
+        )
 
         # Create a list of entries for Exercise Phase Components table.
         with session_scope() as s:
