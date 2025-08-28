@@ -1,6 +1,7 @@
 from logging_config import LogMainSubAgent
 from flask import abort
 
+from langgraph.graph import StateGraph
 from langgraph.types import interrupt
 
 from app.goal_prompts import availability_system_prompt
@@ -84,4 +85,37 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
         abort(404, description=f"No active {self.availability_title} found.")
         return {}
 
+    # Create main agent.
+    def _add_availability_retrieval_pipeline_to_workflow(self, workflow: StateGraph):
+        workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
+        workflow.add_node("availability_retrieved", self.chained_conditional_inbetween)
 
+        # Whether an availability for the user exists.
+        workflow.add_conditional_edges(
+            "retrieve_availability",
+            self.confirm_availability,
+            {
+                "no_availability": "ask_for_availability_permission",   # No parent element exists.
+                "availability": "availability_retrieved"                # In between step for if availability exists.
+            }
+        )
+        return workflow
+
+    # Create main agent.
+    def _add_availability_permission_pipeline_to_workflow(self, workflow: StateGraph):
+        workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
+        workflow.add_node("availability_permission_denied", self.availability_permission_denied)
+        workflow.add_node("availability", self.availability_node)
+
+        # Whether an availability for the user is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
+        workflow.add_conditional_edges(
+            "availability_requests_extraction",
+            self.confirm_availability_permission,
+            {
+                "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
+                "permission_granted": "availability"                    # The agent is allowed to create availability.
+            }
+        )
+        workflow.add_edge("availability_permission_denied", "end_node")
+        return workflow

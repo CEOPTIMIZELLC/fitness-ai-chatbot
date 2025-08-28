@@ -24,6 +24,8 @@ class BaseAgentWithParents(BaseAgent):
     parent_scheduler_agent = None
     focus_edit_agent = None
 
+    include_editor = False
+
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
         self.parent_names = sub_agent_focused_items(self.parent)
@@ -176,24 +178,8 @@ class BaseAgentWithParents(BaseAgent):
 
 
     # Create main agent.
-    def create_main_agent_graph(self, state_class: type[TState]):
-        workflow = StateGraph(state_class)
+    def _add_impact_pipeline_to_workflow(self, workflow: StateGraph):
         workflow.add_node("retrieve_parent", self.retrieve_parent)
-        workflow.add_node("ask_for_permission", self.ask_for_permission)
-        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
-        workflow.add_node("permission_denied", self.permission_denied)
-        workflow.add_node("parent_agent", self.parent_scheduler_agent)
-        workflow.add_node("parent_retrieved", self.parent_retrieved)
-        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
-        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
-        workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("delete_old_children", self.delete_old_children)
-        workflow.add_node("perform_scheduler", self.perform_scheduler)
-        workflow.add_node("editor_agent", self.focus_edit_agent)
-        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
-        workflow.add_node("read_user_current_element", self.read_user_current_element)
-        workflow.add_node("get_formatted_list", self.get_formatted_list)
-        workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -205,6 +191,13 @@ class BaseAgentWithParents(BaseAgent):
                 "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
             }
         )
+        workflow.add_edge("end_node", END)
+        return workflow
+
+    # Create main agent.
+    def _add_parent_retrieval_pipeline_to_workflow(self, workflow: StateGraph):
+        workflow.add_node("ask_for_permission", self.ask_for_permission)
+        workflow.add_node("parent_retrieved", self.parent_retrieved)
 
         # Whether a parent element exists.
         workflow.add_conditional_edges(
@@ -215,6 +208,18 @@ class BaseAgentWithParents(BaseAgent):
                 "parent": "parent_retrieved"                            # In between step for if a parent element exists.
             }
         )
+        return workflow
+
+    # Create main agent.
+    def _add_read_write_pipeline_to_workflow(self, workflow: StateGraph):
+        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
+        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
+
+        workflow.add_node("retrieve_information", self.retrieve_information)
+
+        workflow.add_node("read_user_current_element", self.read_user_current_element)
+        workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("get_user_list", self.get_user_list)
 
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
@@ -245,6 +250,16 @@ class BaseAgentWithParents(BaseAgent):
                 "all": "get_user_list"                                  # Read all user elements.
             }
         )
+        workflow.add_edge("read_user_current_element", "end_node")
+        workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("get_user_list", "end_node")
+        return workflow
+
+    # Create main agent.
+    def _add_parent_permission_pipeline_to_workflow(self, workflow: StateGraph):
+        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
+        workflow.add_node("permission_denied", self.permission_denied)
+        workflow.add_node("parent_agent", self.parent_scheduler_agent)
 
         # Whether a parent element is allowed to be created where one doesn't already exist.
         workflow.add_edge("ask_for_permission", "parent_requests_extraction")
@@ -257,16 +272,54 @@ class BaseAgentWithParents(BaseAgent):
             }
         )
         workflow.add_edge("parent_agent", "retrieve_parent")
+        workflow.add_edge("permission_denied", "end_node")
+        return workflow
+
+    # Create main agent.
+    def _add_scheduler_pipeline_to_workflow(self, workflow: StateGraph, is_edited=False):
+        workflow.add_node("perform_scheduler", self.perform_scheduler)
+        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
+
+        if self.include_editor:
+            workflow.add_node("editor_agent", self.focus_edit_agent)
+
+            workflow.add_edge("delete_old_children", "perform_scheduler")
+            workflow.add_edge("perform_scheduler", "editor_agent")
+            workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
+            workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
+
+        else:
+            workflow.add_edge("delete_old_children", "perform_scheduler")
+            workflow.add_edge("perform_scheduler", "agent_output_to_sqlalchemy_model")
+            workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
+
+        return workflow
+
+    # Create main agent.
+    def _add_pipeline_to_workflow(self, workflow: StateGraph):
+        return workflow
+
+    # Create main agent.
+    def _add_pipeline_to_workflow(self, workflow: StateGraph):
+        return workflow
+
+    def create_main_agent_graph(self, state_class: type[TState]):
+        workflow = StateGraph(state_class)
+        workflow.add_node("delete_old_children", self.delete_old_children)
+
+        # Whether the focus element has been indicated to be impacted.
+        self._add_impact_pipeline_to_workflow(workflow)
+
+        # Whether a parent element exists.
+        self._add_parent_retrieval_pipeline_to_workflow(workflow)
+
+        # What to do depending on if the request is to read or write.
+        self._add_read_write_pipeline_to_workflow(workflow)
+
+        # Whether a parent element is allowed to be created where one doesn't already exist.
+        self._add_parent_permission_pipeline_to_workflow(workflow)
 
         workflow.add_edge("retrieve_information", "delete_old_children")
-        workflow.add_edge("delete_old_children", "perform_scheduler")
-        workflow.add_edge("perform_scheduler", "editor_agent")
-        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
-        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
-        workflow.add_edge("permission_denied", "end_node")
-        workflow.add_edge("read_user_current_element", "end_node")
-        workflow.add_edge("get_formatted_list", "end_node")
-        workflow.add_edge("get_user_list", "end_node")
-        workflow.add_edge("end_node", END)
+        self._add_scheduler_pipeline_to_workflow(workflow)
 
         return workflow.compile()

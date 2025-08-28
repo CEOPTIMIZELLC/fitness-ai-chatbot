@@ -45,6 +45,8 @@ class SubAgent(BaseAgent):
     schedule_printer_class = WorkoutScheduleSchedulePrinter()
     list_printer_class = WorkoutScheduleListPrinter()
 
+    include_editor = True
+
     # Retrieve the Exercises belonging to the Workout.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
         return parent_db_entry.exercises
@@ -64,6 +66,10 @@ class SubAgent(BaseAgent):
 
     def parent_retriever_agent(self, user_id):
         return current_workout_day(user_id)
+
+    # In between node for chained conditional edges.
+    def parent_retrieved(self, state):
+        return {}
 
     # Retrieve User's Availability.
     def availability_retriever_agent(self, state: AgentState):
@@ -175,87 +181,11 @@ class SubAgent(BaseAgent):
         return {self.focus_names["formatted"]: formatted_schedule}
 
     # Create main agent.
-    def create_main_agent_graph(self, state_class):
-        workflow = StateGraph(state_class)
-        workflow.add_node("retrieve_parent", self.retrieve_parent)
-        workflow.add_node("ask_for_permission", self.ask_for_permission)
-        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
-        workflow.add_node("permission_denied", self.permission_denied)
-        workflow.add_node("parent_agent", self.parent_scheduler_agent)
-        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
-        workflow.add_node("retrieve_availability", self.retrieve_availability)
-        workflow.add_node("availability_retrieved", self.chained_conditional_inbetween)
-        workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
-        workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
-        workflow.add_node("availability_permission_denied", self.availability_permission_denied)
-        workflow.add_node("availability", self.availability_node)
+    def _add_read_write_pipeline_to_workflow(self, workflow: StateGraph):
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
-        workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("delete_old_children", self.delete_old_children)
-        workflow.add_node("perform_scheduler", self.perform_scheduler)
-        workflow.add_node("editor_agent", self.focus_edit_agent)
-        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
+
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("get_user_list", self.get_user_list)
-        workflow.add_node("end_node", self.end_node)
-
-        # Whether the focus element has been indicated to be impacted.
-        workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
-            {
-                "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
-                "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
-            }
-        )
-
-        # Whether a parent element exists.
-        workflow.add_conditional_edges(
-            "retrieve_parent",
-            self.confirm_parent,
-            {
-                "no_parent": "ask_for_permission",                      # No parent element exists.
-                "parent": "parent_retrieved"                            # In between step for if a parent element exists.
-            }
-        )
-        workflow.add_edge("parent_retrieved", "retrieve_availability")
-
-
-        # Whether a parent element is allowed to be created where one doesn't already exist.
-        workflow.add_edge("ask_for_permission", "parent_requests_extraction")
-        workflow.add_conditional_edges(
-            "parent_requests_extraction",
-            self.confirm_permission,
-            {
-                "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
-                "permission_granted": "parent_agent"                    # The agent is allowed to create a parent.
-            }
-        )
-        workflow.add_edge("parent_agent", "retrieve_parent")
-
-        # Whether an availability for the user exists.
-        workflow.add_conditional_edges(
-            "retrieve_availability",
-            self.confirm_availability,
-            {
-                "no_availability": "ask_for_availability_permission",   # No parent element exists.
-                "availability": "availability_retrieved"                # In between step for if availability exists.
-            }
-        )
-        # Retrieve the information for the alteration.
-        workflow.add_edge("availability_retrieved", "retrieve_information")
-
-        # Whether an availability for the user is allowed to be created where one doesn't already exist.
-        workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
-        workflow.add_conditional_edges(
-            "availability_requests_extraction",
-            self.confirm_availability_permission,
-            {
-                "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
-                "permission_granted": "availability"                    # The agent is allowed to create availability.
-            }
-        )
-        workflow.add_edge("availability", "retrieve_parent")
 
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
@@ -276,16 +206,41 @@ class SubAgent(BaseAgent):
                 "all": "get_user_list"                                  # Read all user elements.
             }
         )
-
-        workflow.add_edge("delete_old_children", "perform_scheduler")
-        workflow.add_edge("perform_scheduler", "editor_agent")
-        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
-        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
-        workflow.add_edge("permission_denied", "end_node")
-        workflow.add_edge("availability_permission_denied", "end_node")
         workflow.add_edge("get_formatted_list", "end_node")
         workflow.add_edge("get_user_list", "end_node")
-        workflow.add_edge("end_node", END)
+        return workflow
+
+    # Create main agent.
+    def create_main_agent_graph(self, state_class):
+        workflow = StateGraph(state_class)
+        workflow.add_node("retrieve_availability", self.retrieve_availability)
+        workflow.add_node("retrieve_information", self.retrieve_information)
+        workflow.add_node("delete_old_children", self.delete_old_children)
+
+        # Whether the focus element has been indicated to be impacted.
+        self._add_impact_pipeline_to_workflow(workflow)
+
+        # Whether a parent element exists.
+        self._add_parent_retrieval_pipeline_to_workflow(workflow)
+        workflow.add_edge("parent_retrieved", "retrieve_availability")
+
+        # Whether a parent element is allowed to be created where one doesn't already exist.
+        self._add_parent_permission_pipeline_to_workflow(workflow)
+
+        # Whether an availability for the user exists.
+        self._add_availability_retrieval_pipeline_to_workflow(workflow)
+
+        # Retrieve the information for the alteration.
+        workflow.add_edge("availability_retrieved", "retrieve_information")
+
+        # Whether an availability for the user is allowed to be created where one doesn't already exist.
+        self._add_availability_permission_pipeline_to_workflow(workflow)
+        workflow.add_edge("availability", "retrieve_parent")
+
+        # What to do depending on if the request is to read or write.
+        self._add_read_write_pipeline_to_workflow(workflow)
+
+        self._add_scheduler_pipeline_to_workflow(workflow)
 
         return workflow.compile()
 

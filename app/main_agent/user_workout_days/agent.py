@@ -163,29 +163,8 @@ class SubAgent(BaseAgent):
         return {}
 
     # Create main agent.
-    def create_main_agent_graph(self, state_class):
-        workflow = StateGraph(state_class)
+    def _add_impact_pipeline_to_workflow(self, workflow):
         workflow.add_node("retrieve_availability", self.retrieve_availability)
-        workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
-        workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
-        workflow.add_node("availability_permission_denied", self.availability_permission_denied)
-        workflow.add_node("availability", self.availability_node)
-        workflow.add_node("availability_retrieved", self.chained_conditional_inbetween)
-        workflow.add_node("retrieve_parent", self.retrieve_parent)
-        workflow.add_node("ask_for_permission", self.ask_for_permission)
-        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
-        workflow.add_node("permission_denied", self.permission_denied)
-        workflow.add_node("parent_agent", self.parent_scheduler_agent)
-        workflow.add_node("parent_retrieved", self.parent_retrieved)
-        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
-        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
-        workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("delete_old_children", self.delete_old_children)
-        workflow.add_node("perform_scheduler", self.perform_scheduler)
-        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
-        workflow.add_node("read_user_current_element", self.read_user_current_element)
-        workflow.add_node("get_formatted_list", self.get_formatted_list)
-        workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -197,93 +176,39 @@ class SubAgent(BaseAgent):
                 "impact": "retrieve_availability"                       # Retreive the availability for the alteration.
             }
         )
+        workflow.add_edge("end_node", END)
+        return workflow
+
+    # Create main agent.
+    def create_main_agent_graph(self, state_class):
+        workflow = StateGraph(state_class)
+        workflow.add_node("retrieve_parent", self.retrieve_parent)
+        workflow.add_node("delete_old_children", self.delete_old_children)
+
+        # Whether the focus element has been indicated to be impacted.
+        self._add_impact_pipeline_to_workflow(workflow)
 
         # Whether an availability for the user exists.
-        workflow.add_conditional_edges(
-            "retrieve_availability",
-            self.confirm_availability,
-            {
-                "no_availability": "ask_for_availability_permission",   # No parent element exists.
-                "availability": "availability_retrieved"                # In between step for if availability exists.
-            }
-        )
+        self._add_availability_retrieval_pipeline_to_workflow(workflow)
+
         # Retrieve the parent element if an availability is found.
         workflow.add_edge("availability_retrieved", "retrieve_parent")
 
         # Whether an availability for the user is allowed to be created where one doesn't already exist.
-        workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
-        workflow.add_conditional_edges(
-            "availability_requests_extraction",
-            self.confirm_availability_permission,
-            {
-                "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
-                "permission_granted": "availability"                    # The agent is allowed to create availability.
-            }
-        )
+        self._add_availability_permission_pipeline_to_workflow(workflow)
         workflow.add_edge("availability", "retrieve_availability")
 
         # Whether a parent element exists.
-        workflow.add_conditional_edges(
-            "retrieve_parent",
-            self.confirm_parent,
-            {
-                "no_parent": "ask_for_permission",                      # No parent element exists.
-                "parent": "parent_retrieved"                            # In between step for if a parent element exists.
-            }
-        )
+        self._add_parent_retrieval_pipeline_to_workflow(workflow)
 
-        # Whether the goal is to read or alter user elements.
-        workflow.add_conditional_edges(
-            "parent_retrieved",
-            self.determine_operation,
-            {
-                "read": "operation_is_read",                            # In between step for if the operation is read.
-                "alter": "retrieve_information"                         # Retrieve the information for the alteration.
-            }
-        )
-
-        # Whether the read operations is for a single element or plural elements.
-        workflow.add_conditional_edges(
-            "operation_is_read",
-            self.determine_read_operation,
-            {
-                "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
-                "singular": "read_user_current_element"                 # Read the current element.
-            }
-        )
-
-        # Whether the plural list is for all of the elements or all elements belonging to the user.
-        workflow.add_conditional_edges(
-            "read_operation_is_plural",
-            self.determine_read_filter_operation,
-            {
-                "current": "get_formatted_list",                        # Read the current schedule.
-                "all": "get_user_list"                                  # Read all user elements.
-            }
-        )
+        # What to do depending on if the request is to read or write.
+        self._add_read_write_pipeline_to_workflow(workflow)
 
         # Whether a parent element is allowed to be created where one doesn't already exist.
-        workflow.add_edge("ask_for_permission", "parent_requests_extraction")
-        workflow.add_conditional_edges(
-            "parent_requests_extraction",
-            self.confirm_permission,
-            {
-                "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
-                "permission_granted": "parent_agent"                    # The agent is allowed to create a parent.
-            }
-        )
-        workflow.add_edge("parent_agent", "retrieve_parent")
+        self._add_parent_permission_pipeline_to_workflow(workflow)
 
         workflow.add_edge("retrieve_information", "delete_old_children")
-        workflow.add_edge("delete_old_children", "perform_scheduler")
-        workflow.add_edge("perform_scheduler", "agent_output_to_sqlalchemy_model")
-        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
-        workflow.add_edge("permission_denied", "end_node")
-        workflow.add_edge("availability_permission_denied", "end_node")
-        workflow.add_edge("read_user_current_element", "end_node")
-        workflow.add_edge("get_formatted_list", "end_node")
-        workflow.add_edge("get_user_list", "end_node")
-        workflow.add_edge("end_node", END)
+        self._add_scheduler_pipeline_to_workflow(workflow)
 
         return workflow.compile()
 
