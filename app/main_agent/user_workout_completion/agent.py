@@ -372,8 +372,8 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
             START,
             self.confirm_impact,
             {
-                "no_impact": "end_node",
-                "impact": "retrieve_parent"
+                "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
+                "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
             }
         )
 
@@ -381,8 +381,8 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
             "retrieve_parent",
             self.confirm_parent,
             {
-                "no_parent": "end_node",
-                "parent": "retrieve_information"
+                "no_parent": "end_node",                                # No parent element exists.
+                "parent": "retrieve_information"                        # Retrieve the information for the alteration.
             }
         )
 
@@ -390,8 +390,8 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
             "retrieve_information",
             self.confirm_children,
             {
-                "no_schedule": "end_node",
-                "present_schedule": "get_proposed_list"
+                "no_schedule": "end_node",                              # End the sub agent if no schedule is found.
+                "present_schedule": "get_proposed_list"                 # Fromat the proposed list for the user if a schedule exists.
             }
         )
 
@@ -403,11 +403,10 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
             "ask_for_edits",
             self.confirm_edits,
             {
-                "is_edited": "perform_edits",
-                "not_edited": "perform_workout_completion"
+                "is_edited": "perform_edits",                           # The agent should apply the desired edits to the schedule.
+                "not_edited": "perform_workout_completion"              # The agent should perform the completion if no edits were found.
             }
         )
-
         workflow.add_edge("perform_edits", "retrieve_parent")
 
         workflow.add_edge("perform_workout_completion", "get_formatted_list")
