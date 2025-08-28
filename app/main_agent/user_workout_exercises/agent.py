@@ -13,12 +13,13 @@ from app.utils.common_table_queries import current_workout_day
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
-from app.main_agent.impact_goal_models import PhaseComponentGoal
-from app.main_agent.prompts import phase_component_system_prompt
+from app.impact_goal_models import PhaseComponentGoal
+from app.goal_prompts import phase_component_system_prompt
+from app.edit_agents import create_workout_edit_agent
 
 from .actions import retrieve_availability_for_day, retrieve_parameters
-from .schedule_printer import SchedulePrinter
-from .list_printer import Main as list_printer_main
+from app.schedule_printers import WorkoutScheduleSchedulePrinter
+from app.list_printers import WorkoutScheduleListPrinter
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
@@ -30,8 +31,9 @@ class AgentState(MainAgentState):
     user_availability: int
     start_date: any
     agent_output: list
+    schedule_printed: str
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent):
     focus = "workout_schedule"
     parent = "phase_component"
     sub_agent_title = "User Workout"
@@ -39,7 +41,9 @@ class SubAgent(BaseAgent, SchedulePrinter):
     parent_system_prompt = phase_component_system_prompt
     parent_goal = PhaseComponentGoal
     parent_scheduler_agent = create_microcycle_scheduler_agent()
-
+    focus_edit_agent = create_workout_edit_agent()
+    schedule_printer_class = WorkoutScheduleSchedulePrinter()
+    list_printer_class = WorkoutScheduleListPrinter()
 
     # Retrieve the Exercises belonging to the Workout.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -100,9 +104,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         result = exercises_main(parameters, constraints)
         LogMainSubAgent.agent_output(result["formatted"])
 
-        return {
-            "agent_output": result["output"]
-        }
+        return {"agent_output": result["output"]}
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
@@ -119,11 +121,11 @@ class SubAgent(BaseAgent, SchedulePrinter):
                 exercise_id = exercise["exercise_id"],
                 bodypart_id = exercise["bodypart_id"],
                 order = i,
-                reps = exercise["reps_var"],
-                sets = exercise["sets_var"],
-                intensity = exercise["intensity_var"],
-                rest = exercise["rest_var"],
-                weight = exercise["training_weight"],
+                reps = exercise["reps"],
+                sets = exercise["sets"],
+                intensity = exercise["intensity"],
+                rest = exercise["rest"],
+                weight = exercise["weight"],
                 true_exercise_flag = exercise["true_exercise_flag"]
             )
 
@@ -150,7 +152,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
                                     {"component_id": user_workout_exercise.phase_components.components.id}
                                     for user_workout_exercise in schedule_from_db]
 
-        formatted_schedule = self.run_schedule_printer(workout_date, loading_system_id, user_workout_exercises_dict)
+        formatted_schedule = self.schedule_printer_class.run_printer(workout_date, loading_system_id, user_workout_exercises_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
@@ -168,7 +170,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
                                     {"component_id": user_workout_exercise.phase_components.components.id}
                                     for user_workout_exercise in schedule_from_db]
 
-        formatted_schedule = list_printer_main(user_workout_exercises_dict)
+        formatted_schedule = self.list_printer_class.run_printer(user_workout_exercises_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
@@ -177,17 +179,20 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow = StateGraph(state_class)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
+        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
+        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_availability", self.retrieve_availability)
         workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
+        workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
         workflow.add_node("availability_permission_denied", self.availability_permission_denied)
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
+        workflow.add_node("editor_agent", self.focus_edit_agent)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("get_user_list", self.get_user_list)
@@ -209,13 +214,16 @@ class SubAgent(BaseAgent, SchedulePrinter):
             self.confirm_parent,
             {
                 "no_parent": "ask_for_permission",                      # No parent element exists.
-                "parent": "retrieve_availability"                       # Retreive the availability for the alteration.
+                "parent": "parent_retrieved"                            # Retreive the availability for the alteration.
             }
         )
+        workflow.add_edge("parent_retrieved", "retrieve_availability")
+
 
         # Whether a parent element is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_permission", "parent_requests_extraction")
         workflow.add_conditional_edges(
-            "ask_for_permission",
+            "parent_requests_extraction",
             self.confirm_permission,
             {
                 "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
@@ -235,8 +243,9 @@ class SubAgent(BaseAgent, SchedulePrinter):
         )
 
         # Whether an availability for the user is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
         workflow.add_conditional_edges(
-            "ask_for_availability_permission",
+            "availability_requests_extraction",
             self.confirm_availability_permission,
             {
                 "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
@@ -266,7 +275,8 @@ class SubAgent(BaseAgent, SchedulePrinter):
         )
 
         workflow.add_edge("delete_old_children", "perform_scheduler")
-        workflow.add_edge("perform_scheduler", "agent_output_to_sqlalchemy_model")
+        workflow.add_edge("perform_scheduler", "editor_agent")
+        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("availability_permission_denied", "end_node")

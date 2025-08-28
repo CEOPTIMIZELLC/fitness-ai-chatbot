@@ -1,6 +1,7 @@
 from flask import abort
 import copy
 
+from config import request_schedule_edits
 from logging_config import LogMainSubAgent
 
 from langgraph.graph import StateGraph, START, END
@@ -14,11 +15,11 @@ from app.utils.datetime_to_string import recursively_change_dict_timedeltas
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.utils import new_input_request
+from app.edit_goal_models import WorkoutCompletionEditGoal
+from app.edit_prompts import WorkoutCompletionEditPrompt
 
-from .edit_goal_model import EditGoal
-from .edit_prompts import workout_edit_system_prompt
-from .schedule_printer import SchedulePrinter
-from .list_printer import Main as list_printer_main
+from app.schedule_printers import WorkoutCompletionSchedulePrinter
+from app.list_printers import WorkoutCompletionListPrinter
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
 
@@ -99,11 +100,14 @@ class AgentState(MainAgentState):
     schedule_list: list
     schedule_printed: str
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
     focus = "workout_completion"
     parent = "workout_day"
     sub_agent_title = "Workout Completion"
     parent_title = "Workout Day"
+    edit_goal = WorkoutCompletionEditGoal
+    schedule_printer_class = WorkoutCompletionSchedulePrinter()
+    list_printer_class = WorkoutCompletionListPrinter()
 
     # def focus_retriever_agent(self, user_id):
     #     return current_workout_day(user_id)
@@ -150,7 +154,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         LogMainSubAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
         schedule_list = state["schedule_list"]
 
-        formatted_schedule = list_printer_main(schedule_list)
+        formatted_schedule = self.list_printer_class.run_printer(schedule_list)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
 
         return {"schedule_printed": formatted_schedule}
@@ -160,7 +164,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         schedule_list = remove_unnecessary_keys_from_workout_schedule(schedule_list_original)
         allowed_list = get_ids_and_names(schedule_list)
         schedule_summary = list_of_dicts_to_string(schedule_list)
-        edit_prompt = workout_edit_system_prompt(schedule_summary, allowed_list)
+        edit_prompt = self.edit_system_prompt_constructor(schedule_summary, allowed_list)
         return edit_prompt
 
     # Items extracted from the edit request.
@@ -220,6 +224,13 @@ class SubAgent(BaseAgent, SchedulePrinter):
     # Request permission from user to execute the parent initialization.
     def ask_for_edits(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Ask user if Workout Performance is Accurate---------")
+        if not request_schedule_edits:
+            LogMainSubAgent.agent_steps(f"\t---------Agent settings do not request edits.---------")
+            return {
+                "is_edited": False,
+                "edits": [],
+                "other_requests": None
+            }
         # Get a copy of the current schedule and remove the items not useful for the AI.
         formatted_schedule_list = state["schedule_printed"]
 
@@ -234,7 +245,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         edit_prompt = self.edit_prompt_creator(copy.deepcopy(schedule_list))
 
         # Retrieve the new input for the parent item.
-        goal_class = new_input_request(user_input, edit_prompt, EditGoal)
+        goal_class = new_input_request(user_input, edit_prompt, self.edit_goal)
 
         new_schedule = goal_class.schedule
         if new_schedule: 
@@ -339,7 +350,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         user_exercises = state["user_exercises"]
         old_user_exercises = state["old_user_exercises"]
 
-        formatted_schedule = self.run_schedule_printer(old_user_exercises, user_exercises)
+        formatted_schedule = self.schedule_printer_class.run_printer(old_user_exercises, user_exercises)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 

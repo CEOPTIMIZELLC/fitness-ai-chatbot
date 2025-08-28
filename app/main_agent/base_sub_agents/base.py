@@ -15,6 +15,7 @@ class BaseAgent():
     sub_agent_title = ""
     focus_system_prompt = None
     focus_goal = None
+    schedule_printer_class = None
 
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
@@ -48,7 +49,8 @@ class BaseAgent():
             focus_names["is_altered"]: True,
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False,
-            focus_names["message"]: goal_class.detail
+            focus_names["message"]: goal_class.detail,
+            "other_requests": goal_class.other_requests
         }
 
     # Determine the operation to be performed.
@@ -82,7 +84,7 @@ class BaseAgent():
             abort(404, description=f"No active {self.sub_agent_title} found.")
 
         schedule_dict = [entry_from_db.to_dict()]
-        formatted_schedule = self.run_schedule_printer(schedule_dict)
+        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
@@ -94,7 +96,7 @@ class BaseAgent():
 
         schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
 
-        formatted_schedule = self.run_schedule_printer(schedule_dict)
+        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
@@ -109,7 +111,7 @@ class BaseAgent():
 
         schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
 
-        formatted_schedule = self.run_schedule_printer(schedule_dict)
+        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 

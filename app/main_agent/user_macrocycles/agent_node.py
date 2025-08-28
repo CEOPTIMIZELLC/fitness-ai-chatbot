@@ -33,7 +33,8 @@ class AgentNode():
                 "macrocycle_message": None, 
                 "macrocycle_perform_with_parent_id": None, 
                 "macrocycle_formatted": None, 
-                "macrocycle_alter_old": False
+                "macrocycle_alter_old": False, 
+                "macrocycle_other_requests": None
             }
         return {
             "macrocycle_impacted": result["macrocycle_impacted"], 
@@ -43,5 +44,6 @@ class AgentNode():
             "macrocycle_message": result["macrocycle_message"], 
             "macrocycle_perform_with_parent_id": result["macrocycle_perform_with_parent_id"] if "macrocycle_perform_with_parent_id" in result else None, 
             "macrocycle_formatted": result["macrocycle_formatted"], 
-            "macrocycle_alter_old": result["macrocycle_alter_old"]
+            "macrocycle_alter_old": result["macrocycle_alter_old"], 
+            "macrocycle_other_requests": result.get("other_requests")
         }

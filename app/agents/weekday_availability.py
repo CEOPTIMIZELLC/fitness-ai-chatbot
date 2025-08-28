@@ -6,7 +6,6 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, END
 from flask import current_app
-from datetime import timedelta
 
 class AgentState(TypedDict):
     new_availability: str
@@ -68,13 +67,13 @@ def llm_output_to_timedelta(state: AgentState):
     result = []
     for id, availability in enumerate(weekday_availability_llm):
         if availability[1]:
-            result.append({"weekday_id": id, "availability": timedelta(seconds=availability[1])})
+            result.append({"weekday_id": id, "availability": availability[1]})
         else:
-            result.append({"weekday_id": id, "availability": timedelta(seconds=0)})
+            result.append({"weekday_id": id, "availability": 0})
 
     from calendar import day_name
     for day in result:
-        total_seconds = day["availability"].total_seconds()
+        total_seconds = day["availability"]
         LogSolver.verbose(f"{day_name[day["weekday_id"]]}: {total_seconds // 60} minutes and {total_seconds % 60} seconds")
 
     state["weekday_availability"] = result

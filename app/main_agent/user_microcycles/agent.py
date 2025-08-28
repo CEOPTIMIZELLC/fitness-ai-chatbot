@@ -1,17 +1,19 @@
 from logging_config import LogMainSubAgent
 from datetime import timedelta
 
+from langgraph.graph import StateGraph, START, END
+
 from app import db
 from app.models import User_Microcycles, User_Mesocycles, User_Macrocycles
 from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.main_agent.impact_goal_models import MesocycleGoal
-from app.main_agent.prompts import mesocycle_system_prompt
+from app.impact_goal_models import MesocycleGoal
+from app.goal_prompts import mesocycle_system_prompt
 from app.main_agent.user_mesocycles import create_mesocycle_agent
 
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import MicrocycleSchedulePrinter
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 
@@ -22,7 +24,7 @@ class AgentState(MainAgentState):
     microcycle_duration: any
     start_date: any
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent):
     focus = "microcycle"
     parent = "mesocycle"
     sub_agent_title = "Microcycle"
@@ -30,6 +32,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
     parent_system_prompt = mesocycle_system_prompt
     parent_goal = MesocycleGoal
     parent_scheduler_agent = create_mesocycle_agent()
+    schedule_printer_class = MicrocycleSchedulePrinter()
 
     # Retrieve the Microcycles belonging to the Mesocycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -106,6 +109,99 @@ class SubAgent(BaseAgent, SchedulePrinter):
         db.session.commit()
 
         return {}
+
+    def create_main_agent_graph(self, state_class: type[AgentState]):
+        workflow = StateGraph(state_class)
+        workflow.add_node("retrieve_parent", self.retrieve_parent)
+        workflow.add_node("ask_for_permission", self.ask_for_permission)
+        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
+        workflow.add_node("permission_denied", self.permission_denied)
+        workflow.add_node("parent_agent", self.parent_scheduler_agent)
+        workflow.add_node("parent_retrieved", self.parent_retrieved)
+        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
+        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
+        workflow.add_node("retrieve_information", self.retrieve_information)
+        workflow.add_node("delete_old_children", self.delete_old_children)
+        workflow.add_node("perform_scheduler", self.perform_scheduler)
+        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
+        workflow.add_node("read_user_current_element", self.read_user_current_element)
+        workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("get_user_list", self.get_user_list)
+        workflow.add_node("end_node", self.end_node)
+
+        # Whether the focus element has been indicated to be impacted.
+        workflow.add_conditional_edges(
+            START,
+            self.confirm_impact,
+            {
+                "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
+                "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
+            }
+        )
+
+        # Whether a parent element exists.
+        workflow.add_conditional_edges(
+            "retrieve_parent",
+            self.confirm_parent,
+            {
+                "no_parent": "ask_for_permission",                      # No parent element exists.
+                "parent": "parent_retrieved"                            # In between step for if a parent element exists.
+            }
+        )
+
+        # Whether the goal is to read or alter user elements.
+        workflow.add_conditional_edges(
+            "parent_retrieved",
+            self.determine_operation,
+            {
+                "read": "operation_is_read",                            # In between step for if the operation is read.
+                "alter": "retrieve_information"                         # Retrieve the information for the alteration.
+            }
+        )
+
+        # Whether the read operations is for a single element or plural elements.
+        workflow.add_conditional_edges(
+            "operation_is_read",
+            self.determine_read_operation,
+            {
+                "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
+                "singular": "read_user_current_element"                 # Read the current element.
+            }
+        )
+
+        # Whether the plural list is for all of the elements or all elements belonging to the user.
+        workflow.add_conditional_edges(
+            "read_operation_is_plural",
+            self.determine_read_filter_operation,
+            {
+                "current": "get_formatted_list",                        # Read the current schedule.
+                "all": "get_user_list"                                  # Read all user elements.
+            }
+        )
+
+        # Whether a parent element is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_permission", "parent_requests_extraction")
+        workflow.add_conditional_edges(
+            "parent_requests_extraction",
+            self.confirm_permission,
+            {
+                "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
+                "permission_granted": "parent_agent"                    # The agent is allowed to create a parent.
+            }
+        )
+        workflow.add_edge("parent_agent", "retrieve_parent")
+
+        workflow.add_edge("retrieve_information", "delete_old_children")
+        workflow.add_edge("delete_old_children", "perform_scheduler")
+        workflow.add_edge("perform_scheduler", "agent_output_to_sqlalchemy_model")
+        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
+        workflow.add_edge("permission_denied", "end_node")
+        workflow.add_edge("read_user_current_element", "end_node")
+        workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("get_user_list", "end_node")
+        workflow.add_edge("end_node", END)
+
+        return workflow.compile()
 
 # Create main agent.
 def create_main_agent_graph():

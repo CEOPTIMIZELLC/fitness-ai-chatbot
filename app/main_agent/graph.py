@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 from flask import current_app
 
-from .prompts import goal_extraction_system_prompt
+from app.goal_prompts import goal_extraction_system_prompt
 
 from .user_macrocycles import MacrocycleAgentNode
 from .user_mesocycles import create_mesocycle_agent
@@ -16,7 +16,7 @@ from .user_workout_exercises import create_workout_agent
 from .user_workout_completion import create_workout_completion_agent
 from .user_weekdays_availability import WeekdayAvailabilityAgentNode
 
-from .impact_goal_models import RoutineImpactGoals
+from app.impact_goal_models import RoutineImpactGoals
 from .main_agent_state import MainAgentState as AgentState
 
 # Resets the value of an item in the state to None if it exists.

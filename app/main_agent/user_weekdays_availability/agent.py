@@ -1,19 +1,22 @@
 from logging_config import LogMainSubAgent
 from typing_extensions import TypedDict
+from datetime import timedelta
 
 from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.agents.weekday_availability import create_weekday_availability_extraction_graph
+from app.db_session import session_scope
 from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_weekday_availability, current_microcycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.main_agent.impact_goal_models import AvailabilityGoal
-from app.main_agent.prompts import availability_system_prompt
+from app.impact_goal_models import AvailabilityGoal
+from app.goal_prompts import availability_system_prompt
+from app.edit_agents import create_availability_edit_agent
 
 from .actions import retrieve_weekday_types
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import AvailabilitySchedulePrinter
 
 # ----------------------------------------- User Availability -----------------------------------------
 
@@ -22,6 +25,7 @@ class AgentState(TypedDict):
 
     user_input: str
     attempts: int
+    other_requests: str
 
     availability_impacted: bool
     availability_is_altered: bool
@@ -32,11 +36,13 @@ class AgentState(TypedDict):
 
     agent_output: list
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent):
     focus = "availability"
     sub_agent_title = "Weekday Availability"
     focus_system_prompt = availability_system_prompt
     focus_goal = AvailabilityGoal
+    focus_edit_agent = create_availability_edit_agent()
+    schedule_printer_class = AvailabilitySchedulePrinter()
 
     def user_list_query(self, user_id):
         return User_Weekday_Availability.query.filter_by(user_id=user_id).all()
@@ -72,13 +78,13 @@ class SubAgent(BaseAgent, SchedulePrinter):
         user_id = state["user_id"]
         weekday_availability = state["agent_output"]
         # Update each availability entry to the database.
-        for i in weekday_availability:
-            db_entry = User_Weekday_Availability(
-                user_id=user_id, 
-                weekday_id=i["weekday_id"], 
-                availability=i["availability"])
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for i in weekday_availability:
+                db_entry = User_Weekday_Availability(
+                    user_id=user_id, 
+                    weekday_id=i["weekday_id"], 
+                    availability=timedelta(seconds=i["availability"]))
+                s.merge(db_entry)
         return {}
 
     # Delete the old children belonging to the current item.
@@ -89,7 +95,8 @@ class SubAgent(BaseAgent, SchedulePrinter):
         if user_microcycle:
             microcycle_id = user_microcycle.id
 
-            db.session.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
+            with session_scope() as s:
+                s.query(User_Workout_Days).filter_by(microcycle_id=microcycle_id).delete()
             LogMainSubAgent.verbose("Successfully deleted")
         return {}
 
@@ -102,6 +109,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
+        workflow.add_node("editor_agent", self.focus_edit_agent)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
@@ -160,7 +168,8 @@ class SubAgent(BaseAgent, SchedulePrinter):
         )
 
         workflow.add_edge("delete_old_children", "perform_input_parser")
-        workflow.add_edge("perform_input_parser", "agent_output_to_sqlalchemy_model")
+        workflow.add_edge("perform_input_parser", "editor_agent")
+        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
         workflow.add_edge("no_new_input_requested", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")

@@ -1,39 +1,41 @@
 from app.utils.longest_string import longest_string_size_for_key
-from app.main_agent.schedule_printer import BaseSchedulePrinter
+from .base import BaseSchedulePrinter
 
-class SchedulePrinter(BaseSchedulePrinter):
+class MesocycleSchedulePrinter(BaseSchedulePrinter):
     def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
             "number": ("Mesocycle", 12),
-            "goal_name": ("Goal", longest_sizes["goal_name"] + 4),
+            "phase": ("Phase", longest_sizes["phase"] + 4),
             "start_date": ("Start", 17),
             "end_date": ("End", 17),
-            "duration": ("Duration", 20)
+            "duration": ("Duration", 20),
+            "goal_duration": ("Goal Duration", 20),
         }
 
-    def _line_fields(self, goal):
+    def _line_fields(self, phase):
         return {
-            "number": str(str(goal["id"])),
-            "goal_name": f"{goal['goal_name']}",
-            "start_date": str(goal["start_date"]),
-            "end_date": str(goal["end_date"]),
-            "duration": f"{str(goal["duration"])}"
+            "number": str(str(phase["order"])),
+            "phase": f"{phase['phase_name']}",
+            "start_date": str(phase["start_date"]),
+            "end_date": str(phase["end_date"]),
+            "duration": f"{str(phase["duration"])}",
+            "goal_duration": f"+{str(phase["duration"]) if phase['is_goal_phase'] else 0}"
         }
 
     def _log_schedule(self, headers, header_line, schedule):
         schedule_string = ""
         schedule_string += header_line
-        for goal in schedule:
-            _line_fields = self._line_fields(goal)
+        for phase in schedule:
+            _line_fields = self._line_fields(phase)
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_schedule_printer(self, schedule):
+    def run_printer(self, schedule):
         formatted = ""
 
         # Calculate longest string sizes
-        longest_sizes = {"goal_name": longest_string_size_for_key(schedule, "goal_name")}
+        longest_sizes = {"phase": longest_string_size_for_key(schedule, "phase_name")}
 
         # Create headers
         formatted += self.schedule_header
@@ -45,5 +47,5 @@ class SchedulePrinter(BaseSchedulePrinter):
         return formatted
 
 def Main(schedule):
-    macrocycle_schedule_printer = SchedulePrinter()
-    return macrocycle_schedule_printer.run_schedule_printer(schedule)
+    mesocycle_schedule_printer = MesocycleSchedulePrinter()
+    return mesocycle_schedule_printer.run_printer(schedule)

@@ -2,7 +2,7 @@ from logging_config import LogDBInit
 import pandas as pd
 import numpy as np
 
-from app import db
+from app.db_session import session_scope
 from app.models import Loading_System_Library
 
 class Data_Importer:
@@ -18,15 +18,16 @@ class Data_Importer:
         LogDBInit.introductions(f"Initializing Loading_System_Library table.")
         # Loading Systems
         # Create list of Loading Systems
-        for i, row in self.loading_systems_df.iterrows():
-            self.loading_system_ids[row["loading_system"]] = i+1
-            db_entry = Loading_System_Library(
-                id=i+1, 
-                name=row["loading_system"], 
-                description=row["Description"])
-            db.session.merge(db_entry)
-        db.session.commit()
-        
+        with session_scope() as s:
+            for i, row in self.loading_systems_df.iterrows():
+                self.loading_system_ids[row["loading_system"]] = i+1
+                db_entry = Loading_System_Library(
+                    id=i+1, 
+                    name=row["loading_system"], 
+                    description=row["Description"])
+                s.merge(db_entry)
+            # s.commit()
+        LogDBInit.introductions(f"Initialized Loading_System_Library table.")
         return None
 
     def run(self):

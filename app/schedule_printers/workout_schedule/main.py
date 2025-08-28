@@ -1,7 +1,15 @@
+from config import ScheduleDisplayConfig
 from app.utils.longest_string import longest_string_size_for_key
-from app.main_agent.schedule_printer import BaseSchedulePrinter
+from ..base import BaseSchedulePrinter
+from .vertical import VerticalSchedulePrinter
+from .horizontal import HorizontalSchedulePrinter
 
-class SchedulePrinter(BaseSchedulePrinter):
+non_specific_true_flags = {
+    True: "True Exercise", 
+    False: "False Exercise"
+}
+
+class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter, HorizontalSchedulePrinter, VerticalSchedulePrinter):
     def _create_final_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
@@ -27,12 +35,19 @@ class SchedulePrinter(BaseSchedulePrinter):
             "performance": ("Performance", 14),
             "end": ("", 2),
         }
-
-
+    
     def _line_fields(self, i, exercise, set_count, superset_var):
         new_weight = exercise["weight"] or 0
 
         one_rep_max = int(round((new_weight * (30 + exercise["reps"])) / 30, 2))
+
+        # Whether or not a specific indication should be given for if the exercise belongs to the phase component/bodypart combination.
+        if ScheduleDisplayConfig.specific_true_exercise_flag:
+            # Display a specific indication.
+            true_exercise_flag = exercise["true_exercise_flag"]
+        else:
+            # Display a non specific indication.
+            true_exercise_flag = non_specific_true_flags[exercise["true_exercise_flag"] == "True Exercise"]
 
         # Format line
         return {
@@ -40,7 +55,7 @@ class SchedulePrinter(BaseSchedulePrinter):
             "superset": str(superset_var["superset_current"]) if superset_var["is_resistance"] else str(superset_var["not_a_superset"]),
             "number": str(i + 1),
             "exercise": exercise["exercise_name"],
-            "true_exercise_flag": exercise["true_exercise_flag"],
+            "true_exercise_flag": true_exercise_flag,
             "phase_component": f"{exercise['phase_component_subcomponent']}",
             "bodypart": exercise["bodypart_name"],
             "warmup": f"{exercise["is_warmup"]}",
@@ -73,58 +88,27 @@ class SchedulePrinter(BaseSchedulePrinter):
             superset_var["is_resistance"] = False
         return superset_var
 
-    def _log_sub_schedule(self, sub_schedule_name, headers, header_line, schedule, warmup=False, set_count=None):
-        sub_schedule_string = ""
-        # Create header line
-        sub_schedule_string += f"\n| {sub_schedule_name} |\n"
-        sub_schedule_string += header_line
-
-        superset_var = {
-            "not_a_superset": "-", 
-            "superset_current": 0, 
-            "superset_previous": 0, 
-            "bodypart_id": 0,
-            "is_resistance": False}
-
-        for component_count, exercise in enumerate(schedule):
-            sub_schedule_part = exercise["is_warmup"] if warmup else not exercise["is_warmup"]
-            if sub_schedule_part:
-                # Count the number of occurrences of each phase component
-                superset_var["superset_previous"] = superset_var["superset_current"]
-
-                # Check if the current component is resistance.
-                superset_var = self._check_if_component_is_resistance(exercise["component_id"], exercise["bodypart_id"], superset_var)
-
-                if set_count:
-                    _line_fields = self._line_fields(component_count, exercise, set_count, superset_var)
-                    sub_schedule_string += self._formatted_entry_line(headers, _line_fields)
-                else:
-                    set_var = exercise["sets"]
-                    for set in range(1, set_var+1):
-                        _line_fields = self._line_fields(component_count, exercise, set, superset_var)
-                        sub_schedule_string += self._formatted_entry_line(headers, _line_fields)
-        return sub_schedule_string
 
     def _log_schedule(self, headers, header_line, loading_system_id, schedule):
         schedule_string = ""
-        max_sets = max(exercise["sets"] if not exercise["is_warmup"] else 1 for exercise in schedule)
 
         # Create header line
-        sub_schedule_name = "Warm-Up"
-
-        schedule_string += self._log_sub_schedule(sub_schedule_name, headers, header_line, schedule, True)
+        schedule_string += self._log_horizontal_sub_schedule(
+            sub_schedule_name="Warm-Up", 
+            headers=headers, 
+            header_line=header_line, 
+            schedule=schedule, 
+            warmup=True
+        )
 
         # Different logging method depending on if the schedule is vertical.
         if loading_system_id == 1:
-            for set_count in range(1, max_sets+1):
-                sub_schedule_name = f"Vertical Set {set_count}"
-                schedule_string += self._log_sub_schedule(sub_schedule_name, headers, header_line, schedule, False, set_count)
+            schedule_string += self._log_vertical_main_schedule(headers, header_line, schedule)
         else:
-            sub_schedule_name = f"Workout"
-            schedule_string += self._log_sub_schedule(sub_schedule_name, headers, header_line, schedule, False)
+            schedule_string += self._log_horizontal_main_schedule(headers, header_line, schedule)
         return schedule_string
 
-    def run_schedule_printer(self, workout_date, loading_system_id, schedule):
+    def run_printer(self, workout_date, loading_system_id, schedule):
         formatted = f"Workout for {str(workout_date)}"
 
         # Calculate longest string sizes
@@ -134,6 +118,14 @@ class SchedulePrinter(BaseSchedulePrinter):
             "exercise": longest_string_size_for_key(schedule, "exercise_name"),
             "true_exercise_flag": longest_string_size_for_key(schedule, "true_exercise_flag")
         }
+
+        # The size of the column depends on if the specific flags are allowed.
+        if ScheduleDisplayConfig.specific_true_exercise_flag:
+            # The column should be the size of the longest flag in the schedule.
+            longest_sizes["true_exercise_flag"] = longest_string_size_for_key(schedule, "true_exercise_flag")
+        else:
+            # The column should be the size of the longest non-specific flag allowed.
+            longest_sizes["true_exercise_flag"] = len("False Exercise")
 
         # Create headers
         formatted += self.schedule_header
@@ -145,5 +137,5 @@ class SchedulePrinter(BaseSchedulePrinter):
         return formatted
 
 def Main(workout_date, loading_system_id, schedule):
-    exercise_schedule_printer = SchedulePrinter()
-    return exercise_schedule_printer.run_schedule_printer(workout_date, loading_system_id, schedule)
+    exercise_schedule_printer = WorkoutScheduleSchedulePrinter()
+    return exercise_schedule_printer.run_printer(workout_date, loading_system_id, schedule)

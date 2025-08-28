@@ -18,8 +18,8 @@ from app.utils.common_table_queries import current_microcycle, current_workout_d
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
 from app.main_agent.user_microcycles import create_microcycle_agent
-from app.main_agent.impact_goal_models import MicrocycleGoal
-from app.main_agent.prompts import microcycle_system_prompt
+from app.impact_goal_models import MicrocycleGoal
+from app.goal_prompts import microcycle_system_prompt
 
 from .actions import (
     retrieve_parameters, 
@@ -28,7 +28,7 @@ from .actions import (
     duration_to_weekdays, 
     workout_day_entry_construction 
 )
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import PhaseComponentSchedulePrinter
 
 # ----------------------------------------- User Workout Days -----------------------------------------
 
@@ -46,8 +46,9 @@ class AgentState(MainAgentState):
 
     start_date: any
     agent_output: list
+    schedule_printed: str
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent):
     focus = "phase_component"
     parent = "microcycle"
     sub_agent_title = "Phase Component"
@@ -55,6 +56,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
     parent_system_prompt = microcycle_system_prompt
     parent_goal = MicrocycleGoal
     parent_scheduler_agent = create_microcycle_agent()
+    schedule_printer_class = PhaseComponentSchedulePrinter()
 
     # Retrieve the Workout Days belonging to the Microcycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -129,8 +131,10 @@ class SubAgent(BaseAgent, SchedulePrinter):
         LogMainSubAgent.agent_output(result["formatted"])
 
         return {
-            "agent_output": result["output"]
+            "agent_output": result["output"],
+            "schedule_printed": result["formatted"]
         }
+
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
@@ -163,10 +167,12 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow = StateGraph(state_class)
         workflow.add_node("retrieve_availability", self.retrieve_availability)
         workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
+        workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
         workflow.add_node("availability_permission_denied", self.availability_permission_denied)
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
+        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("parent_retrieved", self.parent_retrieved)
@@ -202,8 +208,9 @@ class SubAgent(BaseAgent, SchedulePrinter):
         )
 
         # Whether an availability for the user is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
         workflow.add_conditional_edges(
-            "ask_for_availability_permission",
+            "availability_requests_extraction",
             self.confirm_availability_permission,
             {
                 "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
@@ -253,8 +260,9 @@ class SubAgent(BaseAgent, SchedulePrinter):
         )
 
         # Whether a parent element is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_permission", "parent_requests_extraction")
         workflow.add_conditional_edges(
-            "ask_for_permission",
+            "parent_requests_extraction",
             self.confirm_permission,
             {
                 "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.

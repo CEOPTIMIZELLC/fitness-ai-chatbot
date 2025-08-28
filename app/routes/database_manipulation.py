@@ -1,3 +1,4 @@
+from logging_config import LogDBInit
 from flask import request, jsonify, current_app, Blueprint, abort
 
 from app import db
@@ -41,6 +42,7 @@ def get_table_schema():
 @bp.route('/drop_db', methods=['GET','POST'])
 def drop_db():
     """Drops the database."""
+    LogDBInit.introductions(f"Dropping old database.")
     db.drop_all()
 
     return jsonify({"status": "success", "message": "Database DROPPED!"}), 200
@@ -49,6 +51,7 @@ def drop_db():
 @bp.route('/create_db', methods=['GET','POST'])
 def create_db():
     """Creates the database."""
+    LogDBInit.introductions(f"Initializing database.")
     db.create_all()
 
     from app.existing_data.import_existing_data import Main as import_data_main
@@ -63,13 +66,16 @@ def create_db():
         and 'age' in request.form
         and 'gender' in request.form
         and 'goal' in request.form):
+        LogDBInit.introductions(f"Adding User.")
         register()
     
         from app.existing_data.user_equipment import get_default_user_equipment
         user_equipment = get_default_user_equipment()
         if user_equipment:
+            LogDBInit.introductions(f"Adding User equipment.")
             db.session.add_all(user_equipment)
             db.session.commit()
+        LogDBInit.introductions(f"User added.")
 
     current_app.table_schema = get_database_schema(db)
 
@@ -78,6 +84,7 @@ def create_db():
 # Database reinitialization
 @bp.route('/init_db', methods=['GET','POST'])
 def initialize_db():
+    LogDBInit.introductions(f"Dropping old database and reinitializing with new database structure.")
 
     results = []
     

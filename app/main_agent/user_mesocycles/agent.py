@@ -1,6 +1,8 @@
 from logging_config import LogMainSubAgent
 from datetime import timedelta
 
+from langgraph.graph import StateGraph, START, END
+
 from app import db
 from app.models import User_Mesocycles, User_Macrocycles
 from app.agents.phases import Main as phase_main
@@ -9,11 +11,12 @@ from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 from app.main_agent.user_macrocycles import MacrocycleAgentNode
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.main_agent.impact_goal_models import MacrocycleGoal
-from app.main_agent.prompts import macrocycle_system_prompt
+from app.impact_goal_models import MacrocycleGoal
+from app.goal_prompts import macrocycle_system_prompt
+from app.edit_agents import create_mesocycle_edit_agent
 from app.main_agent.utils import construct_phases_list
 
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import MesocycleSchedulePrinter
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
@@ -27,8 +30,9 @@ class AgentState(MainAgentState):
     macrocycle_allowed_weeks: int
     possible_phases: list
     agent_output: list
+    schedule_printed: str
 
-class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
+class SubAgent(MacrocycleAgentNode, BaseAgent):
     focus = "mesocycle"
     parent = "macrocycle"
     sub_agent_title = "Mesocycle"
@@ -36,6 +40,8 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
     parent_system_prompt = macrocycle_system_prompt
     parent_goal = MacrocycleGoal
     parent_scheduler_agent = MacrocycleAgentNode.macrocycle_node
+    focus_edit_agent = create_mesocycle_edit_agent()
+    schedule_printer_class = MesocycleSchedulePrinter()
 
     # Retrieve the Mesocycles belonging to the Macrocycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -64,8 +70,14 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
             parent_names["read_plural"]: False,
             parent_names["read_current"]: False,
             parent_names["message"]: goal_class.detail, 
+            "macrocycle_other_requests": goal_class.other_requests,
             "macrocycle_alter_old": goal_class.alter_old
         }
+
+    # Request is unique for Macrocycle for Mesocycle
+    def parent_requests_extraction(self, state: AgentState):
+        LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests---------")
+        return self.other_requests_information_extractor(state, self.parent, f"{self.parent}_other_requests")
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
@@ -103,10 +115,24 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
         parameters["possible_phases"] = construct_phases_list(int(goal_id))
 
         result = phase_main(parameters, constraints)
-
         LogMainSubAgent.agent_output(result["formatted"])
+
+        agent_output = result["output"]
+        mesocycle_start_date = state["start_date"]
+
+        # Add the startdates and enddates to the schedule items.
+        for i, schedule_item in enumerate(agent_output, start=1):
+            phase_duration = schedule_item["duration"]
+            schedule_item["start_date"] = mesocycle_start_date
+            schedule_item["end_date"] = mesocycle_start_date + timedelta(weeks=phase_duration)
+            schedule_item["order"] = i
+
+            # Set startdate of next phase to be at the end of the current one.
+            mesocycle_start_date +=timedelta(weeks=phase_duration)
+
         return {
-            "agent_output": result["output"]
+            "agent_output": agent_output,
+            "schedule_printed": result["formatted"]
         }
 
     # Convert output from the agent to SQL models.
@@ -114,28 +140,119 @@ class SubAgent(MacrocycleAgentNode, BaseAgent, SchedulePrinter):
         LogMainSubAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         phases_output = state["agent_output"]
         macrocycle_id = state["macrocycle_id"]
-        mesocycle_start_date = state["start_date"]
 
         # Convert output to form that may be stored.
         user_phases = []
-        for i, phase in enumerate(phases_output, start=1):
+        for phase in phases_output:
             new_phase = User_Mesocycles(
                 macrocycle_id = macrocycle_id,
                 phase_id = phase["id"],
                 is_goal_phase = phase["is_goal_phase"],
-                order = i,
-                start_date = mesocycle_start_date,
-                end_date = mesocycle_start_date + timedelta(weeks=phase["duration"])
+                order = phase["order"],
+                start_date = phase["start_date"],
+                end_date = phase["end_date"]
             )
 
             user_phases.append(new_phase)
 
-            # Set startdate of next phase to be at the end of the current one.
-            mesocycle_start_date +=timedelta(weeks=phase["duration"])
-
         db.session.add_all(user_phases)
         db.session.commit()
         return {}
+
+    def create_main_agent_graph(self, state_class: type[AgentState]):
+        workflow = StateGraph(state_class)
+        workflow.add_node("retrieve_parent", self.retrieve_parent)
+        workflow.add_node("ask_for_permission", self.ask_for_permission)
+        workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
+        workflow.add_node("permission_denied", self.permission_denied)
+        workflow.add_node("parent_agent", self.parent_scheduler_agent)
+        workflow.add_node("parent_retrieved", self.parent_retrieved)
+        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
+        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
+        workflow.add_node("retrieve_information", self.retrieve_information)
+        workflow.add_node("delete_old_children", self.delete_old_children)
+        workflow.add_node("perform_scheduler", self.perform_scheduler)
+        workflow.add_node("editor_agent", self.focus_edit_agent)
+        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
+        workflow.add_node("read_user_current_element", self.read_user_current_element)
+        workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("get_user_list", self.get_user_list)
+        workflow.add_node("end_node", self.end_node)
+
+        # Whether the focus element has been indicated to be impacted.
+        workflow.add_conditional_edges(
+            START,
+            self.confirm_impact,
+            {
+                "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
+                "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
+            }
+        )
+
+        # Whether a parent element exists.
+        workflow.add_conditional_edges(
+            "retrieve_parent",
+            self.confirm_parent,
+            {
+                "no_parent": "ask_for_permission",                      # No parent element exists.
+                "parent": "parent_retrieved"                            # In between step for if a parent element exists.
+            }
+        )
+
+        # Whether the goal is to read or alter user elements.
+        workflow.add_conditional_edges(
+            "parent_retrieved",
+            self.determine_operation,
+            {
+                "read": "operation_is_read",                            # In between step for if the operation is read.
+                "alter": "retrieve_information"                         # Retrieve the information for the alteration.
+            }
+        )
+
+        # Whether the read operations is for a single element or plural elements.
+        workflow.add_conditional_edges(
+            "operation_is_read",
+            self.determine_read_operation,
+            {
+                "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
+                "singular": "read_user_current_element"                 # Read the current element.
+            }
+        )
+
+        # Whether the plural list is for all of the elements or all elements belonging to the user.
+        workflow.add_conditional_edges(
+            "read_operation_is_plural",
+            self.determine_read_filter_operation,
+            {
+                "current": "get_formatted_list",                        # Read the current schedule.
+                "all": "get_user_list"                                  # Read all user elements.
+            }
+        )
+
+        # Whether a parent element is allowed to be created where one doesn't already exist.
+        workflow.add_edge("ask_for_permission", "parent_requests_extraction")
+        workflow.add_conditional_edges(
+            "parent_requests_extraction",
+            self.confirm_permission,
+            {
+                "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
+                "permission_granted": "parent_agent"                    # The agent is allowed to create a parent.
+            }
+        )
+        workflow.add_edge("parent_agent", "retrieve_parent")
+
+        workflow.add_edge("retrieve_information", "delete_old_children")
+        workflow.add_edge("delete_old_children", "perform_scheduler")
+        workflow.add_edge("perform_scheduler", "editor_agent")
+        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
+        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
+        workflow.add_edge("permission_denied", "end_node")
+        workflow.add_edge("read_user_current_element", "end_node")
+        workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("get_user_list", "end_node")
+        workflow.add_edge("end_node", END)
+
+        return workflow.compile()
 
 # Create main agent.
 def create_main_agent_graph():

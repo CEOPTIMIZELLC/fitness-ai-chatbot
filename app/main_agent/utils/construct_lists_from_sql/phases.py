@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from app import db
 from app.models import (
     Goal_Library, 
@@ -51,7 +52,7 @@ def phase_dict(possible_phase):
 def construct_phases_list(possible_phases):
     # Convert the phases to a list form.
     possible_phases_list = [dummy_phase]
-    for possible_phase in possible_phases:
+    for possible_phase in tqdm(possible_phases, total=len(possible_phases), desc="Creating phase list from entries"):
         possible_phases_list.append(phase_dict(possible_phase))
     return possible_phases_list
 

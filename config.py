@@ -8,6 +8,12 @@ agent_recursion_limit = 30
 # Distance threshold for if semantic clustering of exercises (smaller number means more precise).
 distance_threshold = 1.1
 
+# Maximum workers for the database initialization
+db_max_workers = 8
+
+# When clusters are created for items, should names be generated where not necessary. (Makes database initialization slower.)
+generate_cluster_names = True
+
 # If a dummy user is created in the database initialization, which preset for equipment to be included.
 # [1-3]
 user_equipment_population_default = 2
@@ -20,6 +26,14 @@ vertical_loading = True
 
 # Whether the main agent will loop after finishing.
 loop_main_agent = True
+
+# Whether the agent should request edits to the schedule after generation.
+request_schedule_edits = True
+
+# Configurations for displayed information for logged schedules.
+class ScheduleDisplayConfig:
+    # Whether the logged schedule should include the reason that an exercise has been included.
+    specific_true_exercise_flag = True
 
 # Configurations for exercise performance decay.
 class ExercisePerformanceDecayConfig:
@@ -87,6 +101,9 @@ class MainAgentVerbosityConfig:
     # Log information regarding user input in the main agent.
     input_info = True
 
+    # Log system messages for LLM calls in the main agent.
+    system_message = True
+
     # Log final formatted schedule produced.
     formatted_schedule = True
 
@@ -103,6 +120,12 @@ class MainSubAgentVerbosityConfig:
 
     # Log the output of the sub agents.
     agent_output = True
+
+    # Log information regarding user input in the sub agents.
+    input_info = True
+
+    # Log system messages for LLM calls in the sub agent.
+    system_message = True
 
     # Log the parsed user input for the sub agents.
     parsed_goal = True
@@ -180,6 +203,12 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://'+os.environ["POSTRGRES_USER"]+':'+os.environ["POSTRGRES_PASSWORD"]+'@'+os.environ["POSTRGRES_HOST"]+'/'+os.environ["POSTRGRES_DATABASE"]
     SQLALCHEMY_DATABASE_URI = "postgresql://postgres:" + os.environ["SUPABASE_PASSWORD"] + "@db.ibjmsnuozqlwcdaqtcwh.supabase.co:5432/postgres"
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_size": 10, 
+        # "max_overflow": 20, 
+        # "pool_recycle": 3600, 
+        # "pool_pre_ping": True, 
+    }
     LANGUAGE_MODEL = os.environ.get("LANGUAGE_MODEL")
     EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL")
     #PERMANENT_SESSION_LIFETIME = timedelta(minutes=1)

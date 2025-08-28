@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from app.utils.common_table_queries import user_possible_exercises_with_user_exercise_info
 
 dummy_exercise = {
@@ -35,11 +36,29 @@ dummy_exercise = {
     "working_duration": 0,
 }
 
+# Construct all of the component phase combinations for the exercise.
+def construct_component_phase_ids(component_phases):
+    component_ids = []
+    subcomponent_ids = []
+    pc_ids = []
+
+    for component_phase in component_phases:
+        component_id = component_phase.component_id
+        subcomponent_id = component_phase.subcomponent_id
+
+        component_ids.append(component_id)
+        subcomponent_ids.append(subcomponent_id)
+        pc_ids.append([component_id, subcomponent_id])
+    return component_ids, subcomponent_ids, pc_ids
+
 def exercise_dict(exercise, user_exercise):
     # Construct list of allowed weighted measurements.
     weighted_equipment_measurements = [0]
     for key in user_exercise.has_weighted_equipment[1]:
         weighted_equipment_measurements.extend(user_exercise.has_weighted_equipment[1][key])
+
+    # Construct the list of ids.
+    component_ids, subcomponent_ids, pc_ids = construct_component_phase_ids(exercise.component_phases)
 
     """Format the exercise data."""
     return {
@@ -49,9 +68,9 @@ def exercise_dict(exercise, user_exercise):
         "general_name": exercise.general_exercises.name.lower(),
         "base_strain": exercise.base_strain,
         "technical_difficulty": exercise.technical_difficulty,
-        "component_ids": [component_phase.component_id for component_phase in exercise.component_phases],
-        "subcomponent_ids": [component_phase.subcomponent_id for component_phase in exercise.component_phases],
-        "pc_ids": [[component_phase.component_id, component_phase.subcomponent_id] for component_phase in exercise.component_phases],
+        "component_ids": component_ids,
+        "subcomponent_ids": subcomponent_ids,
+        "pc_ids": pc_ids,
         "body_region_ids": exercise.all_body_region_ids,
         "bodypart_ids": exercise.all_bodypart_ids,
         "muscle_group_ids": exercise.all_muscle_group_ids,
@@ -80,10 +99,13 @@ def exercise_dict(exercise, user_exercise):
 # Retrieve the phase types and their corresponding constraints for a goal.
 def construct_available_exercises_list(exercises_with_component_phases):
     possible_exercises_list = [dummy_exercise]
-    for exercise, user_exercise in exercises_with_component_phases:
+    for exercise, user_exercise in tqdm(exercises_with_component_phases, total=len(exercises_with_component_phases), desc="Creating exercise list from entries"):
         possible_exercises_list.append(exercise_dict(exercise, user_exercise))
     return possible_exercises_list
 
 def Main(user_id):
+    # Query List Retrieval
     exercises_with_component_phases = user_possible_exercises_with_user_exercise_info(user_id)
+
+    # List of Dictionary Construction
     return construct_available_exercises_list(exercises_with_component_phases)

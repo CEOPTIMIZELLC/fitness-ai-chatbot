@@ -30,7 +30,7 @@ class Exercise(BaseModel):
 
 
 # Model to extract information on whether the user wants to edit something.
-class EditGoal(BaseModel):
+class WorkoutCompletionEditGoal(BaseModel):
     """Goal extraction from user input regarding editing the current workout schedule."""
     schedule: List[Exercise] = Field(
         [], description="Details about what the values of the schedule elements."

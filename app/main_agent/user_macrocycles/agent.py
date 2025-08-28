@@ -5,15 +5,17 @@ from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.agents.goals import create_goal_classification_graph
+from app.db_session import session_scope
 from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.main_agent.impact_goal_models import MacrocycleGoal
-from app.main_agent.prompts import macrocycle_system_prompt
+from app.impact_goal_models import MacrocycleGoal
+from app.goal_prompts import macrocycle_system_prompt
+from app.edit_agents import create_macrocycle_edit_agent
 
 from .actions import retrieve_goal_types
-from .schedule_printer import SchedulePrinter
+from app.schedule_printers import MacrocycleSchedulePrinter
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 
@@ -22,6 +24,7 @@ class AgentState(TypedDict):
 
     user_input: str
     attempts: int
+    other_requests: str
 
     macrocycle_impacted: bool
     macrocycle_is_altered: bool
@@ -37,11 +40,13 @@ class AgentState(TypedDict):
     goal_id: int
 
 
-class SubAgent(BaseAgent, SchedulePrinter):
+class SubAgent(BaseAgent):
     focus = "macrocycle"
     sub_agent_title = "Macrocycle"
     focus_system_prompt = macrocycle_system_prompt
     focus_goal = MacrocycleGoal
+    focus_edit_agent = create_macrocycle_edit_agent()
+    schedule_printer_class = MacrocycleSchedulePrinter()
 
     def user_list_query(self, user_id):
         return User_Macrocycles.query.filter_by(user_id=user_id).all()
@@ -60,6 +65,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False, 
             focus_names["message"]: goal_class.detail, 
+            "other_requests": goal_class.other_requests, 
             "macrocycle_alter_old": goal_class.alter_old
         }
 
@@ -114,23 +120,36 @@ class SubAgent(BaseAgent, SchedulePrinter):
         user_id = state["user_id"]
         goal_id = state["goal_id"]
         new_goal = state["macrocycle_message"]
-        user_macrocycle = User_Macrocycles(user_id=user_id, goal_id=goal_id, goal=new_goal)
-        db.session.add(user_macrocycle)
-        db.session.commit()
-        return {"user_macrocycle": user_macrocycle.to_dict()}
+        payload = {}
+        with session_scope() as s:
+            user_macrocycle = User_Macrocycles(user_id=user_id, goal_id=goal_id, goal=new_goal)
+            s.add(user_macrocycle)
+
+            # get PKs without committing the transaction
+            s.flush()
+
+            # load defaults/server-side values
+            s.refresh(user_macrocycle)
+            payload = user_macrocycle.to_dict()
+
+        return {"user_macrocycle": payload}
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Macrocycle Changing---------")
         user_macrocycle = state["user_macrocycle"]
-        macrocycle_id = user_macrocycle["id"]
-        return {"macrocycle_id": macrocycle_id}
+        return {
+            "macrocycle_id": user_macrocycle["id"], 
+            "start_date": user_macrocycle["start_date"], 
+            "end_date": user_macrocycle["end_date"], 
+        }
 
     # Delete the old children belonging to the current item.
     def delete_old_children(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Delete old items of current Macrocycle---------")
         macrocycle_id = state["macrocycle_id"]
-        db.session.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
+        with session_scope() as s:
+            s.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
         LogMainSubAgent.verbose("Successfully deleted")
         return {}
 
@@ -139,11 +158,20 @@ class SubAgent(BaseAgent, SchedulePrinter):
         goal_id = state["goal_id"]
         new_goal = state["macrocycle_message"]
         macrocycle_id = state["macrocycle_id"]
-        user_macrocycle = db.session.get(User_Macrocycles, macrocycle_id)
-        user_macrocycle.goal = new_goal
-        user_macrocycle.goal_id = goal_id
-        db.session.commit()
-        return {"user_macrocycle": user_macrocycle.to_dict()}
+        payload = {}
+        with session_scope() as s:
+            user_macrocycle = s.get(User_Macrocycles, macrocycle_id)
+            user_macrocycle.goal = new_goal
+            user_macrocycle.goal_id = goal_id
+
+            # get PKs without committing the transaction
+            s.flush()
+
+            # load defaults/server-side values
+            s.refresh(user_macrocycle)
+            payload = user_macrocycle.to_dict()
+
+        return {"user_macrocycle": payload}
 
     # Create main agent.
     def create_main_agent_graph(self, state_class):
@@ -157,7 +185,9 @@ class SubAgent(BaseAgent, SchedulePrinter):
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
         workflow.add_node("create_new_macrocycle", self.create_new_macrocycle)
+        workflow.add_node("editor_agent_for_creation", self.focus_edit_agent)
         workflow.add_node("retrieve_information", self.retrieve_information)
+        workflow.add_node("editor_agent_for_alteration", self.focus_edit_agent)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("alter_old_macrocycle", self.alter_old_macrocycle)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
@@ -211,7 +241,7 @@ class SubAgent(BaseAgent, SchedulePrinter):
             self.which_operation,
             {
                 "alter_old_macrocycle": "retrieve_information",             # Alter the current macrocycle.
-                "create_new_macrocycle": "create_new_macrocycle"        # Create a new macrocycle.
+                "create_new_macrocycle": "editor_agent_for_creation"        # Create a new macrocycle.
             }
         )
 
@@ -241,11 +271,14 @@ class SubAgent(BaseAgent, SchedulePrinter):
             self.which_operation,
             {
                 "alter_old_macrocycle": "retrieve_information",             # Alter the current macrocycle.
-                "create_new_macrocycle": "create_new_macrocycle"        # Create a new macrocycle.
+                "create_new_macrocycle": "editor_agent_for_creation"        # Create a new macrocycle.
             }
         )
 
-        workflow.add_edge("retrieve_information", "delete_old_children")
+        workflow.add_edge("editor_agent_for_creation", "create_new_macrocycle")
+
+        workflow.add_edge("retrieve_information", "editor_agent_for_alteration")
+        workflow.add_edge("editor_agent_for_alteration", "delete_old_children")
         workflow.add_edge("delete_old_children", "alter_old_macrocycle")
         workflow.add_edge("alter_old_macrocycle", "get_user_list")
         workflow.add_edge("create_new_macrocycle", "get_user_list")

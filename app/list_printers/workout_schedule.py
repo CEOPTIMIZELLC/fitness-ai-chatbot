@@ -1,7 +1,13 @@
+from config import ScheduleDisplayConfig
 from app.utils.longest_string import longest_string_size_for_key
-from app.main_agent.schedule_printer import BaseSchedulePrinter
+from app.schedule_printers.base import BaseSchedulePrinter
 
-class ListPrinter(BaseSchedulePrinter):
+non_specific_true_flags = {
+    True: "True Exercise", 
+    False: "False Exercise"
+}
+
+class WorkoutScheduleListPrinter(BaseSchedulePrinter):
     def _create_final_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
@@ -33,11 +39,19 @@ class ListPrinter(BaseSchedulePrinter):
 
         one_rep_max = int(round((new_weight * (30 + exercise["reps"])) / 30, 2))
 
+        # Whether or not a specific indication should be given for if the exercise belongs to the phase component/bodypart combination.
+        if ScheduleDisplayConfig.specific_true_exercise_flag:
+            # Display a specific indication.
+            true_exercise_flag = exercise["true_exercise_flag"]
+        else:
+            # Display a non specific indication.
+            true_exercise_flag = non_specific_true_flags[exercise["true_exercise_flag"] == "True Exercise"]
+
         # Format line
         return {
             "number": str(i + 1),
             "exercise": exercise["exercise_name"],
-            "true_exercise_flag": exercise["true_exercise_flag"],
+            "true_exercise_flag": true_exercise_flag,
             "phase_component": f"{exercise['phase_component_subcomponent']}",
             "bodypart": exercise["bodypart_name"],
             "warmup": f"{exercise["is_warmup"]}",
@@ -65,7 +79,7 @@ class ListPrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_schedule_printer(self, schedule):
+    def run_printer(self, schedule):
         formatted = ""
 
         # Calculate longest string sizes
@@ -73,8 +87,15 @@ class ListPrinter(BaseSchedulePrinter):
             "phase_component": longest_string_size_for_key(schedule, "phase_component_subcomponent"),
             "bodypart": longest_string_size_for_key(schedule, "bodypart_name"),
             "exercise": longest_string_size_for_key(schedule, "exercise_name"),
-            "true_exercise_flag": longest_string_size_for_key(schedule, "true_exercise_flag")
         }
+
+        # The size of the column depends on if the specific flags are allowed.
+        if ScheduleDisplayConfig.specific_true_exercise_flag:
+            # The column should be the size of the longest flag in the schedule.
+            longest_sizes["true_exercise_flag"] = longest_string_size_for_key(schedule, "true_exercise_flag")
+        else:
+            # The column should be the size of the longest non-specific flag allowed.
+            longest_sizes["true_exercise_flag"] = len("False Exercise")
 
         # Create headers
         formatted += self.schedule_header
@@ -86,5 +107,5 @@ class ListPrinter(BaseSchedulePrinter):
         return formatted
 
 def Main(schedule):
-    exercise_schedule_printer = ListPrinter()
-    return exercise_schedule_printer.run_schedule_printer(schedule)
+    exercise_schedule_printer = WorkoutScheduleListPrinter()
+    return exercise_schedule_printer.run_printer(schedule)

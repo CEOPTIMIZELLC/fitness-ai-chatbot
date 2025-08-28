@@ -1,7 +1,7 @@
 from logging_config import LogDBInit
 import re
 
-from app import db
+from app.db_session import session_scope
 from app.models import (
     Exercise_Supportive_Equipment,
     Exercise_Assistive_Equipment,
@@ -9,7 +9,7 @@ from app.models import (
     Exercise_Marking_Equipment,
     Exercise_Other_Equipment,
 )
-from .utils import determine_connector, extract_number
+from .utils import determine_connector, extract_number, run_parallel_queries
 
 
 class Data_Importer:
@@ -44,15 +44,15 @@ class Data_Importer:
         exercise_equipment_df["Equipment ID"] = exercise_equipment_df["Equipment"].map(self.equipment_ids)
 
         # Create a list of entries for the exercises
-        for _, row in exercise_equipment_df.iterrows():
-            db_entry = model_type(
-                exercise_id=row["Exercise ID"], 
-                equipment_id=row["Equipment ID"],
-                quantity=row["Quantity"],
-                equipment_relationship=row["Equipment Relationship"],
-            )
-            db.session.merge(db_entry)
-        db.session.commit()
+        with session_scope() as s:
+            for _, row in exercise_equipment_df.iterrows():
+                db_entry = model_type(
+                    exercise_id=row["Exercise ID"], 
+                    equipment_id=row["Equipment ID"],
+                    quantity=row["Quantity"],
+                    equipment_relationship=row["Equipment Relationship"],
+                )
+                s.merge(db_entry)
 
         return exercise_equipment_df
 
@@ -62,6 +62,7 @@ class Data_Importer:
         exercise_supportive_equipment_df = self.exercises_df[["Exercise", "Supportive Equipment"]].copy().dropna()
         exercise_supportive_equipment_df.rename(columns={"Supportive Equipment": "Equipment"}, inplace=True)
         exercise_supportive_equipment_df = self._parse_exercise_join_table(exercise_supportive_equipment_df, Exercise_Supportive_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Supportive_Equipment table.")
         return None
 
     def exercise_assistive_equipment(self):
@@ -70,6 +71,7 @@ class Data_Importer:
         exercise_assistive_equipment_df = self.exercises_df[["Exercise", "Assistive Equipment"]].copy().dropna()
         exercise_assistive_equipment_df.rename(columns={"Assistive Equipment": "Equipment"}, inplace=True)
         exercise_assistive_equipment_df = self._parse_exercise_join_table(exercise_assistive_equipment_df, Exercise_Assistive_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Assistive_Equipment table.")
         return None
 
     def exercise_weighted_equipment(self):
@@ -78,6 +80,7 @@ class Data_Importer:
         exercise_weighted_equipment_df = self.exercises_df[["Exercise", "Weighted Equipment"]].copy().dropna()
         exercise_weighted_equipment_df.rename(columns={"Weighted Equipment": "Equipment"}, inplace=True)
         exercise_weighted_equipment_df = self._parse_exercise_join_table(exercise_weighted_equipment_df, Exercise_Weighted_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Weighted_Equipment table.")
         return None
 
     def exercise_marking_equipment(self):
@@ -86,6 +89,7 @@ class Data_Importer:
         exercise_marking_equipment_df = self.exercises_df[["Exercise", "Marking Equipment"]].copy().dropna()
         exercise_marking_equipment_df.rename(columns={"Marking Equipment": "Equipment"}, inplace=True)
         exercise_marking_equipment_df = self._parse_exercise_join_table(exercise_marking_equipment_df, Exercise_Marking_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Marking_Equipment table.")
         return None
 
     def exercise_other_equipment(self):
@@ -94,12 +98,16 @@ class Data_Importer:
         exercise_other_equipment_df = self.exercises_df[["Exercise", "Other Equipment"]].copy().dropna()
         exercise_other_equipment_df.rename(columns={"Other Equipment": "Equipment"}, inplace=True)
         exercise_other_equipment_df = self._parse_exercise_join_table(exercise_other_equipment_df, Exercise_Other_Equipment)
+        LogDBInit.introductions(f"Initialized Exercise_Other_Equipment table.")
         return None
 
     def run(self):
-        self.exercise_supportive_equipment()
-        self.exercise_assistive_equipment()
-        self.exercise_weighted_equipment()
-        self.exercise_marking_equipment()
-        self.exercise_other_equipment()
+        tasks = [
+            self.exercise_supportive_equipment, 
+            self.exercise_assistive_equipment, 
+            self.exercise_weighted_equipment, 
+            self.exercise_marking_equipment, 
+            self.exercise_other_equipment, 
+        ]
+        run_parallel_queries(tasks)
         return None
