@@ -170,6 +170,7 @@ class SubAgent(BaseAgent):
         workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
         workflow.add_node("availability_permission_denied", self.availability_permission_denied)
         workflow.add_node("availability", self.availability_node)
+        workflow.add_node("availability_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
@@ -203,9 +204,11 @@ class SubAgent(BaseAgent):
             self.confirm_availability,
             {
                 "no_availability": "ask_for_availability_permission",   # No parent element exists.
-                "availability": "retrieve_parent"                       # Retrieve the parent element if an availability is found.
+                "availability": "availability_retrieved"                # In between step for if availability exists.
             }
         )
+        # Retrieve the parent element if an availability is found.
+        workflow.add_edge("availability_retrieved", "retrieve_parent")
 
         # Whether an availability for the user is allowed to be created where one doesn't already exist.
         workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
