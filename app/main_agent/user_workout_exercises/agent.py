@@ -214,7 +214,7 @@ class SubAgent(BaseAgent):
             self.confirm_parent,
             {
                 "no_parent": "ask_for_permission",                      # No parent element exists.
-                "parent": "parent_retrieved"                            # Retreive the availability for the alteration.
+                "parent": "parent_retrieved"                            # In between step for if a parent element exists.
             }
         )
         workflow.add_edge("parent_retrieved", "retrieve_availability")

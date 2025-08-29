@@ -108,6 +108,19 @@ class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter, HorizontalSchedulePrin
             schedule_string += self._log_horizontal_main_schedule(headers, header_line, schedule)
         return schedule_string
 
+    def _log_total_time(self, schedule):
+        total_duration = 0
+        total_working_duration = 0
+
+        for exercise in schedule:
+            total_duration += exercise["duration"]
+            total_working_duration += exercise["working_duration"]
+
+        formatted = ""
+        formatted += f"Total Duration: {total_duration} seconds"
+        formatted += f"\nTotal Work Duration: {total_working_duration} seconds"
+        return formatted
+
     def run_printer(self, workout_date, loading_system_id, schedule):
         formatted = f"Workout for {str(workout_date)}"
 
@@ -133,6 +146,7 @@ class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter, HorizontalSchedulePrin
         header_line = self._formatted_header_line(headers)
 
         formatted += self._log_schedule(headers, header_line, loading_system_id, schedule)
+        formatted += "\n\n" + self._log_total_time(schedule)
 
         return formatted
 
