@@ -258,8 +258,13 @@ class BaseSubAgent(ScheduleFormatterMethods):
         # Determine if the schedule is valid.
         if violations:
             is_valid = False
+            LogEditorAgent.agent_steps(f"\t---------No violations have been found.---------")
         else:
             is_valid = True
+            LogEditorAgent.agent_steps(f"\t---------The following violations have been found:---------")
+            for violation in violations:
+                LogEditorAgent.agent_steps(f"\t{violation}")
+
         return {"is_valid": is_valid}
 
     # Format the structured schedule.
