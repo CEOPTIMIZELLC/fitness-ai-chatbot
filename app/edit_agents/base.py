@@ -1,5 +1,5 @@
 from config import request_schedule_edits
-from logging_config import LogMainSubAgent
+from logging_config import LogEditorAgent
 import copy
 
 from typing_extensions import TypeVar, TypedDict
@@ -67,28 +67,28 @@ class ScheduleFormatterMethods:
 
 # Confirm that the desired section should be edited.
 def confirm_edits(state):
-    LogMainSubAgent.agent_steps(f"\t---------Confirm that the Schedule is Edited---------")
+    LogEditorAgent.agent_steps(f"\t---------Confirm that the Schedule is Edited---------")
     if state["is_edited"]:
-        LogMainSubAgent.agent_steps(f"\t---------Is Edited---------")
+        LogEditorAgent.agent_steps(f"\t---------Is Edited---------")
         return "is_edited"
     return "not_edited"
 
 # Confirm that edits are valid.
 def confirm_valid(state):
-    LogMainSubAgent.agent_steps(f"\t---------Confirm that the Edits have generated a valid Schedule---------")
+    LogEditorAgent.agent_steps(f"\t---------Confirm that the Edits have generated a valid Schedule---------")
     if state["is_valid"]:
-        LogMainSubAgent.agent_steps(f"\t---------Is Valid---------")
+        LogEditorAgent.agent_steps(f"\t---------Is Valid---------")
         return "is_valid"
-    LogMainSubAgent.agent_steps(f"\t---------Is NOT Valid---------")
+    LogEditorAgent.agent_steps(f"\t---------Is NOT Valid---------")
     return "not_valid"
 
 # Confirm that the user wants to move forward with the invalid schedule.
 def confirm_interest(state):
-    LogMainSubAgent.agent_steps(f"\t---------Confirm Interest in the Invalid Schedule---------")
+    LogEditorAgent.agent_steps(f"\t---------Confirm Interest in the Invalid Schedule---------")
     if state["allow_schedule"]:
-        LogMainSubAgent.agent_steps(f"\t---------Allowed the Schedule---------")
+        LogEditorAgent.agent_steps(f"\t---------Allowed the Schedule---------")
         return "allow_schedule"
-    LogMainSubAgent.agent_steps(f"\t---------Do NOT Allow the Schedule---------")
+    LogEditorAgent.agent_steps(f"\t---------Do NOT Allow the Schedule---------")
     return "do_not_allow_schedule"
 
 class BaseSubAgent(ScheduleFormatterMethods):
@@ -111,7 +111,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         schedule_list = self.add_necessary_keys_to_schedule_item(schedule_list)
 
         formatted_schedule = self.list_printer_class.run_printer(schedule_list)
-        LogMainSubAgent.formatted_schedule(formatted_schedule)
+        LogEditorAgent.formatted_schedule(formatted_schedule)
 
         return {
             schedule_key: schedule_list, 
@@ -120,7 +120,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
     # Format the structured schedule.
     def format_proposed_list(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
+        LogEditorAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
         return self._get_formatted_proposed_list(state, "agent_output", "schedule_printed")
 
     # Create prompt to request schedule edits.
@@ -183,9 +183,9 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
     # Request permission from user to execute the parent initialization.
     def ask_for_edits(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Ask user if edits should be made to the schedule---------")
+        LogEditorAgent.agent_steps(f"\t---------Ask user if edits should be made to the schedule---------")
         if not request_schedule_edits:
-            LogMainSubAgent.agent_steps(f"\t---------Agent settings do not request edits.---------")
+            LogEditorAgent.agent_steps(f"\t---------Agent settings do not request edits.---------")
             return {
                 "is_edited": False,
                 "edits": {},
@@ -199,7 +199,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
             "task": f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"
         })
         user_input = result["user_input"]
-        LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
+        LogEditorAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         # Retrieve the schedule and format it for the prompt.
         schedule_list = state["agent_output"]
@@ -226,7 +226,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
     # Perform the edits.
     def perform_edits(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for the Schedule---------")
+        LogEditorAgent.agent_steps(f"\t---------Performing the Requested Edits for the Schedule---------")
 
         # Retrieve the schedule and format it for the prompt.
         schedule_list = copy.deepcopy(state["agent_output"])
@@ -251,7 +251,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
     # Check if the user's edits produce a valid schedule.
     def check_if_schedule_is_valid(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Check if Schedule is valid.---------")
+        LogEditorAgent.agent_steps(f"\t---------Check if Schedule is valid.---------")
         schedule_list = state["edited_schedule"]
         violations = self.gather_schedule_violations(schedule_list)
 
@@ -264,12 +264,12 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
     # Format the structured schedule.
     def format_proposed_edited_list(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Format Proposed Edited Workout Schedule---------")
+        LogEditorAgent.agent_steps(f"\t---------Format Proposed Edited Workout Schedule---------")
         return self._get_formatted_proposed_list(state, "edited_schedule", "edited_schedule_printed")
 
     # Request permission from user to allow edits that aren't advised.
     def ask_for_validity(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Ask user if the new NOT VALID schedule should be allowed---------")
+        LogEditorAgent.agent_steps(f"\t---------Ask user if the new NOT VALID schedule should be allowed---------")
 
         # Get a copy of the current schedule and remove the items not useful for the AI.
         formatted_schedule_list = state["edited_schedule_printed"]
@@ -282,7 +282,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
     # Finalize the proposed edits.
     def finalize_edits(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Replacing Old Schedule with Edited Schedule---------")
+        LogEditorAgent.agent_steps(f"\t---------Replacing Old Schedule with Edited Schedule---------")
         return {
             "schedule_printed": state["edited_schedule_printed"], 
             "agent_output": state["edited_schedule"]
@@ -290,7 +290,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
-        LogMainSubAgent.agent_introductions(f"=========Ending Editor SubAgent=========\n")
+        LogEditorAgent.agent_introductions(f"=========Ending Editor SubAgent=========\n")
         return {}
 
     # Create main agent.

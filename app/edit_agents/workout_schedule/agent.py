@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from logging_config import LogEditorAgent
 
 from app.list_printers import WorkoutScheduleListPrinter
 from app.edit_agents.base import BaseSubAgent, TState

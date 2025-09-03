@@ -1,5 +1,5 @@
 from config import request_schedule_edits
-from logging_config import LogMainSubAgent
+from logging_config import LogEditorAgent
 
 from datetime import date, timedelta
 from typing_extensions import TypedDict
@@ -37,9 +37,9 @@ class AgentState(TypedDict):
 
 # Confirm that the desired section should be edited.
 def confirm_edits(state):
-    LogMainSubAgent.agent_steps(f"\t---------Confirm that the Schedule is Edited---------")
+    LogEditorAgent.agent_steps(f"\t---------Confirm that the Schedule is Edited---------")
     if state["is_edited"]:
-        LogMainSubAgent.agent_steps(f"\t---------Is Edited---------")
+        LogEditorAgent.agent_steps(f"\t---------Is Edited---------")
         return "is_edited"
     return "not_edited"
 
@@ -52,7 +52,7 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
 
     # Format the structured schedule.
     def construct_agent_output(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Construct Agent Output From Macrocycle Information---------")
+        LogEditorAgent.agent_steps(f"\t---------Construct Agent Output From Macrocycle Information---------")
         current_date = date.today()
 
         items = Goal_Library.query.all()
@@ -85,11 +85,11 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
 
     # Format the structured schedule.
     def format_proposed_list(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
+        LogEditorAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
         schedule_list = state["agent_output"]
 
         formatted_schedule = self.list_printer_class.run_printer([schedule_list])
-        LogMainSubAgent.formatted_schedule(formatted_schedule)
+        LogEditorAgent.formatted_schedule(formatted_schedule)
 
         return {
             "agent_output": schedule_list, 
@@ -115,9 +115,9 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
 
     # Request permission from user to execute the parent initialization.
     def ask_for_edits(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Ask user if edits should be made to the schedule---------")
+        LogEditorAgent.agent_steps(f"\t---------Ask user if edits should be made to the schedule---------")
         if not request_schedule_edits:
-            LogMainSubAgent.agent_steps(f"\t---------Agent settings do not request edits.---------")
+            LogEditorAgent.agent_steps(f"\t---------Agent settings do not request edits.---------")
             return {
                 "is_edited": False,
                 "edits": {},
@@ -131,7 +131,7 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
             "task": f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"
         })
         user_input = result["user_input"]
-        LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
+        LogEditorAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         # Retrieve the schedule and format it for the prompt.
         current_goal = state["agent_output"]
@@ -164,7 +164,7 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
 
     # Perform the edits.
     def perform_edits(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for the Schedule---------")
+        LogEditorAgent.agent_steps(f"\t---------Performing the Requested Edits for the Schedule---------")
 
         # Retrieve the schedule and format it for the prompt.
         schedule = state["agent_output"]
@@ -191,7 +191,7 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
-        LogMainSubAgent.agent_introductions(f"=========Ending Editor SubAgent=========\n")
+        LogEditorAgent.agent_introductions(f"=========Ending Editor SubAgent=========\n")
         return {}
 
     # Create main agent.

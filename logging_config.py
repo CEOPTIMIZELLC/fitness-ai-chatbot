@@ -1,7 +1,16 @@
 import logging
 from functools import partial
 
-from config import VerbosityConfig, RouteVerbosityConfig, DatabaseInitVerbosityConfig, MainAgentVerbosityConfig, MainSubAgentVerbosityConfig, SchedulerVerbosityConfig, SchedulerPreProcessingVerbosityConfig
+from config import (
+    VerbosityConfig, 
+    RouteVerbosityConfig, 
+    DatabaseInitVerbosityConfig, 
+    MainAgentVerbosityConfig, 
+    MainSubAgentVerbosityConfig, 
+    EditorAgentVerbosityConfig, 
+    SchedulerVerbosityConfig, 
+    SchedulerPreProcessingVerbosityConfig
+)
 
 # Set Up the Logger
 logger = logging.getLogger("my_app")
@@ -53,6 +62,14 @@ class LogMainSubAgent:
     agent_output = partial(verbose_log, MainSubAgentVerbosityConfig.agent_output)
     parsed_goal = partial(verbose_log, MainSubAgentVerbosityConfig.parsed_goal)
     input_info = partial(verbose_log, MainSubAgentVerbosityConfig.input_info)
+    system_message = partial(verbose_log, MainSubAgentVerbosityConfig.system_message)
+    formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
+
+class LogEditorAgent:
+    verbose = partial(verbose_log, MainSubAgentVerbosityConfig.verbose)
+    agent_introductions = partial(verbose_log, MainSubAgentVerbosityConfig.agent_introductions)
+    agent_steps = partial(verbose_log, MainSubAgentVerbosityConfig.agent_steps)
+    parsed_goal = partial(verbose_log, MainSubAgentVerbosityConfig.parsed_goal)
     system_message = partial(verbose_log, MainSubAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
 

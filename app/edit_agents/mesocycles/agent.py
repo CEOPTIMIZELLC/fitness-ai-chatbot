@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from logging_config import LogEditorAgent
 
 from app.schedule_printers import MesocycleSchedulePrinter
 from app.edit_agents.base import BaseSubAgent, TState

@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from logging_config import LogEditorAgent
 
 from pydantic import BaseModel, Field
 
@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 # Request permission from user to execute the parent initialization.
 def new_input_request(user_input, item_system_prompt, item_goal):
-    LogMainSubAgent.system_message(item_system_prompt)
+    LogEditorAgent.system_message(item_system_prompt)
     human = f"Extract the goals from the following message: {user_input}"
     check_prompt = ChatPromptTemplate.from_messages(
         [
@@ -25,10 +25,10 @@ def new_input_request(user_input, item_system_prompt, item_goal):
     goal_dict = goal_class.model_dump()
 
     # Iterate and print names and values
-    LogMainSubAgent.parsed_goal(f"Parsed Goal Fields: ")
+    LogEditorAgent.parsed_goal(f"Parsed Goal Fields: ")
     for key, value in goal_dict.items():
-        LogMainSubAgent.parsed_goal(f"{key}: {value}")
-    LogMainSubAgent.parsed_goal(f"")
+        LogEditorAgent.parsed_goal(f"{key}: {value}")
+    LogEditorAgent.parsed_goal(f"")
 
     return goal_class
 
@@ -40,7 +40,7 @@ class MoveForwardWithSchedule(BaseModel):
 
 # Request permission from user to allow edits that aren't advised.
 def does_user_allow_schedule(user_input):
-    LogMainSubAgent.verbose(f"Extract the confirmation from the following message: {user_input}")
+    LogEditorAgent.verbose(f"Extract the confirmation from the following message: {user_input}")
 
     edit_prompt = """
 You are an expert on conversational analysis. 

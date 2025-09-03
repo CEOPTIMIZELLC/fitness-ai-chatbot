@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from logging_config import LogEditorAgent
 
 from app import db
 from app.models import Weekday_Library

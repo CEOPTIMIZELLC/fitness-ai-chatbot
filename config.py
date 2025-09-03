@@ -133,6 +133,27 @@ class MainSubAgentVerbosityConfig:
     # Log final formatted schedule produced.
     formatted_schedule = True
 
+
+# Logging configurations options for the editor agents.
+class EditorAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the editor agents.
+    agent_introductions = True
+
+    # Log node introductions in the editor agents.
+    agent_steps = True
+
+    # Log system messages for LLM calls in the editor agent.
+    system_message = True
+
+    # Log the parsed user input for the editor agents.
+    parsed_goal = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
 # Logging configurations options for the solver preprocessing verbosity.
 class SchedulerPreProcessingVerbosityConfig:
     # Log any items in this configuration set.
