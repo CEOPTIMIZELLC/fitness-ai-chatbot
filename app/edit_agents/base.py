@@ -267,7 +267,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
             "task": f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\nAre you sure you would like for the following schedule to be allowed?\n\n{formatted_schedule_list}"
         })
 
-        return does_user_allow_schedule(result["user_input"])
+        return {"allow_schedule": does_user_allow_schedule(result["user_input"])}
 
     # Finalize the proposed edits.
     def finalize_edits(self, state: TState):
