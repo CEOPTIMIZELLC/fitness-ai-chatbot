@@ -68,7 +68,7 @@ def user_input_information_extraction(user_input):
     state["macrocycle_impacted"] = goal_class.macrocycle.is_requested
     state["macrocycle_is_altered"] = True
     state["macrocycle_message"] = goal_class.macrocycle.detail
-    state["macrocycle_alter_old"] = goal_class.macrocycle.alter_old
+    state["macrocycle_alter_old"] = goal_class.macrocycle.alter_old or False
     state["mesocycle_impacted"] = goal_class.mesocycle.is_requested
     state["mesocycle_is_altered"] = True
     state["mesocycle_message"] = goal_class.mesocycle.detail

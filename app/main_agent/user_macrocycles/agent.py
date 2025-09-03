@@ -66,7 +66,7 @@ class SubAgent(BaseAgent):
             focus_names["read_current"]: False, 
             focus_names["message"]: goal_class.detail, 
             "other_requests": goal_class.other_requests, 
-            "macrocycle_alter_old": goal_class.alter_old
+            "macrocycle_alter_old": goal_class.alter_old or False
         }
 
     # Perform the goal change to the desired ID.

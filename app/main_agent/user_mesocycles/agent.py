@@ -71,7 +71,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
             parent_names["read_current"]: False,
             parent_names["message"]: goal_class.detail, 
             "macrocycle_other_requests": goal_class.other_requests,
-            "macrocycle_alter_old": goal_class.alter_old
+            "macrocycle_alter_old": goal_class.alter_old or False
         }
 
     # Request is unique for Macrocycle for Mesocycle
