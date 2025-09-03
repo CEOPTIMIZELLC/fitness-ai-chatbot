@@ -8,10 +8,10 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
 from app import db
-from app.main_agent.base_sub_agents.utils import new_input_request
 from app.models import Goal_Library
 from app.schedule_printers import MacrocycleSchedulePrinter
 from app.edit_agents.base import ScheduleFormatterMethods
+from app.edit_agents.utils import new_input_request
 
 from .edit_goal_model import MacrocycleScheduleEditGoal
 from .edit_prompt import MacrocycleEditPrompt
