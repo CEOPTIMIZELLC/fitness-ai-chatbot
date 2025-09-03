@@ -49,10 +49,8 @@ class SubAgent(BaseSubAgent, AvailabilityEditPrompt):
         return schedule_item
 
     # Check if the user's edits produce a valid schedule.
-    def check_if_schedule_is_valid(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Check if Schedule is valid.---------")
-        schedule_list = state["edited_schedule"]
-        return {"is_valid": check_schedule_validity(schedule_list)}
+    def gather_schedule_violations(self, schedule_list):
+        return check_schedule_validity(schedule_list)
 
 # Create main agent.
 def create_main_agent_graph():

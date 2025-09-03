@@ -246,10 +246,21 @@ class BaseSubAgent(ScheduleFormatterMethods):
         
         return {"edited_schedule": schedule_list}
 
+    def gather_schedule_violations(self, schedule_list):
+        pass
+
     # Check if the user's edits produce a valid schedule.
     def check_if_schedule_is_valid(self, state: TState):
         LogMainSubAgent.agent_steps(f"\t---------Check if Schedule is valid.---------")
-        return {"is_valid": True}
+        schedule_list = state["edited_schedule"]
+        violations = self.gather_schedule_violations(schedule_list)
+
+        # Determine if the schedule is valid.
+        if violations:
+            is_valid = False
+        else:
+            is_valid = True
+        return {"is_valid": is_valid}
 
     # Format the structured schedule.
     def format_proposed_edited_list(self, state: TState):
