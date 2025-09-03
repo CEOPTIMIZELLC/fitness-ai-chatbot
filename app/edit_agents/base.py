@@ -13,6 +13,7 @@ class AgentState(TypedDict):
     is_edited: bool
     edits: any
     other_requests: str
+    edited_schedule: list
     agent_output: list
     schedule_printed: str
 
@@ -204,7 +205,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for the Schedule---------")
 
         # Retrieve the schedule and format it for the prompt.
-        schedule_list = state["agent_output"]
+        schedule_list = copy.deepcopy(state["agent_output"])
         schedule_edits = state["edits"]
 
         # Apply the edits to the schedule.
@@ -219,7 +220,12 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
             self.apply_edit_to_schedule_item(schedule_item, schedule_edit)
         
-        return {"agent_output": schedule_list}
+        return {"edited_schedule": schedule_list}
+
+    # Finalize the proposed edits.
+    def finalize_edits(self, state: TState):
+        LogMainSubAgent.agent_steps(f"\t---------Replacing Old Schedule with Edited Schedule---------")
+        return {"agent_output": state["edited_schedule"]}
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
@@ -232,6 +238,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         workflow.add_node("format_proposed_list", self.format_proposed_list)
         workflow.add_node("ask_for_edits", self.ask_for_edits)
         workflow.add_node("perform_edits", self.perform_edits)
+        workflow.add_node("finalize_edits", self.finalize_edits)
         workflow.add_node("end_node", self.end_node)
 
         # Create a formatted list for the user to review.
@@ -247,7 +254,8 @@ class BaseSubAgent(ScheduleFormatterMethods):
                 "not_edited": "end_node"                                # The agent should end if no edits were found.
             }
         )
-        workflow.add_edge("perform_edits", "format_proposed_list")
+        workflow.add_edge("perform_edits", "finalize_edits")
+        workflow.add_edge("finalize_edits", "format_proposed_list")
 
         workflow.add_edge("end_node", END)
 
