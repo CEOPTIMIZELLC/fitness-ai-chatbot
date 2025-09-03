@@ -15,11 +15,12 @@ from app.utils.datetime_to_string import recursively_change_dict_timedeltas
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.utils import new_input_request
-from app.edit_goal_models import WorkoutCompletionEditGoal
-from app.edit_prompts import WorkoutCompletionEditPrompt
 
 from app.schedule_printers import WorkoutCompletionSchedulePrinter
 from app.list_printers import WorkoutCompletionListPrinter
+
+from .edit_goal_model import WorkoutCompletionEditGoal
+from .edit_prompt import WorkoutCompletionEditPrompt
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
 

@@ -1,7 +1,8 @@
-from app.edit_goal_models import WorkoutScheduleEditGoal
-from app.edit_prompts import WorkoutScheduleEditPrompt
 from app.list_printers import WorkoutScheduleListPrinter
-from .base import BaseSubAgent
+from app.edit_agents.base import BaseSubAgent
+
+from .edit_goal_model import WorkoutScheduleEditGoal
+from .edit_prompt import WorkoutScheduleEditPrompt
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 

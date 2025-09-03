@@ -1,10 +1,11 @@
 from app import db
 from app.models import Weekday_Library
 
-from app.edit_goal_models import AvailabilityScheduleEditGoal
-from app.edit_prompts import AvailabilityEditPrompt
 from app.schedule_printers import AvailabilitySchedulePrinter
-from .base import BaseSubAgent
+from app.edit_agents.base import BaseSubAgent
+
+from .edit_goal_model import AvailabilityScheduleEditGoal
+from .edit_prompt import AvailabilityEditPrompt
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 

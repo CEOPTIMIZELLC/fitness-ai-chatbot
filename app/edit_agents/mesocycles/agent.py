@@ -1,7 +1,8 @@
-from app.edit_goal_models import MesocycleScheduleEditGoal
-from app.edit_prompts import MesocycleEditPrompt
 from app.schedule_printers import MesocycleSchedulePrinter
-from .base import BaseSubAgent
+from app.edit_agents.base import BaseSubAgent
+
+from .edit_goal_model import MesocycleScheduleEditGoal
+from .edit_prompt import MesocycleEditPrompt
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
