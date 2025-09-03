@@ -1,11 +1,14 @@
+from logging_config import LogMainSubAgent
+
 from app import db
 from app.models import Weekday_Library
 
 from app.schedule_printers import AvailabilitySchedulePrinter
-from app.edit_agents.base import BaseSubAgent
+from app.edit_agents.base import BaseSubAgent, TState
 
 from .edit_goal_model import AvailabilityScheduleEditGoal
 from .edit_prompt import AvailabilityEditPrompt
+from .validity_check import check_schedule_validity
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
@@ -44,6 +47,12 @@ class SubAgent(BaseSubAgent, AvailabilityEditPrompt):
     def apply_edit_to_schedule_item(self, schedule_item, schedule_edit):
         schedule_item["availability"] = schedule_edit["availability"]
         return schedule_item
+
+    # Check if the user's edits produce a valid schedule.
+    def check_if_schedule_is_valid(self, state: TState):
+        LogMainSubAgent.agent_steps(f"\t---------Check if Schedule is valid.---------")
+        schedule_list = state["edited_schedule"]
+        return {"is_valid": check_schedule_validity(schedule_list)}
 
 # Create main agent.
 def create_main_agent_graph():

@@ -1,8 +1,11 @@
+from logging_config import LogMainSubAgent
+
 from app.list_printers import WorkoutScheduleListPrinter
-from app.edit_agents.base import BaseSubAgent
+from app.edit_agents.base import BaseSubAgent, TState
 
 from .edit_goal_model import WorkoutScheduleEditGoal
 from .edit_prompt import WorkoutScheduleEditPrompt
+from .validity_check import check_schedule_validity
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
@@ -88,6 +91,12 @@ class SubAgent(BaseSubAgent, WorkoutScheduleEditPrompt):
             # Calculate new intensity.
             schedule_item["intensity"] = schedule_item["weight"] / schedule_item["one_rep_max"]
         return schedule_item
+
+    # Check if the user's edits produce a valid schedule.
+    def check_if_schedule_is_valid(self, state: TState):
+        LogMainSubAgent.agent_steps(f"\t---------Check if Schedule is valid.---------")
+        schedule_list = state["edited_schedule"]
+        return {"is_valid": check_schedule_validity(schedule_list)}
 
 # Create main agent.
 def create_main_agent_graph():

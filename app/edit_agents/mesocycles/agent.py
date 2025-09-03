@@ -1,8 +1,11 @@
+from logging_config import LogMainSubAgent
+
 from app.schedule_printers import MesocycleSchedulePrinter
-from app.edit_agents.base import BaseSubAgent
+from app.edit_agents.base import BaseSubAgent, TState
 
 from .edit_goal_model import MesocycleScheduleEditGoal
 from .edit_prompt import MesocycleEditPrompt
+from .validity_check import check_schedule_validity
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
@@ -48,6 +51,12 @@ class SubAgent(BaseSubAgent, MesocycleEditPrompt):
         schedule_item["end_date"] = schedule_edit["end_date"]
         schedule_item["duration"] = (schedule_edit["end_date"] - schedule_edit["start_date"]).days // 7
         return schedule_item
+
+    # Check if the user's edits produce a valid schedule.
+    def check_if_schedule_is_valid(self, state: TState):
+        LogMainSubAgent.agent_steps(f"\t---------Check if Schedule is valid.---------")
+        schedule_list = state["edited_schedule"]
+        return {"is_valid": check_schedule_validity(schedule_list)}
 
 # Create main agent.
 def create_main_agent_graph():
