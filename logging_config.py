@@ -66,12 +66,12 @@ class LogMainSubAgent:
     formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
 
 class LogEditorAgent:
-    verbose = partial(verbose_log, MainSubAgentVerbosityConfig.verbose)
-    agent_introductions = partial(verbose_log, MainSubAgentVerbosityConfig.agent_introductions)
-    agent_steps = partial(verbose_log, MainSubAgentVerbosityConfig.agent_steps)
-    parsed_goal = partial(verbose_log, MainSubAgentVerbosityConfig.parsed_goal)
-    system_message = partial(verbose_log, MainSubAgentVerbosityConfig.system_message)
-    formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
+    verbose = partial(verbose_log, EditorAgentVerbosityConfig.verbose)
+    agent_introductions = partial(verbose_log, EditorAgentVerbosityConfig.agent_introductions)
+    agent_steps = partial(verbose_log, EditorAgentVerbosityConfig.agent_steps)
+    parsed_goal = partial(verbose_log, EditorAgentVerbosityConfig.parsed_goal)
+    system_message = partial(verbose_log, EditorAgentVerbosityConfig.system_message)
+    formatted_schedule = partial(verbose_log, EditorAgentVerbosityConfig.formatted_schedule)
 
 class LogSolverPreProcessing:
     verbose = partial(verbose_log, SchedulerPreProcessingVerbosityConfig.verbose)
