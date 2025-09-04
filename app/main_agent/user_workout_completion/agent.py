@@ -10,7 +10,7 @@ from langgraph.types import interrupt
 from app import db
 from app.models import User_Exercises, User_Workout_Exercises, User_Workout_Days
 from app.utils.common_table_queries import current_workout_day
-from app.utils.datetime_to_string import recursively_change_dict_timedeltas
+from app.utils.item_to_string import recursively_change_dict_timedeltas
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent

@@ -18,7 +18,7 @@ from app.main_agent.user_workout_exercises import create_workout_agent
 from app.main_agent.user_workout_completion import create_workout_completion_agent
 from app.main_agent.user_weekdays_availability import create_availability_agent
 
-from app.utils.datetime_to_string import recursively_change_dict_timedeltas
+from app.utils.item_to_string import recursively_change_dict_timedeltas
 
 bp = Blueprint('dev_tests', __name__)
 

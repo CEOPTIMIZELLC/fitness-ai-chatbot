@@ -9,7 +9,7 @@ from app.main_agent.utils import construct_available_exercises_list, construct_p
 from app.main_agent.utils import verify_pc_information
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 
-from app.utils.datetime_to_string import recursively_change_dict_timedeltas
+from app.utils.item_to_string import recursively_change_dict_timedeltas
 
 bp = Blueprint('user_workout_days', __name__)
 
