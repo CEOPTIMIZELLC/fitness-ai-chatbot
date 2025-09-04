@@ -73,15 +73,6 @@ def confirm_edits(state):
         return "is_edited"
     return "not_edited"
 
-# Confirm that edits are valid.
-def confirm_valid(state):
-    LogEditorAgent.agent_steps(f"\t---------Confirm that the Edits have generated a valid Schedule---------")
-    if state["is_valid"]:
-        LogEditorAgent.agent_steps(f"\t---------Is Valid---------")
-        return "is_valid"
-    LogEditorAgent.agent_steps(f"\t---------Is NOT Valid---------")
-    return "not_valid"
-
 # Confirm that the user wants to move forward with the invalid schedule.
 def confirm_interest(state):
     LogEditorAgent.agent_steps(f"\t---------Confirm Interest in the Invalid Schedule---------")
@@ -279,24 +270,19 @@ class BaseSubAgent(ScheduleFormatterMethods):
         # Get a copy of the current schedule and remove the items not useful for the AI.
         formatted_schedule_list = state["edited_schedule_printed"]
 
-        result = interrupt({
-            "task": f"Would you like to move forward with the following schedule?\n\n{formatted_schedule_list}"
-        })
+        is_schedule_invalid = not(state["is_valid"])
 
-        return {"allow_schedule": does_user_allow_schedule(result["user_input"])}
-
-    # Request permission from user to allow edits that aren't advised.
-    def ask_for_validity(self, state: TState):
-        LogEditorAgent.agent_steps(f"\t---------Ask user if the new NOT VALID schedule should be allowed---------")
-
-        # Get a copy of the current schedule and remove the items not useful for the AI.
-        formatted_schedule_list = state["edited_schedule_printed"]
+        # Determine the task given to the user.
+        if is_schedule_invalid:
+            user_task = f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\nAre you sure you would like for the following schedule to be allowed?\n\n{formatted_schedule_list}"
+        else:
+            user_task = f"Would you like to move forward with the following schedule?\n\n{formatted_schedule_list}"
 
         result = interrupt({
-            "task": f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\nAre you sure you would like for the following schedule to be allowed?\n\n{formatted_schedule_list}"
+            "task": user_task
         })
 
-        return {"allow_schedule": does_user_allow_schedule(result["user_input"], is_schedule_invalid=True)}
+        return {"allow_schedule": does_user_allow_schedule(result["user_input"], is_schedule_invalid)}
 
     # Finalize the proposed edits.
     def finalize_edits(self, state: TState):
@@ -320,7 +306,6 @@ class BaseSubAgent(ScheduleFormatterMethods):
         workflow.add_node("format_proposed_edited_list", self.format_proposed_edited_list)
         workflow.add_node("check_if_schedule_is_valid", self.check_if_schedule_is_valid)
         workflow.add_node("ask_to_move_forward", self.ask_to_move_forward)
-        workflow.add_node("ask_for_validity", self.ask_for_validity)
         workflow.add_node("finalize_edits", self.finalize_edits)
         workflow.add_node("end_node", self.end_node)
 
@@ -339,17 +324,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         )
         workflow.add_edge("perform_edits", "format_proposed_edited_list")
         workflow.add_edge("format_proposed_edited_list", "check_if_schedule_is_valid")
-
-        # Whether the proposed schedule is valid.
-        workflow.add_conditional_edges(
-            "check_if_schedule_is_valid",
-            confirm_valid,
-            {
-                "is_valid": "ask_to_move_forward",                      # The agent should ask the user to confirm that they want to move forward with the valid schedule.
-                "not_valid": "ask_for_validity"                         # The agent should warn the user and confirm that they want to move forward.
-            }
-        )
-
+        workflow.add_edge("check_if_schedule_is_valid", "ask_to_move_forward")
 
         # Whether the user wants to move forward with the new schedule.
         workflow.add_conditional_edges(
@@ -361,15 +336,6 @@ class BaseSubAgent(ScheduleFormatterMethods):
             }
         )
 
-        # Whether the user wants to move forward with a not recommended schedule.
-        workflow.add_conditional_edges(
-            "ask_for_validity",
-            confirm_interest,
-            {
-                "allow_schedule": "finalize_edits",                      # The agent should finalize the edits.
-                "do_not_allow_schedule": "ask_for_edits"                 # The agent should go back to the edit request.
-            }
-        )
         workflow.add_edge("finalize_edits", "ask_for_edits")
 
         workflow.add_edge("end_node", END)
