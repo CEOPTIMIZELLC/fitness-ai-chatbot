@@ -21,7 +21,12 @@ class Mesocycle(BaseModel):
     end_date: date = Field(
         ..., description="The date for the end of the mesocycle in question."
     )
-
+    reason_for_inclusion: str = Field(
+        ..., description="An explanation for why the mesocycle has been included in the edited list. If the mesocycle wasn't explicitly mentioned by name in the request, include what part of the user request indicated that the mesocycle should be included and why this mesocycle qualifies."
+    )
+    reason_for_edits: str = Field(
+        ..., description="An explanation for why the edits that have been applied are being applied to the mesocycle."
+    )
 
 # Model to extract information on whether the user wants to edit something.
 class MesocycleScheduleEditGoal(BaseModel):
