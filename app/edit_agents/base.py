@@ -1,4 +1,4 @@
-from config import request_schedule_edits
+from config import request_schedule_edits, confirm_valid_schedule, confirm_invalid_schedule
 from logging_config import LogEditorAgent
 import copy
 
@@ -273,10 +273,12 @@ class BaseSubAgent(ScheduleFormatterMethods):
         is_schedule_invalid = not(state["is_valid"])
 
         # Determine the task given to the user.
-        if is_schedule_invalid:
+        if is_schedule_invalid and confirm_invalid_schedule:
             user_task = f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\nAre you sure you would like for the following schedule to be allowed?\n\n{formatted_schedule_list}"
-        else:
+        elif confirm_valid_schedule:
             user_task = f"Would you like to move forward with the following schedule?\n\n{formatted_schedule_list}"
+        else:
+            return {"allow_schedule": True}
 
         result = interrupt({
             "task": user_task

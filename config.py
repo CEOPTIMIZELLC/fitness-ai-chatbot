@@ -30,6 +30,12 @@ loop_main_agent = True
 # Whether the agent should request edits to the schedule after generation.
 request_schedule_edits = True
 
+# Whether the editor agent should request user confirmation before applying the edits.
+confirm_valid_schedule = True
+
+# Whether the editor agent should request user confirmation before applying edits that would result in an invalid schedule.
+confirm_invalid_schedule = True
+
 # Configurations for displayed information for logged schedules.
 class ScheduleDisplayConfig:
     # Whether the logged schedule should include the reason that an exercise has been included.
