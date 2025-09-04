@@ -1,5 +1,6 @@
 from logging_config import LogEditorAgent
 
+import math
 from app.list_printers import WorkoutScheduleListPrinter
 from app.edit_agents.base import BaseSubAgent, TState
 
@@ -80,16 +81,36 @@ class SubAgent(BaseSubAgent, WorkoutScheduleEditPrompt):
 
     # Specific code for extracting information from the edited schedule into the new one.
     def apply_edit_to_schedule_item(self, schedule_item, schedule_edit):
-        schedule_item["reps"] = schedule_edit["reps"]
-        schedule_item["sets"] = schedule_edit["sets"]
-        schedule_item["rest"] = schedule_edit["rest"]
+        new_sec_per_ex = schedule_item["seconds_per_exercise"]
+        new_reps = schedule_edit["reps"]
+        new_sets = schedule_edit["sets"]
+        new_rest = schedule_edit["rest"]
+
+        schedule_item["reps"] = new_reps
+        schedule_item["sets"] = new_sets
+        schedule_item["rest"] = new_rest
+
+        # Calculate the new duration, working duration, density, and volume.
+        schedule_item["duration"] = (new_sec_per_ex * new_reps + new_rest) * new_sets
+        schedule_item["working_duration"] = (new_sec_per_ex * new_reps) * new_sets
+
+        # scaled_density = 100 * (schedule_item["working_duration"] / schedule_item["duration"])
+        # schedule_item["density"] = round((schedule_item["working_duration"] / schedule_item["duration"]), 2)
+        schedule_item["density"] = math.floor(100 * schedule_item["working_duration"] / schedule_item["duration"]) / 100
+        schedule_item["volume"] = new_reps * new_sets
 
         # In case a weight is accidentally applied to a non-weighted exercises
         if schedule_item["weight"]:
-            schedule_item["weight"] = schedule_edit["weight"]
+            schedule_item["weight"] = int(schedule_edit["weight"])
 
             # Calculate new intensity.
-            schedule_item["intensity"] = schedule_item["weight"] / schedule_item["one_rep_max"]
+            schedule_item["intensity"] = int(100 * schedule_item["weight"] / schedule_item["one_rep_max"])
+
+            # Factor in the new weight into the volume.
+            schedule_item["volume"] *= schedule_item["weight"]
+
+        # Calculate the new performance
+        schedule_item["performance"] = math.floor(schedule_item["volume"] * schedule_item["density"] * 100) / 100
         return schedule_item
 
     # Check if the user's edits produce a valid schedule.
