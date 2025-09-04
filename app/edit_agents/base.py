@@ -7,10 +7,11 @@ from typing_extensions import TypeVar, TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from .utils import does_user_allow_schedule, new_input_request
+from .utils import list_to_str, does_user_allow_schedule, new_input_request
 
 class AgentState(TypedDict):
     is_edited: bool
+    violations: list
     is_valid: bool
     allow_schedule: bool
     edits: any
@@ -256,7 +257,10 @@ class BaseSubAgent(ScheduleFormatterMethods):
             for violation in violations:
                 LogEditorAgent.agent_steps(f"\t{violation}")
 
-        return {"is_valid": is_valid}
+        return {
+            "violations": violations, 
+            "is_valid": is_valid
+        }
 
     # Format the structured schedule.
     def format_proposed_edited_list(self, state: TState):
@@ -274,7 +278,9 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
         # Determine the task given to the user.
         if is_schedule_invalid and confirm_invalid_schedule:
-            user_task = f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\nAre you sure you would like for the following schedule to be allowed?\n\n{formatted_schedule_list}"
+            violations = list_to_str(state["violations"])
+            
+            user_task = f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\n\nViolations include:\n{violations}\n\nAre you sure you would like for the following schedule to be allowed?\n{formatted_schedule_list}"
         elif confirm_valid_schedule:
             user_task = f"Would you like to move forward with the following schedule?\n\n{formatted_schedule_list}"
         else:
