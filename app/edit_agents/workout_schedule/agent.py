@@ -28,7 +28,7 @@ keys_to_remove = [
     "density", 
 
     "true_exercise_flag", 
-    "is_warmup", 
+    # "is_warmup", 
     "working_duration", 
     "intensity", 
     "one_rep_max", 
