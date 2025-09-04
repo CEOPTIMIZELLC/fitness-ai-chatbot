@@ -27,8 +27,11 @@ class Exercise(BaseModel):
     weight: float = Field(
         ..., description="The weight for the exercise in question."
     )
-    reasoning: str = Field(
-        ..., description="An explanation for why the exercise has been included in the edits and why it has had the edits applied."
+    reason_for_inclusion: str = Field(
+        ..., description="An explanation for why the exercise has been included in the edited list. If the exercise wasn't explicitly mentioned by name in the request, include what part of the user request indicated that the exercise should be included and why this exercise qualifies."
+    )
+    reason_for_edits: str = Field(
+        ..., description="An explanation for why the edits that have been applied are being applied to the exercise."
     )
 
 
@@ -44,3 +47,6 @@ class WorkoutScheduleEditGoal(BaseModel):
     other_requests: Optional[str] = Field(
         None, description="All information not immedately relevant to the edits to the schedule should be made here. Does not impact the 'is_schedule_edited' field."
     )
+    # is_schedule_edited: bool = Field(
+    #     False, description="True if and only if at least one exercise in `schedule` has a change or `remove=True`."
+    # )
