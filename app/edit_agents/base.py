@@ -124,11 +124,11 @@ class BaseSubAgent(ScheduleFormatterMethods):
         return self._get_formatted_proposed_list(state, "agent_output", "schedule_printed")
 
     # Create prompt to request schedule edits.
-    def edit_prompt_creator(self, schedule_list_original):
+    def edit_prompt_creator(self, schedule_list_original, schedule_formatted):
         allowed_list = self.get_ids_and_names(schedule_list_original)
         schedule_list = self.remove_unnecessary_keys_from_workout_schedule(schedule_list_original)
         schedule_summary = self.list_of_dicts_to_string(schedule_list)
-        edit_prompt = self.edit_system_prompt_constructor(schedule_summary, allowed_list)
+        edit_prompt = self.edit_system_prompt_constructor(schedule_summary, schedule_formatted, allowed_list)
         return edit_prompt
 
     # Retrieves the fields from the Pydantic model output.
@@ -203,7 +203,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
         # Retrieve the schedule and format it for the prompt.
         schedule_list = state["agent_output"]
-        edit_prompt = self.edit_prompt_creator(copy.deepcopy(schedule_list))
+        edit_prompt = self.edit_prompt_creator(copy.deepcopy(schedule_list), state["schedule_printed"])
 
         # Retrieve the new input for the parent item.
         goal_class = new_input_request(user_input, edit_prompt, self.edit_goal)
