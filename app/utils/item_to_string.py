@@ -1,5 +1,13 @@
 from datetime import timedelta, date, datetime
 
+# Convert a list of strings to a single string.
+def list_to_str(l):
+    string_output = ", \n".join(
+        l_item
+        for l_item in l
+    )
+    return string_output
+
 # Recursively go through dictionary to change time deltas
 # Correct time delta for serializing for JSON output.
 def recursively_change_dict_timedeltas(my_data_structure):

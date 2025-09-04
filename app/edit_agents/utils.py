@@ -6,14 +6,6 @@ from flask import current_app
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
-# Convert a list of strings to a single string.
-def list_to_str(l):
-    string_output = ", \n".join(
-        l_item
-        for l_item in l
-    )
-    return string_output
-
 # Request permission from user to execute the parent initialization.
 def new_input_request(user_input, item_system_prompt, item_goal):
     LogEditorAgent.system_message(item_system_prompt)

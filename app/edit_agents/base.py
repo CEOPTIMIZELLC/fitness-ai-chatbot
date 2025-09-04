@@ -7,7 +7,9 @@ from typing_extensions import TypeVar, TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from .utils import list_to_str, does_user_allow_schedule, new_input_request
+from app.utils.item_to_string import list_to_str
+
+from .utils import does_user_allow_schedule, new_input_request
 
 class AgentState(TypedDict):
     is_edited: bool
