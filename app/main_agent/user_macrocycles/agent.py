@@ -10,6 +10,7 @@ from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_operation
 from app.main_agent.base_sub_agents.without_parents import confirm_if_performing_by_id, confirm_new_input
 from app.impact_goal_models import MacrocycleGoal
 from app.goal_prompts import macrocycle_system_prompt
@@ -202,7 +203,7 @@ class SubAgent(BaseAgent):
         workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
             "start_node",
-            self.confirm_impact,
+            confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "impact_confirmed"                            # In between step for if an impact is indicated.
@@ -212,7 +213,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "impact_confirmed",
-            self.determine_operation,
+            determine_operation, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "operation_is_alter"                           # In between step for if the operation is alter.
@@ -222,7 +223,7 @@ class SubAgent(BaseAgent):
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
-            self.determine_read_operation,
+            determine_read_operation, 
             {
                 "plural": "get_user_list",                              # Read all user elements.
                 "singular": "read_user_current_element"                 # Read the current element.

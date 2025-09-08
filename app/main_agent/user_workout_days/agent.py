@@ -17,6 +17,7 @@ from app.utils.common_table_queries import current_microcycle, current_workout_d
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_operation, determine_read_filter_operation
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.main_agent.base_sub_agents.with_availability import confirm_availability, confirm_availability_permission
 from app.main_agent.user_microcycles import create_microcycle_agent
@@ -197,7 +198,7 @@ class SubAgent(BaseAgent):
         workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
             "start_node",
-            self.confirm_impact,
+            confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_availability"                       # Retreive the availability for the alteration.
@@ -239,7 +240,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "parent_retrieved",
-            self.determine_operation,
+            determine_operation, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "retrieve_information"                         # Retrieve the information for the alteration.
@@ -249,7 +250,7 @@ class SubAgent(BaseAgent):
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
-            self.determine_read_operation,
+            determine_read_operation, 
             {
                 "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
                 "singular": "read_user_current_element"                 # Read the current element.
@@ -259,7 +260,7 @@ class SubAgent(BaseAgent):
         # Whether the plural list is for all of the elements or all elements belonging to the user.
         workflow.add_conditional_edges(
             "read_operation_is_plural",
-            self.determine_read_filter_operation,
+            determine_read_filter_operation, 
             {
                 "current": "get_formatted_list",                        # Read the current schedule.
                 "all": "get_user_list"                                  # Read all user elements.

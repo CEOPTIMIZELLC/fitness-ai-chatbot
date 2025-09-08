@@ -10,6 +10,48 @@ from .utils import sub_agent_focused_items
 # Create a generic type variable that must be a subclass of MainAgentState
 TState = TypeVar('TState', bound=MainAgentState)
 
+# Confirm that the desired section should be impacted.
+def confirm_impact(state):
+    current_subagent_place = state["agent_path"][-1]
+    sub_agent_focus = current_subagent_place["focus"]
+
+    LogMainSubAgent.agent_steps(f"\t---------Confirm that the {sub_agent_focus} is Impacted---------")
+    if not state[f"{sub_agent_focus}_impacted"]:
+        LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
+        return "no_impact"
+    return "impact"
+
+# Determine the operation to be performed.
+def determine_operation(state):
+    current_subagent_place = state["agent_path"][-1]
+    sub_agent_focus = current_subagent_place["focus"]
+
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read or write {sub_agent_focus}---------")
+    if state[f"{sub_agent_focus}_is_altered"]:
+        return "alter"
+    return "read"
+
+# Determine whether the outcome is to read the entire schedule or simply the current item.
+def determine_read_operation(state):
+    current_subagent_place = state["agent_path"][-1]
+    sub_agent_focus = current_subagent_place["focus"]
+
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read a list of {sub_agent_focus} or simply a singular item---------")
+    if state[f"{sub_agent_focus}_read_plural"]:
+        return "plural"
+    return "singular"
+
+# Determine whether the outcome is to read an item from the current set or all items from the user.
+def determine_read_filter_operation(state):
+    current_subagent_place = state["agent_path"][-1]
+    sub_agent_focus = current_subagent_place["focus"]
+
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read all {sub_agent_focus} items for the user or only those currently active---------")
+    if state[f"{sub_agent_focus}_read_current"]:
+        return "current"
+    return "all"
+
+
 class BaseAgent():
     focus = ""
     sub_agent_title = ""
@@ -47,14 +89,6 @@ class BaseAgent():
             "agent_path": agent_path
         }
 
-    # Confirm that the desired section should be impacted.
-    def confirm_impact(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm that the {self.sub_agent_title} is Impacted---------")
-        if not state[self.focus_names["impact"]]:
-            LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
-            return "no_impact"
-        return "impact"
-
     # Default items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
         return {
@@ -65,27 +99,6 @@ class BaseAgent():
             focus_names["message"]: goal_class.detail,
             "other_requests": goal_class.other_requests
         }
-
-    # Determine the operation to be performed.
-    def determine_operation(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read or write {self.sub_agent_title}---------")
-        if state[self.focus_names["is_altered"]]:
-            return "alter"
-        return "read"
-
-    # Determine whether the outcome is to read the entire schedule or simply the current item.
-    def determine_read_operation(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read a list of {self.sub_agent_title} or simply a singular item---------")
-        if state[self.focus_names["read_plural"]]:
-            return "plural"
-        return "singular"
-
-    # Determine whether the outcome is to read an item from the current set or all items from the user.
-    def determine_read_filter_operation(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read all {self.sub_agent_title} items for the user or only those currently active---------")
-        if state[self.focus_names["read_current"]]:
-            return "current"
-        return "all"
 
     # Retrieve user's current schedule item.
     def read_user_current_element(self, state):

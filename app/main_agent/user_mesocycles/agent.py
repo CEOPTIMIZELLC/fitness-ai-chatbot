@@ -11,6 +11,7 @@ from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 from app.main_agent.user_macrocycles import MacrocycleAgentNode
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_operation, determine_read_filter_operation
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.impact_goal_models import MacrocycleGoal
 from app.goal_prompts import macrocycle_system_prompt
@@ -188,7 +189,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
             "start_node",
-            self.confirm_impact,
+            confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
@@ -208,7 +209,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "parent_retrieved",
-            self.determine_operation,
+            determine_operation, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "retrieve_information"                         # Retrieve the information for the alteration.
@@ -218,7 +219,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
-            self.determine_read_operation,
+            determine_read_operation, 
             {
                 "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
                 "singular": "read_user_current_element"                 # Read the current element.
@@ -228,7 +229,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         # Whether the plural list is for all of the elements or all elements belonging to the user.
         workflow.add_conditional_edges(
             "read_operation_is_plural",
-            self.determine_read_filter_operation,
+            determine_read_filter_operation, 
             {
                 "current": "get_formatted_list",                        # Read the current schedule.
                 "all": "get_user_list"                                  # Read all user elements.

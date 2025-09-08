@@ -14,6 +14,7 @@ from app.utils.item_to_string import recursively_change_dict_timedeltas
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact
 from app.main_agent.base_sub_agents.with_parents import confirm_parent
 from app.main_agent.base_sub_agents.utils import new_input_request
 
@@ -376,7 +377,7 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
         workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
             "start_node",
-            self.confirm_impact,
+            confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
