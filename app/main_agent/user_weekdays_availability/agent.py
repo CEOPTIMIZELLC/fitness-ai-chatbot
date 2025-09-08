@@ -11,6 +11,7 @@ from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_weekday_availability, current_microcycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+from app.main_agent.base_sub_agents.without_parents import confirm_new_input
 from app.impact_goal_models import AvailabilityGoal
 from app.goal_prompts import availability_system_prompt
 from app.edit_agents import create_availability_edit_agent
@@ -163,7 +164,7 @@ class SubAgent(BaseAgent):
         # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "operation_is_alter",
-            self.confirm_new_input,
+            confirm_new_input, 
             {
                 "no_new_input": "ask_for_new_input",                    # Request a new input to parse availability from if one isn't present.
                 "present_new_input": "delete_old_children"              # Delete the old children for the alteration if a goal was given.
@@ -173,7 +174,7 @@ class SubAgent(BaseAgent):
         # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "ask_for_new_input",
-            self.confirm_new_input,
+            confirm_new_input, 
             {
                 "no_new_input": "no_new_input_requested",               # Indicate that no new goal was given.
                 "present_new_input": "delete_old_children"              # Delete the old children for the alteration if a goal was given.

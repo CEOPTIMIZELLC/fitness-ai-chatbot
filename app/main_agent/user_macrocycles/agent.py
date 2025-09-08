@@ -10,6 +10,7 @@ from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+from app.main_agent.base_sub_agents.without_parents import confirm_if_performing_by_id, confirm_new_input
 from app.impact_goal_models import MacrocycleGoal
 from app.goal_prompts import macrocycle_system_prompt
 from app.edit_agents import create_macrocycle_edit_agent
@@ -231,7 +232,7 @@ class SubAgent(BaseAgent):
         # Whether goal should be changed to the included id.
         workflow.add_conditional_edges(
             "operation_is_alter",
-            self.confirm_if_performing_by_id,
+            confirm_if_performing_by_id, 
             {
                 "no_direct_goal_id": "alter_operation_uses_agent",           # Perform LLM parser if no goal id is included.
                 "present_direct_goal_id": "perform_goal_change_by_id"             # Perform direct id assignment if a goal id is included.
@@ -251,7 +252,7 @@ class SubAgent(BaseAgent):
         # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "alter_operation_uses_agent",
-            self.confirm_new_input,
+            confirm_new_input, 
             {
                 "no_new_input": "ask_for_new_input",                    # Request a new macrocycle goal if one isn't present.
                 "present_new_input": "perform_input_parser"             # Parse the goal for what category it falls into if one is present.
@@ -261,7 +262,7 @@ class SubAgent(BaseAgent):
         # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "ask_for_new_input",
-            self.confirm_new_input,
+            confirm_new_input, 
             {
                 "no_new_input": "no_new_input_requested",               # Indicate that no new goal was given.
                 "present_new_input": "perform_input_parser"             # Parse the goal for what category it falls into if one is present.
