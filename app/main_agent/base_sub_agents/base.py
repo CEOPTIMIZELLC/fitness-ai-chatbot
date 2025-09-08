@@ -3,7 +3,7 @@ from flask import abort
 from typing_extensions import TypeVar
 
 from app.main_agent.main_agent_state import MainAgentState
-from .utils import sub_agent_focused_items
+from .utils import retrieve_current_agent_focus, sub_agent_focused_items
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------
 
@@ -12,9 +12,7 @@ TState = TypeVar('TState', bound=MainAgentState)
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state):
-    current_subagent_place = state["agent_path"][-1]
-    sub_agent_focus = current_subagent_place["focus"]
-
+    sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Confirm that the {sub_agent_focus} is Impacted---------")
     if not state[f"{sub_agent_focus}_impacted"]:
         LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
@@ -23,9 +21,7 @@ def confirm_impact(state):
 
 # Determine the operation to be performed.
 def determine_operation(state):
-    current_subagent_place = state["agent_path"][-1]
-    sub_agent_focus = current_subagent_place["focus"]
-
+    sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read or write {sub_agent_focus}---------")
     if state[f"{sub_agent_focus}_is_altered"]:
         return "alter"
@@ -33,9 +29,7 @@ def determine_operation(state):
 
 # Determine whether the outcome is to read the entire schedule or simply the current item.
 def determine_read_operation(state):
-    current_subagent_place = state["agent_path"][-1]
-    sub_agent_focus = current_subagent_place["focus"]
-
+    sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read a list of {sub_agent_focus} or simply a singular item---------")
     if state[f"{sub_agent_focus}_read_plural"]:
         return "plural"
@@ -43,9 +37,7 @@ def determine_read_operation(state):
 
 # Determine whether the outcome is to read an item from the current set or all items from the user.
 def determine_read_filter_operation(state):
-    current_subagent_place = state["agent_path"][-1]
-    sub_agent_focus = current_subagent_place["focus"]
-
+    sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read all {sub_agent_focus} items for the user or only those currently active---------")
     if state[f"{sub_agent_focus}_read_current"]:
         return "current"

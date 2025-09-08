@@ -9,7 +9,7 @@ from app import db
 from app.main_agent.main_agent_state import MainAgentState
 
 from .base import BaseAgent
-from .utils import sub_agent_focused_items, new_input_request, user_input_information_extraction, agent_state_update
+from .utils import retrieve_current_agent_focus, sub_agent_focused_items, new_input_request, user_input_information_extraction, agent_state_update
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
 
@@ -18,9 +18,7 @@ TState = TypeVar('TState', bound=MainAgentState)
 
 # Confirm that a currently active parent exists to attach the a schedule to.
 def confirm_parent(state: TState):
-    current_subagent_place = state["agent_path"][-1]
-    parent_agent_focus = current_subagent_place["parent"]
-
+    parent_agent_focus = retrieve_current_agent_focus(state, "parent")
     LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active {parent_agent_focus}---------")
     if not state[f"user_{parent_agent_focus}"]:
         return "no_parent"
@@ -28,9 +26,7 @@ def confirm_parent(state: TState):
 
 # Router for if permission was granted.
 def confirm_permission(state: TState):
-    current_subagent_place = state["agent_path"][-1]
-    parent_agent_focus = current_subagent_place["parent"]
-
+    parent_agent_focus = retrieve_current_agent_focus(state, "parent")
     LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new {parent_agent_focus}---------")
     if not state[f"{parent_agent_focus}_impacted"]:
         return "permission_denied"
