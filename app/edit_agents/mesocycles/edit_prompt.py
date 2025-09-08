@@ -16,7 +16,12 @@ The tabular version of the schedule is as follows:
 You may ONLY output the mesocycles in this list; all mesocycles in this list MUST be included exactly once:
 {allowed_list}
 
+Mesocycles can have a phase from one of the following types:
+"Stabilization_Endurance", "Strength_Endurance", "Hypertrophy", "Maximal_Strength", "Power"
+
 STRICT RULES:
+- Do not draw any conclusions or inferences about the nature of an mesocycle. Only use the information provided to you by the user and in the mesocycle information provided above.
+- If a user refers to a phase of a specific type that is not present, do not infer that they meant a mesocycles of a different phase type.
 - ALL mesocycles on the allowlist should be in the schedule at least once.
 - All values in the schedule should be the same as the original, except those that have been edited in the user request.
 - Do not change values in the schedule from their original unless requested. 
