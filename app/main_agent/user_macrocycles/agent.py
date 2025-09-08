@@ -22,6 +22,7 @@ from app.schedule_printers import MacrocycleSchedulePrinter
 class AgentState(TypedDict):
     user_id: int
     focus_name: str
+    agent_path: list
 
     user_input: str
     attempts: int

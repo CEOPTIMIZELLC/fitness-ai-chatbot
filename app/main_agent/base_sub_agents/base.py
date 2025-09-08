@@ -36,7 +36,16 @@ class BaseAgent():
     # Node to declare that the sub agent has begun.
     def start_node(self, state):
         LogMainSubAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
-        return {"focus_name": self.focus}
+
+        # Append the current sub agent to the path.
+        agent_path = state.get("agent_path", [])
+        agent_path.append({"focus": self.focus})
+        LogMainSubAgent.agent_path(f"Agent Path: {agent_path}")
+
+        return {
+            "focus_name": self.focus, 
+            "agent_path": agent_path
+        }
 
     # Confirm that the desired section should be impacted.
     def confirm_impact(self, state):
@@ -121,5 +130,13 @@ class BaseAgent():
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
+
+        # Remove current agent from the path once it is done.
+        agent_path = state.get("agent_path", [])
+        agent_path.pop()
+        LogMainSubAgent.agent_path(f"Agent Path: {agent_path}")
+
         LogMainSubAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
-        return {}
+        return {
+            "agent_path": agent_path
+        }

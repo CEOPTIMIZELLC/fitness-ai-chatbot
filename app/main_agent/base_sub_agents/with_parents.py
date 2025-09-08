@@ -39,12 +39,12 @@ class BaseAgentWithParents(BaseAgent):
         LogMainSubAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
 
         # Append the current sub agent to the path.
-        agent_path = state["agent_path"]
+        agent_path = state.get("agent_path", [])
         agent_path.append({
             "focus": self.focus, 
             "parent": self.parent
         })
-        LogMainSubAgent.agent_path(f"{agent_path}")
+        LogMainSubAgent.agent_path(f"Agent Path: {agent_path}")
 
         return {
             "focus_name": self.focus, 
@@ -191,19 +191,6 @@ class BaseAgentWithParents(BaseAgent):
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: TState):
         pass
-
-    # Node to declare that the sub agent has ended.
-    def end_node(self, state):
-
-        # Remove current agent from the path once it is done.
-        agent_path = state["agent_path"]
-        agent_path.pop()
-        LogMainSubAgent.agent_path(f"{agent_path}")
-
-        LogMainSubAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
-        return {
-            "agent_path": agent_path
-        }
 
     # Create main agent.
     def create_main_agent_graph(self, state_class: type[TState]):
