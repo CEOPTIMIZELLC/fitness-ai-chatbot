@@ -102,7 +102,7 @@ class BaseAgent():
 
     # Print output.
     def get_user_list(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving All {self.sub_agent_title} Schedules---------")
         user_id = state["user_id"]
 
         schedule_from_db = self.user_list_query(user_id)
