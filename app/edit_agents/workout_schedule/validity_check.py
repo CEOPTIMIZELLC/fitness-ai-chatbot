@@ -34,6 +34,6 @@ def check_schedule_validity(schedule_list):
         # Only perform for weighted excercises on phase components with a weighted range
         if schedule_item["intensity"] and pc.intensity_min and pc.intensity_max:
             # Exercise must have a intensity between the min and max allowed for the phase component.
-            add_violation(violations, pc_name, schedule_item, "intensity", pc.intensity_min / 100, pc.intensity_max / 100)
+            add_violation(violations, pc_name, schedule_item, "intensity", pc.intensity_min, pc.intensity_max)
 
     return violations
