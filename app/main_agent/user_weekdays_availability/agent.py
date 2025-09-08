@@ -45,13 +45,23 @@ class SubAgent(BaseAgent):
     schedule_printer_class = AvailabilitySchedulePrinter()
 
     def user_list_query(self, user_id):
-        return User_Weekday_Availability.query.filter_by(user_id=user_id).all()
+        return (
+            User_Weekday_Availability.query
+            .filter_by(user_id=user_id)
+            .order_by(User_Weekday_Availability.weekday_id.asc())
+            .all()
+        )
 
     def focus_retriever_agent(self, user_id):
         return current_weekday_availability(user_id)
 
     def focus_list_retriever_agent(self, user_id):
-        return User_Weekday_Availability.query.filter_by(user_id=user_id).all()
+        return (
+            User_Weekday_Availability.query
+            .filter_by(user_id=user_id)
+            .order_by(User_Weekday_Availability.weekday_id.asc())
+            .all()
+        )
 
     # Classify the new goal in one of the possible goal types.
     def perform_input_parser(self, state: AgentState):
