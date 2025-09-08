@@ -139,6 +139,9 @@ class MainSubAgentVerbosityConfig:
     # Log final formatted schedule produced.
     formatted_schedule = True
 
+    # Log the current path of the subagents.
+    agent_path = True
+
 
 # Logging configurations options for the editor agents.
 class EditorAgentVerbosityConfig:

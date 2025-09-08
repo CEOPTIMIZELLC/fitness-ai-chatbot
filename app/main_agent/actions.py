@@ -27,7 +27,7 @@ def enter_main_agent(user_id):
 
         # Invoke with new macrocycle and possible goal types.
         result = main_agent_app.invoke(
-            {"user_id": user_id}, 
+            {"user_id": user_id, "agent_path": []}, 
             config={
                 "recursion_limit": agent_recursion_limit,
                 "configurable": {

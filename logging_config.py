@@ -64,6 +64,7 @@ class LogMainSubAgent:
     input_info = partial(verbose_log, MainSubAgentVerbosityConfig.input_info)
     system_message = partial(verbose_log, MainSubAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
+    agent_path = partial(verbose_log, MainSubAgentVerbosityConfig.agent_path)
 
 class LogEditorAgent:
     verbose = partial(verbose_log, EditorAgentVerbosityConfig.verbose)

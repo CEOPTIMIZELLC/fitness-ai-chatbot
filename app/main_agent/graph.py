@@ -52,6 +52,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         state = reset_schedule_section(state, "phase_component")
         state = reset_schedule_section(state, "workout_schedule")
         state = reset_schedule_section(state, "workout_completion")
+        state["agent_path"] = []
         return state
 
     # Request User Input.
@@ -176,6 +177,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         state = reset_schedule_section(state, "phase_component")
         state = reset_schedule_section(state, "workout_schedule")
         state = reset_schedule_section(state, "workout_completion")
+        state["agent_path"] = []
         return state
 
     # Create main agent.
