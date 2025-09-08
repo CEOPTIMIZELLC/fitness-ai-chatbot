@@ -176,7 +176,7 @@ class SubAgent(BaseAgent):
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
-
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
@@ -196,9 +196,10 @@ class SubAgent(BaseAgent):
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact,
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "impact_confirmed"                            # In between step for if an impact is indicated.

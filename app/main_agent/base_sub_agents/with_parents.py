@@ -34,6 +34,14 @@ class BaseAgentWithParents(BaseAgent):
     def retrieve_children_entries_from_parent(self, parent_db_entry):
         pass
 
+    # Node to declare that the sub agent has begun.
+    def start_node(self, state):
+        LogMainSubAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
+        return {
+            "focus_name": self.focus, 
+            "parent_name": self.parent, 
+        }
+
     # Focus List Retriever uses the parent retriever and then retrieves the children from it.
     def focus_list_retriever_agent(self, user_id):
         parent_db_entry = self.parent_retriever_agent(user_id)
@@ -178,6 +186,7 @@ class BaseAgentWithParents(BaseAgent):
     # Create main agent.
     def create_main_agent_graph(self, state_class: type[TState]):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
@@ -197,9 +206,10 @@ class BaseAgentWithParents(BaseAgent):
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact,
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.

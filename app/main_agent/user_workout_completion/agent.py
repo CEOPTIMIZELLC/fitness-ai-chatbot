@@ -358,7 +358,7 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
-
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("get_proposed_list", self.get_proposed_list)
@@ -369,9 +369,11 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("end_node", self.end_node)
 
+        # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact,
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.

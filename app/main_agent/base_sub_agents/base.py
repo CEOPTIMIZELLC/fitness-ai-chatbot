@@ -32,6 +32,11 @@ class BaseAgent():
     # In between node for chained conditional edges.
     def chained_conditional_inbetween(self, state):
         return {}
+    
+    # Node to declare that the sub agent has begun.
+    def start_node(self, state):
+        LogMainSubAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
+        return {"focus_name": self.focus}
 
     # Confirm that the desired section should be impacted.
     def confirm_impact(self, state):

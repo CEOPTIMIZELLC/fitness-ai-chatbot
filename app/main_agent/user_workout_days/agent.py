@@ -165,6 +165,7 @@ class SubAgent(BaseAgent):
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("retrieve_availability", self.retrieve_availability)
         workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
         workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
@@ -188,9 +189,10 @@ class SubAgent(BaseAgent):
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact,
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_availability"                       # Retreive the availability for the alteration.

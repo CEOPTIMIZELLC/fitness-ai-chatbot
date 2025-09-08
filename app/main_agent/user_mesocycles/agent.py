@@ -161,6 +161,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
 
     def create_main_agent_graph(self, state_class: type[AgentState]):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
@@ -180,9 +181,10 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact,
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
