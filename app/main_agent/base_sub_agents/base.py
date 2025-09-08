@@ -40,7 +40,6 @@ class BaseAgent():
 
     # Confirm that the desired section should be impacted.
     def confirm_impact(self, state):
-        LogMainSubAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
         LogMainSubAgent.agent_steps(f"\t---------Confirm that the {self.sub_agent_title} is Impacted---------")
         if not state[self.focus_names["impact"]]:
             LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
