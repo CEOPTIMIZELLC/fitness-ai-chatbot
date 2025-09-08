@@ -18,6 +18,7 @@ from app.utils.common_table_queries import current_microcycle, current_workout_d
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
+from app.main_agent.base_sub_agents.with_availability import confirm_availability, confirm_availability_permission
 from app.main_agent.user_microcycles import create_microcycle_agent
 from app.impact_goal_models import MicrocycleGoal
 from app.goal_prompts import microcycle_system_prompt
@@ -206,7 +207,7 @@ class SubAgent(BaseAgent):
         # Whether an availability for the user exists.
         workflow.add_conditional_edges(
             "retrieve_availability",
-            self.confirm_availability,
+            confirm_availability, 
             {
                 "no_availability": "ask_for_availability_permission",   # No parent element exists.
                 "availability": "retrieve_parent"                       # Retrieve the parent element if an availability is found.
@@ -217,7 +218,7 @@ class SubAgent(BaseAgent):
         workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
         workflow.add_conditional_edges(
             "availability_requests_extraction",
-            self.confirm_availability_permission,
+            confirm_availability_permission, 
             {
                 "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
                 "permission_granted": "availability"                    # The agent is allowed to create availability.
