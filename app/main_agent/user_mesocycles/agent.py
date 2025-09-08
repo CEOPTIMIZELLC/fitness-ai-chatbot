@@ -23,6 +23,9 @@ from app.schedule_printers import MesocycleSchedulePrinter
 macrocycle_weeks = 26
 
 class AgentState(MainAgentState):
+    focus_name: str
+    parent_name: str
+
     user_macrocycle: dict
     macrocycle_id: int
     goal_id: int

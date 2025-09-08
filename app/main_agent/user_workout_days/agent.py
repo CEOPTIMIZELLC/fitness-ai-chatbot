@@ -33,6 +33,9 @@ from app.schedule_printers import PhaseComponentSchedulePrinter
 # ----------------------------------------- User Workout Days -----------------------------------------
 
 class AgentState(MainAgentState):
+    focus_name: str
+    parent_name: str
+
     user_microcycle: dict
     microcycle_id: int
     phase_id: int

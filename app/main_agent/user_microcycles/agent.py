@@ -18,6 +18,8 @@ from app.schedule_printers import MicrocycleSchedulePrinter
 # ----------------------------------------- User Microcycles -----------------------------------------
 
 class AgentState(MainAgentState):
+    focus_name: str
+    parent_name: str
     user_mesocycle: dict
     mesocycle_id: int
     microcycle_count: int

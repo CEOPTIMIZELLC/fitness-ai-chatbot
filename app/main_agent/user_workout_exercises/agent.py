@@ -24,6 +24,9 @@ from app.list_printers import WorkoutScheduleListPrinter
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
 class AgentState(MainAgentState):
+    focus_name: str
+    parent_name: str
+
     user_phase_component: dict
     phase_component_id: int
     loading_system_id: int

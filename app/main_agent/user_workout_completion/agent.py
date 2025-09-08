@@ -94,6 +94,8 @@ def list_of_dicts_to_string(list_of_dicts):
     return f"[{string_output}]"
 
 class AgentState(MainAgentState):
+    focus_name: str
+    parent_name: str
     user_workout_day: dict
     workout_exercises: list
     user_exercises: list
