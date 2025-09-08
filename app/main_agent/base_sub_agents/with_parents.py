@@ -16,6 +16,26 @@ from .utils import sub_agent_focused_items, new_input_request, user_input_inform
 # Create a generic type variable that must be a subclass of MainAgentState
 TState = TypeVar('TState', bound=MainAgentState)
 
+# Confirm that a currently active parent exists to attach the a schedule to.
+def confirm_parent(state: TState):
+    current_subagent_place = state["agent_path"][-1]
+    parent_agent_focus = current_subagent_place["parent"]
+
+    LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active {parent_agent_focus}---------")
+    if not state[f"user_{parent_agent_focus}"]:
+        return "no_parent"
+    return "parent"
+
+# Router for if permission was granted.
+def confirm_permission(state: TState):
+    current_subagent_place = state["agent_path"][-1]
+    parent_agent_focus = current_subagent_place["parent"]
+
+    LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new {parent_agent_focus}---------")
+    if not state[f"{parent_agent_focus}_impacted"]:
+        return "permission_denied"
+    return "permission_granted"
+
 class BaseAgentWithParents(BaseAgent):
     parent = ""
     parent_title = ""
@@ -69,13 +89,6 @@ class BaseAgentWithParents(BaseAgent):
 
         # Return parent.
         return {self.parent_names["entry"]: parent_db_entry.to_dict() if parent_db_entry else None}
-
-    # Confirm that a currently active parent exists to attach the a schedule to.
-    def confirm_parent(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active {self.parent_title}---------")
-        if not state[self.parent_names["entry"]]:
-            return "no_parent"
-        return "parent"
 
     # Changes the id of the parent.
     def parent_changer(self, user_id, new_parent_id):
@@ -155,13 +168,6 @@ class BaseAgentWithParents(BaseAgent):
     def parent_requests_extraction(self, state: TState):
         LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests---------")
         return self.other_requests_information_extractor(state, self.parent)
-
-    # Router for if permission was granted.
-    def confirm_permission(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new {self.parent_title}---------")
-        if not state[self.parent_names["impact"]]:
-            return "permission_denied"
-        return "permission_granted"
 
     # State if the Parent isn't allowed to be requested.
     def permission_denied(self, state: TState):

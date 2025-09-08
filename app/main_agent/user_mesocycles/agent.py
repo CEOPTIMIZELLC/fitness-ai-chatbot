@@ -11,6 +11,7 @@ from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 from app.main_agent.user_macrocycles import MacrocycleAgentNode
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.impact_goal_models import MacrocycleGoal
 from app.goal_prompts import macrocycle_system_prompt
 from app.edit_agents import create_mesocycle_edit_agent
@@ -197,7 +198,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         # Whether a parent element exists.
         workflow.add_conditional_edges(
             "retrieve_parent",
-            self.confirm_parent,
+            confirm_parent, 
             {
                 "no_parent": "ask_for_permission",                      # No parent element exists.
                 "parent": "parent_retrieved"                            # In between step for if a parent element exists.
@@ -238,7 +239,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         workflow.add_edge("ask_for_permission", "parent_requests_extraction")
         workflow.add_conditional_edges(
             "parent_requests_extraction",
-            self.confirm_permission,
+            confirm_permission, 
             {
                 "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
                 "permission_granted": "parent_agent"                    # The agent is allowed to create a parent.

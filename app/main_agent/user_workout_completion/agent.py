@@ -14,6 +14,7 @@ from app.utils.item_to_string import recursively_change_dict_timedeltas
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.main_agent.base_sub_agents.with_parents import confirm_parent
 from app.main_agent.base_sub_agents.utils import new_input_request
 
 from app.schedule_printers import WorkoutCompletionSchedulePrinter
@@ -384,7 +385,7 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
 
         workflow.add_conditional_edges(
             "retrieve_parent",
-            self.confirm_parent,
+            confirm_parent, 
             {
                 "no_parent": "end_node",                                # No parent element exists.
                 "parent": "retrieve_information"                        # Retrieve the information for the alteration.
