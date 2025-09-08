@@ -68,8 +68,8 @@ def llm_output_to_timedelta(state: AgentState):
     for id, availability in enumerate(weekday_availability_llm):
         if availability[1]:
             result.append({"weekday_id": id, "availability": availability[1]})
-        else:
-            result.append({"weekday_id": id, "availability": 0})
+        # else:
+        #     result.append({"weekday_id": id, "availability": 0})
 
     from calendar import day_name
     for day in result:
