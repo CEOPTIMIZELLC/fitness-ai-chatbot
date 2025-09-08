@@ -134,7 +134,7 @@ class SubAgent(BaseAgent):
         workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
             "start_node",
-            confirm_impact,
+            self.confirm_impact,
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
