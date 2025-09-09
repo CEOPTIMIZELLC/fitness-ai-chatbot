@@ -105,6 +105,22 @@ class AgentState(MainAgentState):
     schedule_list: list
     schedule_printed: str
 
+
+# Confirm that there is a workout to complete.
+def confirm_children(state: AgentState):
+    LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active Workout---------")
+    if not state["workout_exercises"]:
+        return "no_schedule"
+    return "present_schedule"
+
+# Confirm that the desired section should be edited.
+def confirm_edits(state):
+    LogMainSubAgent.agent_steps(f"\t---------Confirm that the Schedule is Edited---------")
+    if state["is_edited"]:
+        LogMainSubAgent.agent_steps(f"\t---------Is Edited---------")
+        return "is_edited"
+    return "not_edited"
+
 class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
     focus = "workout_completion"
     parent = "workout_day"
@@ -127,13 +143,6 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
         workout_exercises = user_workout_day["exercises"]
 
         return {"workout_exercises": workout_exercises}
-
-    # Confirm that there is a workout to complete.
-    def confirm_children(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active Workout---------")
-        if not state["workout_exercises"]:
-            return "no_schedule"
-        return "present_schedule"
 
     # Create the structured schedule.
     def get_proposed_list(self, state: AgentState):
@@ -265,15 +274,6 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
         # Parse the structured output values to a dictionary.
         return self.goal_edit_request_parser(goal_class, edits_to_be_applyed)
 
-    # Confirm that the desired section should be edited.
-    def confirm_edits(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm that the {self.sub_agent_title} is Edited---------")
-        if state["is_edited"]:
-        # if state["edits"]:
-            LogMainSubAgent.agent_steps(f"\t---------Is Edited---------")
-            return "is_edited"
-        return "not_edited"
-
     # Perform the edits.
     def perform_edits(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Performing the Requested Edits for {self.sub_agent_title}---------")
@@ -395,7 +395,7 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
 
         workflow.add_conditional_edges(
             "retrieve_information",
-            self.confirm_children,
+            confirm_children,
             {
                 "no_schedule": "end_node",                              # End the sub agent if no schedule is found.
                 "present_schedule": "get_proposed_list"                 # Fromat the proposed list for the user if a schedule exists.
@@ -408,7 +408,7 @@ class SubAgent(BaseAgent, WorkoutCompletionEditPrompt):
 
         workflow.add_conditional_edges(
             "ask_for_edits",
-            self.confirm_edits,
+            confirm_edits,
             {
                 "is_edited": "perform_edits",                           # The agent should apply the desired edits to the schedule.
                 "not_edited": "perform_workout_completion"              # The agent should perform the completion if no edits were found.
