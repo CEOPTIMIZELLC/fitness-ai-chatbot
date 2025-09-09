@@ -17,7 +17,7 @@ from app.impact_goal_models import AvailabilityGoal
 from app.goal_prompts import availability_system_prompt
 from app.edit_agents import create_availability_edit_agent
 
-from .actions import retrieve_weekday_types
+from .actions import retrieve_weekday_types, initialize_user_availability, update_user_availability
 from app.schedule_printers import AvailabilitySchedulePrinter
 
 # ----------------------------------------- User Availability -----------------------------------------
@@ -91,14 +91,15 @@ class SubAgent(BaseAgent):
         LogMainSubAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         user_id = state["user_id"]
         weekday_availability = state["agent_output"]
+
         # Update each availability entry to the database.
         with session_scope() as s:
-            for i in weekday_availability:
-                db_entry = User_Weekday_Availability(
-                    user_id=user_id, 
-                    weekday_id=i["weekday_id"], 
-                    availability=timedelta(seconds=i["availability"]))
-                s.merge(db_entry)
+            user_availability = s.query(User_Weekday_Availability).filter_by(user_id=user_id).all()
+
+            if len(user_availability) != 7:
+                initialize_user_availability(s, user_id)
+
+            update_user_availability(s, user_id, weekday_availability)
         return {}
 
     # Delete the old children belonging to the current item.
