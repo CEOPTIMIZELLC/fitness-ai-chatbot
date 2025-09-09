@@ -1,5 +1,5 @@
 class WorkoutCompletionEditPrompt:
-    def edit_system_prompt_constructor(self, current_schedule, allowed_list):
+    def edit_system_prompt_constructor(self, current_schedule, schedule_formatted, allowed_list):
         return f"""
 You are an expert on fitness and exercise routines, terminology, and understanding of the macro and micro scale of a workout routine.
 A user has previously been presented with a schedule and may request edits to the schedule.
@@ -7,6 +7,9 @@ You are extracting structured information from the user's input regarding if the
 
 Please examine the user input and determine whether the user is requesting changes to any of the workout exercises in the current schedule:
 {current_schedule}
+
+The tabular version of the schedule is as follows:
+{schedule_formatted}
 
 **Workout** — Specifically indicates what changes that the user would like to make to their workout schedule to reflect the actual effort put in.
 

@@ -2,3 +2,4 @@ from .availability.agent import create_main_agent_graph as create_availability_e
 from .macrocycles.agent import create_main_agent_graph as create_macrocycle_edit_agent
 from .mesocycles.agent import create_main_agent_graph as create_mesocycle_edit_agent
 from .workout_schedule.agent import create_main_agent_graph as create_workout_edit_agent
+from .workout_completion.agent import create_main_agent_graph as create_workout_completion_edit_agent
