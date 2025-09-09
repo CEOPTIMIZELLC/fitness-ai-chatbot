@@ -7,7 +7,7 @@ from app import db
 from app.models import User_Workout_Exercises, User_Workout_Days
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 
-from app.agents.exercises import exercises_main
+from app.solver_agents.exercises import exercises_main
 from app.utils.common_table_queries import current_workout_day
 
 from app.main_agent.main_agent_state import MainAgentState

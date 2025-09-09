@@ -5,7 +5,7 @@ from datetime import timedelta
 from langgraph.graph import StateGraph, START, END
 
 from app import db
-from app.agents.weekday_availability import create_weekday_availability_extraction_graph
+from app.solver_agents.weekday_availability import create_weekday_availability_extraction_graph
 from app.db_session import session_scope
 from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_weekday_availability, current_microcycle

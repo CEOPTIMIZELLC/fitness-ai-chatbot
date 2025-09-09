@@ -4,7 +4,7 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 
 from app import db
-from app.agents.goals import create_goal_classification_graph
+from app.solver_agents.goals import create_goal_classification_graph
 from app.db_session import session_scope
 from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle

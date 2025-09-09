@@ -5,7 +5,7 @@ from ortools.sat.python import cp_model
 from dotenv import load_dotenv
 import math
 
-from app.agents.constraints import (
+from app.solver_agents.constraints import (
     intvar_list_from_phase_components, 
     intvar_list_from_elements, 
     link_entry_and_item, 
@@ -14,7 +14,7 @@ from app.agents.constraints import (
     ensure_all_vars_equal, 
     entries_equal)
 
-from app.agents.exercises.exercise_model_specific_constraints import (
+from app.solver_agents.exercises.exercise_model_specific_constraints import (
     constrain_duration_var, 
     create_exercise_effort_var, 
     constrain_weighted_exercises_var, 

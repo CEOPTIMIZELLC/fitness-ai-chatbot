@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 
 from app import db
 from app.models import Phase_Library
-from app.agents.phase_components import Main as phase_component_main
+from app.solver_agents.phase_components import Main as phase_component_main
 from app.main_agent.utils import construct_available_exercises_list, construct_phase_component_list, construct_available_general_exercises_list
 from app.main_agent.utils import verify_pc_information
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent

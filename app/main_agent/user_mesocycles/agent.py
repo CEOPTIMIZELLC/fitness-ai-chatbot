@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, START, END
 
 from app import db
 from app.models import User_Mesocycles, User_Macrocycles
-from app.agents.phases import Main as phase_main
+from app.solver_agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 from app.main_agent.user_macrocycles import MacrocycleAgentNode

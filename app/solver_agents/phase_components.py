@@ -3,7 +3,7 @@ from logging_config import LogSolver
 from ortools.sat.python import cp_model
 from typing import Set, Optional
 from dotenv import load_dotenv
-from app.agents.constraints import (
+from app.solver_agents.constraints import (
     create_optional_intvar, 
     create_spread_intvar, 
     day_duration_within_availability, 
@@ -13,7 +13,7 @@ from app.agents.constraints import (
     frequency_within_min_max, 
     consecutive_bodyparts_for_component)
 
-from app.agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
+from app.solver_agents.base_agent import BaseRelaxationAttempt, BaseAgent, BaseAgentState
 from app.utils.longest_string import longest_string_size_for_key
 
 _ = load_dotenv()

@@ -3,7 +3,7 @@ from logging_config import LogMainSubAgent
 from langgraph.graph import StateGraph, START, END
 
 from app import db
-from app.agents.phase_components import Main as phase_component_main
+from app.solver_agents.phase_components import Main as phase_component_main
 from app.models import (
     User_Workout_Components, 
     User_Macrocycles, 
