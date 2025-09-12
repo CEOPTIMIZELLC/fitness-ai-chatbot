@@ -1,7 +1,5 @@
-from logging_config import LogEditorAgent
-
 from app.schedule_printers import MesocycleSchedulePrinter
-from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate, TState
+from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate
 
 from .edit_goal_model import MesocycleScheduleEditGoal
 from .edit_prompt import MesocycleEditPrompt

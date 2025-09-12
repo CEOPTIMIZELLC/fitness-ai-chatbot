@@ -1,8 +1,6 @@
-from logging_config import LogEditorAgent
-
 import math
 from app.list_printers import WorkoutScheduleListPrinter
-from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate, TState
+from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate
 
 from .edit_goal_model import WorkoutScheduleEditGoal
 from .edit_prompt import WorkoutScheduleEditPrompt
