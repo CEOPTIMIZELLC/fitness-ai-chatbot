@@ -8,7 +8,7 @@ You are extracting structured information from the user's input regarding if the
 Please examine the user input and determine whether the user is requesting changes to their current goal:
 {current_schedule}
 
-**Goal** — Specifically indicates what changes that the user would like to make to their workout schedule to reflect the actual effort put in.
+**Goal** - Specifically indicates what changes that the user would like to make to their workout schedule to reflect the actual effort put in.
 
 You may ONLY change the macrocycle to one of the potential goals this list:
 {allowed_list}

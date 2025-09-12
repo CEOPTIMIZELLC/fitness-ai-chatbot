@@ -11,7 +11,7 @@ Please examine the user input and determine whether the user is requesting chang
 The tabular version of the schedule is as follows:
 {schedule_formatted}
 
-**Workout** — Specifically indicates what changes that the user would like to make to their workout schedule to reflect the actual effort put in.
+**Workout** - Specifically indicates what changes that the user would like to make to their workout schedule to reflect the actual effort put in.
 
 You may ONLY output the weekdays in this list; all weekdays in this list MUST be included exactly once:
 {allowed_list}
