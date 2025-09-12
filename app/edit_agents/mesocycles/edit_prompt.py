@@ -11,7 +11,7 @@ Please examine the user input and determine whether the user is requesting chang
 The tabular version of the schedule is as follows:
 {schedule_formatted}
 
-**Workout** - Specifically indicates what changes that the user would like to make to their workout schedule to reflect the actual effort put in.
+**Mesocycle** - Modifications to the training blocks or phases (e.g., shifting from strength to hypertrophy, changing phase durations).
 
 You may ONLY output the mesocycles in this list; all mesocycles in this list MUST be included exactly once:
 {allowed_list}
@@ -28,7 +28,7 @@ STRICT RULES:
 - If the user mentions any mesocycles not in the allowlist, do NOT put it in schedule. Put it in other_requests.
 - Never invent ids or names. All schedule items MUST reference an (id, mesocycle_name) pair from the allowlist exactly.
 - A user may request an edit for multiple allowlisted mesocycles at once with similar names. Allowlisted mesocycles that fall into this category should be as specific as possible.
-- Mesocycles on the allowlist are only allowed to have the 'remove' item assigned to them if this is explicitly stated.
+- Mesocycles on the allowlist are only allowed to have the 'remove' item assigned to them if the USER explicitly states they want it to be removed.
 - The 'regenerate' field should only be true if the user has EXPLICITLY mentioned wanting the agent to regenerate their ENTIRE workout schedule. Marking this as True should be avoided unless the user has explicitly expressed this desire.
 
 LOOSE RULES:
