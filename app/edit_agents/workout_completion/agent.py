@@ -6,7 +6,7 @@ import math
 from app import db
 from app.models import User_Workout_Exercises
 from app.list_printers import WorkoutCompletionListPrinter
-from app.edit_agents.base import BaseSubAgent, AgentState
+from app.edit_agents.base.base import BaseSubAgent, AgentState
 
 from .edit_goal_model import WorkoutCompletionEditGoal
 from .edit_prompt import WorkoutCompletionEditPrompt

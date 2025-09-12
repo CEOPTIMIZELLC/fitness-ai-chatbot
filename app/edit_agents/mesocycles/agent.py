@@ -1,7 +1,7 @@
 from logging_config import LogEditorAgent
 
 from app.schedule_printers import MesocycleSchedulePrinter
-from app.edit_agents.base import BaseSubAgent, TState
+from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate, TState
 
 from .edit_goal_model import MesocycleScheduleEditGoal
 from .edit_prompt import MesocycleEditPrompt
@@ -14,7 +14,7 @@ keys_to_remove = [
     "order"
 ]
 
-class SubAgent(BaseSubAgent, MesocycleEditPrompt):
+class SubAgent(BaseSubAgentRegenerate, MesocycleEditPrompt):
     edit_goal = MesocycleScheduleEditGoal
     list_printer_class = MesocycleSchedulePrinter()
     schedule_id_key = "order"

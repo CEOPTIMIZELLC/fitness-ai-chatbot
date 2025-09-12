@@ -2,7 +2,7 @@ from logging_config import LogEditorAgent
 
 import math
 from app.list_printers import WorkoutScheduleListPrinter
-from app.edit_agents.base import BaseSubAgent, TState
+from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate, TState
 
 from .edit_goal_model import WorkoutScheduleEditGoal
 from .edit_prompt import WorkoutScheduleEditPrompt
@@ -41,7 +41,7 @@ keys_to_remove = [
     "i", 
 ]
 
-class SubAgent(BaseSubAgent, WorkoutScheduleEditPrompt):
+class SubAgent(BaseSubAgentRegenerate, WorkoutScheduleEditPrompt):
     edit_goal = WorkoutScheduleEditGoal
     list_printer_class = WorkoutScheduleListPrinter()
     schedule_id_key = "exercise_index"

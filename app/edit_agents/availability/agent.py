@@ -4,7 +4,7 @@ from app import db
 from app.models import Weekday_Library
 
 from app.schedule_printers import AvailabilitySchedulePrinter
-from app.edit_agents.base import BaseSubAgent, TState
+from app.edit_agents.base.base import BaseSubAgent, TState
 
 from .edit_goal_model import AvailabilityScheduleEditGoal
 from .edit_prompt import AvailabilityEditPrompt
