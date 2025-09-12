@@ -106,9 +106,6 @@ class SubAgent(BaseSubAgent, WorkoutCompletionEditPrompt):
         # Calculate the new duration, working duration, density, and volume.
         schedule_item["duration"] = (new_sec_per_ex * new_reps + new_rest) * new_sets
         schedule_item["working_duration"] = (new_sec_per_ex * new_reps) * new_sets
-
-        # scaled_density = 100 * (schedule_item["working_duration"] / schedule_item["duration"])
-        # schedule_item["density"] = round((schedule_item["working_duration"] / schedule_item["duration"]), 2)
         schedule_item["density"] = math.floor(100 * schedule_item["working_duration"] / schedule_item["duration"]) / 100
         schedule_item["volume"] = new_reps * new_sets
 
