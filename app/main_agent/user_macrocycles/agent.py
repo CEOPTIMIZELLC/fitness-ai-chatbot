@@ -43,6 +43,12 @@ class AgentState(TypedDict):
     macrocycle_id: int
     goal_id: int
 
+# Determine whether the current macrocycle should be edited or if a new one should be created.
+def which_operation(state: AgentState):
+    LogMainSubAgent.agent_steps(f"\t---------Determine whether goal should be new---------")
+    if state["macrocycle_alter_old"] and state["user_macrocycle"]:
+        return "alter_old_macrocycle"
+    return "create_new_macrocycle"
 
 class SubAgent(BaseAgent):
     focus = "macrocycle"
@@ -111,13 +117,6 @@ class SubAgent(BaseAgent):
             "user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None,
             "goal_id": goal["goal_id"]
         }
-
-    # Determine whether the current macrocycle should be edited or if a new one should be created.
-    def which_operation(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Determine whether goal should be new---------")
-        if state["macrocycle_alter_old"] and state["user_macrocycle"]:
-            return "alter_old_macrocycle"
-        return "create_new_macrocycle"
 
     # Creates the new macrocycle of the determined type.
     def create_new_macrocycle(self, state: AgentState):
@@ -243,7 +242,7 @@ class SubAgent(BaseAgent):
         # Whether the intention is to alter the current macrocycle or to create a new one.
         workflow.add_conditional_edges(
             "perform_goal_change_by_id",
-            self.which_operation,
+            which_operation,
             {
                 "alter_old_macrocycle": "retrieve_information",             # Alter the current macrocycle.
                 "create_new_macrocycle": "editor_agent_for_creation"        # Create a new macrocycle.
@@ -273,7 +272,7 @@ class SubAgent(BaseAgent):
         # Whether the intention is to alter the current macrocycle or to create a new one.
         workflow.add_conditional_edges(
             "perform_input_parser",
-            self.which_operation,
+            which_operation,
             {
                 "alter_old_macrocycle": "retrieve_information",             # Alter the current macrocycle.
                 "create_new_macrocycle": "editor_agent_for_creation"        # Create a new macrocycle.
