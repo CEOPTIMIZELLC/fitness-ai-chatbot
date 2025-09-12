@@ -12,7 +12,7 @@ from app.utils.common_table_queries import current_workout_day
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
-from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_filter_operation
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_filter_operation, confirm_regenerate
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.main_agent.base_sub_agents.with_availability import confirm_availability, confirm_availability_permission
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
@@ -37,6 +37,7 @@ class AgentState(MainAgentState):
     user_availability: int
     start_date: any
     agent_output: list
+    should_regenerate: bool
     schedule_printed: str
 
 class SubAgent(BaseAgent):
@@ -284,7 +285,17 @@ class SubAgent(BaseAgent):
 
         workflow.add_edge("delete_old_children", "perform_scheduler")
         workflow.add_edge("perform_scheduler", "editor_agent")
-        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
+
+        # Whether the scheduler should be performed again.
+        workflow.add_conditional_edges(
+            "editor_agent",
+            confirm_regenerate, 
+            {
+                "is_regenerated": "parent_agent",                       # Perform the scheduler again if regenerating.
+                "not_regenerated": "agent_output_to_sqlalchemy_model"   # The agent should move on to adding the information to the database.
+            }
+        )
+
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("availability_permission_denied", "end_node")

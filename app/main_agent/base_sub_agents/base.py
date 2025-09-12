@@ -43,6 +43,14 @@ def determine_read_filter_operation(state):
         return "current"
     return "all"
 
+# Determine whether the schedule should be regenerated.
+def confirm_regenerate(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the {sub_agent_focus} schedule should be regenerated---------")
+    if state.get("is_regenerated", False):
+        LogMainSubAgent.agent_steps(f"\t---------Is Regenerated---------")
+        return "is_regenerated"
+    return "not_regenerated"
 
 class BaseAgent():
     focus = ""
