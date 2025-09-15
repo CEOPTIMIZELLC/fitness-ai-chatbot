@@ -72,11 +72,16 @@ class WorkoutCompletionSchedulePrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
+    def _retrieve_longest_schedule_elements(self, schedule):
+        return {
+            "exercise": longest_string_size_for_key(schedule, "exercise_name")
+        }
+
     def run_printer(self, schedule_old, schedule):
         formatted = ""
 
         # Calculate longest string sizes
-        longest_sizes = {"exercise": longest_string_size_for_key(schedule, "exercise_name")}
+        longest_sizes = self._retrieve_longest_schedule_elements(schedule)
 
         # Create headers
         formatted += self.schedule_header

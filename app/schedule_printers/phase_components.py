@@ -42,27 +42,14 @@ class PhaseComponentSchedulePrinter(BaseSchedulePrinter):
                     schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_printer(self, schedule):
+    def _retrieve_longest_schedule_elements(self, schedule):
         phase_components = get_all_items(Phase_Component_Library)
         bodyparts = get_all_items(Bodypart_Library)
 
-        formatted = ""
-
-        # Calculate longest string sizes
-        longest_sizes = {
+        return {
             "phase_component": longest_string_size_for_key(phase_components, "name"),
             "bodypart": longest_string_size_for_key(bodyparts, "name")
         }
-
-        # Create headers
-        formatted += self.schedule_header
-        headers = self._create_header_fields(longest_sizes)
-        header_line = self._formatted_header_line(headers)
-
-        formatted += self._log_schedule(headers, header_line, schedule)
-
-        return formatted
-
 
 def Main(phase_components):
     workout_day_schedule_printer = PhaseComponentSchedulePrinter()

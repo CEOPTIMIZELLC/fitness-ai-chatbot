@@ -27,7 +27,6 @@ class WorkoutCompletionListPrinter(BaseSchedulePrinter):
             "end": ("", 2),
         }
 
-
     def _line_fields(self, i, exercise):
         new_weight = exercise["weight"] or 0
 
@@ -65,25 +64,13 @@ class WorkoutCompletionListPrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_printer(self, schedule):
-        formatted = ""
-
-        # Calculate longest string sizes
-        longest_sizes = {
+    def _retrieve_longest_schedule_elements(self, schedule):
+        return {
             "phase_component": longest_string_size_for_key(schedule, "phase_component_subcomponent"),
             "bodypart": longest_string_size_for_key(schedule, "bodypart_name"),
             "exercise": longest_string_size_for_key(schedule, "exercise_name"),
             "true_exercise_flag": longest_string_size_for_key(schedule, "true_exercise_flag")
         }
-
-        # Create headers
-        formatted += self.schedule_header
-        headers = self._create_header_fields(longest_sizes)
-        header_line = self._formatted_header_line(headers)
-
-        formatted += self._log_schedule(headers, header_line, schedule)
-
-        return formatted
 
 def Main(schedule):
     exercise_schedule_printer = WorkoutCompletionListPrinter()

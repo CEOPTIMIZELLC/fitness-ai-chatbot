@@ -121,9 +121,7 @@ class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter, HorizontalSchedulePrin
         formatted += f"\nTotal Work Duration: {total_working_duration} seconds"
         return formatted
 
-    def run_printer(self, workout_date, loading_system_id, schedule):
-        formatted = f"Workout for {str(workout_date)}"
-
+    def _retrieve_longest_schedule_elements(self, schedule):
         # Calculate longest string sizes
         longest_sizes = {
             "phase_component": longest_string_size_for_key(schedule, "phase_component_subcomponent"),
@@ -139,6 +137,14 @@ class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter, HorizontalSchedulePrin
         else:
             # The column should be the size of the longest non-specific flag allowed.
             longest_sizes["true_exercise_flag"] = len("False Exercise")
+
+        return longest_sizes
+
+    def run_printer(self, workout_date, loading_system_id, schedule):
+        formatted = f"Workout for {str(workout_date)}"
+
+        # Calculate longest string sizes
+        longest_sizes = self._retrieve_longest_schedule_elements(schedule)
 
         # Create headers
         formatted += self.schedule_header

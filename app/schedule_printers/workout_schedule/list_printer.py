@@ -79,9 +79,7 @@ class WorkoutScheduleListPrinter(BaseSchedulePrinter):
             schedule_string += self._formatted_entry_line(headers, _line_fields)
         return schedule_string
 
-    def run_printer(self, schedule):
-        formatted = ""
-
+    def _retrieve_longest_schedule_elements(self, schedule):
         # Calculate longest string sizes
         longest_sizes = {
             "phase_component": longest_string_size_for_key(schedule, "phase_component_subcomponent"),
@@ -97,14 +95,7 @@ class WorkoutScheduleListPrinter(BaseSchedulePrinter):
             # The column should be the size of the longest non-specific flag allowed.
             longest_sizes["true_exercise_flag"] = len("False Exercise")
 
-        # Create headers
-        formatted += self.schedule_header
-        headers = self._create_header_fields(longest_sizes)
-        header_line = self._formatted_header_line(headers)
-
-        formatted += self._log_schedule(headers, header_line, schedule)
-
-        return formatted
+        return longest_sizes
 
 def Main(schedule):
     exercise_schedule_printer = WorkoutScheduleListPrinter()
