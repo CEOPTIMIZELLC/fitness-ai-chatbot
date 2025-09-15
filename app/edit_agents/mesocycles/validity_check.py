@@ -4,7 +4,7 @@ from app.models import Phase_Library
 def check_for_out_of_bounds(item_value, min_value, max_value):
     return (min_value > item_value) or (item_value > max_value)
 
-def add_violation(violations, phase_name, item, value_name, min_value, max_value):
+def add_local_bounds_violation(violations, phase_name, item, value_name, min_value, max_value):
     item_name = item["order"]
     item_value = item[value_name]
 
@@ -26,6 +26,6 @@ def check_schedule_validity(schedule_list):
         duration_max = phase.phase_duration_maximum_in_weeks.days // 7
 
         # Mesocycle must have a duration in weeks between the min and max allowed for the phase.
-        add_violation(violations, phase_name, schedule_item, "duration", duration_min, duration_max)
+        add_local_bounds_violation(violations, phase_name, schedule_item, "duration", duration_min, duration_max)
 
     return violations
