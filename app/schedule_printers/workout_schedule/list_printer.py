@@ -8,7 +8,7 @@ non_specific_true_flags = {
 }
 
 class WorkoutScheduleListPrinter(BaseSchedulePrinter):
-    def _create_final_header_fields(self, longest_sizes: dict) -> dict:
+    def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
             "number": ("No", 5),
@@ -99,7 +99,7 @@ class WorkoutScheduleListPrinter(BaseSchedulePrinter):
 
         # Create headers
         formatted += self.schedule_header
-        headers = self._create_final_header_fields(longest_sizes)
+        headers = self._create_header_fields(longest_sizes)
         header_line = self._formatted_header_line(headers)
 
         formatted += self._log_schedule(headers, header_line, schedule)
