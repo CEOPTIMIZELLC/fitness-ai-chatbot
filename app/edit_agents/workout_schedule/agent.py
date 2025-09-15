@@ -112,7 +112,8 @@ class SubAgent(BaseSubAgentRegenerate, WorkoutScheduleEditPrompt):
         return schedule_item
 
     # Check if the user's edits produce a valid schedule.
-    def gather_schedule_violations(self, schedule_list):
+    def gather_schedule_violations(self, state):
+        schedule_list = state["edited_schedule"]
         return check_schedule_validity(schedule_list)
 
 # Create main agent.

@@ -240,14 +240,13 @@ class BaseSubAgent(ScheduleFormatterMethods):
         
         return {"edited_schedule": schedule_list}
 
-    def gather_schedule_violations(self, schedule_list):
+    def gather_schedule_violations(self, state):
         pass
 
     # Check if the user's edits produce a valid schedule.
     def check_if_schedule_is_valid(self, state: TState):
         LogEditorAgent.agent_steps(f"\t---------Check if Schedule is valid.---------")
-        schedule_list = state["edited_schedule"]
-        violations = self.gather_schedule_violations(schedule_list)
+        violations = self.gather_schedule_violations(state)
 
         # Determine if the schedule is valid.
         if violations:

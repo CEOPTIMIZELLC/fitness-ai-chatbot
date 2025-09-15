@@ -155,7 +155,7 @@ class SubAgent(BaseSubAgent, WorkoutCompletionEditPrompt):
         return {"edited_schedule": schedule_list}
 
     # Check if the user's edits produce a valid schedule.
-    def gather_schedule_violations(self, schedule_list):
+    def gather_schedule_violations(self, state):
         return []
 
 # Create main agent.
