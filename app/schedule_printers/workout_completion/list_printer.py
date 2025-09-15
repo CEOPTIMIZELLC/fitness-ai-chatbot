@@ -1,5 +1,5 @@
 from app.utils.longest_string import longest_string_size_for_key
-from app.schedule_printers.base import BaseSchedulePrinter
+from ..base import BaseSchedulePrinter
 
 class WorkoutCompletionListPrinter(BaseSchedulePrinter):
     def _create_final_header_fields(self, longest_sizes: dict) -> dict:

@@ -3,5 +3,5 @@ from .macrocycles import MacrocycleSchedulePrinter
 from .mesocycles import MesocycleSchedulePrinter
 from .microcycles import MicrocycleSchedulePrinter
 from .phase_components import PhaseComponentSchedulePrinter
-from .workout_schedule import WorkoutScheduleSchedulePrinter
-from .workout_completion import WorkoutCompletionSchedulePrinter
+from .workout_schedule import WorkoutScheduleSchedulePrinter, WorkoutScheduleListPrinter
+from .workout_completion import WorkoutCompletionSchedulePrinter, WorkoutCompletionListPrinter

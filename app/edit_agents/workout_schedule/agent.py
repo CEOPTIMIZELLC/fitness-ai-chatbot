@@ -1,5 +1,5 @@
 import math
-from app.list_printers import WorkoutScheduleListPrinter
+from app.schedule_printers import WorkoutScheduleListPrinter
 from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate
 
 from .edit_goal_model import WorkoutScheduleEditGoal

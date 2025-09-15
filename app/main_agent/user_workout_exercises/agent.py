@@ -22,7 +22,7 @@ from app.edit_agents import create_workout_edit_agent
 
 from .actions import retrieve_availability_for_day, retrieve_parameters
 from app.schedule_printers import WorkoutScheduleSchedulePrinter
-from app.list_printers import WorkoutScheduleListPrinter
+from app.schedule_printers import WorkoutScheduleListPrinter
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
