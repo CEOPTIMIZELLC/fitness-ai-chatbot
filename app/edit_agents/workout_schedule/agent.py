@@ -1,6 +1,6 @@
 import math
 from app.schedule_printers import WorkoutScheduleListPrinter
-from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate
+from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate, AgentState
 
 from .edit_goal_model import WorkoutScheduleEditGoal
 from .edit_prompt import WorkoutScheduleEditPrompt
@@ -38,6 +38,10 @@ keys_to_remove = [
     "warmup", 
     "i", 
 ]
+
+
+class WorkoutScheduleAgentState(AgentState):
+    user_availability: int
 
 class SubAgent(BaseSubAgentRegenerate, WorkoutScheduleEditPrompt):
     edit_goal = WorkoutScheduleEditGoal
@@ -114,9 +118,10 @@ class SubAgent(BaseSubAgentRegenerate, WorkoutScheduleEditPrompt):
     # Check if the user's edits produce a valid schedule.
     def gather_schedule_violations(self, state):
         schedule_list = state["edited_schedule"]
-        return check_schedule_validity(schedule_list)
+        user_availability = state["user_availability"]
+        return check_schedule_validity(schedule_list, user_availability)
 
 # Create main agent.
 def create_main_agent_graph():
     agent = SubAgent()
-    return agent.create_main_agent_graph()
+    return agent.create_main_agent_graph(WorkoutScheduleAgentState)
