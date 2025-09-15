@@ -568,8 +568,17 @@ class ExercisePhaseComponentAgent(BaseAgent):
         # solver.parameters.log_search_progress = True
         status = self._solve_and_time_solver(solver, model)
 
+        # Extending time allowed for the agent to 10 seconds.
+        if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
+            status = self._new_max_time_solve_and_time_solver(solver, model, new_max_time=10)
+
+        # Using the divided strain.
         if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
             status = self._new_max_time_solve_and_time_solver(solver, model_with_divided_strain, new_max_time=None, message_end="Solving with strain divided.")
+
+        # Using the divided strain with extended time to 10 seconds.
+        if status not in (cp_model.FEASIBLE, cp_model.OPTIMAL):
+            status = self._new_max_time_solve_and_time_solver(solver, model_with_divided_strain, new_max_time=10, message_end="Solving with strain divided.")
 
         state["logs"] += f"\nSolver status: {status}\n"
         state["logs"] += f"Conflicts: {solver.NumConflicts()}, Branches: {solver.NumBranches()}\n"
