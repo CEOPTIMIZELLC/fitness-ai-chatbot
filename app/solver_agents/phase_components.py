@@ -448,9 +448,9 @@ class PhaseComponentAgent(BaseAgent):
             "phase_component": f"{pc['name']}",
             "bodypart": pc["bodypart"],
             "exercises_per_bodypart": f"{self._format_range(str(exercises_per_bodypart_var), pc["exercises_per_bodypart_workout_min"], pc["exercises_per_bodypart_workout_max"])}",
-            "partial_duration": f"{self._format_duration(partial_duration_var)} sec",
+            "partial_duration": f"{self._format_duration(partial_duration_var)}",
             "partial_duration_sec": f"{self._format_range(str(partial_duration_var) + " seconds", pc["duration_min"], pc["duration_max"])}",
-            "duration": f"{self._format_duration(duration_var)} sec",
+            "duration": f"{self._format_duration(duration_var)}",
             "duration_sec": f"{self._format_range(str(duration_var) + " seconds", pc["duration_min"], pc["duration_max"] * pc["exercises_per_bodypart_workout_max"])}"
         }
 

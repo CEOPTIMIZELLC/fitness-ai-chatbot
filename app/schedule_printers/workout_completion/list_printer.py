@@ -1,4 +1,5 @@
 from app.utils.longest_string import longest_string_size_for_key
+from app.utils.time_parser import parse_seconds_to_hr_min_sec, parse_time_dict
 from ..base import BaseSchedulePrinter
 
 class WorkoutCompletionListPrinter(BaseSchedulePrinter):
@@ -11,8 +12,8 @@ class WorkoutCompletionListPrinter(BaseSchedulePrinter):
             "phase_component": ("Phase Component", longest_sizes["phase_component"] + 4),
             "bodypart": ("Bodypart", longest_sizes["bodypart"] + 4),
             "warmup": ("Warmup", 9),
-            "duration": ("Duration", 12),
-            "working_duration": ("WDuration", 12),
+            "duration": ("Duration", len("xx hours, xx minutes, xx.xx seconds") + 4),
+            "working_duration": ("WDuration", len("xx hours, xx minutes, xx.xx seconds") + 4),
             "base_strain": ("BStrain", 10),
             "seconds_per_exercise": ("Sec/Exer", 11),
             "reps": ("Reps", 7),
@@ -32,6 +33,9 @@ class WorkoutCompletionListPrinter(BaseSchedulePrinter):
 
         one_rep_max = int(round((new_weight * (30 + exercise["reps"])) / 30, 2))
 
+        duration_dict = parse_seconds_to_hr_min_sec(exercise["duration"])
+        working_duration_duration_dict = parse_seconds_to_hr_min_sec(exercise["working_duration"])
+
         # Format line
         return {
             "number": str(i + 1),
@@ -40,8 +44,8 @@ class WorkoutCompletionListPrinter(BaseSchedulePrinter):
             "phase_component": f"{exercise['phase_component_subcomponent']}",
             "bodypart": exercise["bodypart_name"],
             "warmup": f"{exercise["is_warmup"]}",
-            "duration": f"{exercise["duration"]} sec",
-            "working_duration": f"{exercise["working_duration"]} sec",
+            "duration": parse_time_dict(duration_dict),
+            "working_duration": parse_time_dict(working_duration_duration_dict),
             "base_strain": str(exercise["base_strain"]),
             "seconds_per_exercise": f"{exercise["seconds_per_exercise"]} sec",
             "reps": str(exercise["reps"]),

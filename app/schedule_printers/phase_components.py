@@ -1,4 +1,5 @@
 from app.utils.longest_string import longest_string_size_for_key
+from app.utils.time_parser import parse_seconds_to_hr_min_sec, parse_time_dict
 from .base import BaseSchedulePrinter
 
 from app.models import Bodypart_Library, Phase_Component_Library
@@ -15,19 +16,23 @@ class PhaseComponentSchedulePrinter(BaseSchedulePrinter):
         }
 
     def _line_fields(self, component_count, pc):
+        duration_dict = parse_seconds_to_hr_min_sec(pc["duration"])
         return {
             "number": str(component_count + 1),
             "phase_component": f"{pc['phase_component_subcomponent']}",
             "bodypart": pc["bodypart_name"],
-            "duration": f"{pc["duration"]} sec"
+            "duration": parse_time_dict(duration_dict)
         }
 
-    def _log_day(self, current_day, header_line):
+    def _log_day(self, current_day, header_line, duration):
         line = ""
         current_order = str(current_day["order"])
-        current_date = str(current_day["date"])
+        current_date = f"{str(current_day["date"]):<{14}}"
         current_name = f"{current_day["weekday_name"]:<{10}}"
-        line += f"\n| Day {current_order} | {current_name} | {current_date} | \n"
+        duration_dict = parse_seconds_to_hr_min_sec(duration)
+        parsed_duration = parse_time_dict(duration_dict)
+        current_duration = f"{parsed_duration:<{len("xx hours, xx minutes, xx.xx seconds") + 4}}"
+        line += f"\n| Day {current_order} | {current_name} | {current_date} | {current_duration} | \n"
         line += header_line + "\n"
         return line
 
@@ -36,10 +41,14 @@ class PhaseComponentSchedulePrinter(BaseSchedulePrinter):
         for current_day in schedule:
             current_components = current_day["components"]
             if current_components:
-                schedule_string += self._log_day(current_day, header_line)
+                day_duration = 0
+                pc_string = ""
                 for i, component in enumerate(current_components):
+                    day_duration += component["duration"]
                     _line_fields = self._line_fields(i, component)
-                    schedule_string += self._formatted_entry_line(headers, _line_fields)
+                    pc_string += self._formatted_entry_line(headers, _line_fields)
+                day_string = self._log_day(current_day, header_line, day_duration)
+                schedule_string += day_string + pc_string
         return schedule_string
 
     def _retrieve_longest_schedule_elements(self, schedule):

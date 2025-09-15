@@ -7,8 +7,8 @@ class MesocycleSchedulePrinter(BaseSchedulePrinter):
         return {
             "number": ("Mesocycle", 12),
             "phase": ("Phase", longest_sizes["phase"] + 4),
-            "start_date": ("Start", 17),
-            "end_date": ("End", 17),
+            "start_date": ("Start Date", 17),
+            "end_date": ("End Date", 17),
             "duration": ("Duration", 20),
             "goal_duration": ("Goal Duration", 20),
         }
