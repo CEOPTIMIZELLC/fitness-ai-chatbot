@@ -1,5 +1,5 @@
 class BaseSchedulePrinter:
-    schedule_header = "\nFORMATTED SCHEDULE:\n" + "-" * 40 + "\n"
+    schedule_header = "\n" + "-" * 40 + "\n"
 
     def _create_formatted_field(self, label: str, value: str, header_length: int) -> str:
         """Helper method to create consistently formatted fields"""
