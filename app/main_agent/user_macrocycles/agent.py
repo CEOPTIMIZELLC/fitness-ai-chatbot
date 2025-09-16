@@ -4,12 +4,14 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 
 from app import db
-from app.agents.goals import create_goal_classification_graph
+from app.solver_agents.goals import create_goal_classification_graph
 from app.db_session import session_scope
 from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_operation
+from app.main_agent.base_sub_agents.without_parents import confirm_if_performing_by_id, confirm_new_input
 from app.impact_goal_models import MacrocycleGoal
 from app.goal_prompts import macrocycle_system_prompt
 from app.edit_agents import create_macrocycle_edit_agent
@@ -21,6 +23,8 @@ from app.schedule_printers import MacrocycleSchedulePrinter
 
 class AgentState(TypedDict):
     user_id: int
+    focus_name: str
+    agent_path: list
 
     user_input: str
     attempts: int
@@ -39,6 +43,12 @@ class AgentState(TypedDict):
     macrocycle_id: int
     goal_id: int
 
+# Determine whether the current macrocycle should be edited or if a new one should be created.
+def which_operation(state: AgentState):
+    LogMainSubAgent.agent_steps(f"\t---------Determine whether goal should be new---------")
+    if state["macrocycle_alter_old"] and state["user_macrocycle"]:
+        return "alter_old_macrocycle"
+    return "create_new_macrocycle"
 
 class SubAgent(BaseAgent):
     focus = "macrocycle"
@@ -66,7 +76,7 @@ class SubAgent(BaseAgent):
             focus_names["read_current"]: False, 
             focus_names["message"]: goal_class.detail, 
             "other_requests": goal_class.other_requests, 
-            "macrocycle_alter_old": goal_class.alter_old
+            "macrocycle_alter_old": goal_class.alter_old or False
         }
 
     # Perform the goal change to the desired ID.
@@ -107,13 +117,6 @@ class SubAgent(BaseAgent):
             "user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None,
             "goal_id": goal["goal_id"]
         }
-
-    # Determine whether the current macrocycle should be edited or if a new one should be created.
-    def which_operation(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Determine whether goal should be new---------")
-        if state["macrocycle_alter_old"] and state["user_macrocycle"]:
-            return "alter_old_macrocycle"
-        return "create_new_macrocycle"
 
     # Creates the new macrocycle of the determined type.
     def create_new_macrocycle(self, state: AgentState):
@@ -176,7 +179,7 @@ class SubAgent(BaseAgent):
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
-
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
@@ -196,9 +199,10 @@ class SubAgent(BaseAgent):
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "impact_confirmed"                            # In between step for if an impact is indicated.
@@ -208,7 +212,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "impact_confirmed",
-            self.determine_operation,
+            determine_operation, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "operation_is_alter"                           # In between step for if the operation is alter.
@@ -218,7 +222,7 @@ class SubAgent(BaseAgent):
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
-            self.determine_read_operation,
+            determine_read_operation, 
             {
                 "plural": "get_user_list",                              # Read all user elements.
                 "singular": "read_user_current_element"                 # Read the current element.
@@ -228,7 +232,7 @@ class SubAgent(BaseAgent):
         # Whether goal should be changed to the included id.
         workflow.add_conditional_edges(
             "operation_is_alter",
-            self.confirm_if_performing_by_id,
+            confirm_if_performing_by_id, 
             {
                 "no_direct_goal_id": "alter_operation_uses_agent",           # Perform LLM parser if no goal id is included.
                 "present_direct_goal_id": "perform_goal_change_by_id"             # Perform direct id assignment if a goal id is included.
@@ -238,7 +242,7 @@ class SubAgent(BaseAgent):
         # Whether the intention is to alter the current macrocycle or to create a new one.
         workflow.add_conditional_edges(
             "perform_goal_change_by_id",
-            self.which_operation,
+            which_operation,
             {
                 "alter_old_macrocycle": "retrieve_information",             # Alter the current macrocycle.
                 "create_new_macrocycle": "editor_agent_for_creation"        # Create a new macrocycle.
@@ -248,7 +252,7 @@ class SubAgent(BaseAgent):
         # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "alter_operation_uses_agent",
-            self.confirm_new_input,
+            confirm_new_input, 
             {
                 "no_new_input": "ask_for_new_input",                    # Request a new macrocycle goal if one isn't present.
                 "present_new_input": "perform_input_parser"             # Parse the goal for what category it falls into if one is present.
@@ -258,7 +262,7 @@ class SubAgent(BaseAgent):
         # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "ask_for_new_input",
-            self.confirm_new_input,
+            confirm_new_input, 
             {
                 "no_new_input": "no_new_input_requested",               # Indicate that no new goal was given.
                 "present_new_input": "perform_input_parser"             # Parse the goal for what category it falls into if one is present.
@@ -268,7 +272,7 @@ class SubAgent(BaseAgent):
         # Whether the intention is to alter the current macrocycle or to create a new one.
         workflow.add_conditional_edges(
             "perform_input_parser",
-            self.which_operation,
+            which_operation,
             {
                 "alter_old_macrocycle": "retrieve_information",             # Alter the current macrocycle.
                 "create_new_macrocycle": "editor_agent_for_creation"        # Create a new macrocycle.
@@ -280,8 +284,8 @@ class SubAgent(BaseAgent):
         workflow.add_edge("retrieve_information", "editor_agent_for_alteration")
         workflow.add_edge("editor_agent_for_alteration", "delete_old_children")
         workflow.add_edge("delete_old_children", "alter_old_macrocycle")
-        workflow.add_edge("alter_old_macrocycle", "get_user_list")
-        workflow.add_edge("create_new_macrocycle", "get_user_list")
+        workflow.add_edge("alter_old_macrocycle", "read_user_current_element")
+        workflow.add_edge("create_new_macrocycle", "read_user_current_element")
         workflow.add_edge("no_new_input_requested", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")
         workflow.add_edge("get_user_list", "end_node")

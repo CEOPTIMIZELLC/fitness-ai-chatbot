@@ -6,6 +6,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from app.impact_goal_models import RoutineImpactGoals
 from app.goal_prompts import goal_extraction_system_prompt
 
+# Retrieves the last element appended to the path.
+def retrieve_current_agent_focus(state, desired_element="focus"):
+    current_path_items = state["agent_path"][-1]
+    return current_path_items[desired_element]
+
 def sub_agent_focused_items(sub_agent_focus):
     return {
         "entry": f"user_{sub_agent_focus}", 
@@ -68,7 +73,7 @@ def user_input_information_extraction(user_input):
     state["macrocycle_impacted"] = goal_class.macrocycle.is_requested
     state["macrocycle_is_altered"] = True
     state["macrocycle_message"] = goal_class.macrocycle.detail
-    state["macrocycle_alter_old"] = goal_class.macrocycle.alter_old
+    state["macrocycle_alter_old"] = goal_class.macrocycle.alter_old or False
     state["mesocycle_impacted"] = goal_class.mesocycle.is_requested
     state["mesocycle_is_altered"] = True
     state["mesocycle_message"] = goal_class.mesocycle.detail

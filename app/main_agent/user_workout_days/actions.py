@@ -38,7 +38,7 @@ def retrieve_availability_for_week(user_id):
         User_Weekday_Availability.query
         .join(Weekday_Library)
         .filter(User_Weekday_Availability.user_id == user_id)
-        .order_by(User_Weekday_Availability.user_id.asc())
+        .order_by(User_Weekday_Availability.weekday_id.asc())
         .all())
     return availability
 

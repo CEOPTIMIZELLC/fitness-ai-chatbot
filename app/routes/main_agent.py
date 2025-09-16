@@ -125,7 +125,7 @@ def delete_schedules():
 def get_current_state():
     db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
 
-    # 👇 keep checkpointer alive during invocation
+    # Keep checkpointer alive during invocation
     with PostgresSaver.from_conn_string(db_uri) as checkpointer:
         main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
         

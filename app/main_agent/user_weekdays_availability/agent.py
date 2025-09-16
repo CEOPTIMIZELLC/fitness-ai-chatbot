@@ -5,23 +5,27 @@ from datetime import timedelta
 from langgraph.graph import StateGraph, START, END
 
 from app import db
-from app.agents.weekday_availability import create_weekday_availability_extraction_graph
+from app.solver_agents.weekday_availability import create_weekday_availability_extraction_graph
 from app.db_session import session_scope
 from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_weekday_availability, current_microcycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_operation
+from app.main_agent.base_sub_agents.without_parents import confirm_new_input
 from app.impact_goal_models import AvailabilityGoal
 from app.goal_prompts import availability_system_prompt
 from app.edit_agents import create_availability_edit_agent
 
-from .actions import retrieve_weekday_types
+from .actions import retrieve_weekday_types, initialize_user_availability, update_user_availability
 from app.schedule_printers import AvailabilitySchedulePrinter
 
 # ----------------------------------------- User Availability -----------------------------------------
 
 class AgentState(TypedDict):
     user_id: int
+    focus_name: str
+    agent_path: list
 
     user_input: str
     attempts: int
@@ -45,13 +49,23 @@ class SubAgent(BaseAgent):
     schedule_printer_class = AvailabilitySchedulePrinter()
 
     def user_list_query(self, user_id):
-        return User_Weekday_Availability.query.filter_by(user_id=user_id).all()
+        return (
+            User_Weekday_Availability.query
+            .filter_by(user_id=user_id)
+            .order_by(User_Weekday_Availability.weekday_id.asc())
+            .all()
+        )
 
     def focus_retriever_agent(self, user_id):
         return current_weekday_availability(user_id)
 
     def focus_list_retriever_agent(self, user_id):
-        return User_Weekday_Availability.query.filter_by(user_id=user_id).all()
+        return (
+            User_Weekday_Availability.query
+            .filter_by(user_id=user_id)
+            .order_by(User_Weekday_Availability.weekday_id.asc())
+            .all()
+        )
 
     # Classify the new goal in one of the possible goal types.
     def perform_input_parser(self, state: AgentState):
@@ -77,14 +91,15 @@ class SubAgent(BaseAgent):
         LogMainSubAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         user_id = state["user_id"]
         weekday_availability = state["agent_output"]
+
         # Update each availability entry to the database.
         with session_scope() as s:
-            for i in weekday_availability:
-                db_entry = User_Weekday_Availability(
-                    user_id=user_id, 
-                    weekday_id=i["weekday_id"], 
-                    availability=timedelta(seconds=i["availability"]))
-                s.merge(db_entry)
+            user_availability = s.query(User_Weekday_Availability).filter_by(user_id=user_id).all()
+
+            if len(user_availability) != 7:
+                initialize_user_availability(s, user_id)
+
+            update_user_availability(s, user_id, weekday_availability)
         return {}
 
     # Delete the old children belonging to the current item.
@@ -103,7 +118,7 @@ class SubAgent(BaseAgent):
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
-
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
@@ -118,9 +133,10 @@ class SubAgent(BaseAgent):
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "impact_confirmed"                            # In between step for if an impact is indicated.
@@ -130,7 +146,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "impact_confirmed",
-            self.determine_operation,
+            determine_operation, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "operation_is_alter"                           # In between step for if the operation is alter.
@@ -140,7 +156,7 @@ class SubAgent(BaseAgent):
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
-            self.determine_read_operation,
+            determine_read_operation, 
             {
                 "plural": "get_formatted_list",                         # Read the current schedule.
                 "singular": "read_user_current_element"                 # Read the current element.
@@ -150,7 +166,7 @@ class SubAgent(BaseAgent):
         # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "operation_is_alter",
-            self.confirm_new_input,
+            confirm_new_input, 
             {
                 "no_new_input": "ask_for_new_input",                    # Request a new input to parse availability from if one isn't present.
                 "present_new_input": "delete_old_children"              # Delete the old children for the alteration if a goal was given.
@@ -160,7 +176,7 @@ class SubAgent(BaseAgent):
         # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
             "ask_for_new_input",
-            self.confirm_new_input,
+            confirm_new_input, 
             {
                 "no_new_input": "no_new_input_requested",               # Indicate that no new goal was given.
                 "present_new_input": "delete_old_children"              # Delete the old children for the alteration if a goal was given.
