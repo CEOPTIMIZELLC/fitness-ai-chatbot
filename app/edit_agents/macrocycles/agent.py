@@ -50,6 +50,11 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
     schedule_name_key = "goal_name"
     keys_to_remove = keys_to_remove
 
+    # Node to declare that the sub agent has ended.
+    def start_node(self, state):
+        LogEditorAgent.agent_introductions(f"=========Starting Editor SubAgent=========\n")
+        return {}
+
     # Format the structured schedule.
     def construct_agent_output(self, state: AgentState):
         LogEditorAgent.agent_steps(f"\t---------Construct Agent Output From Macrocycle Information---------")
@@ -197,6 +202,7 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
     # Create main agent.
     def create_main_agent_graph(self, state_class = AgentState):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("construct_agent_output", self.construct_agent_output)
         workflow.add_node("format_proposed_list", self.format_proposed_list)
         workflow.add_node("ask_for_edits", self.ask_for_edits)
@@ -204,7 +210,8 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
         workflow.add_node("end_node", self.end_node)
 
         # Create a formatted list for the user to review.
-        workflow.add_edge(START, "construct_agent_output")
+        workflow.add_edge(START, "start_node")
+        workflow.add_edge("start_node", "construct_agent_output")
         workflow.add_edge("construct_agent_output", "format_proposed_list")
         workflow.add_edge("format_proposed_list", "ask_for_edits")
 

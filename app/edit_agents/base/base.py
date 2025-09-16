@@ -93,6 +93,11 @@ class BaseSubAgent(ScheduleFormatterMethods):
     schedule_id_key = "id"
     schedule_name_key = "name"
 
+    # Node to declare that the sub agent has ended.
+    def start_node(self, state):
+        LogEditorAgent.agent_introductions(f"=========Starting Editor SubAgent=========\n")
+        return {}
+
     # Adds necessary keys for the formatter to the schedule item. 
     def add_necessary_keys_to_schedule_item(self, schedule_list):
         return schedule_list
@@ -309,6 +314,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
     # Create main agent.
     def create_main_agent_graph(self, state_class: type[TState] = AgentState):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("format_proposed_list", self.format_proposed_list)
         workflow.add_node("ask_for_edits", self.ask_for_edits)
         workflow.add_node("perform_edits", self.perform_edits)
@@ -319,7 +325,8 @@ class BaseSubAgent(ScheduleFormatterMethods):
         workflow.add_node("end_node", self.end_node)
 
         # Create a formatted list for the user to review.
-        workflow.add_edge(START, "format_proposed_list")
+        workflow.add_edge(START, "start_node")
+        workflow.add_edge("start_node", "format_proposed_list")
         workflow.add_edge("format_proposed_list", "ask_for_edits")
 
         # Whether any edits have been applied.
