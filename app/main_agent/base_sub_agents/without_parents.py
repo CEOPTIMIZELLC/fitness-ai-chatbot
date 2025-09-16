@@ -50,11 +50,3 @@ class BaseAgentWithoutParents(BaseAgent):
     def perform_input_parser(self, state):
         pass
 
-    # Delete the old children belonging to the current item.
-    def delete_old_children(self, state):
-        pass
-
-    # Convert output from the agent to SQL models.
-    def agent_output_to_sqlalchemy_model(self, state):
-        pass
-

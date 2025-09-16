@@ -1,14 +1,8 @@
 from logging_config import LogMainSubAgent
 from flask import abort
-from typing_extensions import TypeVar
-
-from app.main_agent.main_agent_state import MainAgentState
 from .utils import retrieve_current_agent_focus, sub_agent_focused_items
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------
-
-# Create a generic type variable that must be a subclass of MainAgentState
-TState = TypeVar('TState', bound=MainAgentState)
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state):
@@ -141,6 +135,14 @@ class BaseAgent():
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
+    # Delete the old children belonging to the current item.
+    def delete_old_children(self, state):
+        pass
+
+    # Convert output from the agent to SQL models.
+    def agent_output_to_sqlalchemy_model(self, state):
+        pass
+
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
 
@@ -153,3 +155,7 @@ class BaseAgent():
         return {
             "agent_path": agent_path
         }
+
+    # Create main agent.
+    def create_main_agent_graph(self, state_class):
+        pass

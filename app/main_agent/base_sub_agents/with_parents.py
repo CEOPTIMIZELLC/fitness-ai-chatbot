@@ -189,11 +189,3 @@ class BaseAgentWithParents(BaseAgent):
     # Initializes the scheduler for the current parent.
     def perform_scheduler(self, state: TState):
         pass
-
-    # Convert output from the agent to SQL models.
-    def agent_output_to_sqlalchemy_model(self, state: TState):
-        pass
-
-    # Create main agent.
-    def create_main_agent_graph(self, state_class: type[TState]):
-        pass
