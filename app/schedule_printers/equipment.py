@@ -6,7 +6,7 @@ class EquipmentSchedulePrinter(BaseSchedulePrinter):
         """Create all header fields with consistent formatting"""
         return {
             "id": ("Unique ID", 14),
-            "equipment": ("Equipment", longest_sizes["equipment"] + 4),
+            "equipment": ("Equipment", max(longest_sizes["equipment"], len("Equipment")) + 4),
             "measurement": ("Measurement", 15),
             "unit_of_measurement": ("Unit of Measurement", 23),
         }
