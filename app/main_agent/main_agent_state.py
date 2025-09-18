@@ -14,6 +14,15 @@ class MainAgentState(TypedDict):
     macrocycle_other_requests: str
     availability_other_requests: str
 
+    equipment_impacted: bool
+    equipment_is_altered: bool
+    equipment_read_plural: bool
+    equipment_read_current: bool
+    equipment_message: str
+    equipment_formatted: str
+    equipment_perform_with_parent_id: int
+    equipment_alter_old: bool
+
     availability_impacted: bool
     availability_is_altered: bool
     availability_read_plural: bool

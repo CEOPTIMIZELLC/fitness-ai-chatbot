@@ -4,6 +4,8 @@ from flask_login import current_user, login_required
 from app import db
 from app.models import User_Equipment
 
+from app.main_agent.user_equipment import create_equipment_agent
+
 bp = Blueprint('user_equipment', __name__)
 
 # ----------------------------------------- User Equipment -----------------------------------------
@@ -12,10 +14,18 @@ bp = Blueprint('user_equipment', __name__)
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_equipment_list():
-    user_equipment = current_user.equipment
-    result = []
-    for equipment in user_equipment:
-        result.append(equipment.to_dict())
+    state = {
+        "user_id": current_user.id,
+        "equipment_impacted": True,
+        "equipment_is_altered": False,
+        "equipment_read_plural": True,
+        "equipment_read_current": True,
+        "equipment_message": "Retrieve current equipment.",
+        "equipment_alter_old": None
+    }
+    equipment_agent = create_equipment_agent()
+
+    result = equipment_agent.invoke(state)
     return jsonify({"status": "success", "user_equipment": result}), 200
 
 
