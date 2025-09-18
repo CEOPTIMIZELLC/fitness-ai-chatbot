@@ -14,6 +14,12 @@ bp = Blueprint('user_equipment', __name__)
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_equipment_list():
+    # Input is a json.
+    if not request.is_json:
+        data={}
+    else:
+        data = request.get_json()
+
     state = {
         "user_id": current_user.id,
         "equipment_impacted": True,
@@ -21,7 +27,11 @@ def get_user_equipment_list():
         "equipment_read_plural": True,
         "equipment_read_current": True,
         "equipment_message": "Retrieve current equipment.",
-        "equipment_alter_old": None
+        "equipment_alter_old": None, 
+
+        "item_id": data.get("item_id"), 
+        "equipment_id": data.get("equipment_id"), 
+        "equipment_measurement": data.get("measurement"), 
     }
     equipment_agent = create_equipment_agent()
 
