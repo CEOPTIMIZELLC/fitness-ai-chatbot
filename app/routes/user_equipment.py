@@ -106,6 +106,8 @@ def change_user_equipment():
         "item_id": data.get("item_id"), 
         "equipment_id": data.get("equipment_id"), 
         "equipment_measurement": data.get("measurement"), 
+        "new_equipment_id": data.get("new_equipment_id"), 
+        "new_equipment_measurement": data.get("new_measurement"), 
     }
     equipment_agent = create_equipment_agent()
 
@@ -134,6 +136,8 @@ def change_user_equipment_by_id(user_equipment_id):
         "item_id": user_equipment_id, 
         "equipment_id": data.get("equipment_id"), 
         "equipment_measurement": data.get("measurement"), 
+        "new_equipment_id": data.get("new_equipment_id"), 
+        "new_equipment_measurement": data.get("new_measurement"), 
     }
     equipment_agent = create_equipment_agent()
 

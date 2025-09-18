@@ -7,7 +7,7 @@ from app.models import User_Equipment
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_operation, determine_read_operation
 
-from .actions import filter_items_by_query
+from .actions import construct_query_filters, filter_items_by_query
 from app.schedule_printers import EquipmentSchedulePrinter
 
 class AgentState(MainAgentState):
@@ -16,6 +16,8 @@ class AgentState(MainAgentState):
     item_id: int
     equipment_id: int
     equipment_measurement: int
+    new_equipment_id: int
+    new_equipment_measurement: int
 
 # Determine whether the outcome is to read the entire schedule or simply the current item.
 def which_operation(state: AgentState):
@@ -90,8 +92,33 @@ class SubAgent(BaseAgent):
     def alter_old(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Alter Old User {self.sub_agent_title}---------")
 
-        schedule_dict = filter_items_by_query(state)
-        item_count = len(schedule_dict)
+        # Construct the queries.
+        query_filters = construct_query_filters(
+            user_id = state["user_id"], 
+            item_id = state.get("item_id", None), 
+            equipment_id = state.get("equipment_id", None), 
+            measurement = state.get("equipment_measurement", None)
+        )
+
+        new_equipment_id = state.get("new_equipment_id", None)
+        new_measurement = state.get("new_equipment_measurement", None)
+
+        with session_scope() as s:
+            filtered_equipment = s.query(User_Equipment).filter(*query_filters).all()
+            item_count = len(filtered_equipment)
+
+            # Perform edit on the only item found.
+            if item_count == 1:
+                requested_item = filtered_equipment[0]
+                if new_equipment_id:
+                    requested_item.equipment_id = new_equipment_id
+                if new_measurement:
+                    requested_item.measurement = new_measurement
+
+            schedule_dict = [
+                item.to_dict()
+                for item in filtered_equipment
+            ]
 
         return {
             "user_equipment": schedule_dict, 
