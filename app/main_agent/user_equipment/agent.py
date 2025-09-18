@@ -7,7 +7,7 @@ from app.models import User_Equipment
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_operation, determine_read_operation
 
-from .actions import construct_query_filters, filter_items_by_query
+from .actions import create_singular, filter_items_by_query, alter_singular
 from app.schedule_printers import EquipmentSchedulePrinter
 
 class AgentState(MainAgentState):
@@ -62,68 +62,37 @@ class SubAgent(BaseAgent):
     def create_new(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Creating New {self.sub_agent_title} for User---------")
 
-        equipment_id = state.get("equipment_id")
-        equipment_measurement = state.get("equipment_measurement")
+        schedule_dict = create_singular(state)    
 
-        # Requires equipment id AND equipment measurement to create a new entry.
-        if not(equipment_id and equipment_measurement):
-            return {"request_more_details": True}
+        # Edit was successful if the created entry is returned.
+        if schedule_dict:
+            return {
+                "user_equipment": schedule_dict, 
+                "item_id": schedule_dict["id"], 
+                "request_more_details": False
+            }
         
-        user_id = state["user_id"]
-        payload = {}
-        with session_scope() as s:
-            user_equipment = User_Equipment(user_id=user_id, equipment_id=equipment_id, measurement=equipment_measurement)
-            s.add(user_equipment)
-
-            # get PKs without committing the transaction
-            s.flush()
-
-            # load defaults/server-side values
-            s.refresh(user_equipment)
-            payload = user_equipment.to_dict()
-
-        return {
-            "user_equipment": payload, 
-            "item_id": payload["id"], 
-            "request_more_details": False
-        }
-
+        # If no entry was returned, then the creation requires more details
+        return {"request_more_details": True}
+        
     # Alter an old piece of equipment for the user.
     def alter_old(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Alter Old User {self.sub_agent_title}---------")
 
-        # Construct the queries.
-        query_filters = construct_query_filters(
-            user_id = state["user_id"], 
-            item_id = state.get("item_id", None), 
-            equipment_id = state.get("equipment_id", None), 
-            measurement = state.get("equipment_measurement", None)
-        )
+        schedule_dict = alter_singular(state)
 
-        new_equipment_id = state.get("new_equipment_id", None)
-        new_measurement = state.get("new_equipment_measurement", None)
-
-        with session_scope() as s:
-            filtered_equipment = s.query(User_Equipment).filter(*query_filters).all()
-            item_count = len(filtered_equipment)
-
-            # Perform edit on the only item found.
-            if item_count == 1:
-                requested_item = filtered_equipment[0]
-                if new_equipment_id:
-                    requested_item.equipment_id = new_equipment_id
-                if new_measurement:
-                    requested_item.measurement = new_measurement
-
-            schedule_dict = [
-                item.to_dict()
-                for item in filtered_equipment
-            ]
-
+        # Edit was successful if only one item was present.
+        if len(schedule_dict) == 1:
+            return {
+                "user_equipment": schedule_dict, 
+                "item_id": schedule_dict[0]["id"], 
+                "request_more_details": False, 
+            }
+        
+        # More details are required to filter the information.
         return {
             "user_equipment": schedule_dict, 
-            "item_id": schedule_dict[0]["id"] if item_count==1 else None, 
-            "request_more_details": False if item_count==1 else True, 
+            "request_more_details": True, 
         }
 
     # Request the details required to continue.
