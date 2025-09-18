@@ -88,7 +88,7 @@ class SubAgent(BaseAgent):
             "request_more_details": False
         }
 
-    # Create a new piece of equipment for the user.
+    # Alter an old piece of equipment for the user.
     def alter_old(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Alter Old User {self.sub_agent_title}---------")
 
