@@ -1,6 +1,7 @@
 from logging_config import LogMainSubAgent
 from langgraph.graph import StateGraph, START, END
 
+from app.db_session import session_scope
 from app.models import User_Equipment
 
 from app.main_agent.main_agent_state import MainAgentState
@@ -15,6 +16,22 @@ class AgentState(MainAgentState):
     item_id: int
     equipment_id: int
     equipment_measurement: int
+
+# Determine whether the outcome is to read the entire schedule or simply the current item.
+def which_operation(state: AgentState):
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to create a new piece of equipment or alter an old one.---------")
+    if state["equipment_alter_old"]:
+        return "alter"
+    return "create"
+
+# Determine if more details are required for the operation to occur.
+def are_more_details_needed(state: AgentState):
+    LogMainSubAgent.agent_steps(f"\t---------Determine if more details are needed to continue.---------")
+    if state["request_more_details"]:
+        LogMainSubAgent.agent_steps(f"\t---------More details are needed.---------")
+        return "need_more_details"
+    LogMainSubAgent.agent_steps(f"\t---------No more details are needed.---------")
+    return "enough_details"
 
 class SubAgent(BaseAgent):
     focus = "equipment"
@@ -39,12 +56,65 @@ class SubAgent(BaseAgent):
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
+    # Create a new piece of equipment for the user.
+    def create_new(self, state):
+        LogMainSubAgent.agent_steps(f"\t---------Creating New {self.sub_agent_title} for User---------")
+
+        equipment_id = state.get("equipment_id")
+        equipment_measurement = state.get("equipment_measurement")
+
+        # Requires equipment id AND equipment measurement to create a new entry.
+        if not(equipment_id and equipment_measurement):
+            return {"request_more_details": True}
+        
+        user_id = state["user_id"]
+        payload = {}
+        with session_scope() as s:
+            user_equipment = User_Equipment(user_id=user_id, equipment_id=equipment_id, measurement=equipment_measurement)
+            s.add(user_equipment)
+
+            # get PKs without committing the transaction
+            s.flush()
+
+            # load defaults/server-side values
+            s.refresh(user_equipment)
+            payload = user_equipment.to_dict()
+
+        return {
+            "user_equipment": payload, 
+            "item_id": payload["id"], 
+            "request_more_details": False
+        }
+
+    # Create a new piece of equipment for the user.
+    def alter_old(self, state):
+        LogMainSubAgent.agent_steps(f"\t---------Alter Old User {self.sub_agent_title}---------")
+
+        schedule_dict = filter_items_by_query(state)
+        item_count = len(schedule_dict)
+
+        return {
+            "user_equipment": schedule_dict, 
+            "item_id": schedule_dict[0]["id"] if item_count==1 else None, 
+            "request_more_details": False if item_count==1 else True, 
+        }
+
+    # Request the details required to continue.
+    def request_more_details(self, state):
+        LogMainSubAgent.agent_steps(f"\t---------Requesting more details to continue---------")
+        return {}
+
+
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
+        workflow.add_node("create_new", self.create_new)
+        workflow.add_node("alter_old", self.alter_old)
+        workflow.add_node("request_more_details", self.request_more_details)
         workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
@@ -65,7 +135,7 @@ class SubAgent(BaseAgent):
             determine_operation, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
-                "alter": "end_node"                                     # In between step for if the operation is alter.
+                "alter": "operation_is_alter"                           # In between step for if the operation is alter.
             }
         )
     
@@ -79,6 +149,37 @@ class SubAgent(BaseAgent):
             }
         )
 
+        # Whether the goal is to create a new item or alter an old one.
+        workflow.add_conditional_edges(
+            "operation_is_alter",
+            which_operation, 
+            {
+                "create": "create_new",                                 # Create a new piece of equipment.
+                "alter": "alter_old"                                    # Alter an old piece of equipment. 
+            }
+        )
+
+        # Whether more details are needed to create the new piece of equipment.
+        workflow.add_conditional_edges(
+            "create_new",
+            are_more_details_needed, 
+            {
+                "need_more_details": "request_more_details",            # Request more details if needed.
+                "enough_details": "get_user_list"                       # Enough details were found to create the new entry. 
+            }
+        )
+
+        # Whether more details are needed to create the new piece of equipment.
+        workflow.add_conditional_edges(
+            "alter_old",
+            are_more_details_needed, 
+            {
+                "need_more_details": "request_more_details",            # Request more details if needed.
+                "enough_details": "get_user_list"                       # Enough details were found to create the new entry. 
+            }
+        )
+
+        workflow.add_edge("request_more_details", "get_user_list")
         workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
