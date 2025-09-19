@@ -1,10 +1,16 @@
 from logging_config import LogMainSubAgent
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt
 
-from app.main_agent.base_sub_agents.utils import sub_agent_focused_items
+from app.models import Equipment_Library
+
+from app.main_agent.base_sub_agents.utils import sub_agent_focused_items, new_input_request
+from app.utils.item_to_string import list_to_str_for_prompt
 
 from ..agent_state import AgentState
 from .actions import filter_items_by_query, alter_singular
+from .goal_model import EquipmentGoal
+from .prompt import EquipmentDetailsPrompt
 from app.schedule_printers import EquipmentSchedulePrinter
 
 
@@ -17,7 +23,8 @@ def are_more_details_needed(state: AgentState):
     LogMainSubAgent.agent_steps(f"\t---------No more details are needed.---------")
     return "enough_details"
 
-class SubAgent:
+class SubAgent(EquipmentDetailsPrompt):
+    details_goal = EquipmentGoal
     focus = "equipment"
     sub_agent_title = "Equipment"
     schedule_printer_class = EquipmentSchedulePrinter()
@@ -60,10 +67,82 @@ class SubAgent:
             "request_more_details": True, 
         }
 
+    def detail_request_constructor(self, formatted_schedule, **kwargs):
+        details_contained = ", ".join(
+            f"{key}: {value}"
+            for key, value in kwargs.items()
+            if value != None
+        )
+
+        details_needed = ", ".join(
+            f"{key}"
+            for key, value in kwargs.items()
+            if value == None
+        )
+
+        question_text = "There is more than one piece of equipment that matches the criteria. Is this correct or would you like to provide more details?"
+        details_contained_text = f"You have already provided the following details: \n{details_contained}"
+        details_needed_text = f"You can still provide the following details: \n{details_needed}"
+
+        return f"{question_text}\n\n{details_contained_text}\n\n{details_needed_text}\n\nHere is the list of your equipment that match this criteria:\n{formatted_schedule}"
+
+    def system_prompt_constructor(self, schedule_dict, state):
+        available_equipment = list_to_str_for_prompt(state["available_equipment"], newline=True)
+
+        user_equipment_ids = ", \n".join(
+            f"{{{{unique_id: {l_item["id"]}}}}}"
+            for l_item in schedule_dict
+        )
+
+        return self.details_system_prompt_constructor(
+            f"[\n{user_equipment_ids}\n]", 
+            f"[\n{available_equipment}\n]", 
+            equipment_id = state.get("equipment_id"), 
+            equipment_measurement = state.get("equipment_measurement")
+        )
+
     # Request the details required to continue.
     def request_more_details(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Requesting more details to continue---------")
-        return {}
+
+        schedule_dict = filter_items_by_query(state)
+        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
+
+        human_task = self.detail_request_constructor(
+            formatted_schedule, 
+            item_id = state.get("item_id"), 
+            equipment_name = state.get("equipment_name"), 
+            equipment_measurement = state.get("equipment_measurement")
+        )
+        LogMainSubAgent.system_message(human_task)
+
+        result = interrupt({
+            "task": human_task
+        })
+
+        user_input = result["user_input"]
+        LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
+
+        system_prompt = self.system_prompt_constructor(schedule_dict, state)
+        LogMainSubAgent.system_message(system_prompt)
+
+        # Retrieve the details.
+        goal_class = new_input_request(user_input, system_prompt, self.details_goal)
+
+        new_details = {}
+
+        equipment_id = goal_class.equipment_id
+
+        if goal_class.unique_id:
+            new_details["item_id"] = goal_class.unique_id
+        if equipment_id:
+            item = Equipment_Library.query.filter_by(id=equipment_id).first()
+            new_details["equipment_id"] = equipment_id
+            new_details["equipment_name"] = item.name
+        if goal_class.equipment_measurement:
+            new_details["equipment_measurement"] = goal_class.equipment_measurement
+
+        return new_details
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
@@ -93,8 +172,8 @@ class SubAgent:
                 "enough_details": "get_user_list"                       # Enough details were found to create the new entry. 
             }
         )
+        workflow.add_edge("request_more_details", "alter_old")
 
-        workflow.add_edge("request_more_details", "get_user_list")
         workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
