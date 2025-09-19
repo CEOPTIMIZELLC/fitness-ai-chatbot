@@ -2,7 +2,7 @@ from logging_config import LogMainSubAgent
 from langgraph.graph import StateGraph, START, END
 
 from app.db_session import session_scope
-from app.models import User_Equipment
+from app.models import Equipment_Library, User_Equipment
 
 from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_operation, determine_read_operation
 
@@ -51,6 +51,39 @@ class SubAgent(BaseAgent):
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
+    # Node to prepare information for altering.
+    def operation_is_alter(self, state):
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Altering---------")
+        equipment_name = None
+        new_equipment_name = None
+
+        # Retrieve names for the user's convenience.
+        equipment_id = state.get("equipment_id")
+        if equipment_id:
+            item = Equipment_Library.query.filter_by(id=equipment_id).first()
+            equipment_name = item.name
+
+        new_equipment_id = state.get("new_equipment_id")
+        if new_equipment_id:
+            item = Equipment_Library.query.filter_by(id=new_equipment_id).first()
+            new_equipment_name = item.name
+
+        items = Equipment_Library.query.all()
+
+        # Create the list of available equipment for the LLM to choose from.
+        equipment_list = [
+            {
+                "id": item.id, 
+                "equipment_name": item.name
+            } for item in items
+        ]
+
+        return {
+            "equipment_name": equipment_name, 
+            "new_equipment_name": new_equipment_name, 
+            "available_equipment": equipment_list
+        }
+
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         creation_agent = create_creation_agent()
@@ -60,7 +93,7 @@ class SubAgent(BaseAgent):
         workflow.add_node("start_node", self.start_node)
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
-        workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_alter", self.operation_is_alter)
         workflow.add_node("create_new", creation_agent)
         workflow.add_node("alter_old", altering_agent)
         workflow.add_node("get_user_list", self.get_user_list)

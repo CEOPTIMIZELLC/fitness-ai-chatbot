@@ -19,6 +19,29 @@ def list_to_str(l, **kwargs):
     )
     return string_output
 
+# Convert a list of strings to a single string.
+# Performs some other formatting operations to allow an LLM to process it.
+def list_to_str_for_prompt(l, **kwargs):
+    # String metrics
+    join_between = ", "
+
+    # Add newline to join.
+    if kwargs.get("newline") or kwargs.get("nl") or kwargs.get("n"):
+        join_between += "\n"
+
+    # Add tab to join.
+    if kwargs.get("tab") or kwargs.get("t"):
+        join_between += "\t"
+
+    string_output = join_between.join(
+        f"{{{l_item}}}"
+        if isinstance(l_item, dict)
+        else
+        str(l_item)
+        for l_item in l
+    )
+    return string_output
+
 # Recursively go through dictionary to change time deltas
 # Correct time delta for serializing for JSON output.
 def recursively_change_dict_timedeltas(my_data_structure):
