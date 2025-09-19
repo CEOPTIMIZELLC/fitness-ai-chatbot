@@ -4,20 +4,13 @@ from langgraph.graph import StateGraph, START, END
 from app.db_session import session_scope
 from app.models import User_Equipment
 
-from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_operation, determine_read_operation
 
-from .actions import create_singular, filter_items_by_query, alter_singular
+from .agent_state import AgentState
+from .actions import filter_items_by_query
+from .creation_agent import create_creation_agent
+from .altering_agent import create_altering_agent
 from app.schedule_printers import EquipmentSchedulePrinter
-
-class AgentState(MainAgentState):
-    focus_name: str
-
-    item_id: int
-    equipment_id: int
-    equipment_measurement: int
-    new_equipment_id: int
-    new_equipment_measurement: int
 
 # Determine whether the outcome is to read the entire schedule or simply the current item.
 def which_operation(state: AgentState):
@@ -58,59 +51,18 @@ class SubAgent(BaseAgent):
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
-    # Create a new piece of equipment for the user.
-    def create_new(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Creating New {self.sub_agent_title} for User---------")
-
-        schedule_dict = create_singular(state)    
-
-        # Edit was successful if the created entry is returned.
-        if schedule_dict:
-            return {
-                "user_equipment": schedule_dict, 
-                "item_id": schedule_dict["id"], 
-                "request_more_details": False
-            }
-        
-        # If no entry was returned, then the creation requires more details
-        return {"request_more_details": True}
-        
-    # Alter an old piece of equipment for the user.
-    def alter_old(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Alter Old User {self.sub_agent_title}---------")
-
-        schedule_dict = alter_singular(state)
-
-        # Edit was successful if only one item was present.
-        if len(schedule_dict) == 1:
-            return {
-                "user_equipment": schedule_dict, 
-                "item_id": schedule_dict[0]["id"], 
-                "request_more_details": False, 
-            }
-        
-        # More details are required to filter the information.
-        return {
-            "user_equipment": schedule_dict, 
-            "request_more_details": True, 
-        }
-
-    # Request the details required to continue.
-    def request_more_details(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Requesting more details to continue---------")
-        return {}
-
-
     # Create main agent.
     def create_main_agent_graph(self, state_class):
+        creation_agent = create_creation_agent()
+        altering_agent = create_altering_agent()
+
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
-        workflow.add_node("create_new", self.create_new)
-        workflow.add_node("alter_old", self.alter_old)
-        workflow.add_node("request_more_details", self.request_more_details)
+        workflow.add_node("create_new", creation_agent)
+        workflow.add_node("alter_old", altering_agent)
         workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
@@ -155,27 +107,8 @@ class SubAgent(BaseAgent):
             }
         )
 
-        # Whether more details are needed to create the new piece of equipment.
-        workflow.add_conditional_edges(
-            "create_new",
-            are_more_details_needed, 
-            {
-                "need_more_details": "request_more_details",            # Request more details if needed.
-                "enough_details": "get_user_list"                       # Enough details were found to create the new entry. 
-            }
-        )
-
-        # Whether more details are needed to create the new piece of equipment.
-        workflow.add_conditional_edges(
-            "alter_old",
-            are_more_details_needed, 
-            {
-                "need_more_details": "request_more_details",            # Request more details if needed.
-                "enough_details": "get_user_list"                       # Enough details were found to create the new entry. 
-            }
-        )
-
-        workflow.add_edge("request_more_details", "get_user_list")
+        workflow.add_edge("create_new", "get_user_list")
+        workflow.add_edge("alter_old", "get_user_list")
         workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
