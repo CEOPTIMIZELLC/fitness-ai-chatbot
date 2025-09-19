@@ -1,8 +1,19 @@
 from datetime import timedelta, date, datetime
 
 # Convert a list of strings to a single string.
-def list_to_str(l):
-    string_output = ", \n".join(
+def list_to_str(l, **kwargs):
+    # String metrics
+    join_between = ", "
+
+    # Add newline to join.
+    if kwargs.get("newline") or kwargs.get("nl") or kwargs.get("n"):
+        join_between += "\n"
+
+    # Add tab to join.
+    if kwargs.get("tab") or kwargs.get("t"):
+        join_between += "\t"
+
+    string_output = join_between.join(
         str(l_item)
         for l_item in l
     )

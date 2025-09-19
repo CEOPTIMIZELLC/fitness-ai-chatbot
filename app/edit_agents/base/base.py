@@ -284,7 +284,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
         # Determine the task given to the user.
         if is_schedule_invalid and confirm_invalid_schedule:
-            violations = list_to_str(state["violations"])
+            violations = list_to_str(state["violations"], newline=True)
             
             user_task = f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\n\nViolations include:\n{violations}\n\nAre you sure you would like for the following schedule to be allowed?\n{formatted_schedule_list}"
         elif confirm_valid_schedule:
