@@ -1,7 +1,21 @@
 from app.db_session import session_scope
-from app.models import User_Equipment
+from app.models import Equipment_Library, User_Equipment
 
 from ..actions import filter_items_by_query, construct_query_filters
+
+# Extract the goal class items from the goal class.
+def extract_sub_goal_class_info(new_details, goal_class, key_name="equipment"):
+    equipment_id = goal_class.equipment_id
+    equipment_measurement = goal_class.equipment_measurement
+
+    if equipment_id:
+        item = Equipment_Library.query.filter_by(id=equipment_id).first()
+        new_details[f"{key_name}_id"] = equipment_id
+        new_details[f"{key_name}_name"] = item.name
+    if equipment_measurement:
+        new_details[f"{key_name}_measurement"] = equipment_measurement
+
+    return new_details
 
 # Alter an old piece of equipment for the user.
 def alter_singular(state):

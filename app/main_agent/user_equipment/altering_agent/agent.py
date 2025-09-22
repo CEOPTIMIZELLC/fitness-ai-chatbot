@@ -8,8 +8,8 @@ from app.main_agent.base_sub_agents.utils import sub_agent_focused_items, new_in
 from app.utils.item_to_string import list_to_str_for_prompt
 
 from ..agent_state import AgentState
-from .actions import filter_items_by_query, alter_singular
-from .goal_model import EquipmentGoal
+from .actions import extract_sub_goal_class_info, filter_items_by_query, alter_singular
+from .goal_model import EquipmentGoal, EquipmentRequests
 from .prompt import EquipmentDetailsPrompt
 from app.schedule_printers import EquipmentSchedulePrinter
 
@@ -24,7 +24,6 @@ def are_more_details_needed(state: AgentState):
     return "enough_details"
 
 class SubAgent(EquipmentDetailsPrompt):
-    details_goal = EquipmentGoal
     focus = "equipment"
     sub_agent_title = "Equipment"
     schedule_printer_class = EquipmentSchedulePrinter()
@@ -36,6 +35,53 @@ class SubAgent(EquipmentDetailsPrompt):
     def start_node(self, state):
         LogMainSubAgent.agent_introductions(f"=========Starting {self.sub_agent_title} Alteration SubAgent=========\n")
         return {}
+
+    def system_prompt_constructor(self, schedule_dict, state, initial_request=False):
+        available_equipment = list_to_str_for_prompt(state["available_equipment"], newline=True)
+
+        user_equipment_ids = ", \n".join(
+            f"{{{{unique_id: {l_item["id"]}}}}}"
+            for l_item in schedule_dict
+        )
+
+        if initial_request:
+            return self.request_system_prompt_constructor(
+                f"[\n{user_equipment_ids}\n]", 
+                f"[\n{available_equipment}\n]"
+            )
+
+        return self.details_system_prompt_constructor(
+            f"[\n{user_equipment_ids}\n]", 
+            f"[\n{available_equipment}\n]", 
+            equipment_id = state.get("equipment_id"), 
+            equipment_measurement = state.get("equipment_measurement")
+        )
+
+    # Node to extract the information from the initial user request.
+    def initial_request_parsing(self, state):
+        LogMainSubAgent.agent_steps(f"\t---------Retrieve details from initial request---------")
+        user_input = state.get("equipment_message")
+        schedule_dict = filter_items_by_query(state)
+        LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
+
+        system_prompt = self.system_prompt_constructor(schedule_dict, state, initial_request=True)
+
+        # Retrieve the details.
+        goal_class = new_input_request(user_input, system_prompt, EquipmentRequests)
+
+        new_details = {}
+
+        if goal_class.old_equipment_information:
+            new_details = extract_sub_goal_class_info(new_details, goal_class.old_equipment_information, key_name="equipment")
+            old_equipment_id = goal_class.old_equipment_information.unique_id
+
+            if old_equipment_id:
+                new_details["item_id"] = old_equipment_id
+
+        if goal_class.new_equipment_information:
+            new_details = extract_sub_goal_class_info(new_details, goal_class.new_equipment_information, key_name="new_equipment")
+
+        return new_details
 
     # Print output.
     def get_user_list(self, state):
@@ -86,21 +132,6 @@ class SubAgent(EquipmentDetailsPrompt):
 
         return f"{question_text}\n\n{details_contained_text}\n\n{details_needed_text}\n\nHere is the list of your equipment that match this criteria:\n{formatted_schedule}"
 
-    def system_prompt_constructor(self, schedule_dict, state):
-        available_equipment = list_to_str_for_prompt(state["available_equipment"], newline=True)
-
-        user_equipment_ids = ", \n".join(
-            f"{{{{unique_id: {l_item["id"]}}}}}"
-            for l_item in schedule_dict
-        )
-
-        return self.details_system_prompt_constructor(
-            f"[\n{user_equipment_ids}\n]", 
-            f"[\n{available_equipment}\n]", 
-            equipment_id = state.get("equipment_id"), 
-            equipment_measurement = state.get("equipment_measurement")
-        )
-
     # Request the details required to continue.
     def request_more_details(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Requesting more details to continue---------")
@@ -124,23 +155,15 @@ class SubAgent(EquipmentDetailsPrompt):
         LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         system_prompt = self.system_prompt_constructor(schedule_dict, state)
-        LogMainSubAgent.system_message(system_prompt)
 
         # Retrieve the details.
-        goal_class = new_input_request(user_input, system_prompt, self.details_goal)
+        goal_class = new_input_request(user_input, system_prompt, EquipmentGoal)
 
         new_details = {}
-
-        equipment_id = goal_class.equipment_id
+        new_details = extract_sub_goal_class_info(new_details, goal_class, key_name="equipment")
 
         if goal_class.unique_id:
             new_details["item_id"] = goal_class.unique_id
-        if equipment_id:
-            item = Equipment_Library.query.filter_by(id=equipment_id).first()
-            new_details["equipment_id"] = equipment_id
-            new_details["equipment_name"] = item.name
-        if goal_class.equipment_measurement:
-            new_details["equipment_measurement"] = goal_class.equipment_measurement
 
         return new_details
 
@@ -154,6 +177,7 @@ class SubAgent(EquipmentDetailsPrompt):
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
+        workflow.add_node("initial_request_parsing", self.initial_request_parsing)
         workflow.add_node("alter_old", self.alter_old)
         workflow.add_node("request_more_details", self.request_more_details)
         workflow.add_node("get_user_list", self.get_user_list)
@@ -161,7 +185,8 @@ class SubAgent(EquipmentDetailsPrompt):
 
         # Whether the focus element has been indicated to be impacted.
         workflow.add_edge(START, "start_node")
-        workflow.add_edge("start_node", "alter_old")
+        workflow.add_edge("start_node", "initial_request_parsing")
+        workflow.add_edge("initial_request_parsing", "alter_old")
 
         # Whether more details are needed to create the new piece of equipment.
         workflow.add_conditional_edges(

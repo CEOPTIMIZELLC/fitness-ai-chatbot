@@ -54,20 +54,6 @@ class SubAgent(BaseAgent):
     # Node to prepare information for altering.
     def operation_is_alter(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Altering---------")
-        equipment_name = None
-        new_equipment_name = None
-
-        # Retrieve names for the user's convenience.
-        equipment_id = state.get("equipment_id")
-        if equipment_id:
-            item = Equipment_Library.query.filter_by(id=equipment_id).first()
-            equipment_name = item.name
-
-        new_equipment_id = state.get("new_equipment_id")
-        if new_equipment_id:
-            item = Equipment_Library.query.filter_by(id=new_equipment_id).first()
-            new_equipment_name = item.name
-
         items = Equipment_Library.query.all()
 
         # Create the list of available equipment for the LLM to choose from.
@@ -79,8 +65,6 @@ class SubAgent(BaseAgent):
         ]
 
         return {
-            "equipment_name": equipment_name, 
-            "new_equipment_name": new_equipment_name, 
             "available_equipment": equipment_list
         }
 
