@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from .availability import AvailabilityGoalPart
+from .equipment import EquipmentGoalPart
 from .macrocycles import MacrocycleGoalPart
 from .mesocycles import MesocycleGoalPart
 from .microcycles import MicrocycleGoalPart
@@ -19,3 +20,4 @@ class RoutineImpactGoals(BaseModel):
     phase_component: PhaseComponentGoalPart
     workout_schedule: WorkoutScheduleGoalPart
     workout_completion: WorkoutCompletionGoalPart
+    equipment: EquipmentGoalPart

@@ -164,7 +164,20 @@ Return:
     "other_requests": null
 }}}}
 
-### Example 2 - Name only: targeting a type but not saying which existing item
+### Example 2 - Name only: Saying existing type but not saying target.
+User: "I want to change a Bench."
+Return:
+{{{{
+    "old_equipment_information": {{{{
+        "unique_id": null,
+        "equipment_id": <ID for 'Bench'>,
+        "equipment_measurement": null
+    }}}},
+    "new_equipment_information": null,
+    "other_requests": null
+}}}}
+
+### Example 3 - Name only: targeting a type but not saying which existing item
 User: "Change it to Bench."
 Return:
 {{{{
@@ -176,7 +189,7 @@ Return:
     "other_requests": null
 }}}}
 
-### Example 3 - Unique id + new measurement (CHANGE goes under new_equipment_information)
+### Example 4 - Unique id + new measurement (CHANGE goes under new_equipment_information)
 User: "For equipment 7, set it to 12."
 Return:
 {{{{
@@ -192,7 +205,7 @@ Return:
     "other_requests": null
 }}}}
 
-### Example 4 - Unique id + change to a new equipment type by NAME
+### Example 5 - Unique id + change to a new equipment type by NAME
 User: "Switch equipment 8 to Bench."
 Return:
 {{{{
@@ -208,7 +221,7 @@ Return:
     "other_requests": null
 }}}}
 
-### Example 5 - Name + measurement (no unique id specified)
+### Example 6 - Name + measurement (no unique id specified)
 User: "Make it the Barbell at 20."
 Return:
 {{{{
@@ -220,7 +233,7 @@ Return:
     "other_requests": null
 }}}}
 
-### Example 6 - Mixed: explicit unique id, target name, and new measurement
+### Example 7 - Mixed: explicit unique id, target name, and new measurement
 User: "Update equipment 12 to Example Item 5 at 5 kilograms."
 (Assume 'Example Item 5' is in the allowed list)
 Return:
@@ -237,7 +250,7 @@ Return:
     "other_requests": null
 }}}}
 
-### Example 7 - Unknown number (not a valid unique_id) and unrelated request
+### Example 8 - Unknown number (not a valid unique_id) and unrelated request
 User: "I want equipment 99 and please email me the plan."
 (Assume 99 is not in user_item_ids)
 Return:
@@ -247,7 +260,7 @@ Return:
     "other_requests": "please email me the plan"
 }}}}
 
-### Example 8 - Only measurement with no target
+### Example 9 - Only measurement with no target
 User: "Set it to 12 meters."
 Return:
 {{{{

@@ -8,6 +8,7 @@ from flask import current_app
 
 from app.goal_prompts import goal_extraction_system_prompt
 
+from .user_equipment import create_equipment_agent
 from .user_macrocycles import MacrocycleAgentNode
 from .user_mesocycles import create_mesocycle_agent
 from .user_microcycles import create_microcycle_agent
@@ -20,6 +21,7 @@ from app.impact_goal_models import RoutineImpactGoals
 from .main_agent_state import MainAgentState as AgentState
 
 sub_agent_names = [
+    "equipment", 
     "workout_completion", 
     "availability", 
     "macrocycle", 
@@ -118,6 +120,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         for sub_agent_name in sub_agent_names:
             state = _user_input_sub_extraction(state, sub_agent_name, goal_class[sub_agent_name])
         state["macrocycle_alter_old"] = goal_class["macrocycle"]["alter_old"]
+        state["equipment_alter_old"] = goal_class["equipment"]["alter_old"]
 
         LogMainAgent.input_info(f"Goals extracted.")
         for sub_agent_name in sub_agent_names:
@@ -153,6 +156,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         microcycle_scheduler_agent = create_microcycle_scheduler_agent()
         workout_agent = create_workout_agent()
         workout_completion_agent = create_workout_completion_agent()
+        equipment_agent = create_equipment_agent()
 
         workflow = StateGraph(AgentState)
 
@@ -166,6 +170,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         workflow.add_node("phase_component", microcycle_scheduler_agent)
         workflow.add_node("workout_schedule", workout_agent)
         workflow.add_node("workout_completion", workout_completion_agent)
+        workflow.add_node("equipment", equipment_agent)
         workflow.add_node("print_schedule", self.print_schedule_node)
         workflow.add_node("end_node", self.end_node)
 
@@ -184,9 +189,12 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         # User Input to Workout Completion
         workflow.add_edge("user_input_extraction", "workout_completion")
 
+        # Workout Completion to Equipment
+        workflow.add_edge("workout_completion", "equipment")
+
         # Workout Completion to Availability and Macrocycles
-        workflow.add_edge("workout_completion", "availability")
-        workflow.add_edge("workout_completion", "macrocycle")
+        workflow.add_edge("equipment", "availability")
+        workflow.add_edge("equipment", "macrocycle")
 
         # Availability and Macrocycles to Mesocycles
         workflow.add_edge("macrocycle", "mesocycle")
