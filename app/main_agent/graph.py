@@ -43,20 +43,20 @@ def reset_schedule_bool(state, state_item):
 
 # Resets the values related to a schedule section in the state to None.
 def reset_schedule_section(state, schedule_name):
-    reset_schedule_bool(state, f"{schedule_name}_impacted")
+    reset_schedule_bool(state, f"{schedule_name}_is_requested")
     reset_schedule_bool(state, f"{schedule_name}_is_altered")
     reset_schedule_bool(state, f"{schedule_name}_read_plural")
     reset_schedule_bool(state, f"{schedule_name}_read_current")
-    reset_schedule_item(state, f"{schedule_name}_message")
+    reset_schedule_item(state, f"{schedule_name}_detail")
     reset_schedule_item(state, f"{schedule_name}_formatted")
     reset_schedule_item(state, f"{schedule_name}_perform_with_parent_id")
     return state
 
 # Extract the individual item
 def _user_input_sub_extraction(state, sub_agent_name, sub_agent_pydantic):
-    state[f"{sub_agent_name}_impacted"] = sub_agent_pydantic["is_requested"]
+    state[f"{sub_agent_name}_is_requested"] = sub_agent_pydantic["is_requested"]
     state[f"{sub_agent_name}_is_altered"] = True
-    state[f"{sub_agent_name}_message"] = sub_agent_pydantic["detail"]
+    state[f"{sub_agent_name}_detail"] = sub_agent_pydantic["detail"]
     return state
 
 # Confirm that the desired section should be impacted.
@@ -124,8 +124,8 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
 
         LogMainAgent.input_info(f"Goals extracted.")
         for sub_agent_name in sub_agent_names:
-            if state[f"{sub_agent_name}_impacted"]:
-                LogMainAgent.input_info(f"{sub_agent_name}: {state[f"{sub_agent_name}_message"]}")
+            if state[f"{sub_agent_name}_is_requested"]:
+                LogMainAgent.input_info(f"{sub_agent_name}: {state[f"{sub_agent_name}_detail"]}")
         LogMainAgent.input_info("")
 
         return state
@@ -134,7 +134,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         LogMainAgent.agent_steps(f"\n=========Printing Schedule=========")
         LogMainAgent.formatted_schedule(f"Schedule Generatted.")
         for sub_agent_name in sub_agent_names:
-            if (f"{sub_agent_name}_formatted" in state) and (state[f"{sub_agent_name}_impacted"]):
+            if (f"{sub_agent_name}_formatted" in state) and (state[f"{sub_agent_name}_is_requested"]):
                 LogMainAgent.formatted_schedule(f"{sub_agent_name}: \n{state[f"{sub_agent_name}_formatted"]}")
         LogMainAgent.formatted_schedule("")
 

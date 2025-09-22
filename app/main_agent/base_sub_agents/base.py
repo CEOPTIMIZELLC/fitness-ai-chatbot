@@ -8,7 +8,7 @@ from .utils import retrieve_current_agent_focus, sub_agent_focused_items
 def confirm_impact(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Confirm that the {sub_agent_focus} is Impacted---------")
-    if not state[f"{sub_agent_focus}_impacted"]:
+    if not state[f"{sub_agent_focus}_is_requested"]:
         LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
         return "no_impact"
     return "impact"
@@ -86,11 +86,11 @@ class BaseAgent():
     # Default items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
         return {
-            focus_names["impact"]: goal_class.is_requested,
+            focus_names["is_requested"]: goal_class.is_requested,
             focus_names["is_altered"]: True,
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False,
-            focus_names["message"]: goal_class.detail,
+            focus_names["detail"]: goal_class.detail,
             "other_requests": goal_class.other_requests
         }
 

@@ -30,11 +30,11 @@ class AgentState(TypedDict):
     attempts: int
     other_requests: str
 
-    macrocycle_impacted: bool
+    macrocycle_is_requested: bool
     macrocycle_is_altered: bool
     macrocycle_read_plural: bool
     macrocycle_read_current: bool
-    macrocycle_message: str
+    macrocycle_detail: str
     macrocycle_formatted: str
     macrocycle_perform_with_parent_id: int
     macrocycle_alter_old: bool
@@ -70,11 +70,11 @@ class SubAgent(BaseAgent):
     # Items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
         return {
-            focus_names["impact"]: goal_class.is_requested,
+            focus_names["is_requested"]: goal_class.is_requested,
             focus_names["is_altered"]: True,
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False, 
-            focus_names["message"]: goal_class.detail, 
+            focus_names["detail"]: goal_class.detail, 
             "other_requests": goal_class.other_requests, 
             "macrocycle_alter_old": goal_class.alter_old or False
         }
@@ -92,13 +92,13 @@ class SubAgent(BaseAgent):
         return {
             "user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None,
             "goal_id": goal_id, 
-            self.focus_names["message"]: goal["name"]
+            self.focus_names["detail"]: goal["name"]
         }
 
     # Classify the new goal in one of the possible goal types.
     def perform_input_parser(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Perform {self.sub_agent_title} Classifier---------")
-        new_goal = state["macrocycle_message"]
+        new_goal = state["macrocycle_detail"]
 
         # There are only so many goal types a macrocycle can be classified as, with all of them being stored.
         goal_types = retrieve_goal_types()
@@ -122,7 +122,7 @@ class SubAgent(BaseAgent):
     def create_new_macrocycle(self, state: AgentState):
         user_id = state["user_id"]
         goal_id = state["goal_id"]
-        new_goal = state["macrocycle_message"]
+        new_goal = state["macrocycle_detail"]
         payload = {}
         with session_scope() as s:
             user_macrocycle = User_Macrocycles(user_id=user_id, goal_id=goal_id, goal=new_goal)
@@ -159,7 +159,7 @@ class SubAgent(BaseAgent):
     # Alters the current macrocycle to be the determined type.
     def alter_old_macrocycle(self, state: AgentState):
         goal_id = state["goal_id"]
-        new_goal = state["macrocycle_message"]
+        new_goal = state["macrocycle_detail"]
         macrocycle_id = state["macrocycle_id"]
         payload = {}
         with session_scope() as s:

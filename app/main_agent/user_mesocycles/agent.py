@@ -71,11 +71,11 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
     # Items extracted from the goal classifier
     def goal_classifier_parser(self, parent_names, goal_class):
         return {
-            parent_names["impact"]: goal_class.is_requested,
+            parent_names["is_requested"]: goal_class.is_requested,
             parent_names["is_altered"]: True,
             parent_names["read_plural"]: False,
             parent_names["read_current"]: False,
-            parent_names["message"]: goal_class.detail, 
+            parent_names["detail"]: goal_class.detail, 
             "macrocycle_other_requests": goal_class.other_requests,
             "macrocycle_alter_old": goal_class.alter_old or False
         }

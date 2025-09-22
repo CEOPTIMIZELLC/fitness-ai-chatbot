@@ -60,11 +60,11 @@ def get_user_equipment_list():
 
     state = {
         "user_id": current_user.id,
-        "equipment_impacted": True,
+        "equipment_is_requested": True,
         "equipment_is_altered": False,
         "equipment_read_plural": True,
         "equipment_read_current": True,
-        "equipment_message": "Retrieve current equipment.",
+        "equipment_detail": "Retrieve current equipment.",
         "equipment_alter_old": None, 
 
         "item_id": data.get("user_equipment_id"), 
@@ -83,11 +83,11 @@ def get_user_equipment_list():
 def read_user_equipment(user_equipment_id):
     state = {
         "user_id": current_user.id,
-        "equipment_impacted": True,
+        "equipment_is_requested": True,
         "equipment_is_altered": False,
         "equipment_read_plural": True,
         "equipment_read_current": True,
-        "equipment_message": "Retrieve current equipment.",
+        "equipment_detail": "Retrieve current equipment.",
         "equipment_alter_old": None, 
 
         "item_id": user_equipment_id, 
@@ -111,11 +111,11 @@ def add_user_equipment():
 
     state = {
         "user_id": current_user.id,
-        "equipment_impacted": True,
+        "equipment_is_requested": True,
         "equipment_is_altered": True,
         "equipment_read_plural": False,
         "equipment_read_current": False,
-        "equipment_message": request_message,
+        "equipment_detail": request_message,
         "equipment_alter_old": False, 
     }
     equipment_agent = create_equipment_agent()
@@ -138,11 +138,11 @@ def change_user_equipment():
 
     state = {
         "user_id": current_user.id,
-        "equipment_impacted": True,
+        "equipment_is_requested": True,
         "equipment_is_altered": True,
         "equipment_read_plural": False,
         "equipment_read_current": False,
-        "equipment_message": request_message,
+        "equipment_detail": request_message,
         "equipment_alter_old": True, 
     }
     equipment_agent = create_equipment_agent()
@@ -165,11 +165,11 @@ def change_user_equipment_by_id(user_equipment_id):
 
     state = {
         "user_id": current_user.id,
-        "equipment_impacted": True,
+        "equipment_is_requested": True,
         "equipment_is_altered": True,
         "equipment_read_plural": False,
         "equipment_read_current": False,
-        "equipment_message": request_message,
+        "equipment_detail": request_message,
         "equipment_alter_old": True, 
     }
     equipment_agent = create_equipment_agent()

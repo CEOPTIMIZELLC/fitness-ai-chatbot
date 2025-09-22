@@ -18,11 +18,11 @@ bp = Blueprint('user_macrocycles', __name__)
 def get_user_macrocycle_list():
     state = {
         "user_id": current_user.id,
-        "macrocycle_impacted": True,
+        "macrocycle_is_requested": True,
         "macrocycle_is_altered": False,
         "macrocycle_read_plural": True,
         "macrocycle_read_current": True,
-        "macrocycle_message": "Retrieve current macrocycle.",
+        "macrocycle_detail": "Retrieve current macrocycle.",
         "macrocycle_alter_old": None
     }
     goal_agent = create_goal_agent()
@@ -37,11 +37,11 @@ def get_user_macrocycle_list():
 def read_user_current_macrocycle():
     state = {
         "user_id": current_user.id,
-        "macrocycle_impacted": True,
+        "macrocycle_is_requested": True,
         "macrocycle_is_altered": False,
         "macrocycle_read_plural": False,
         "macrocycle_read_current": True,
-        "macrocycle_message": "Retrieve current macrocycle.",
+        "macrocycle_detail": "Retrieve current macrocycle.",
         "macrocycle_alter_old": None
     }
     goal_agent = create_goal_agent()
@@ -69,11 +69,11 @@ def change_macrocycle():
 
     state = {
         "user_id": current_user.id,
-        "macrocycle_impacted": True,
+        "macrocycle_is_requested": True,
         "macrocycle_is_altered": True,
         "macrocycle_read_plural": False,
         "macrocycle_read_current": False,
-        "macrocycle_message": data.get("goal", ""),
+        "macrocycle_detail": data.get("goal", ""),
         "macrocycle_alter_old": alter_old
     }
     goal_agent = create_goal_agent()
@@ -93,11 +93,11 @@ def change_macrocycle_by_id(goal_id):
 
     state = {
         "user_id": current_user.id,
-        "macrocycle_impacted": True,
+        "macrocycle_is_requested": True,
         "macrocycle_is_altered": True,
         "macrocycle_read_plural": False,
         "macrocycle_read_current": False,
-        "macrocycle_message": f"Goal of id {goal_id}.",
+        "macrocycle_detail": f"Goal of id {goal_id}.",
         "macrocycle_perform_with_parent_id": goal_id,
         "macrocycle_alter_old": alter_old,
     }

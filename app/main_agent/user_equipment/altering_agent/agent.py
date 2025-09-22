@@ -60,7 +60,7 @@ class SubAgent(EquipmentDetailsPrompt):
     # Node to extract the information from the initial user request.
     def initial_request_parsing(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Retrieve details from initial request---------")
-        user_input = state.get("equipment_message")
+        user_input = state.get("equipment_detail")
         schedule_dict = filter_items_by_query(state)
         LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 

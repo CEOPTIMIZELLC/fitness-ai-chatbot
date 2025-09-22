@@ -23,7 +23,7 @@ def confirm_availability(state: TState):
 # Router for if permission was granted.
 def confirm_availability_permission(state: TState):
     LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new Availability---------")
-    if not state["availability_impacted"]:
+    if not state["availability_is_requested"]:
         return "permission_denied"
     return "permission_granted"
 
@@ -50,7 +50,7 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
     # Request permission from user to execute the availability initialization.
     def ask_for_availability_permission(self, state: TState):
         # If the permission has already been given, move on ahead.
-        if state[self.availability_names["impact"]]:
+        if state[self.availability_names["is_requested"]]:
             LogMainSubAgent.agent_steps(f"\t---------Permission already granted---------")
             return {}
         LogMainSubAgent.agent_steps(f"\t---------Ask user if a new {self.availability_title} can be made---------")
@@ -65,11 +65,11 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
 
         # Parse the structured output values to a dictionary.
         return {
-            self.availability_names["impact"]: goal_class.is_requested,
+            self.availability_names["is_requested"]: goal_class.is_requested,
             self.availability_names["is_altered"]: True,
             self.availability_names["read_plural"]: False,
             self.availability_names["read_current"]: False,
-            self.availability_names["message"]: goal_class.detail, 
+            self.availability_names["detail"]: goal_class.detail, 
             "availability_other_requests": goal_class.other_requests,
         }
 

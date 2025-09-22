@@ -28,7 +28,7 @@ def confirm_parent(state: TState):
 def confirm_permission(state: TState):
     parent_agent_focus = retrieve_current_agent_focus(state, "parent")
     LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new {parent_agent_focus}---------")
-    if not state[f"{parent_agent_focus}_impacted"]:
+    if not state[f"{parent_agent_focus}_is_requested"]:
         return "permission_denied"
     return "permission_granted"
 
@@ -110,7 +110,7 @@ class BaseAgentWithParents(BaseAgent):
     # Request permission from user to execute the parent initialization.
     def ask_for_permission(self, state: TState):
         # If the permission has already been given, move on ahead.
-        if state[self.parent_names["impact"]]:
+        if state[self.parent_names["is_requested"]]:
             LogMainSubAgent.agent_steps(f"\t---------Permission already granted---------")
             return {}
         LogMainSubAgent.agent_steps(f"\t---------Ask user if a new {self.parent_title} can be made---------")
@@ -140,20 +140,20 @@ class BaseAgentWithParents(BaseAgent):
         result = agent_state_update(state, updated_state, ignore_section)
 
         LogMainSubAgent.input_info(f"Goals extracted.")
-        if result.get("workout_completion_impacted"):
-            LogMainSubAgent.input_info(f"workout_completion: {result["workout_completion_message"]}")
-        if result.get("availability_impacted"):
-            LogMainSubAgent.input_info(f"availability: {result["availability_message"]}")
-        if result.get("macrocycle_impacted"):
-            LogMainSubAgent.input_info(f"macrocycle: {result["macrocycle_message"]}")
-        if result.get("mesocycle_impacted"):
-            LogMainSubAgent.input_info(f"mesocycle: {result["mesocycle_message"]}")
-        if result.get("microcycle_impacted"):
-            LogMainSubAgent.input_info(f"microcycle: {result["microcycle_message"]}")
-        if result.get("phase_component_impacted"):
-            LogMainSubAgent.input_info(f"phase_component: {result["phase_component_message"]}")
-        if result.get("workout_schedule_impacted"):
-            LogMainSubAgent.input_info(f"workout_schedule: {result["workout_schedule_message"]}")
+        if result.get("workout_completion_is_requested"):
+            LogMainSubAgent.input_info(f"workout_completion: {result["workout_completion_detail"]}")
+        if result.get("availability_is_requested"):
+            LogMainSubAgent.input_info(f"availability: {result["availability_detail"]}")
+        if result.get("macrocycle_is_requested"):
+            LogMainSubAgent.input_info(f"macrocycle: {result["macrocycle_detail"]}")
+        if result.get("mesocycle_is_requested"):
+            LogMainSubAgent.input_info(f"mesocycle: {result["mesocycle_detail"]}")
+        if result.get("microcycle_is_requested"):
+            LogMainSubAgent.input_info(f"microcycle: {result["microcycle_detail"]}")
+        if result.get("phase_component_is_requested"):
+            LogMainSubAgent.input_info(f"phase_component: {result["phase_component_detail"]}")
+        if result.get("workout_schedule_is_requested"):
+            LogMainSubAgent.input_info(f"workout_schedule: {result["workout_schedule_detail"]}")
         LogMainSubAgent.input_info("")
 
         # Reset other requests to be empty.

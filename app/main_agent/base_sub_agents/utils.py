@@ -15,11 +15,11 @@ def sub_agent_focused_items(sub_agent_focus):
     return {
         "entry": f"user_{sub_agent_focus}", 
         "id": f"{sub_agent_focus}_id", 
-        "impact": f"{sub_agent_focus}_impacted", 
+        "is_requested": f"{sub_agent_focus}_is_requested", 
         "is_altered": f"{sub_agent_focus}_is_altered", 
         "read_plural": f"{sub_agent_focus}_read_plural", 
         "read_current": f"{sub_agent_focus}_read_current", 
-        "message": f"{sub_agent_focus}_message", 
+        "detail": f"{sub_agent_focus}_detail", 
         "formatted": f"{sub_agent_focus}_formatted",
         "perform_with_parent_id": f"{sub_agent_focus}_perform_with_parent_id",
     }
@@ -67,28 +67,28 @@ def user_input_information_extraction(user_input):
     goal_class = goal_classifier.invoke({})
 
     state["attempts"] = 1
-    state["availability_impacted"] = goal_class.availability.is_requested
+    state["availability_is_requested"] = goal_class.availability.is_requested
     state["availability_is_altered"] = True
-    state["availability_message"] = goal_class.availability.detail
-    state["macrocycle_impacted"] = goal_class.macrocycle.is_requested
+    state["availability_detail"] = goal_class.availability.detail
+    state["macrocycle_is_requested"] = goal_class.macrocycle.is_requested
     state["macrocycle_is_altered"] = True
-    state["macrocycle_message"] = goal_class.macrocycle.detail
+    state["macrocycle_detail"] = goal_class.macrocycle.detail
     state["macrocycle_alter_old"] = goal_class.macrocycle.alter_old or False
-    state["mesocycle_impacted"] = goal_class.mesocycle.is_requested
+    state["mesocycle_is_requested"] = goal_class.mesocycle.is_requested
     state["mesocycle_is_altered"] = True
-    state["mesocycle_message"] = goal_class.mesocycle.detail
-    state["microcycle_impacted"] = goal_class.microcycle.is_requested
+    state["mesocycle_detail"] = goal_class.mesocycle.detail
+    state["microcycle_is_requested"] = goal_class.microcycle.is_requested
     state["microcycle_is_altered"] = True
-    state["microcycle_message"] = goal_class.microcycle.detail
-    state["phase_component_impacted"] = goal_class.phase_component.is_requested
+    state["microcycle_detail"] = goal_class.microcycle.detail
+    state["phase_component_is_requested"] = goal_class.phase_component.is_requested
     state["phase_component_is_altered"] = True
-    state["phase_component_message"] = goal_class.phase_component.detail
-    state["workout_schedule_impacted"] = goal_class.workout_schedule.is_requested
+    state["phase_component_detail"] = goal_class.phase_component.detail
+    state["workout_schedule_is_requested"] = goal_class.workout_schedule.is_requested
     state["workout_schedule_is_altered"] = True
-    state["workout_schedule_message"] = goal_class.workout_schedule.detail
-    state["workout_completion_impacted"] = goal_class.workout_completion.is_requested
+    state["workout_schedule_detail"] = goal_class.workout_schedule.detail
+    state["workout_completion_is_requested"] = goal_class.workout_completion.is_requested
     state["workout_completion_is_altered"] = True
-    state["workout_completion_message"] = goal_class.workout_completion.detail
+    state["workout_completion_detail"] = goal_class.workout_completion.detail
 
     return state
 
@@ -107,9 +107,9 @@ def update_bool(final_state, old_state, updated_state, key):
 def update_state_schedule_section(state, old_state, updated_state, section, ignore_section):
     if section == ignore_section:
         return state
-    update_bool(state, old_state, updated_state, f"{section}_impacted")
+    update_bool(state, old_state, updated_state, f"{section}_is_requested")
     update_bool(state, old_state, updated_state, f"{section}_is_altered")
-    update_val(state, old_state, updated_state, f"{section}_message")
+    update_val(state, old_state, updated_state, f"{section}_detail")
     return state
 
 def agent_state_update(old_state, updated_state, ignore_section=None):

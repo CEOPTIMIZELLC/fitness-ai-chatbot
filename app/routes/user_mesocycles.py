@@ -19,11 +19,11 @@ bp = Blueprint('user_mesocycles', __name__)
 def get_user_mesocycles_list():
     state = {
         "user_id": current_user.id,
-        "mesocycle_impacted": True,
+        "mesocycle_is_requested": True,
         "mesocycle_is_altered": False,
         "mesocycle_read_plural": True,
         "mesocycle_read_current": False,
-        "mesocycle_message": "Retrieve mesocycle scheduling."
+        "mesocycle_detail": "Retrieve mesocycle scheduling."
     }
     mesocycle_agent = create_mesocycle_agent()
 
@@ -36,11 +36,11 @@ def get_user_mesocycles_list():
 def get_user_current_mesocycles_list():
     state = {
         "user_id": current_user.id,
-        "mesocycle_impacted": True,
+        "mesocycle_is_requested": True,
         "mesocycle_is_altered": False,
         "mesocycle_read_plural": True,
         "mesocycle_read_current": True,
-        "mesocycle_message": "Retrieve mesocycle scheduling."
+        "mesocycle_detail": "Retrieve mesocycle scheduling."
     }
     mesocycle_agent = create_mesocycle_agent()
 
@@ -53,11 +53,11 @@ def get_user_current_mesocycles_list():
 def read_user_current_mesocycle():
     state = {
         "user_id": current_user.id,
-        "mesocycle_impacted": True,
+        "mesocycle_is_requested": True,
         "mesocycle_is_altered": False,
         "mesocycle_read_plural": False,
         "mesocycle_read_current": True,
-        "mesocycle_message": "Retrieve mesocycle scheduling."
+        "mesocycle_detail": "Retrieve mesocycle scheduling."
     }
     mesocycle_agent = create_mesocycle_agent()
 
@@ -70,11 +70,11 @@ def read_user_current_mesocycle():
 def mesocycle_phases():
     state = {
         "user_id": current_user.id,
-        "mesocycle_impacted": True,
+        "mesocycle_is_requested": True,
         "mesocycle_is_altered": True,
         "mesocycle_read_plural": False,
         "mesocycle_read_current": False,
-        "mesocycle_message": "Perform mesocycle scheduling."
+        "mesocycle_detail": "Perform mesocycle scheduling."
     }
     mesocycle_agent = create_mesocycle_agent()
 
@@ -87,11 +87,11 @@ def mesocycle_phases():
 def add_mesocycle_phases_by_id(goal_id):
     state = {
         "user_id": current_user.id,
-        "mesocycle_impacted": True,
+        "mesocycle_is_requested": True,
         "mesocycle_is_altered": True,
         "mesocycle_read_plural": False,
         "mesocycle_read_current": False,
-        "mesocycle_message": "Perform mesocycle scheduling.",
+        "mesocycle_detail": "Perform mesocycle scheduling.",
         "mesocycle_perform_with_parent_id": goal_id
     }
     mesocycle_agent = create_mesocycle_agent()

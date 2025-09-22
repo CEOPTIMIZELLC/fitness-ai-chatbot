@@ -25,11 +25,11 @@ bp = Blueprint('user_workout_exercises', __name__)
 def get_user_workout_exercises_list():
     state = {
         "user_id": current_user.id,
-        "workout_schedule_impacted": True,
+        "workout_schedule_is_requested": True,
         "workout_schedule_is_altered": False,
         "workout_schedule_read_plural": True,
         "workout_schedule_read_current": False,
-        "workout_schedule_message": "Perform workout scheduling."
+        "workout_schedule_detail": "Perform workout scheduling."
     }
     workout_agent = create_workout_agent()
 
@@ -42,11 +42,11 @@ def get_user_workout_exercises_list():
 def get_user_current_exercises_list():
     state = {
         "user_id": current_user.id,
-        "workout_schedule_impacted": True,
+        "workout_schedule_is_requested": True,
         "workout_schedule_is_altered": False,
         "workout_schedule_read_plural": True,
         "workout_schedule_read_current": True,
-        "workout_schedule_message": "Perform workout scheduling."
+        "workout_schedule_detail": "Perform workout scheduling."
     }
     workout_agent = create_workout_agent()
 
@@ -59,11 +59,11 @@ def get_user_current_exercises_list():
 def exercise_initializer():
     state = {
         "user_id": current_user.id,
-        "workout_schedule_impacted": True,
+        "workout_schedule_is_requested": True,
         "workout_schedule_is_altered": True,
         "workout_schedule_read_plural": False,
         "workout_schedule_read_current": False,
-        "workout_schedule_message": "Perform workout scheduling."
+        "workout_schedule_detail": "Perform workout scheduling."
     }
     workout_agent = create_workout_agent()
 
@@ -76,11 +76,11 @@ def exercise_initializer():
 def complete_workout():
     state = {
         "user_id": current_user.id,
-        "workout_completion_impacted": True,
+        "workout_completion_is_requested": True,
         "workout_completion_is_altered": True,
         "workout_completion_read_plural": False,
         "workout_completion_read_current": False,
-        "workout_completion_message": "Perform workout scheduling."
+        "workout_completion_detail": "Perform workout scheduling."
     }
     workout_completion_agent = create_workout_completion_agent()
 
@@ -95,16 +95,16 @@ def initialize_and_complete():
 
     state = {
         "user_id": current_user.id,
-        "workout_schedule_impacted": True,
+        "workout_schedule_is_requested": True,
         "workout_schedule_is_altered": True,
         "workout_schedule_read_plural": False,
         "workout_schedule_read_current": False,
-        "workout_schedule_message": "Perform workout scheduling.",
-        "workout_completion_impacted": True,
+        "workout_schedule_detail": "Perform workout scheduling.",
+        "workout_completion_is_requested": True,
         "workout_completion_is_altered": True,
         "workout_completion_read_plural": False,
         "workout_completion_read_current": False,
-        "workout_completion_message": "Perform workout scheduling."
+        "workout_completion_detail": "Perform workout scheduling."
     }
     workout_agent = create_workout_agent()
     workout_completion_agent = create_workout_completion_agent()

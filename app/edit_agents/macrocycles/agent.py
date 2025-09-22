@@ -29,7 +29,7 @@ class AgentState(TypedDict):
     agent_output: dict
     schedule_printed: str
 
-    macrocycle_message: str
+    macrocycle_detail: str
     goal_id: int
     start_date: any
     end_date: any
