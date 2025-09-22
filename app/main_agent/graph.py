@@ -57,6 +57,22 @@ def _user_input_sub_extraction(state, sub_agent_name, sub_agent_pydantic):
     state[f"{sub_agent_name}_message"] = sub_agent_pydantic["detail"]
     return state
 
+# Confirm that the desired section should be impacted.
+def confirm_input(state):
+    LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
+    LogMainAgent.agent_steps(f"---------Confirm that an Input Exists---------")
+    if not state["user_input"]:
+        LogMainAgent.agent_steps(f"---------No Input---------")
+        return "no_input"
+    return "included_input"
+
+# Determine if the agent should be looping or end after one iteration.
+def is_agent_a_loop(state: AgentState):
+    LogMainAgent.agent_steps(f"---------Check if Main Agent should loop---------")
+    if loop_main_agent:
+        return "yes_loop"
+    return "no_loop"
+
 class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     def entry_node(self, state: AgentState):
         LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
@@ -77,15 +93,6 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         
         state["user_input"] = user_input
         return state
-
-    # Confirm that the desired section should be impacted.
-    def confirm_input(self, state):
-        LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
-        LogMainAgent.agent_steps(f"---------Confirm that an Input Exists---------")
-        if not state["user_input"]:
-            LogMainAgent.agent_steps(f"---------No Input---------")
-            return "no_input"
-        return "included_input"
 
     def user_input_information_extraction(self, state: AgentState):
         LogMainAgent.agent_steps(f"\n=========Extract Input=========")
@@ -130,13 +137,6 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
 
         return state
 
-    # Determine if the agent should be looping or end after one iteration.
-    def is_agent_a_loop(self, state: AgentState):
-        LogMainAgent.agent_steps(f"---------Check if Main Agent should loop---------")
-        if loop_main_agent:
-            return "yes_loop"
-        return "no_loop"
-
     # Node to declare that the sub agent has ended.
     def end_node(self, state: AgentState):
         LogMainAgent.agent_introductions(f"=========Ending Main Agent=========\n")
@@ -174,7 +174,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         # Check whether a user input exists.
         workflow.add_conditional_edges(
             "ask_for_user_request",
-            self.confirm_input,
+            confirm_input,
             {
                 "no_input": "end_node",                                     # End the agent if no input is given.
                 "included_input": "user_input_extraction"                   # Parse the user input if one is given.
@@ -207,7 +207,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         # Check whether the agent should loop.
         workflow.add_conditional_edges(
             "print_schedule",
-            self.is_agent_a_loop,
+            is_agent_a_loop,
             {
                 "no_loop": "end_node",                                      # End the agent if it shouldn't loop.
                 "yes_loop": "ask_for_user_request"                          # Restart agent if it should loop.
