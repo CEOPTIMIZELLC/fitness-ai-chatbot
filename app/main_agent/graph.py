@@ -19,6 +19,16 @@ from .user_weekdays_availability import WeekdayAvailabilityAgentNode
 from app.impact_goal_models import RoutineImpactGoals
 from .main_agent_state import MainAgentState as AgentState
 
+sub_agent_names = [
+    "workout_completion", 
+    "availability", 
+    "macrocycle", 
+    "mesocycle", 
+    "microcycle", 
+    "phase_component", 
+    "workout_schedule", 
+]
+
 # Resets the value of an item in the state to None if it exists.
 def reset_schedule_item(state, state_item):
     state[state_item] = None
@@ -40,18 +50,19 @@ def reset_schedule_section(state, schedule_name):
     reset_schedule_item(state, f"{schedule_name}_perform_with_parent_id")
     return state
 
+# Extract the individual item
+def _user_input_sub_extraction(state, sub_agent_name, sub_agent_pydantic):
+    state[f"{sub_agent_name}_impacted"] = sub_agent_pydantic["is_requested"]
+    state[f"{sub_agent_name}_is_altered"] = True
+    state[f"{sub_agent_name}_message"] = sub_agent_pydantic["detail"]
+    return state
+
 class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     def entry_node(self, state: AgentState):
         LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
         # Reset to None for testing
-        state = reset_schedule_section(state, "workout_completion")
-        state = reset_schedule_section(state, "availability")
-        state = reset_schedule_section(state, "macrocycle")
-        state = reset_schedule_section(state, "mesocycle")
-        state = reset_schedule_section(state, "microcycle")
-        state = reset_schedule_section(state, "phase_component")
-        state = reset_schedule_section(state, "workout_schedule")
-        state = reset_schedule_section(state, "workout_completion")
+        for sub_agent_name in sub_agent_names:
+            state = reset_schedule_section(state, sub_agent_name)
         state["agent_path"] = []
         return state
 
@@ -94,45 +105,17 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         goal_classifier = check_prompt | structured_llm
         goal_class = goal_classifier.invoke({})
 
+        goal_class = goal_class.model_dump()
+
         state["attempts"] = 1
-        state["availability_impacted"] = goal_class.availability.is_requested
-        state["availability_is_altered"] = True
-        state["availability_message"] = goal_class.availability.detail
-        state["macrocycle_impacted"] = goal_class.macrocycle.is_requested
-        state["macrocycle_is_altered"] = True
-        state["macrocycle_message"] = goal_class.macrocycle.detail
-        state["macrocycle_alter_old"] = goal_class.macrocycle.alter_old
-        state["mesocycle_impacted"] = goal_class.mesocycle.is_requested
-        state["mesocycle_is_altered"] = True
-        state["mesocycle_message"] = goal_class.mesocycle.detail
-        state["microcycle_impacted"] = goal_class.microcycle.is_requested
-        state["microcycle_is_altered"] = True
-        state["microcycle_message"] = goal_class.microcycle.detail
-        state["phase_component_impacted"] = goal_class.phase_component.is_requested
-        state["phase_component_is_altered"] = True
-        state["phase_component_message"] = goal_class.phase_component.detail
-        state["workout_schedule_impacted"] = goal_class.workout_schedule.is_requested
-        state["workout_schedule_is_altered"] = True
-        state["workout_schedule_message"] = goal_class.workout_schedule.detail
-        state["workout_completion_impacted"] = goal_class.workout_completion.is_requested
-        state["workout_completion_is_altered"] = True
-        state["workout_completion_message"] = goal_class.workout_completion.detail
+        for sub_agent_name in sub_agent_names:
+            state = _user_input_sub_extraction(state, sub_agent_name, goal_class[sub_agent_name])
+        state["macrocycle_alter_old"] = goal_class["macrocycle"]["alter_old"]
 
         LogMainAgent.input_info(f"Goals extracted.")
-        if state["workout_completion_impacted"]:
-            LogMainAgent.input_info(f"workout_completion: {state["workout_completion_message"]}")
-        if state["availability_impacted"]:
-            LogMainAgent.input_info(f"availability: {state["availability_message"]}")
-        if state["macrocycle_impacted"]:
-            LogMainAgent.input_info(f"macrocycle: {state["macrocycle_message"]}")
-        if state["mesocycle_impacted"]:
-            LogMainAgent.input_info(f"mesocycle: {state["mesocycle_message"]}")
-        if state["microcycle_impacted"]:
-            LogMainAgent.input_info(f"microcycle: {state["microcycle_message"]}")
-        if state["phase_component_impacted"]:
-            LogMainAgent.input_info(f"phase_component: {state["phase_component_message"]}")
-        if state["workout_schedule_impacted"]:
-            LogMainAgent.input_info(f"workout_schedule: {state["workout_schedule_message"]}")
+        for sub_agent_name in sub_agent_names:
+            if state[f"{sub_agent_name}_impacted"]:
+                LogMainAgent.input_info(f"{sub_agent_name}: {state[f"{sub_agent_name}_message"]}")
         LogMainAgent.input_info("")
 
         return state
@@ -140,20 +123,9 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     def print_schedule_node(self, state: AgentState):
         LogMainAgent.agent_steps(f"\n=========Printing Schedule=========")
         LogMainAgent.formatted_schedule(f"Schedule Generatted.")
-        if ("workout_completion_formatted" in state) and (state["workout_completion_impacted"]):
-            LogMainAgent.formatted_schedule(f"workout_completion: \n{state["workout_completion_formatted"]}")
-        if ("availability_formatted" in state) and (state["availability_impacted"]):
-            LogMainAgent.formatted_schedule(f"availability: \n{state["availability_formatted"]}")
-        if ("macrocycle_formatted" in state) and (state["macrocycle_impacted"]):
-            LogMainAgent.formatted_schedule(f"macrocycle: \n{state["macrocycle_formatted"]}")
-        if ("mesocycle_formatted" in state) and (state["mesocycle_impacted"]):
-            LogMainAgent.formatted_schedule(f"mesocycle: \n{state["mesocycle_formatted"]}")
-        if ("microcycle_formatted" in state) and (state["microcycle_impacted"]):
-            LogMainAgent.formatted_schedule(f"microcycle: \n{state["microcycle_formatted"]}")
-        if ("phase_component_formatted" in state) and (state["phase_component_impacted"]):
-            LogMainAgent.formatted_schedule(f"phase_component: \n{state["phase_component_formatted"]}")
-        if ("workout_schedule_formatted" in state) and (state["workout_schedule_impacted"]):
-            LogMainAgent.formatted_schedule(f"workout_schedule: \n{state["workout_schedule_formatted"]}")
+        for sub_agent_name in sub_agent_names:
+            if (f"{sub_agent_name}_formatted" in state) and (state[f"{sub_agent_name}_impacted"]):
+                LogMainAgent.formatted_schedule(f"{sub_agent_name}: \n{state[f"{sub_agent_name}_formatted"]}")
         LogMainAgent.formatted_schedule("")
 
         return state
@@ -169,14 +141,8 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     def end_node(self, state: AgentState):
         LogMainAgent.agent_introductions(f"=========Ending Main Agent=========\n")
         # Reset to None for testing
-        state = reset_schedule_section(state, "workout_completion")
-        state = reset_schedule_section(state, "availability")
-        state = reset_schedule_section(state, "macrocycle")
-        state = reset_schedule_section(state, "mesocycle")
-        state = reset_schedule_section(state, "microcycle")
-        state = reset_schedule_section(state, "phase_component")
-        state = reset_schedule_section(state, "workout_schedule")
-        state = reset_schedule_section(state, "workout_completion")
+        for sub_agent_name in sub_agent_names:
+            state = reset_schedule_section(state, sub_agent_name)
         state["agent_path"] = []
         return state
 
