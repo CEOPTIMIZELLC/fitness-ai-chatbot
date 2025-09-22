@@ -21,6 +21,9 @@ def construct_query_filters(user_id, item_id=None, equipment_id=None, measuremen
     if measurement:
         LogMainSubAgent.agent_steps(f"\t\tMeasurement = {measurement}")
         query_filters.append(User_Equipment.measurement == measurement)
+    
+    if not (item_id or equipment_id or measurement):
+        LogMainSubAgent.agent_steps(f"\t\tAll.")
     return query_filters
 
 # Filter the list of user equipment based on user filters.
