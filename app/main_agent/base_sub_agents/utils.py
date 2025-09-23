@@ -6,6 +6,17 @@ from langchain_core.prompts import ChatPromptTemplate
 from app.impact_goal_models import RoutineImpactGoals
 from app.goal_prompts import goal_extraction_system_prompt
 
+sub_agent_names = [
+    "equipment", 
+    "workout_completion", 
+    "availability", 
+    "macrocycle", 
+    "mesocycle", 
+    "microcycle", 
+    "phase_component", 
+    "workout_schedule", 
+]
+
 # Retrieves the last element appended to the path.
 def retrieve_current_agent_focus(state, desired_element="focus"):
     current_path_items = state["agent_path"][-1]
@@ -50,6 +61,13 @@ def new_input_request(user_input, item_system_prompt, item_goal):
 
     return goal_class
 
+# Extract the individual item
+def _user_input_sub_extraction(state, sub_agent_name, sub_agent_pydantic):
+    state[f"{sub_agent_name}_is_requested"] = sub_agent_pydantic["is_requested"]
+    state[f"{sub_agent_name}_is_altered"] = True
+    state[f"{sub_agent_name}_detail"] = sub_agent_pydantic["detail"]
+    return state
+
 def user_input_information_extraction(user_input):
     state={}
 
@@ -66,29 +84,14 @@ def user_input_information_extraction(user_input):
     goal_classifier = check_prompt | structured_llm
     goal_class = goal_classifier.invoke({})
 
+    goal_class = goal_class.model_dump()
+
     state["attempts"] = 1
-    state["availability_is_requested"] = goal_class.availability.is_requested
-    state["availability_is_altered"] = True
-    state["availability_detail"] = goal_class.availability.detail
-    state["macrocycle_is_requested"] = goal_class.macrocycle.is_requested
-    state["macrocycle_is_altered"] = True
-    state["macrocycle_detail"] = goal_class.macrocycle.detail
-    state["macrocycle_alter_old"] = goal_class.macrocycle.alter_old or False
-    state["mesocycle_is_requested"] = goal_class.mesocycle.is_requested
-    state["mesocycle_is_altered"] = True
-    state["mesocycle_detail"] = goal_class.mesocycle.detail
-    state["microcycle_is_requested"] = goal_class.microcycle.is_requested
-    state["microcycle_is_altered"] = True
-    state["microcycle_detail"] = goal_class.microcycle.detail
-    state["phase_component_is_requested"] = goal_class.phase_component.is_requested
-    state["phase_component_is_altered"] = True
-    state["phase_component_detail"] = goal_class.phase_component.detail
-    state["workout_schedule_is_requested"] = goal_class.workout_schedule.is_requested
-    state["workout_schedule_is_altered"] = True
-    state["workout_schedule_detail"] = goal_class.workout_schedule.detail
-    state["workout_completion_is_requested"] = goal_class.workout_completion.is_requested
-    state["workout_completion_is_altered"] = True
-    state["workout_completion_detail"] = goal_class.workout_completion.detail
+    for sub_agent_name in sub_agent_names:
+        state = _user_input_sub_extraction(state, sub_agent_name, goal_class[sub_agent_name])
+    state["macrocycle_alter_old"] = goal_class["macrocycle"]["alter_old"]
+    state["equipment_alter_old"] = goal_class["equipment"]["alter_old"]
+    state["equipment_delete_old"] = goal_class["equipment"]["delete_old"]
 
     return state
 
@@ -115,13 +118,11 @@ def update_state_schedule_section(state, old_state, updated_state, section, igno
 def agent_state_update(old_state, updated_state, ignore_section=None):
     LogMainSubAgent.agent_steps(f"\n=========Update other requests=========")
     state = {}
-    update_state_schedule_section(state, old_state, updated_state, "availability", ignore_section)
-    update_state_schedule_section(state, old_state, updated_state, "macrocycle", ignore_section)
+    for sub_agent_name in sub_agent_names:
+        update_state_schedule_section(state, old_state, updated_state, sub_agent_name, ignore_section)
     if "macrocycle" != ignore_section:
         update_bool(state, old_state, updated_state, "macrocycle_alter_old")
-    update_state_schedule_section(state, old_state, updated_state, "mesocycle", ignore_section)
-    update_state_schedule_section(state, old_state, updated_state, "microcycle", ignore_section)
-    update_state_schedule_section(state, old_state, updated_state, "phase_component", ignore_section)
-    update_state_schedule_section(state, old_state, updated_state, "workout_schedule", ignore_section)
-    update_state_schedule_section(state, old_state, updated_state, "workout_completion", ignore_section)
+    if "equipment" != ignore_section:
+        update_bool(state, old_state, updated_state, "equipment_alter_old")
+        update_bool(state, old_state, updated_state, "equipment_delete_old")
     return state
