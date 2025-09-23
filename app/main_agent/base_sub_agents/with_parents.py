@@ -13,6 +13,22 @@ from .utils import retrieve_current_agent_focus, sub_agent_focused_items, new_in
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
 
+sub_agent_names = [
+    "equipment", 
+    "workout_completion", 
+    "availability", 
+    "macrocycle", 
+    "mesocycle", 
+    "microcycle", 
+    "phase_component", 
+    "workout_schedule", 
+]
+
+def other_request_item_extraction(result, sub_agent_name):
+    if result.get(f"{sub_agent_name}_is_requested"):
+        LogMainSubAgent.input_info(f"{sub_agent_name}: {result[f"{sub_agent_name}_detail"]}")
+    return None
+
 # Create a generic type variable that must be a subclass of MainAgentState
 TState = TypeVar('TState', bound=MainAgentState)
 
@@ -140,20 +156,8 @@ class BaseAgentWithParents(BaseAgent):
         result = agent_state_update(state, updated_state, ignore_section)
 
         LogMainSubAgent.input_info(f"Goals extracted.")
-        if result.get("workout_completion_is_requested"):
-            LogMainSubAgent.input_info(f"workout_completion: {result["workout_completion_detail"]}")
-        if result.get("availability_is_requested"):
-            LogMainSubAgent.input_info(f"availability: {result["availability_detail"]}")
-        if result.get("macrocycle_is_requested"):
-            LogMainSubAgent.input_info(f"macrocycle: {result["macrocycle_detail"]}")
-        if result.get("mesocycle_is_requested"):
-            LogMainSubAgent.input_info(f"mesocycle: {result["mesocycle_detail"]}")
-        if result.get("microcycle_is_requested"):
-            LogMainSubAgent.input_info(f"microcycle: {result["microcycle_detail"]}")
-        if result.get("phase_component_is_requested"):
-            LogMainSubAgent.input_info(f"phase_component: {result["phase_component_detail"]}")
-        if result.get("workout_schedule_is_requested"):
-            LogMainSubAgent.input_info(f"workout_schedule: {result["workout_schedule_detail"]}")
+        for sub_agent_name in sub_agent_names:
+            other_request_item_extraction(result, sub_agent_name)
         LogMainSubAgent.input_info("")
 
         # Reset other requests to be empty.

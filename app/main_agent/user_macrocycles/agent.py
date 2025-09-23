@@ -67,34 +67,6 @@ class SubAgent(BaseAgent):
     def focus_list_retriever_agent(self, user_id):
         return [current_macrocycle(user_id)]
 
-    # Items extracted from the goal classifier
-    def goal_classifier_parser(self, focus_names, goal_class):
-        return {
-            focus_names["is_requested"]: goal_class.is_requested,
-            focus_names["is_altered"]: True,
-            focus_names["read_plural"]: False,
-            focus_names["read_current"]: False, 
-            focus_names["detail"]: goal_class.detail, 
-            "other_requests": goal_class.other_requests, 
-            "macrocycle_alter_old": goal_class.alter_old or False
-        }
-
-    # Perform the goal change to the desired ID.
-    def perform_goal_change_by_id(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Perform {self.sub_agent_title} ID Assignment---------")
-        goal_id = state[self.focus_names["perform_with_parent_id"]]
-        goal_entry_from_db = db.session.get(Goal_Library, goal_id)
-        goal = goal_entry_from_db.to_dict()
-
-        user_id = state["user_id"]
-        user_macrocycle = current_macrocycle(user_id)
-        
-        return {
-            "user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None,
-            "goal_id": goal_id, 
-            self.focus_names["detail"]: goal["name"]
-        }
-
     # Classify the new goal in one of the possible goal types.
     def perform_input_parser(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Perform {self.sub_agent_title} Classifier---------")
@@ -183,8 +155,6 @@ class SubAgent(BaseAgent):
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
-        workflow.add_node("perform_goal_change_by_id", self.perform_goal_change_by_id)
-        workflow.add_node("alter_operation_uses_agent", self.chained_conditional_inbetween)
         workflow.add_node("ask_for_new_input", self.ask_for_new_input)
         workflow.add_node("perform_input_parser", self.perform_input_parser)
         workflow.add_node("create_new_macrocycle", self.create_new_macrocycle)
@@ -229,29 +199,9 @@ class SubAgent(BaseAgent):
             }
         )
 
-        # Whether goal should be changed to the included id.
-        workflow.add_conditional_edges(
-            "operation_is_alter",
-            confirm_if_performing_by_id, 
-            {
-                "no_direct_goal_id": "alter_operation_uses_agent",           # Perform LLM parser if no goal id is included.
-                "present_direct_goal_id": "perform_goal_change_by_id"             # Perform direct id assignment if a goal id is included.
-            }
-        )
-
-        # Whether the intention is to alter the current macrocycle or to create a new one.
-        workflow.add_conditional_edges(
-            "perform_goal_change_by_id",
-            which_operation,
-            {
-                "alter_old_macrocycle": "retrieve_information",             # Alter the current macrocycle.
-                "create_new_macrocycle": "editor_agent_for_creation"        # Create a new macrocycle.
-            }
-        )
-
         # Whether there is a new goal to perform the change with.
         workflow.add_conditional_edges(
-            "alter_operation_uses_agent",
+            "operation_is_alter",
             confirm_new_input, 
             {
                 "no_new_input": "ask_for_new_input",                    # Request a new macrocycle goal if one isn't present.

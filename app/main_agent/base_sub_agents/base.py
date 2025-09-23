@@ -85,14 +85,20 @@ class BaseAgent():
 
     # Default items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
-        return {
-            focus_names["is_requested"]: goal_class.is_requested,
+        goal_class_dump = goal_class.model_dump()
+        parsed_goal = {
             focus_names["is_altered"]: True,
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False,
-            focus_names["detail"]: goal_class.detail,
-            "other_requests": goal_class.other_requests
+            "other_requests": goal_class_dump.pop("other_requests", None)
         }
+
+        # Alter the variables in the state to match those retrieved from the LLM.
+        for key, value in goal_class_dump.items():
+            if value is not None:
+                parsed_goal[focus_names[key]] = value
+
+        return parsed_goal
 
     # Retrieve user's current schedule item.
     def read_user_current_element(self, state):
