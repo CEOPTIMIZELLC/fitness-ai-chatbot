@@ -301,7 +301,7 @@ class SubAgent(BaseAgent):
             "editor_agent",
             confirm_regenerate, 
             {
-                "is_regenerated": "parent_agent",                       # Perform the scheduler again if regenerating.
+                "is_regenerated": "perform_scheduler",                  # Perform the scheduler again if regenerating.
                 "not_regenerated": "agent_output_to_sqlalchemy_model"   # The agent should move on to adding the information to the database.
             }
         )
