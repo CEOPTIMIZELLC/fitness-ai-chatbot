@@ -32,6 +32,11 @@ class SubAgent(EquipmentDetailsPrompt):
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
 
+    # Node to declare that the sub agent has ended.
+    def start_node(self, state):
+        LogMainSubAgent.agent_introductions(f"=========Starting {self.sub_agent_title} Creation SubAgent=========\n")
+        return {}
+
     def system_prompt_constructor(self, state):
         available_equipment = list_to_str_for_prompt(state["available_equipment"], newline=True)
         return self.details_system_prompt_constructor(
@@ -39,11 +44,6 @@ class SubAgent(EquipmentDetailsPrompt):
             equipment_id = state.get("equipment_id"), 
             equipment_measurement = state.get("equipment_measurement")
         )
-
-    # Node to declare that the sub agent has ended.
-    def start_node(self, state):
-        LogMainSubAgent.agent_introductions(f"=========Starting {self.sub_agent_title} Creation SubAgent=========\n")
-        return {}
 
     # Request the details required to continue.
     def detail_extraction(self, state, user_input):
