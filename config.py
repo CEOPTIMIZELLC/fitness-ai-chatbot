@@ -39,7 +39,7 @@ confirm_invalid_schedule = True
 # Configurations for displayed information for logged schedules.
 class ScheduleDisplayConfig:
     # Whether the logged schedule should include the reason that an exercise has been included.
-    specific_true_exercise_flag = True
+    specific_true_exercise_flag = False
 
 # Configurations for exercise performance decay.
 class ExercisePerformanceDecayConfig:
