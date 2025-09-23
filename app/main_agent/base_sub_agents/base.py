@@ -21,8 +21,8 @@ def determine_if_delete(state):
         return "deletion"
     return "not_deletion"
 
-# Determine the operation to be performed.
-def determine_operation(state):
+# Determine if an item is to be altered.
+def determine_if_alter(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read or write {sub_agent_focus}---------")
     if state[f"{sub_agent_focus}_is_altered"]:

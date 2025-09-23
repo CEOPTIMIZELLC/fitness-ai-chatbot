@@ -11,7 +11,7 @@ from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_weekday_availability, current_microcycle
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_operation
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_read_operation
 from app.main_agent.base_sub_agents.without_parents import confirm_new_input
 from app.impact_goal_models import AvailabilityGoal
 from app.goal_prompts import availability_system_prompt
@@ -146,7 +146,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "impact_confirmed",
-            determine_operation, 
+            determine_if_alter, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "operation_is_alter"                           # In between step for if the operation is alter.

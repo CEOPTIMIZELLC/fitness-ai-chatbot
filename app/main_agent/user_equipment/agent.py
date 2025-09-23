@@ -4,7 +4,7 @@ from langgraph.graph import StateGraph, START, END
 from app.db_session import session_scope
 from app.models import Equipment_Library, User_Equipment
 
-from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_operation, determine_read_operation
+from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_if_alter, determine_read_operation
 
 from .agent_state import AgentState
 from .actions import filter_items_by_query
@@ -113,7 +113,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "operation_is_not_delete",
-            determine_operation, 
+            determine_if_alter, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "operation_is_alter"                           # In between step for if the operation is alter.

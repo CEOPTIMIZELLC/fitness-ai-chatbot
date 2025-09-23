@@ -17,7 +17,7 @@ from app.utils.common_table_queries import current_microcycle, current_workout_d
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
-from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_operation, determine_read_filter_operation
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_read_operation, determine_read_filter_operation
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.main_agent.base_sub_agents.with_availability import confirm_availability, confirm_availability_permission
 from app.main_agent.user_microcycles import create_microcycle_agent
@@ -240,7 +240,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "parent_retrieved",
-            determine_operation, 
+            determine_if_alter, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "retrieve_information"                         # Retrieve the information for the alteration.
