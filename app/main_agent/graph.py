@@ -8,6 +8,8 @@ from flask import current_app
 
 from app.goal_prompts import goal_extraction_system_prompt
 
+from .base_sub_agents.utils import user_input_information_extraction
+
 from .user_equipment import create_equipment_agent
 from .user_macrocycles import MacrocycleAgentNode
 from .user_mesocycles import create_mesocycle_agent
@@ -52,13 +54,6 @@ def reset_schedule_section(state, schedule_name):
     reset_schedule_item(state, f"{schedule_name}_perform_with_parent_id")
     return state
 
-# Extract the individual item
-def _user_input_sub_extraction(state, sub_agent_name, sub_agent_pydantic):
-    state[f"{sub_agent_name}_is_requested"] = sub_agent_pydantic["is_requested"]
-    state[f"{sub_agent_name}_is_altered"] = True
-    state[f"{sub_agent_name}_detail"] = sub_agent_pydantic["detail"]
-    return state
-
 # Confirm that the desired section should be impacted.
 def confirm_input(state):
     LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
@@ -101,27 +96,9 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         user_input = state["user_input"]
 
         LogMainAgent.verbose(f"Extract the goals from the following message: {user_input}")
-        human = f"Extract the goals from the following message: {user_input}"
-        # human = f"New_goal: {user_input}"
-        check_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", goal_extraction_system_prompt),
-                ("human", human),
-            ]
-        )
-        llm = ChatOpenAI(model=current_app.config["LANGUAGE_MODEL"], temperature=0)
-        structured_llm = llm.with_structured_output(RoutineImpactGoals)
-        goal_classifier = check_prompt | structured_llm
-        goal_class = goal_classifier.invoke({})
-
-        goal_class = goal_class.model_dump()
-
-        state["attempts"] = 1
-        for sub_agent_name in sub_agent_names:
-            state = _user_input_sub_extraction(state, sub_agent_name, goal_class[sub_agent_name])
-        state["macrocycle_alter_old"] = goal_class["macrocycle"]["alter_old"]
-        state["equipment_alter_old"] = goal_class["equipment"]["alter_old"]
-        state["equipment_delete_old"] = goal_class["equipment"]["delete_old"]
+        state_updates = user_input_information_extraction(user_input)
+        for key, value in state_updates.items():
+            state[key] = value
 
         LogMainAgent.input_info(f"Goals extracted.")
         for sub_agent_name in sub_agent_names:
