@@ -36,13 +36,6 @@ class SubAgent(BaseSubAgent, AvailabilityEditPrompt):
             schedule_item["weekday_name"] = weekday_entry.name
         return schedule_list
 
-    # Retrieves the fields from the Pydantic model output.
-    def edit_model_to_dict(self, goal_edit):
-        return {
-            self.schedule_id_key: goal_edit.id, 
-            "availability": goal_edit.availability, 
-        }
-
     # Specific code for extracting information from the edited schedule into the new one.
     def apply_edit_to_schedule_item(self, schedule_item, schedule_edit):
         schedule_item["availability"] = schedule_edit["availability"]

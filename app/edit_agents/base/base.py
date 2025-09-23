@@ -132,7 +132,21 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
     # Retrieves the fields from the Pydantic model output.
     def edit_model_to_dict(self, goal_edit):
-        pass
+        goal_edit_dump = goal_edit.model_dump()
+        parsed_edit = {
+            self.schedule_id_key: goal_edit_dump.pop("id", None)
+        }
+
+        # Alter the variables in the state to match those retrieved from the LLM.
+        for key, value in goal_edit_dump.items():
+            parsed_edit[key] = value
+        
+        print("Parsed Edit:")
+        for key, value in parsed_edit.items():
+            print(key, value)
+        print("")
+
+        return parsed_edit
 
     # Items extracted from the edit request.
     def goal_edits_parser(self, goal_edits=None):
