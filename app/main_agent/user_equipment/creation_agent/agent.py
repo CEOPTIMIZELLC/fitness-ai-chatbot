@@ -50,7 +50,6 @@ class SubAgent(EquipmentDetailsPrompt):
         LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         system_prompt = self.system_prompt_constructor(state)
-        LogMainSubAgent.system_message(system_prompt)
 
         # Retrieve the details.
         goal_class = new_input_request(user_input, system_prompt, self.details_goal)
