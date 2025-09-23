@@ -24,10 +24,18 @@ def determine_if_delete(state):
 # Determine if an item is to be altered.
 def determine_if_alter(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
-    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read or write {sub_agent_focus}---------")
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to write {sub_agent_focus}---------")
     if state[f"{sub_agent_focus}_is_altered"]:
         return "alter"
-    return "read"
+    return "not_alter"
+
+# Determine if an item is to be read.
+def determine_if_read(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read {sub_agent_focus}---------")
+    if state[f"{sub_agent_focus}_is_read"]:
+        return "read"
+    return "not_read"
 
 # Determine whether the outcome is to read the entire schedule or simply the current item.
 def determine_read_operation(state):

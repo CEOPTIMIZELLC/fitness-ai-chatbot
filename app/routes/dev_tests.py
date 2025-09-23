@@ -29,6 +29,7 @@ state_templates = {
     "alter": {
         "is_requested": True, 
         "is_altered": True, 
+        "is_read": True, 
         "read_plural": False, 
         "read_current": False, 
         "detail": "Perform", 
@@ -36,6 +37,7 @@ state_templates = {
     "current_list": {
         "is_requested": True, 
         "is_altered": False, 
+        "is_read": False, 
         "read_plural": False, 
         "read_current": True, 
         "detail": "Retrieve", 

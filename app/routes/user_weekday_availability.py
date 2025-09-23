@@ -17,6 +17,7 @@ def get_user_weekday_list():
         "user_id": current_user.id,
         "availability_is_requested": True,
         "availability_is_altered": False,
+        "availability_is_read": True,
         "availability_read_plural": True,
         "availability_read_current": True,
         "availability_detail": "Retrieve current availability"
@@ -37,6 +38,7 @@ def get_user_weekday_current_list():
         "user_id": current_user.id,
         "availability_is_requested": True,
         "availability_is_altered": False,
+        "availability_is_read": True,
         "availability_read_plural": True,
         "availability_read_current": True,
         "availability_detail": "Retrieve current availability"
@@ -57,6 +59,7 @@ def read_user_current_weekday():
         "user_id": current_user.id,
         "availability_is_requested": True,
         "availability_is_altered": False,
+        "availability_is_read": True,
         "availability_read_plural": False,
         "availability_read_current": True,
         "availability_detail": "Retrieve current availability"
@@ -85,6 +88,7 @@ def change_weekday_availability():
         "user_id": current_user.id,
         "availability_is_requested": True,
         "availability_is_altered": True,
+        "availability_is_read": True,
         "availability_read_plural": False,
         "availability_read_current": False,
         "availability_detail": data.get("availability", "")

@@ -17,6 +17,7 @@ def get_user_microcycles_list():
         "user_id": current_user.id,
         "microcycle_is_requested": True,
         "microcycle_is_altered": False,
+        "microcycle_is_read": True,
         "microcycle_read_plural": True,
         "microcycle_read_current": False,
         "microcycle_detail": "Perform microcycle scheduling."
@@ -35,6 +36,7 @@ def get_user_current_mesocycles_list():
         "user_id": current_user.id,
         "microcycle_is_requested": True,
         "microcycle_is_altered": False,
+        "microcycle_is_read": True,
         "microcycle_read_plural": True,
         "microcycle_read_current": True,
         "microcycle_detail": "Perform microcycle scheduling."
@@ -53,6 +55,7 @@ def read_user_current_microcycle():
         "user_id": current_user.id,
         "microcycle_is_requested": True,
         "microcycle_is_altered": False,
+        "microcycle_is_read": True,
         "microcycle_read_plural": False,
         "microcycle_read_current": True,
         "microcycle_detail": "Perform microcycle scheduling."
@@ -71,6 +74,7 @@ def microcycle_initializer():
         "user_id": current_user.id,
         "microcycle_is_requested": True,
         "microcycle_is_altered": True,
+        "microcycle_is_read": True,
         "microcycle_read_plural": False,
         "microcycle_read_current": False,
         "microcycle_detail": "Perform microcycle scheduling."
@@ -92,6 +96,7 @@ def microcycle_initializer_by_id(phase_id):
         "user_id": current_user.id,
         "microcycle_is_requested": True,
         "microcycle_is_altered": True,
+        "microcycle_is_read": True,
         "microcycle_read_plural": False,
         "microcycle_read_current": False,
         "microcycle_detail": "Perform microcycle scheduling.",

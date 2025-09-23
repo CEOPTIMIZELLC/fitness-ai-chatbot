@@ -21,6 +21,7 @@ def get_user_mesocycles_list():
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
         "mesocycle_is_altered": False,
+        "mesocycle_is_read": True,
         "mesocycle_read_plural": True,
         "mesocycle_read_current": False,
         "mesocycle_detail": "Retrieve mesocycle scheduling."
@@ -38,6 +39,7 @@ def get_user_current_mesocycles_list():
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
         "mesocycle_is_altered": False,
+        "mesocycle_is_read": True,
         "mesocycle_read_plural": True,
         "mesocycle_read_current": True,
         "mesocycle_detail": "Retrieve mesocycle scheduling."
@@ -55,6 +57,7 @@ def read_user_current_mesocycle():
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
         "mesocycle_is_altered": False,
+        "mesocycle_is_read": True,
         "mesocycle_read_plural": False,
         "mesocycle_read_current": True,
         "mesocycle_detail": "Retrieve mesocycle scheduling."
@@ -72,6 +75,7 @@ def mesocycle_phases():
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
         "mesocycle_is_altered": True,
+        "mesocycle_is_read": True,
         "mesocycle_read_plural": False,
         "mesocycle_read_current": False,
         "mesocycle_detail": "Perform mesocycle scheduling."
@@ -89,6 +93,7 @@ def add_mesocycle_phases_by_id(goal_id):
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
         "mesocycle_is_altered": True,
+        "mesocycle_is_read": True,
         "mesocycle_read_plural": False,
         "mesocycle_read_current": False,
         "mesocycle_detail": "Perform mesocycle scheduling.",

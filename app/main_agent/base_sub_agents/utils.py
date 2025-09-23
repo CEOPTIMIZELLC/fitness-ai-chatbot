@@ -28,6 +28,7 @@ def sub_agent_focused_items(sub_agent_focus):
         "id": f"{sub_agent_focus}_id", 
         "is_requested": f"{sub_agent_focus}_is_requested", 
         "is_altered": f"{sub_agent_focus}_is_altered", 
+        "is_read": f"{sub_agent_focus}_is_read", 
         "read_plural": f"{sub_agent_focus}_read_plural", 
         "read_current": f"{sub_agent_focus}_read_current", 
         "detail": f"{sub_agent_focus}_detail", 
@@ -65,6 +66,7 @@ def new_input_request(user_input, item_system_prompt, item_goal):
 def _user_input_sub_extraction(state, sub_agent_name, sub_agent_pydantic):
     state[f"{sub_agent_name}_is_requested"] = sub_agent_pydantic["is_requested"]
     state[f"{sub_agent_name}_is_altered"] = True
+    state[f"{sub_agent_name}_is_read"] = True
     state[f"{sub_agent_name}_detail"] = sub_agent_pydantic["detail"]
     return state
 
@@ -112,6 +114,7 @@ def update_state_schedule_section(state, old_state, updated_state, section, igno
         return state
     update_bool(state, old_state, updated_state, f"{section}_is_requested")
     update_bool(state, old_state, updated_state, f"{section}_is_altered")
+    update_bool(state, old_state, updated_state, f"{section}_is_read")
     update_val(state, old_state, updated_state, f"{section}_detail")
     return state
 

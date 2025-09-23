@@ -9,7 +9,7 @@ from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_read_operation, determine_read_filter_operation
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read, determine_read_operation, determine_read_filter_operation
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.impact_goal_models import MesocycleGoal
 from app.goal_prompts import mesocycle_system_prompt
@@ -125,6 +125,7 @@ class SubAgent(BaseAgent):
         workflow.add_node("parent_retrieved", self.parent_retrieved)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
@@ -155,16 +156,25 @@ class SubAgent(BaseAgent):
             }
         )
 
-        # Whether the goal is to read or alter user elements.
+        # Whether the goal is to alter user elements.
         workflow.add_conditional_edges(
             "parent_retrieved",
             determine_if_alter, 
             {
-                "read": "operation_is_read",                            # In between step for if the operation is read.
+                "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.
                 "alter": "retrieve_information"                         # Retrieve the information for the alteration.
             }
         )
 
+        # Whether the goal is to read user elements.
+        workflow.add_conditional_edges(
+            "operation_is_not_alter",
+            determine_if_read, 
+            {
+                "not_read": "end_node",                                 # End subagent if nothing is requested.
+                "read": "operation_is_read"                             # In between step for if the operation is read.
+            }
+        )
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",

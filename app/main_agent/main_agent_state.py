@@ -16,6 +16,7 @@ class MainAgentState(TypedDict):
 
     equipment_is_requested: bool
     equipment_is_altered: bool
+    equipment_is_read: bool
     equipment_read_plural: bool
     equipment_read_current: bool
     equipment_detail: str
@@ -26,6 +27,7 @@ class MainAgentState(TypedDict):
 
     availability_is_requested: bool
     availability_is_altered: bool
+    availability_is_read: bool
     availability_read_plural: bool
     availability_read_current: bool
     availability_detail: str
@@ -34,6 +36,7 @@ class MainAgentState(TypedDict):
 
     macrocycle_is_requested: bool
     macrocycle_is_altered: bool
+    macrocycle_is_read: bool
     macrocycle_read_plural: bool
     macrocycle_read_current: bool
     macrocycle_detail: str
@@ -43,6 +46,7 @@ class MainAgentState(TypedDict):
 
     mesocycle_is_requested: bool
     mesocycle_is_altered: bool
+    mesocycle_is_read: bool
     mesocycle_read_plural: bool
     mesocycle_read_current: bool
     mesocycle_detail: str
@@ -51,6 +55,7 @@ class MainAgentState(TypedDict):
 
     microcycle_is_requested: bool
     microcycle_is_altered: bool
+    microcycle_is_read: bool
     microcycle_read_plural: bool
     microcycle_read_current: bool
     microcycle_detail: str
@@ -59,6 +64,7 @@ class MainAgentState(TypedDict):
 
     phase_component_is_requested: bool
     phase_component_is_altered: bool
+    phase_component_is_read: bool
     phase_component_read_plural: bool
     phase_component_read_current: bool
     phase_component_detail: str
@@ -67,6 +73,7 @@ class MainAgentState(TypedDict):
 
     workout_schedule_is_requested: bool
     workout_schedule_is_altered: bool
+    workout_schedule_is_read: bool
     workout_schedule_read_plural: bool
     workout_schedule_read_current: bool
     workout_schedule_detail: str
@@ -75,6 +82,7 @@ class MainAgentState(TypedDict):
 
     workout_completion_is_requested: bool
     workout_completion_is_altered: bool
+    workout_completion_is_read: bool
     workout_completion_read_plural: bool
     workout_completion_read_current: bool
     workout_completion_detail: str

@@ -27,6 +27,7 @@ def get_user_workout_exercises_list():
         "user_id": current_user.id,
         "workout_schedule_is_requested": True,
         "workout_schedule_is_altered": False,
+        "workout_schedule_is_read": True,
         "workout_schedule_read_plural": True,
         "workout_schedule_read_current": False,
         "workout_schedule_detail": "Perform workout scheduling."
@@ -44,6 +45,7 @@ def get_user_current_exercises_list():
         "user_id": current_user.id,
         "workout_schedule_is_requested": True,
         "workout_schedule_is_altered": False,
+        "workout_schedule_is_read": True,
         "workout_schedule_read_plural": True,
         "workout_schedule_read_current": True,
         "workout_schedule_detail": "Perform workout scheduling."
@@ -61,6 +63,7 @@ def exercise_initializer():
         "user_id": current_user.id,
         "workout_schedule_is_requested": True,
         "workout_schedule_is_altered": True,
+        "workout_schedule_is_read": True,
         "workout_schedule_read_plural": False,
         "workout_schedule_read_current": False,
         "workout_schedule_detail": "Perform workout scheduling."
@@ -78,6 +81,7 @@ def complete_workout():
         "user_id": current_user.id,
         "workout_completion_is_requested": True,
         "workout_completion_is_altered": True,
+        "workout_completion_is_read": True,
         "workout_completion_read_plural": False,
         "workout_completion_read_current": False,
         "workout_completion_detail": "Perform workout scheduling."
@@ -97,11 +101,13 @@ def initialize_and_complete():
         "user_id": current_user.id,
         "workout_schedule_is_requested": True,
         "workout_schedule_is_altered": True,
+        "workout_schedule_is_read": True,
         "workout_schedule_read_plural": False,
         "workout_schedule_read_current": False,
         "workout_schedule_detail": "Perform workout scheduling.",
         "workout_completion_is_requested": True,
         "workout_completion_is_altered": True,
+        "workout_completion_is_read": True,
         "workout_completion_read_plural": False,
         "workout_completion_read_current": False,
         "workout_completion_detail": "Perform workout scheduling."

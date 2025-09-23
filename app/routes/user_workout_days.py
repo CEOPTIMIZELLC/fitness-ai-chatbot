@@ -23,6 +23,7 @@ def get_user_workout_days_list():
         "user_id": current_user.id,
         "phase_component_is_requested": True,
         "phase_component_is_altered": False,
+        "phase_component_is_read": True,
         "phase_component_read_plural": True,
         "phase_component_read_current": False,
         "phase_component_detail": "Perform phase component classification."
@@ -44,6 +45,7 @@ def get_user_current_workout_days_list():
         "user_id": current_user.id,
         "phase_component_is_requested": True,
         "phase_component_is_altered": False,
+        "phase_component_is_read": True,
         "phase_component_read_plural": True,
         "phase_component_read_current": True,
         "phase_component_detail": "Perform phase component classification."
@@ -65,6 +67,7 @@ def read_user_current_workout_day():
         "user_id": current_user.id,
         "phase_component_is_requested": True,
         "phase_component_is_altered": False,
+        "phase_component_is_read": True,
         "phase_component_read_plural": False,
         "phase_component_read_current": True,
         "phase_component_detail": "Perform phase component classification."
@@ -86,6 +89,7 @@ def workout_day_initializer():
         "user_id": current_user.id,
         "phase_component_is_requested": True,
         "phase_component_is_altered": True,
+        "phase_component_is_read": True,
         "phase_component_read_plural": False,
         "phase_component_read_current": False,
         "phase_component_detail": "Perform phase component classification."
@@ -103,6 +107,7 @@ def workout_day_initializer_by_id(phase_id):
         "user_id": current_user.id,
         "phase_component_is_requested": True,
         "phase_component_is_altered": True,
+        "phase_component_is_read": True,
         "phase_component_read_plural": False,
         "phase_component_read_current": False,
         "phase_component_detail": "Perform phase component classification.",

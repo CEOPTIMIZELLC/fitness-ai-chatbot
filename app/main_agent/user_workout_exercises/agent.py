@@ -12,7 +12,7 @@ from app.utils.common_table_queries import current_workout_day
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
-from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_read_filter_operation, confirm_regenerate
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read, determine_read_filter_operation, confirm_regenerate
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.main_agent.base_sub_agents.with_availability import confirm_availability, confirm_availability_permission
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
@@ -197,6 +197,7 @@ class SubAgent(BaseAgent):
         workflow.add_node("availability_permission_denied", self.availability_permission_denied)
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("delete_old_children", self.delete_old_children)
         workflow.add_node("perform_scheduler", self.perform_scheduler)
@@ -263,16 +264,25 @@ class SubAgent(BaseAgent):
         )
         workflow.add_edge("availability", "retrieve_parent")
 
-        # Whether the goal is to read or alter user elements.
+        # Whether the goal is to alter user elements.
         workflow.add_conditional_edges(
             "retrieve_information",
             determine_if_alter, 
             {
-                "read": "read_operation_is_plural",                     # In between step for if the read operation is plural.
+                "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.
                 "alter": "delete_old_children"                          # Delete the old children for the alteration.
             }
         )
 
+        # Whether the goal is to read user elements.
+        workflow.add_conditional_edges(
+            "operation_is_not_alter",
+            determine_if_read, 
+            {
+                "not_read": "end_node",                                 # End subagent if nothing is requested.
+                "read": "read_operation_is_plural"                      # In between step for if the read operation is plural.
+            }
+        )
         # Whether the plural list is for all of the elements or all elements belonging to the user.
         workflow.add_conditional_edges(
             "read_operation_is_plural",

@@ -18,6 +18,7 @@ class AgentNode():
                 "attempts": state["attempts"], 
                 "macrocycle_is_requested": state["macrocycle_is_requested"], 
                 "macrocycle_is_altered": state["macrocycle_is_altered"], 
+                "macrocycle_is_read": state["macrocycle_is_read"], 
                 "macrocycle_read_plural": state["macrocycle_read_plural"], 
                 "macrocycle_read_current": state["macrocycle_read_current"], 
                 "macrocycle_detail": state["macrocycle_detail"],
@@ -28,6 +29,7 @@ class AgentNode():
             result = {
                 "macrocycle_is_requested": False, 
                 "macrocycle_is_altered": False,
+                "macrocycle_is_read": False,
                 "macrocycle_read_plural": False, 
                 "macrocycle_read_current": False, 
                 "macrocycle_detail": None, 
@@ -39,6 +41,7 @@ class AgentNode():
         return {
             "macrocycle_is_requested": result["macrocycle_is_requested"], 
             "macrocycle_is_altered": result["macrocycle_is_altered"], 
+            "macrocycle_is_read": result["macrocycle_is_read"], 
             "macrocycle_read_plural": result["macrocycle_read_plural"], 
             "macrocycle_read_current": result["macrocycle_read_current"], 
             "macrocycle_detail": result["macrocycle_detail"], 

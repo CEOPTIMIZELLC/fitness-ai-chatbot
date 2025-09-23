@@ -4,7 +4,7 @@ from langgraph.graph import StateGraph, START, END
 from app.db_session import session_scope
 from app.models import Equipment_Library, User_Equipment
 
-from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_if_alter, determine_read_operation
+from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_if_alter, determine_if_read, determine_read_operation
 
 from .agent_state import AgentState
 from .actions import filter_items_by_query
@@ -80,6 +80,7 @@ class SubAgent(BaseAgent):
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_not_delete", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_alter", self.operation_is_alter)
         workflow.add_node("operation_is_delete", self.operation_is_alter)
         workflow.add_node("create_new", creation_agent)
@@ -110,16 +111,25 @@ class SubAgent(BaseAgent):
         )
         workflow.add_edge("operation_is_delete", "delete_old")
 
-        # Whether the goal is to read or alter user elements.
+        # Whether the goal is to alter user elements.
         workflow.add_conditional_edges(
             "operation_is_not_delete",
             determine_if_alter, 
             {
-                "read": "operation_is_read",                            # In between step for if the operation is read.
+                "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.
                 "alter": "operation_is_alter"                           # In between step for if the operation is alter.
             }
         )
 
+        # Whether the goal is to read user elements.
+        workflow.add_conditional_edges(
+            "operation_is_not_alter",
+            determine_if_read, 
+            {
+                "not_read": "end_node",                                 # End subagent if nothing is requested.
+                "read": "operation_is_read"                             # In between step for if the operation is read.
+            }
+        )
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
