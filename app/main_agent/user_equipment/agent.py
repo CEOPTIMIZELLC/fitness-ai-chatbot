@@ -4,12 +4,13 @@ from langgraph.graph import StateGraph, START, END
 from app.db_session import session_scope
 from app.models import Equipment_Library, User_Equipment
 
-from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_operation, determine_read_operation
+from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_operation, determine_read_operation
 
 from .agent_state import AgentState
 from .actions import filter_items_by_query
 from .creation_agent import create_creation_agent
 from .altering_agent import create_altering_agent
+from .deletion_agent import create_deletion_agent
 from app.schedule_printers import EquipmentSchedulePrinter
 
 # Determine whether the outcome is to read the entire schedule or simply the current item.
@@ -72,14 +73,18 @@ class SubAgent(BaseAgent):
     def create_main_agent_graph(self, state_class):
         creation_agent = create_creation_agent()
         altering_agent = create_altering_agent()
+        deletion_agent = create_deletion_agent()
 
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
+        workflow.add_node("operation_is_not_delete", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_alter", self.operation_is_alter)
+        workflow.add_node("operation_is_delete", self.operation_is_alter)
         workflow.add_node("create_new", creation_agent)
         workflow.add_node("alter_old", altering_agent)
+        workflow.add_node("delete_old", deletion_agent)
         workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
@@ -97,13 +102,24 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "impact_confirmed",
+            determine_if_delete, 
+            {
+                "deletion": "operation_is_delete",                      # In between step for if the operation is delete.
+                "not_deletion": "operation_is_not_delete"               # In between step for if the operation is not delete.
+            }
+        )
+        workflow.add_edge("operation_is_delete", "delete_old")
+
+        # Whether the goal is to read or alter user elements.
+        workflow.add_conditional_edges(
+            "operation_is_not_delete",
             determine_operation, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "operation_is_alter"                           # In between step for if the operation is alter.
             }
         )
-    
+
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
@@ -119,8 +135,8 @@ class SubAgent(BaseAgent):
             "operation_is_alter",
             which_operation, 
             {
-                "create": "create_new",                                 # Create a new piece of equipment.
-                "alter": "alter_old"                                    # Alter an old piece of equipment. 
+                "create": "create_new",                                 # Create a new item.
+                "alter": "alter_old"                                    # Alter an old item. 
             }
         )
 

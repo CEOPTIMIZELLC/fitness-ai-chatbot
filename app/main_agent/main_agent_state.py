@@ -22,6 +22,7 @@ class MainAgentState(TypedDict):
     equipment_formatted: str
     equipment_perform_with_parent_id: int
     equipment_alter_old: bool
+    equipment_delete_old: bool
 
     availability_is_requested: bool
     availability_is_altered: bool
