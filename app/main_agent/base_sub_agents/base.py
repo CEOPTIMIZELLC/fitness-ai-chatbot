@@ -13,6 +13,14 @@ def confirm_impact(state):
         return "no_impact"
     return "impact"
 
+# Determine if an item is to be deleted.
+def determine_if_delete(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to delete {sub_agent_focus}---------")
+    if state[f"{sub_agent_focus}_delete_old"]:
+        return "deletion"
+    return "not_deletion"
+
 # Determine the operation to be performed.
 def determine_operation(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
