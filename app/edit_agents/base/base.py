@@ -140,11 +140,6 @@ class BaseSubAgent(ScheduleFormatterMethods):
         # Alter the variables in the state to match those retrieved from the LLM.
         for key, value in goal_edit_dump.items():
             parsed_edit[key] = value
-        
-        print("Parsed Edit:")
-        for key, value in parsed_edit.items():
-            print(key, value)
-        print("")
 
         return parsed_edit
 
