@@ -68,6 +68,24 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         parent_db_entry.goal_id = new_parent_id
         return parent_db_entry
 
+    # Default items extracted from the goal classifier
+    def goal_classifier_parser(self, focus_names, goal_class):
+        goal_class_dump = goal_class.model_dump()
+        parsed_goal = {
+            focus_names["is_altered"]: True,
+            focus_names["read_plural"]: False,
+            focus_names["read_current"]: False,
+            "macrocycle_alter_old": goal_class_dump.pop("alter_old", False), 
+            "other_requests": goal_class_dump.pop("other_requests", None)
+        }
+
+        # Alter the variables in the state to match those retrieved from the LLM.
+        for key, value in goal_class_dump.items():
+            if value is not None:
+                parsed_goal[focus_names[key]] = value
+
+        return parsed_goal
+
     # Request is unique for Macrocycle for Mesocycle
     def parent_requests_extraction(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests---------")
