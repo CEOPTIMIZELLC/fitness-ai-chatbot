@@ -22,6 +22,7 @@ from app.schedule_printers import AvailabilitySchedulePrinter
 from app.agent_states.availability import AgentState
 
 from app.altering_agents.availability.agent import create_main_agent_graph as create_altering_agent
+from app.reading_agents.availability.agent import create_main_agent_graph as create_reading_agent
 
 # ----------------------------------------- User Availability -----------------------------------------
 
@@ -33,6 +34,7 @@ class SubAgent(BaseAgent):
     focus_edit_agent = create_availability_edit_agent()
     schedule_printer_class = AvailabilitySchedulePrinter()
     altering_agent = create_altering_agent()
+    reading_agent = create_reading_agent()
 
     def user_list_query(self, user_id):
         return (
@@ -106,11 +108,9 @@ class SubAgent(BaseAgent):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
-        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
         workflow.add_node("altering_agent", self.altering_agent)
-        workflow.add_node("read_user_current_element", self.read_user_current_element)
-        workflow.add_node("get_formatted_list", self.get_formatted_list)
+        workflow.add_node("reading_agent", self.reading_agent)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -140,22 +140,12 @@ class SubAgent(BaseAgent):
             determine_if_read, 
             {
                 "not_read": "end_node",                                 # End subagent if nothing is requested.
-                "read": "operation_is_read"                             # In between step for if the operation is read.
+                "read": "reading_agent"                                 # Start reading subagent.
             }
         )    
-        # Whether the read operations is for a single element or plural elements.
-        workflow.add_conditional_edges(
-            "operation_is_read",
-            determine_read_operation, 
-            {
-                "plural": "get_formatted_list",                         # Read the current schedule.
-                "singular": "read_user_current_element"                 # Read the current element.
-            }
-        )
 
         workflow.add_edge("altering_agent", "end_node")
-        workflow.add_edge("read_user_current_element", "end_node")
-        workflow.add_edge("get_formatted_list", "end_node")
+        workflow.add_edge("reading_agent", "end_node")
         workflow.add_edge("end_node", END)
 
         return workflow.compile()

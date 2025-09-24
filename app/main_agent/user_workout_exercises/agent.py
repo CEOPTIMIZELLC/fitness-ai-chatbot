@@ -26,6 +26,7 @@ from app.schedule_printers import WorkoutScheduleListPrinter
 from app.agent_states.workout_schedule import AgentState
 
 from app.altering_agents.workout_schedule.agent import create_main_agent_graph as create_altering_agent
+from app.reading_agents.workout_schedule.agent import create_main_agent_graph as create_reading_agent
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
@@ -41,6 +42,7 @@ class SubAgent(BaseAgent):
     schedule_printer_class = WorkoutScheduleSchedulePrinter()
     list_printer_class = WorkoutScheduleListPrinter()
     altering_agent = create_altering_agent()
+    reading_agent = create_reading_agent()
 
     # Retrieve the Exercises belonging to the Workout.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -187,12 +189,9 @@ class SubAgent(BaseAgent):
         workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
         workflow.add_node("availability_permission_denied", self.availability_permission_denied)
         workflow.add_node("availability", self.availability_node)
-        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
         workflow.add_node("altering_agent", self.altering_agent)
+        workflow.add_node("reading_agent", self.reading_agent)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
-        workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("get_formatted_list", self.get_formatted_list)
-        workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -268,26 +267,14 @@ class SubAgent(BaseAgent):
             determine_if_read, 
             {
                 "not_read": "end_node",                                 # End subagent if nothing is requested.
-                "read": "retrieve_information"                          # Retrieve the information for the reading.
-            }
-        )
-        workflow.add_edge("retrieve_information", "read_operation_is_plural")
-
-        # Whether the plural list is for all of the elements or all elements belonging to the user.
-        workflow.add_conditional_edges(
-            "read_operation_is_plural",
-            determine_read_filter_operation, 
-            {
-                "current": "get_formatted_list",                        # Read the current schedule.
-                "all": "get_user_list"                                  # Read all user elements.
+                "read": "reading_agent"                                 # Start reading subagent.
             }
         )
 
         workflow.add_edge("altering_agent", "end_node")
+        workflow.add_edge("reading_agent", "end_node")
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("availability_permission_denied", "end_node")
-        workflow.add_edge("get_formatted_list", "end_node")
-        workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
         return workflow.compile()

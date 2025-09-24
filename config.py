@@ -167,6 +167,21 @@ class AlteringAgentVerbosityConfig:
     formatted_schedule = True
 
 
+# Logging configurations options for the reading agents.
+class ReadingAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the sub agents.
+    agent_introductions = True
+
+    # Log node introductions in the sub agents.
+    agent_steps = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+
 # Logging configurations options for the editor agents.
 class EditorAgentVerbosityConfig:
     # Log any items in this configuration set.

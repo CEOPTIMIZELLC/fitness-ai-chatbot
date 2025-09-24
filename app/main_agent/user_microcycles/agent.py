@@ -19,6 +19,7 @@ from app.schedule_printers import MicrocycleSchedulePrinter
 from app.agent_states.microcycles import AgentState
 
 from app.altering_agents.microcycles.agent import create_main_agent_graph as create_altering_agent
+from app.reading_agents.microcycles.agent import create_main_agent_graph as create_reading_agent
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 
@@ -32,6 +33,7 @@ class SubAgent(BaseAgent):
     parent_scheduler_agent = create_mesocycle_agent()
     schedule_printer_class = MicrocycleSchedulePrinter()
     altering_agent = create_altering_agent()
+    reading_agent = create_reading_agent()
 
     # Retrieve the Microcycles belonging to the Mesocycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -118,13 +120,9 @@ class SubAgent(BaseAgent):
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("parent_retrieved", self.parent_retrieved)
-        workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
-        workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
         workflow.add_node("altering_agent", self.altering_agent)
+        workflow.add_node("reading_agent", self.reading_agent)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
-        workflow.add_node("read_user_current_element", self.read_user_current_element)
-        workflow.add_node("get_formatted_list", self.get_formatted_list)
-        workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -164,26 +162,7 @@ class SubAgent(BaseAgent):
             determine_if_read, 
             {
                 "not_read": "end_node",                                 # End subagent if nothing is requested.
-                "read": "operation_is_read"                             # In between step for if the operation is read.
-            }
-        )
-        # Whether the read operations is for a single element or plural elements.
-        workflow.add_conditional_edges(
-            "operation_is_read",
-            determine_read_operation, 
-            {
-                "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
-                "singular": "read_user_current_element"                 # Read the current element.
-            }
-        )
-
-        # Whether the plural list is for all of the elements or all elements belonging to the user.
-        workflow.add_conditional_edges(
-            "read_operation_is_plural",
-            determine_read_filter_operation, 
-            {
-                "current": "get_formatted_list",                        # Read the current schedule.
-                "all": "get_user_list"                                  # Read all user elements.
+                "read": "reading_agent"                                 # Start reading subagent.
             }
         )
 
@@ -200,10 +179,8 @@ class SubAgent(BaseAgent):
         workflow.add_edge("parent_agent", "retrieve_parent")
 
         workflow.add_edge("altering_agent", "end_node")
+        workflow.add_edge("reading_agent", "end_node")
         workflow.add_edge("permission_denied", "end_node")
-        workflow.add_edge("read_user_current_element", "end_node")
-        workflow.add_edge("get_formatted_list", "end_node")
-        workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
         return workflow.compile()
