@@ -34,6 +34,8 @@ from app.schedule_printers import PhaseComponentSchedulePrinter
 
 from app.agent_states.phase_components import AgentState
 
+from app.altering_agents.phase_components.agent import create_main_agent_graph as create_altering_agent
+
 # ----------------------------------------- User Workout Days -----------------------------------------
 
 class SubAgent(BaseAgent):
@@ -45,6 +47,7 @@ class SubAgent(BaseAgent):
     parent_goal = MicrocycleGoal
     parent_scheduler_agent = create_microcycle_agent()
     schedule_printer_class = PhaseComponentSchedulePrinter()
+    altering_agent = create_altering_agent()
 
     # Retrieve the Workout Days belonging to the Microcycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -167,11 +170,8 @@ class SubAgent(BaseAgent):
         workflow.add_node("parent_retrieved", self.parent_retrieved)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
+        workflow.add_node("altering_agent", self.altering_agent)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
-        workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("delete_old_children", self.delete_old_children)
-        workflow.add_node("perform_scheduler", self.perform_scheduler)
-        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("get_user_list", self.get_user_list)
@@ -226,7 +226,7 @@ class SubAgent(BaseAgent):
             determine_if_alter, 
             {
                 "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.
-                "alter": "retrieve_information"                         # Retrieve the information for the alteration.
+                "alter": "altering_agent"                               # Start altering subagent.
             }
         )
 
@@ -271,10 +271,7 @@ class SubAgent(BaseAgent):
         )
         workflow.add_edge("parent_agent", "retrieve_parent")
 
-        workflow.add_edge("retrieve_information", "delete_old_children")
-        workflow.add_edge("delete_old_children", "perform_scheduler")
-        workflow.add_edge("perform_scheduler", "agent_output_to_sqlalchemy_model")
-        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
+        workflow.add_edge("altering_agent", "end_node")
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("availability_permission_denied", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")

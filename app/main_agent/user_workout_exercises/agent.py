@@ -25,6 +25,8 @@ from app.schedule_printers import WorkoutScheduleListPrinter
 
 from app.agent_states.workout_schedule import AgentState
 
+from app.altering_agents.workout_schedule.agent import create_main_agent_graph as create_altering_agent
+
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
 class SubAgent(BaseAgent):
@@ -38,6 +40,7 @@ class SubAgent(BaseAgent):
     focus_edit_agent = create_workout_edit_agent()
     schedule_printer_class = WorkoutScheduleSchedulePrinter()
     list_printer_class = WorkoutScheduleListPrinter()
+    altering_agent = create_altering_agent()
 
     # Retrieve the Exercises belonging to the Workout.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -180,16 +183,14 @@ class SubAgent(BaseAgent):
         workflow.add_node("parent_retrieved", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_availability", self.retrieve_availability)
         workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
+        workflow.add_node("availability_found", self.chained_conditional_inbetween)
         workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
         workflow.add_node("availability_permission_denied", self.availability_permission_denied)
         workflow.add_node("availability", self.availability_node)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
+        workflow.add_node("altering_agent", self.altering_agent)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
         workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("delete_old_children", self.delete_old_children)
-        workflow.add_node("perform_scheduler", self.perform_scheduler)
-        workflow.add_node("editor_agent", self.focus_edit_agent)
-        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
@@ -235,7 +236,7 @@ class SubAgent(BaseAgent):
             confirm_availability, 
             {
                 "no_availability": "ask_for_availability_permission",   # No parent element exists.
-                "availability": "retrieve_information"                  # Retrieve the information for the alteration.
+                "availability": "availability_found"                    # Retrieve the information for the alteration.
             }
         )
 
@@ -253,11 +254,11 @@ class SubAgent(BaseAgent):
 
         # Whether the goal is to alter user elements.
         workflow.add_conditional_edges(
-            "retrieve_information",
+            "availability_found",
             determine_if_alter, 
             {
                 "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.
-                "alter": "delete_old_children"                          # Delete the old children for the alteration.
+                "alter": "altering_agent"                               # Start altering subagent.
             }
         )
 
@@ -267,9 +268,11 @@ class SubAgent(BaseAgent):
             determine_if_read, 
             {
                 "not_read": "end_node",                                 # End subagent if nothing is requested.
-                "read": "read_operation_is_plural"                      # In between step for if the read operation is plural.
+                "read": "retrieve_information"                          # Retrieve the information for the reading.
             }
         )
+        workflow.add_edge("retrieve_information", "read_operation_is_plural")
+
         # Whether the plural list is for all of the elements or all elements belonging to the user.
         workflow.add_conditional_edges(
             "read_operation_is_plural",
@@ -280,20 +283,7 @@ class SubAgent(BaseAgent):
             }
         )
 
-        workflow.add_edge("delete_old_children", "perform_scheduler")
-        workflow.add_edge("perform_scheduler", "editor_agent")
-
-        # Whether the scheduler should be performed again.
-        workflow.add_conditional_edges(
-            "editor_agent",
-            confirm_regenerate, 
-            {
-                "is_regenerated": "perform_scheduler",                  # Perform the scheduler again if regenerating.
-                "not_regenerated": "agent_output_to_sqlalchemy_model"   # The agent should move on to adding the information to the database.
-            }
-        )
-
-        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
+        workflow.add_edge("altering_agent", "end_node")
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("availability_permission_denied", "end_node")
         workflow.add_edge("get_formatted_list", "end_node")

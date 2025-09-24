@@ -20,6 +20,8 @@ from app.main_agent.utils import construct_phases_list
 from app.schedule_printers import MesocycleSchedulePrinter
 from app.agent_states.mesocycles import AgentState
 
+from app.altering_agents.mesocycles.agent import create_main_agent_graph as create_altering_agent
+
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
 macrocycle_weeks = 26
@@ -34,6 +36,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
     parent_scheduler_agent = MacrocycleAgentNode.macrocycle_node
     focus_edit_agent = create_mesocycle_edit_agent()
     schedule_printer_class = MesocycleSchedulePrinter()
+    altering_agent = create_altering_agent()
 
     # Retrieve the Mesocycles belonging to the Macrocycle.
     def retrieve_children_entries_from_parent(self, parent_db_entry):
@@ -168,12 +171,8 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         workflow.add_node("parent_retrieved", self.parent_retrieved)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("read_operation_is_plural", self.chained_conditional_inbetween)
+        workflow.add_node("altering_agent", self.altering_agent)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
-        workflow.add_node("retrieve_information", self.retrieve_information)
-        workflow.add_node("delete_old_children", self.delete_old_children)
-        workflow.add_node("perform_scheduler", self.perform_scheduler)
-        workflow.add_node("editor_agent", self.focus_edit_agent)
-        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
         workflow.add_node("get_user_list", self.get_user_list)
@@ -206,7 +205,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
             determine_if_alter, 
             {
                 "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.
-                "alter": "retrieve_information"                         # Retrieve the information for the alteration.
+                "alter": "altering_agent"                               # Start altering subagent.
             }
         )
 
@@ -251,21 +250,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         )
         workflow.add_edge("parent_agent", "retrieve_parent")
 
-        workflow.add_edge("retrieve_information", "delete_old_children")
-        workflow.add_edge("delete_old_children", "perform_scheduler")
-        workflow.add_edge("perform_scheduler", "editor_agent")
-
-        # Whether the scheduler should be performed again.
-        workflow.add_conditional_edges(
-            "editor_agent",
-            confirm_regenerate, 
-            {
-                "is_regenerated": "perform_scheduler",                  # Perform the scheduler again if regenerating.
-                "not_regenerated": "agent_output_to_sqlalchemy_model"   # The agent should move on to adding the information to the database.
-            }
-        )
-
-        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
+        workflow.add_edge("altering_agent", "end_node")
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")
         workflow.add_edge("get_formatted_list", "end_node")

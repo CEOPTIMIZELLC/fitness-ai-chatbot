@@ -7,6 +7,7 @@ from config import (
     DatabaseInitVerbosityConfig, 
     MainAgentVerbosityConfig, 
     MainSubAgentVerbosityConfig, 
+    AlteringAgentVerbosityConfig, 
     EditorAgentVerbosityConfig, 
     SchedulerVerbosityConfig, 
     SchedulerPreProcessingVerbosityConfig
@@ -65,6 +66,14 @@ class LogMainSubAgent:
     system_message = partial(verbose_log, MainSubAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
     agent_path = partial(verbose_log, MainSubAgentVerbosityConfig.agent_path)
+
+class LogAlteringAgent:
+    verbose = partial(verbose_log, AlteringAgentVerbosityConfig.verbose)
+    agent_introductions = partial(verbose_log, AlteringAgentVerbosityConfig.agent_introductions)
+    agent_steps = partial(verbose_log, AlteringAgentVerbosityConfig.agent_steps)
+    agent_output = partial(verbose_log, AlteringAgentVerbosityConfig.agent_output)
+    system_message = partial(verbose_log, AlteringAgentVerbosityConfig.system_message)
+    formatted_schedule = partial(verbose_log, AlteringAgentVerbosityConfig.formatted_schedule)
 
 class LogEditorAgent:
     verbose = partial(verbose_log, EditorAgentVerbosityConfig.verbose)

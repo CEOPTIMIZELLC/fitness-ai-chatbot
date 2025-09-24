@@ -143,6 +143,30 @@ class MainSubAgentVerbosityConfig:
     agent_path = True
 
 
+# Logging configurations options for the altering agents.
+class AlteringAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the sub agents.
+    agent_introductions = True
+
+    # Log node introductions in the sub agents.
+    agent_steps = True
+
+    # Log the output of the sub agents.
+    agent_output = True
+
+    # Log system messages for LLM calls in the sub agent.
+    system_message = False
+
+    # Log the parsed user input for the sub agents.
+    parsed_goal = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+
 # Logging configurations options for the editor agents.
 class EditorAgentVerbosityConfig:
     # Log any items in this configuration set.

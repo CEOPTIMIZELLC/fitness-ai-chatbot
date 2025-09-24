@@ -21,6 +21,8 @@ from app.schedule_printers import AvailabilitySchedulePrinter
 
 from app.agent_states.availability import AgentState
 
+from app.altering_agents.availability.agent import create_main_agent_graph as create_altering_agent
+
 # ----------------------------------------- User Availability -----------------------------------------
 
 class SubAgent(BaseAgent):
@@ -30,6 +32,7 @@ class SubAgent(BaseAgent):
     focus_goal = AvailabilityGoal
     focus_edit_agent = create_availability_edit_agent()
     schedule_printer_class = AvailabilitySchedulePrinter()
+    altering_agent = create_altering_agent()
 
     def user_list_query(self, user_id):
         return (
@@ -105,15 +108,9 @@ class SubAgent(BaseAgent):
         workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_read", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
-        workflow.add_node("operation_is_alter", self.chained_conditional_inbetween)
-        workflow.add_node("ask_for_new_input", self.ask_for_new_input)
-        workflow.add_node("perform_input_parser", self.perform_input_parser)
-        workflow.add_node("editor_agent", self.focus_edit_agent)
-        workflow.add_node("delete_old_children", self.delete_old_children)
-        workflow.add_node("agent_output_to_sqlalchemy_model", self.agent_output_to_sqlalchemy_model)
+        workflow.add_node("altering_agent", self.altering_agent)
         workflow.add_node("read_user_current_element", self.read_user_current_element)
         workflow.add_node("get_formatted_list", self.get_formatted_list)
-        workflow.add_node("no_new_input_requested", self.no_new_input_requested)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -133,7 +130,7 @@ class SubAgent(BaseAgent):
             determine_if_alter, 
             {
                 "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.
-                "alter": "operation_is_alter"                           # In between step for if the operation is alter.
+                "alter": "altering_agent"                               # Start altering subagent.
             }
         )
 
@@ -156,31 +153,7 @@ class SubAgent(BaseAgent):
             }
         )
 
-        # Whether there is a new goal to perform the change with.
-        workflow.add_conditional_edges(
-            "operation_is_alter",
-            confirm_new_input, 
-            {
-                "no_new_input": "ask_for_new_input",                    # Request a new input to parse availability from if one isn't present.
-                "present_new_input": "delete_old_children"              # Delete the old children for the alteration if a goal was given.
-            }
-        )
-
-        # Whether there is a new goal to perform the change with.
-        workflow.add_conditional_edges(
-            "ask_for_new_input",
-            confirm_new_input, 
-            {
-                "no_new_input": "no_new_input_requested",               # Indicate that no new goal was given.
-                "present_new_input": "delete_old_children"              # Delete the old children for the alteration if a goal was given.
-            }
-        )
-
-        workflow.add_edge("delete_old_children", "perform_input_parser")
-        workflow.add_edge("perform_input_parser", "editor_agent")
-        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
-        workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
-        workflow.add_edge("no_new_input_requested", "end_node")
+        workflow.add_edge("altering_agent", "end_node")
         workflow.add_edge("read_user_current_element", "end_node")
         workflow.add_edge("get_formatted_list", "end_node")
         workflow.add_edge("end_node", END)
