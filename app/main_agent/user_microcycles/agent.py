@@ -1,20 +1,13 @@
-from logging_config import LogMainSubAgent
-from datetime import timedelta
-
 from langgraph.graph import StateGraph, START, END
 
-from app import db
-from app.models import User_Microcycles, User_Mesocycles, User_Macrocycles
-from app.utils.common_table_queries import current_mesocycle, current_microcycle
+from app.utils.common_table_queries import current_mesocycle
 
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read, determine_read_operation, determine_read_filter_operation
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.impact_goal_models import MesocycleGoal
 from app.goal_prompts import mesocycle_system_prompt
 from app.main_agent.user_mesocycles import create_mesocycle_agent
-
-from app.schedule_printers import MicrocycleSchedulePrinter
 
 from app.agent_states.microcycles import AgentState
 
@@ -31,19 +24,8 @@ class SubAgent(BaseAgent):
     parent_system_prompt = mesocycle_system_prompt
     parent_goal = MesocycleGoal
     parent_scheduler_agent = create_mesocycle_agent()
-    schedule_printer_class = MicrocycleSchedulePrinter()
     altering_agent = create_altering_agent()
     reading_agent = create_reading_agent()
-
-    # Retrieve the Microcycles belonging to the Mesocycle.
-    def retrieve_children_entries_from_parent(self, parent_db_entry):
-        return parent_db_entry.microcycles
-
-    def user_list_query(self, user_id):
-        return User_Microcycles.query.join(User_Mesocycles).join(User_Macrocycles).filter_by(user_id=user_id).all()
-
-    def focus_retriever_agent(self, user_id):
-        return current_microcycle(user_id)
 
     def parent_retriever_agent(self, user_id):
         return current_mesocycle(user_id)
@@ -53,63 +35,6 @@ class SubAgent(BaseAgent):
         parent_db_entry = self.parent_retriever_agent(user_id)
         parent_db_entry.phase_id = new_parent_id
         return parent_db_entry
-
-    # Retrieve necessary information for the schedule creation.
-    def retrieve_information(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Microcycle Scheduling---------")
-        user_mesocycle = state["user_mesocycle"]
-
-        # Each microcycle must last 1 week.
-        microcycle_duration = timedelta(weeks=1)
-
-        # Find how many one week microcycles will be present in the mesocycle
-        microcycle_count = user_mesocycle["duration_days"] // microcycle_duration.days
-        microcycle_start = user_mesocycle["start_date"]
-
-        return {
-            "mesocycle_id": user_mesocycle["id"],
-            "microcycle_duration": microcycle_duration,
-            "microcycle_count": microcycle_count,
-            "start_date": microcycle_start
-        }
-
-    # Query to delete all old microcycles belonging to the current mesocycle.
-    def delete_children_query(self, parent_id):
-        db.session.query(User_Microcycles).filter_by(mesocycle_id=parent_id).delete()
-        db.session.commit()
-
-    # Initializes the microcycle schedule for the current mesocycle.
-    def perform_scheduler(self, state: AgentState):
-        return {}
-
-    # Initializes the microcycle schedule for the current mesocycle.
-    def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Perform Microcycle Scheduling---------")
-        mesocycle_id = state["mesocycle_id"]
-        microcycle_duration = state["microcycle_duration"]
-        microcycle_count = state["microcycle_count"]
-        microcycle_start = state["start_date"]
-
-        # Create a microcycle for each week in the mesocycle.
-        microcycles = []
-        for i in range(microcycle_count):
-            microcycle_end = microcycle_start + microcycle_duration
-            new_microcycle = User_Microcycles(
-                mesocycle_id = mesocycle_id,
-                order = i+1,
-                start_date = microcycle_start,
-                end_date = microcycle_end,
-            )
-
-            microcycles.append(new_microcycle)
-
-            # Shift the start of the next microcycle to be the end of the current.
-            microcycle_start = microcycle_end
-
-        db.session.add_all(microcycles)
-        db.session.commit()
-
-        return {}
 
     def create_main_agent_graph(self, state_class: type[AgentState]):
         workflow = StateGraph(state_class)

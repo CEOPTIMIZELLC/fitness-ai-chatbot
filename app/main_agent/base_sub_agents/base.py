@@ -67,19 +67,9 @@ class BaseAgent():
     sub_agent_title = ""
     focus_system_prompt = None
     focus_goal = None
-    schedule_printer_class = None
 
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
-
-    def user_list_query(self, user_id):
-        pass
-
-    def focus_retriever_agent(self, user_id):
-        pass
-
-    def focus_list_retriever_agent(self, user_id):
-        pass
 
     # In between node for chained conditional edges.
     def chained_conditional_inbetween(self, state):
@@ -115,55 +105,6 @@ class BaseAgent():
                 parsed_goal[focus_names[key]] = value
 
         return parsed_goal
-
-    # Retrieve user's current schedule item.
-    def read_user_current_element(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving Current {self.sub_agent_title} for User---------")
-        user_id = state["user_id"]
-
-        entry_from_db = self.focus_retriever_agent(user_id)
-        if not entry_from_db:
-            abort(404, description=f"No active {self.sub_agent_title} found.")
-
-        schedule_dict = [entry_from_db.to_dict()]
-        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogMainSubAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
-
-    # Print output.
-    def get_formatted_list(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
-        user_id = state["user_id"]
-        schedule_from_db = self.focus_list_retriever_agent(user_id)
-
-        schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
-
-        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogMainSubAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
-
-    # Print output.
-    def get_user_list(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving All {self.sub_agent_title} Schedules---------")
-        user_id = state["user_id"]
-
-        schedule_from_db = self.user_list_query(user_id)
-        if not schedule_from_db:
-            abort(404, description=f"No {self.focus}s found for the user.")
-
-        schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
-
-        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogMainSubAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
-
-    # Delete the old children belonging to the current item.
-    def delete_old_children(self, state):
-        pass
-
-    # Convert output from the agent to SQL models.
-    def agent_output_to_sqlalchemy_model(self, state):
-        pass
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):

@@ -2,21 +2,13 @@ from logging_config import LogMainSubAgent
 
 from langgraph.graph import StateGraph, START, END
 
-from app import db
-from app.solver_agents.goals import create_goal_classification_graph
 from app.db_session import session_scope
-from app.models import Goal_Library, User_Macrocycles, User_Mesocycles
-from app.utils.common_table_queries import current_macrocycle
+from app.models import User_Macrocycles
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read, determine_read_operation
-from app.main_agent.base_sub_agents.without_parents import confirm_if_performing_by_id, confirm_new_input
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read
 from app.impact_goal_models import MacrocycleGoal
 from app.goal_prompts import macrocycle_system_prompt
-from app.edit_agents import create_macrocycle_edit_agent
-
-from .actions import retrieve_goal_types
-from app.schedule_printers import MacrocycleSchedulePrinter
 
 from app.agent_states.macrocycles import AgentState
 
@@ -37,42 +29,8 @@ class SubAgent(BaseAgent):
     sub_agent_title = "Macrocycle"
     focus_system_prompt = macrocycle_system_prompt
     focus_goal = MacrocycleGoal
-    focus_edit_agent = create_macrocycle_edit_agent()
-    schedule_printer_class = MacrocycleSchedulePrinter()
     altering_agent = create_altering_agent()
     reading_agent = create_reading_agent()
-
-    def user_list_query(self, user_id):
-        return User_Macrocycles.query.filter_by(user_id=user_id).all()
-
-    def focus_retriever_agent(self, user_id):
-        return current_macrocycle(user_id)
-
-    def focus_list_retriever_agent(self, user_id):
-        return [current_macrocycle(user_id)]
-
-    # Classify the new goal in one of the possible goal types.
-    def perform_input_parser(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Perform {self.sub_agent_title} Classifier---------")
-        new_goal = state["macrocycle_detail"]
-
-        # There are only so many goal types a macrocycle can be classified as, with all of them being stored.
-        goal_types = retrieve_goal_types()
-        goal_app = create_goal_classification_graph()
-
-        user_id = state["user_id"]
-        user_macrocycle = current_macrocycle(user_id)
-
-        # Invoke with new macrocycle and possible goal types.
-        goal = goal_app.invoke({
-            "new_goal": new_goal, 
-            "goal_types": goal_types, 
-            "attempts": 0})
-        
-        return {
-            "user_macrocycle": user_macrocycle.to_dict() if user_macrocycle else None,
-            "goal_id": goal["goal_id"]
-        }
 
     # Creates the new macrocycle of the determined type.
     def create_new_macrocycle(self, state: AgentState):
@@ -92,25 +50,6 @@ class SubAgent(BaseAgent):
             payload = user_macrocycle.to_dict()
 
         return {"user_macrocycle": payload}
-
-    # Retrieve necessary information for the schedule creation.
-    def retrieve_information(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for Macrocycle Changing---------")
-        user_macrocycle = state["user_macrocycle"]
-        return {
-            "macrocycle_id": user_macrocycle["id"], 
-            "start_date": user_macrocycle["start_date"], 
-            "end_date": user_macrocycle["end_date"], 
-        }
-
-    # Delete the old children belonging to the current item.
-    def delete_old_children(self, state: AgentState):
-        LogMainSubAgent.agent_steps(f"\t---------Delete old items of current Macrocycle---------")
-        macrocycle_id = state["macrocycle_id"]
-        with session_scope() as s:
-            s.query(User_Mesocycles).filter_by(macrocycle_id=macrocycle_id).delete()
-        LogMainSubAgent.verbose("Successfully deleted")
-        return {}
 
     # Alters the current macrocycle to be the determined type.
     def alter_old_macrocycle(self, state: AgentState):

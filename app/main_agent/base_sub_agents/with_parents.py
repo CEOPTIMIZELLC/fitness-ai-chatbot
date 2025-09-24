@@ -54,16 +54,12 @@ class BaseAgentWithParents(BaseAgent):
     parent_system_prompt = None
     parent_goal = None
     parent_scheduler_agent = None
-    focus_edit_agent = None
 
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
         self.parent_names = sub_agent_focused_items(self.parent)
 
     def parent_retriever_agent(self, user_id):
-        pass
-
-    def retrieve_children_entries_from_parent(self, parent_db_entry):
         pass
 
     # Node to declare that the sub agent has begun.
@@ -83,15 +79,6 @@ class BaseAgentWithParents(BaseAgent):
             "parent_name": self.parent, 
             "agent_path": agent_path
         }
-
-    # Focus List Retriever uses the parent retriever and then retrieves the children from it.
-    def focus_list_retriever_agent(self, user_id):
-        parent_db_entry = self.parent_retriever_agent(user_id)
-
-        schedule_from_db = self.retrieve_children_entries_from_parent(parent_db_entry)
-        if not schedule_from_db:
-            abort(404, description=f"No {self.focus}s found for the {self.parent}.")
-        return schedule_from_db
 
     # Retrieve parent item that will be used for the current schedule.
     def retrieve_parent(self, state: TState):
@@ -174,22 +161,3 @@ class BaseAgentWithParents(BaseAgent):
         LogMainSubAgent.agent_steps(f"\t---------Abort {self.sub_agent_title} Scheduling---------")
         abort(404, description=f"No active {self.parent_title} found.")
         return {}
-
-    # Retrieve necessary information for the schedule creation.
-    def retrieve_information(self, state: TState):
-        pass
-
-    def delete_children_query(self, parent_id):
-        pass
-
-    # Delete the old items belonging to the parent.
-    def delete_old_children(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Delete old {self.sub_agent_title}s---------")
-        parent_id = state[self.parent_names["id"]]
-        self.delete_children_query(parent_id)
-        LogMainSubAgent.verbose("Successfully deleted")
-        return {}
-
-    # Initializes the scheduler for the current parent.
-    def perform_scheduler(self, state: TState):
-        pass
