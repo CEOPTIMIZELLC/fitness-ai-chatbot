@@ -7,24 +7,15 @@ from app.models import User_Exercises
 from app.utils.common_table_queries import current_workout_day
 
 from app.edit_agents import create_workout_completion_edit_agent
-from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.base import confirm_impact
 from app.main_agent.base_sub_agents.with_parents import confirm_parent
 
 from app.schedule_printers import WorkoutCompletionSchedulePrinter
 
-# ----------------------------------------- User Workout Completion -----------------------------------------
+from app.agent_states.workout_completion import AgentState
 
-class AgentState(MainAgentState):
-    focus_name: str
-    parent_name: str
-    user_workout_day: dict
-    workout_day_id: int
-    user_exercises: list
-    old_user_exercises: list
-    agent_output: list
-    schedule_printed: str
+# ----------------------------------------- User Workout Completion -----------------------------------------
 
 # Confirm that there is a workout to complete.
 def confirm_children(state: AgentState):

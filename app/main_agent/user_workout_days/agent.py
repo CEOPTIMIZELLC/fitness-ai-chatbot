@@ -15,7 +15,6 @@ from app.models import (
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 from app.utils.common_table_queries import current_microcycle, current_workout_day
 
-from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
 from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read, determine_read_operation, determine_read_filter_operation
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
@@ -33,26 +32,9 @@ from .actions import (
 )
 from app.schedule_printers import PhaseComponentSchedulePrinter
 
+from app.agent_states.phase_components import AgentState
+
 # ----------------------------------------- User Workout Days -----------------------------------------
-
-class AgentState(MainAgentState):
-    focus_name: str
-    parent_name: str
-
-    user_microcycle: dict
-    microcycle_id: int
-    phase_id: int
-    duration: any
-
-    microcycle_weekdays: list
-    user_availability: list
-    weekday_availability: list
-    number_of_available_weekdays: int
-    total_availability: int
-
-    start_date: any
-    agent_output: list
-    schedule_printed: str
 
 class SubAgent(BaseAgent):
     focus = "phase_component"

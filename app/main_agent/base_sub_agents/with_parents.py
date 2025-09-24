@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
 from app import db
-from app.main_agent.main_agent_state import MainAgentState
+from app.agent_states.main_agent_state import MainAgentState
 
 from .base import BaseAgent
 from .utils import retrieve_current_agent_focus, sub_agent_focused_items, new_input_request, user_input_information_extraction, agent_state_update

@@ -7,7 +7,6 @@ from app import db
 from app.models import User_Microcycles, User_Mesocycles, User_Macrocycles
 from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
-from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read, determine_read_operation, determine_read_filter_operation
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
@@ -17,16 +16,9 @@ from app.main_agent.user_mesocycles import create_mesocycle_agent
 
 from app.schedule_printers import MicrocycleSchedulePrinter
 
-# ----------------------------------------- User Microcycles -----------------------------------------
+from app.agent_states.microcycles import AgentState
 
-class AgentState(MainAgentState):
-    focus_name: str
-    parent_name: str
-    user_mesocycle: dict
-    mesocycle_id: int
-    microcycle_count: int
-    microcycle_duration: any
-    start_date: any
+# ----------------------------------------- User Microcycles -----------------------------------------
 
 class SubAgent(BaseAgent):
     focus = "microcycle"

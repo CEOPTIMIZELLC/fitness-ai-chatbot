@@ -7,12 +7,12 @@ from app.models import Equipment_Library
 from app.main_agent.base_sub_agents.utils import sub_agent_focused_items, new_input_request
 from app.utils.item_to_string import list_to_str_for_prompt
 
-from ..agent_state import AgentState
 from .actions import extract_sub_goal_class_info, filter_items_by_query, alter_singular
 from .goal_model import EquipmentGoal, EquipmentRequests
 from .prompt import EquipmentDetailsPrompt
 from app.schedule_printers import EquipmentSchedulePrinter
 
+from app.agent_states.equipment import AgentState
 
 # Determine if more details are required for the operation to occur.
 def are_more_details_needed(state: AgentState):

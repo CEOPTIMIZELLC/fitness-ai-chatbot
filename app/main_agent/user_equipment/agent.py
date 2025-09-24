@@ -6,12 +6,13 @@ from app.models import Equipment_Library, User_Equipment
 
 from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_if_alter, determine_if_read, determine_read_operation
 
-from .agent_state import AgentState
 from .actions import filter_items_by_query
 from .creation_agent import create_creation_agent
 from .altering_agent import create_altering_agent
 from .deletion_agent import create_deletion_agent
 from app.schedule_printers import EquipmentSchedulePrinter
+
+from app.agent_states.equipment import AgentState
 
 # Determine whether the outcome is to read the entire schedule or simply the current item.
 def which_operation(state: AgentState):

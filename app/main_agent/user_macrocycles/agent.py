@@ -1,5 +1,4 @@
 from logging_config import LogMainSubAgent
-from typing_extensions import TypedDict
 
 from langgraph.graph import StateGraph, START, END
 
@@ -19,30 +18,9 @@ from app.edit_agents import create_macrocycle_edit_agent
 from .actions import retrieve_goal_types
 from app.schedule_printers import MacrocycleSchedulePrinter
 
+from app.agent_states.macrocycles import AgentState
+
 # ----------------------------------------- User Macrocycles -----------------------------------------
-
-class AgentState(TypedDict):
-    user_id: int
-    focus_name: str
-    agent_path: list
-
-    user_input: str
-    attempts: int
-    other_requests: str
-
-    macrocycle_is_requested: bool
-    macrocycle_is_altered: bool
-    macrocycle_is_read: bool
-    macrocycle_read_plural: bool
-    macrocycle_read_current: bool
-    macrocycle_detail: str
-    macrocycle_formatted: str
-    macrocycle_perform_with_parent_id: int
-    macrocycle_alter_old: bool
-
-    user_macrocycle: dict
-    macrocycle_id: int
-    goal_id: int
 
 # Determine whether the current macrocycle should be edited or if a new one should be created.
 def which_operation(state: AgentState):

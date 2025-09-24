@@ -1,5 +1,4 @@
 from logging_config import LogMainSubAgent
-from typing_extensions import TypedDict
 from datetime import timedelta
 
 from langgraph.graph import StateGraph, START, END
@@ -20,26 +19,9 @@ from app.edit_agents import create_availability_edit_agent
 from .actions import retrieve_weekday_types, initialize_user_availability, update_user_availability
 from app.schedule_printers import AvailabilitySchedulePrinter
 
+from app.agent_states.availability import AgentState
+
 # ----------------------------------------- User Availability -----------------------------------------
-
-class AgentState(TypedDict):
-    user_id: int
-    focus_name: str
-    agent_path: list
-
-    user_input: str
-    attempts: int
-    other_requests: str
-
-    availability_is_requested: bool
-    availability_is_altered: bool
-    availability_is_read: bool
-    availability_read_plural: bool
-    availability_read_current: bool
-    availability_detail: str
-    availability_formatted: str
-
-    agent_output: list
 
 class SubAgent(BaseAgent):
     focus = "availability"

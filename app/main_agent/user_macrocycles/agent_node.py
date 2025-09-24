@@ -1,6 +1,6 @@
 from logging_config import LogMainSubAgent
 from typing_extensions import TypeVar
-from app.main_agent.main_agent_state import MainAgentState
+from app.agent_states.main_agent_state import MainAgentState
 
 from .agent import create_main_agent_graph
 
@@ -23,7 +23,7 @@ class AgentNode():
                 "macrocycle_read_current": state["macrocycle_read_current"], 
                 "macrocycle_detail": state["macrocycle_detail"],
                 "macrocycle_perform_with_parent_id": state["macrocycle_perform_with_parent_id"] if "macrocycle_perform_with_parent_id" in state else None,
-                "macrocycle_alter_old": state["macrocycle_alter_old"]
+                "macrocycle_alter_old": state.get("macrocycle_alter_old", False)
             })
         else:
             result = {
@@ -47,6 +47,6 @@ class AgentNode():
             "macrocycle_detail": result["macrocycle_detail"], 
             "macrocycle_perform_with_parent_id": result["macrocycle_perform_with_parent_id"] if "macrocycle_perform_with_parent_id" in result else None, 
             "macrocycle_formatted": result["macrocycle_formatted"], 
-            "macrocycle_alter_old": result["macrocycle_alter_old"], 
+            "macrocycle_alter_old": result.get("macrocycle_alter_old", False), 
             "macrocycle_other_requests": result.get("other_requests")
         }

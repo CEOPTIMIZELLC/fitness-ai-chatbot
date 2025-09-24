@@ -10,7 +10,6 @@ from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 from app.solver_agents.exercises import exercises_main
 from app.utils.common_table_queries import current_workout_day
 
-from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
 from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read, determine_read_filter_operation, confirm_regenerate
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
@@ -24,21 +23,9 @@ from .actions import retrieve_availability_for_day, retrieve_parameters
 from app.schedule_printers import WorkoutScheduleSchedulePrinter
 from app.schedule_printers import WorkoutScheduleListPrinter
 
+from app.agent_states.workout_schedule import AgentState
+
 # ----------------------------------------- User Workout Exercises -----------------------------------------
-
-class AgentState(MainAgentState):
-    focus_name: str
-    parent_name: str
-
-    user_phase_component: dict
-    phase_component_id: int
-    loading_system_id: int
-
-    user_availability: int
-    start_date: any
-    agent_output: list
-    should_regenerate: bool
-    schedule_printed: str
 
 class SubAgent(BaseAgent):
     focus = "workout_schedule"

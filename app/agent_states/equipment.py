@@ -1,4 +1,4 @@
-from app.main_agent.main_agent_state import MainAgentState
+from app.agent_states.main_agent_state import MainAgentState
 
 class AgentState(MainAgentState):
     focus_name: str

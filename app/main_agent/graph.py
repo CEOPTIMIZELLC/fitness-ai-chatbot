@@ -20,7 +20,7 @@ from .user_workout_completion import create_workout_completion_agent
 from .user_weekdays_availability import WeekdayAvailabilityAgentNode
 
 from app.impact_goal_models import RoutineImpactGoals
-from .main_agent_state import MainAgentState as AgentState
+from app.agent_states.main_agent_state import MainAgentState as AgentState
 
 sub_agent_names = [
     "equipment", 

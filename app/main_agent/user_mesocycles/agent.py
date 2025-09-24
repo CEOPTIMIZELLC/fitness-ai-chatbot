@@ -9,7 +9,6 @@ from app.solver_agents.phases import Main as phase_main
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 from app.main_agent.user_macrocycles import MacrocycleAgentNode
-from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read, determine_read_operation, determine_read_filter_operation, confirm_regenerate
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
@@ -19,24 +18,11 @@ from app.edit_agents import create_mesocycle_edit_agent
 from app.main_agent.utils import construct_phases_list
 
 from app.schedule_printers import MesocycleSchedulePrinter
+from app.agent_states.mesocycles import AgentState
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
 macrocycle_weeks = 26
-
-class AgentState(MainAgentState):
-    focus_name: str
-    parent_name: str
-
-    user_macrocycle: dict
-    macrocycle_id: int
-    goal_id: int
-    start_date: any
-    macrocycle_allowed_weeks: int
-    possible_phases: list
-    agent_output: list
-    should_regenerate: bool
-    schedule_printed: str
 
 class SubAgent(MacrocycleAgentNode, BaseAgent):
     focus = "mesocycle"
