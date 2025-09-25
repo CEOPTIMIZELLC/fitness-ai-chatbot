@@ -8,7 +8,7 @@ from .utils import retrieve_current_agent_focus, sub_agent_focused_items
 def confirm_impact(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Confirm that the {sub_agent_focus} is Impacted---------")
-    if not state[f"{sub_agent_focus}_is_requested"]:
+    if not state.get(f"{sub_agent_focus}_is_requested", False):
         LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
         return "no_impact"
     return "impact"
@@ -17,7 +17,7 @@ def confirm_impact(state):
 def determine_if_delete(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to delete {sub_agent_focus}---------")
-    if state[f"{sub_agent_focus}_delete_old"]:
+    if state.get(f"{sub_agent_focus}_delete_old", False):
         return "deletion"
     return "not_deletion"
 
@@ -25,7 +25,7 @@ def determine_if_delete(state):
 def determine_if_alter(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to write {sub_agent_focus}---------")
-    if state[f"{sub_agent_focus}_is_altered"]:
+    if state.get(f"{sub_agent_focus}_is_altered", False):
         return "alter"
     return "not_alter"
 
@@ -33,7 +33,7 @@ def determine_if_alter(state):
 def determine_if_read(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read {sub_agent_focus}---------")
-    if state[f"{sub_agent_focus}_is_read"]:
+    if state.get(f"{sub_agent_focus}_is_read", False):
         return "read"
     return "not_read"
 
@@ -41,7 +41,7 @@ def determine_if_read(state):
 def determine_read_operation(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read a list of {sub_agent_focus} or simply a singular item---------")
-    if state[f"{sub_agent_focus}_read_plural"]:
+    if state.get(f"{sub_agent_focus}_read_plural", False):
         return "plural"
     return "singular"
 
@@ -49,7 +49,7 @@ def determine_read_operation(state):
 def determine_read_filter_operation(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read all {sub_agent_focus} items for the user or only those currently active---------")
-    if state[f"{sub_agent_focus}_read_current"]:
+    if state.get(f"{sub_agent_focus}_read_current", False):
         return "current"
     return "all"
 
