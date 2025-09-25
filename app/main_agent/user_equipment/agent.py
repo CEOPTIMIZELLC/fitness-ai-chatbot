@@ -12,7 +12,6 @@ from app.schedule_printers import EquipmentSchedulePrinter
 from app.agent_states.equipment import AgentState
 
 from app.altering_agents.equipment.agent import create_main_agent_graph as create_altering_agent
-from app.creation_agents.equipment.agent import create_main_agent_graph as create_creation_agent
 from app.reading_agents.equipment.agent import create_main_agent_graph as create_reading_agent
 
 # Determine if more details are required for the operation to occur.
@@ -29,7 +28,6 @@ class SubAgent(BaseAgent):
     sub_agent_title = "Equipment"
     schedule_printer_class = EquipmentSchedulePrinter()
     altering_agent = create_altering_agent()
-    creation_agent = create_creation_agent()
     reading_agent = create_reading_agent()
 
     def focus_list_retriever_agent(self, user_id):
