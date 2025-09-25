@@ -32,7 +32,7 @@ class BaseAgent():
     
     # Node to declare that the sub agent has begun.
     def start_node(self, state):
-        LogAlteringAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} ALtering Agent=========")
+        LogAlteringAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Altering Agent=========")
         return {}
 
     # Delete the old children belonging to the current item.
@@ -57,7 +57,7 @@ class BaseAgent():
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
-        LogAlteringAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} ALtering Agent=========\n")
+        LogAlteringAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} Altering Agent=========\n")
         return {}
 
     # Create main agent.

@@ -43,7 +43,7 @@ class BaseAgent():
     
     # Node to declare that the sub agent has begun.
     def start_node(self, state):
-        LogReadingAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
+        LogReadingAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Reading Agent=========")
         return {}
 
     # Retrieve user's current schedule item.
@@ -87,7 +87,7 @@ class BaseAgent():
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
-        LogReadingAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
+        LogReadingAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} Reading Agent=========\n")
         return {}
 
     # Create main agent.
