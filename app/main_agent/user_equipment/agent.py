@@ -6,21 +6,14 @@ from app.models import Equipment_Library, User_Equipment
 
 from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_if_alter, determine_if_read
 
-from .actions import filter_items_by_query
 from .deletion_agent import create_deletion_agent
 from app.schedule_printers import EquipmentSchedulePrinter
 
 from app.agent_states.equipment import AgentState
 
 from app.altering_agents.equipment.agent import create_main_agent_graph as create_altering_agent
+from app.creation_agents.equipment.agent import create_main_agent_graph as create_creation_agent
 from app.reading_agents.equipment.agent import create_main_agent_graph as create_reading_agent
-
-# Determine whether the outcome is to read the entire schedule or simply the current item.
-def which_operation(state: AgentState):
-    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to create a new piece of equipment or alter an old one.---------")
-    if state["equipment_alter_old"]:
-        return "alter"
-    return "create"
 
 # Determine if more details are required for the operation to occur.
 def are_more_details_needed(state: AgentState):
@@ -36,6 +29,7 @@ class SubAgent(BaseAgent):
     sub_agent_title = "Equipment"
     schedule_printer_class = EquipmentSchedulePrinter()
     altering_agent = create_altering_agent()
+    creation_agent = create_creation_agent()
     reading_agent = create_reading_agent()
 
     def focus_list_retriever_agent(self, user_id):
