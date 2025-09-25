@@ -1,13 +1,16 @@
-from logging_config import LogAlteringAgent
+from logging_config import LogCreationAgent
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from app.models import Equipment_Library
+from app.db_session import session_scope
+from app.models import Equipment_Library, User_Equipment
 
-from app.main_agent.base_sub_agents.utils import sub_agent_focused_items, new_input_request
+from app.main_agent.base_sub_agents.utils import new_input_request
 from app.utils.item_to_string import list_to_str_for_prompt
 
-from .actions import create_singular
+from app.creation_agents.base_sub_agents.base import BaseAgent
+
+from .actions import filter_items_by_query, create_singular
 from .goal_model import EquipmentGoal
 from .prompt import EquipmentDetailsPrompt
 from app.schedule_printers import EquipmentSchedulePrinter
@@ -16,26 +19,36 @@ from app.agent_states.equipment import AgentState
 
 # Determine if more details are required for the operation to occur.
 def are_more_details_needed(state: AgentState):
-    LogAlteringAgent.agent_steps(f"\t---------Determine if more details are needed to continue.---------")
+    LogCreationAgent.agent_steps(f"\t---------Determine if more details are needed to continue.---------")
     if state["request_more_details"]:
-        LogAlteringAgent.agent_steps(f"\t---------More details are needed.---------")
+        LogCreationAgent.agent_steps(f"\t---------More details are needed.---------")
         return "need_more_details"
-    LogAlteringAgent.agent_steps(f"\t---------No more details are needed.---------")
+    LogCreationAgent.agent_steps(f"\t---------No more details are needed.---------")
     return "enough_details"
 
-class SubAgent(EquipmentDetailsPrompt):
+class SubAgent(BaseAgent, EquipmentDetailsPrompt):
     details_goal = EquipmentGoal
     focus = "equipment"
     sub_agent_title = "Equipment"
     schedule_printer_class = EquipmentSchedulePrinter()
 
-    def __init__(self):
-        self.focus_names = sub_agent_focused_items(self.focus)
+    def focus_list_retriever_agent(self, user_id):
+        return (
+            User_Equipment.query
+            .filter_by(user_id=user_id)
+            .order_by(User_Equipment.equipment_id.asc())
+            .all()
+        )
 
-    # Node to declare that the sub agent has ended.
-    def start_node(self, state):
-        LogAlteringAgent.agent_introductions(f"=========Starting {self.sub_agent_title} Creation SubAgent=========\n")
-        return {}
+    # Print output.
+    def get_user_list(self, state):
+        LogCreationAgent.agent_steps(f"\t---------Retrieving All {self.sub_agent_title} Schedules---------")
+
+        schedule_dict = filter_items_by_query(state)
+
+        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
+        LogCreationAgent.formatted_schedule(formatted_schedule)
+        return {self.focus_names["formatted"]: formatted_schedule}
 
     def system_prompt_constructor(self, state):
         available_equipment = list_to_str_for_prompt(state["available_equipment"], newline=True)
@@ -47,7 +60,7 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Request the details required to continue.
     def detail_extraction(self, state, user_input):
-        LogAlteringAgent.verbose(f"Extract the Edits from the following message: {user_input}")
+        LogCreationAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         system_prompt = self.system_prompt_constructor(state)
 
@@ -69,13 +82,13 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Node to extract the information from the initial user request.
     def initial_request_parsing(self, state):
-        LogAlteringAgent.agent_steps(f"\t---------Retrieve details from initial request---------")
+        LogCreationAgent.agent_steps(f"\t---------Retrieve details from initial request---------")
         user_input = state.get("equipment_detail")
         return self.detail_extraction(state, user_input)
 
     # Create a new piece of equipment for the user.
     def create_new(self, state):
-        LogAlteringAgent.agent_steps(f"\t---------Creating New {self.sub_agent_title} for User---------")
+        LogCreationAgent.agent_steps(f"\t---------Creating New {self.sub_agent_title} for User---------")
 
         schedule_dict = create_singular(state)    
 
@@ -107,14 +120,14 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Request the details required to continue.
     def request_more_details(self, state):
-        LogAlteringAgent.agent_steps(f"\t---------Requesting more details to continue---------")
+        LogCreationAgent.agent_steps(f"\t---------Requesting more details to continue---------")
 
         human_task = self.detail_request_constructor(
             equipment_id = state.get("equipment_id"), 
             equipment_name = state.get("equipment_name"), 
             equipment_measurement = state.get("equipment_measurement")
         )
-        LogAlteringAgent.system_message(human_task)
+        LogCreationAgent.system_message(human_task)
 
         result = interrupt({
             "task": human_task
@@ -123,24 +136,38 @@ class SubAgent(EquipmentDetailsPrompt):
         user_input = result["user_input"]
         return self.detail_extraction(state, user_input)
 
-    # Node to declare that the sub agent has ended.
-    def end_node(self, state):
-        LogAlteringAgent.agent_introductions(f"=========Ending {self.sub_agent_title} Creation SubAgent=========\n")
-        return {}
+    # Node to prepare information for creation.
+    def retrieve_information(self, state):
+        LogCreationAgent.agent_steps(f"\t---------Retrieving Information for Creation---------")
+        items = Equipment_Library.query.all()
 
+        # Create the list of available equipment for the LLM to choose from.
+        equipment_list = [
+            {
+                "id": item.id, 
+                "equipment_name": item.name
+            } for item in items
+        ]
+
+        return {
+            "available_equipment": equipment_list
+        }
 
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
+        workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("initial_request_parsing", self.initial_request_parsing)
         workflow.add_node("create_new", self.create_new)
         workflow.add_node("request_more_details", self.request_more_details)
+        workflow.add_node("get_user_list", self.get_user_list)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
         workflow.add_edge(START, "start_node")
-        workflow.add_edge("start_node", "initial_request_parsing")
+        workflow.add_edge("start_node", "retrieve_information")
+        workflow.add_edge("retrieve_information", "initial_request_parsing")
         workflow.add_edge("initial_request_parsing", "create_new")
 
         # Whether more details are needed to create the new piece of equipment.
@@ -149,11 +176,11 @@ class SubAgent(EquipmentDetailsPrompt):
             are_more_details_needed, 
             {
                 "need_more_details": "request_more_details",            # Request more details if needed.
-                "enough_details": "end_node"                            # Enough details were found to create the new entry. 
+                "enough_details": "get_user_list"                       # Enough details were found to create the new entry. 
             }
         )
         workflow.add_edge("request_more_details", "create_new")
-
+        workflow.add_edge("get_user_list", "end_node")
         workflow.add_edge("end_node", END)
 
         return workflow.compile()

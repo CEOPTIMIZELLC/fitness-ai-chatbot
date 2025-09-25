@@ -22,17 +22,23 @@ def determine_if_delete(state):
     return "not_deletion"
 
 # Determine if an item is to be altered.
+def determine_if_create(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to create {sub_agent_focus}---------")
+    if state.get(f"{sub_agent_focus}_is_altered", False) and not state.get(f"{sub_agent_focus}_alter_old", False):
+        return "create"
+    return "not_create"
+
+# Determine if an item is to be altered.
 def determine_if_alter(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
-    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to write {sub_agent_focus}---------")
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to alter {sub_agent_focus}---------")
     if state.get(f"{sub_agent_focus}_is_altered", False):
         return "alter"
     return "not_alter"
 
 # Determine if an item is to be read.
 def determine_if_read(state):
-    for key, value in state.items():
-        print(key, value)
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read {sub_agent_focus}---------")
     if state.get(f"{sub_agent_focus}_is_read", False):
