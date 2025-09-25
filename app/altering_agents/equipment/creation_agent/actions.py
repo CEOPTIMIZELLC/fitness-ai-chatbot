@@ -1,8 +1,6 @@
 from app.db_session import session_scope
 from app.models import User_Equipment
 
-from ..actions import filter_items_by_query, construct_query_filters
-
 # Create a new piece of equipment for the user.
 def create_singular(state):
     equipment_id = state.get("equipment_id")

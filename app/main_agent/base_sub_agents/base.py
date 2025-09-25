@@ -31,6 +31,8 @@ def determine_if_alter(state):
 
 # Determine if an item is to be read.
 def determine_if_read(state):
+    for key, value in state.items():
+        print(key, value)
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read {sub_agent_focus}---------")
     if state.get(f"{sub_agent_focus}_is_read", False):
