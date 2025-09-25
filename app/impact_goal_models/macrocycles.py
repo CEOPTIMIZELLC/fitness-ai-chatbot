@@ -11,7 +11,7 @@ class MacrocycleGoalPart(BaseModel):
         None, description="Extracted long-term training goals such as 'gain strength in 12 weeks' or 'prepare for a marathon'."
     )
     alter_old: Optional[bool] = Field(
-        default=False, description="Whether the new macrocycle should alter the current goal instead of replacing it. Only true if explicitly mentioned. Only applicable if macrocycle is requested."
+        default=False, description="Whether the new macrocycle is altering an old macrocycle or if a new macrocycle is requested. Only true if explicitly mentioned. Only applicable if macrocycle is requested."
     )
 
 # Model to extract information along with additional requests.
