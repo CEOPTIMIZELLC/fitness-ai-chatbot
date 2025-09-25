@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from logging_config import LogReadingAgent
 from langgraph.graph import StateGraph, START, END
 
 from app.models import User_Equipment
@@ -24,12 +24,12 @@ class SubAgent(BaseAgent):
 
     # Print output.
     def get_user_list(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving All {self.sub_agent_title} Schedules---------")
+        LogReadingAgent.agent_steps(f"\t---------Retrieving All {self.sub_agent_title} Schedules---------")
 
         schedule_dict = filter_items_by_query(state)
 
         formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogMainSubAgent.formatted_schedule(formatted_schedule)
+        LogReadingAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
     # Create main agent.

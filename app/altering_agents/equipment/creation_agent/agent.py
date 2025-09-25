@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from logging_config import LogAlteringAgent
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
@@ -16,11 +16,11 @@ from app.agent_states.equipment import AgentState
 
 # Determine if more details are required for the operation to occur.
 def are_more_details_needed(state: AgentState):
-    LogMainSubAgent.agent_steps(f"\t---------Determine if more details are needed to continue.---------")
+    LogAlteringAgent.agent_steps(f"\t---------Determine if more details are needed to continue.---------")
     if state["request_more_details"]:
-        LogMainSubAgent.agent_steps(f"\t---------More details are needed.---------")
+        LogAlteringAgent.agent_steps(f"\t---------More details are needed.---------")
         return "need_more_details"
-    LogMainSubAgent.agent_steps(f"\t---------No more details are needed.---------")
+    LogAlteringAgent.agent_steps(f"\t---------No more details are needed.---------")
     return "enough_details"
 
 class SubAgent(EquipmentDetailsPrompt):
@@ -34,7 +34,7 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Node to declare that the sub agent has ended.
     def start_node(self, state):
-        LogMainSubAgent.agent_introductions(f"=========Starting {self.sub_agent_title} Creation SubAgent=========\n")
+        LogAlteringAgent.agent_introductions(f"=========Starting {self.sub_agent_title} Creation SubAgent=========\n")
         return {}
 
     def system_prompt_constructor(self, state):
@@ -47,7 +47,7 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Request the details required to continue.
     def detail_extraction(self, state, user_input):
-        LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
+        LogAlteringAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         system_prompt = self.system_prompt_constructor(state)
 
@@ -69,13 +69,13 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Node to extract the information from the initial user request.
     def initial_request_parsing(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieve details from initial request---------")
+        LogAlteringAgent.agent_steps(f"\t---------Retrieve details from initial request---------")
         user_input = state.get("equipment_detail")
         return self.detail_extraction(state, user_input)
 
     # Create a new piece of equipment for the user.
     def create_new(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Creating New {self.sub_agent_title} for User---------")
+        LogAlteringAgent.agent_steps(f"\t---------Creating New {self.sub_agent_title} for User---------")
 
         schedule_dict = create_singular(state)    
 
@@ -107,14 +107,14 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Request the details required to continue.
     def request_more_details(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Requesting more details to continue---------")
+        LogAlteringAgent.agent_steps(f"\t---------Requesting more details to continue---------")
 
         human_task = self.detail_request_constructor(
             equipment_id = state.get("equipment_id"), 
             equipment_name = state.get("equipment_name"), 
             equipment_measurement = state.get("equipment_measurement")
         )
-        LogMainSubAgent.system_message(human_task)
+        LogAlteringAgent.system_message(human_task)
 
         result = interrupt({
             "task": human_task
@@ -125,7 +125,7 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
-        LogMainSubAgent.agent_introductions(f"=========Ending {self.sub_agent_title} Creation SubAgent=========\n")
+        LogAlteringAgent.agent_introductions(f"=========Ending {self.sub_agent_title} Creation SubAgent=========\n")
         return {}
 
 
