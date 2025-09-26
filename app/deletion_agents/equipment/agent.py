@@ -1,11 +1,14 @@
-from logging_config import LogMainSubAgent
+from logging_config import LogDeletionAgent
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from app.models import Equipment_Library
+from app.db_session import session_scope
+from app.models import Equipment_Library, User_Equipment
 
-from app.main_agent.base_sub_agents.utils import sub_agent_focused_items, new_input_request
+from app.main_agent.base_sub_agents.utils import new_input_request
 from app.utils.item_to_string import list_to_str_for_prompt
+
+from app.deletion_agents.base_sub_agents.base import BaseAgent
 
 from .actions import filter_items_by_query, delete_singular
 from .goal_model import EquipmentGoal
@@ -16,26 +19,53 @@ from app.agent_states.equipment import AgentState
 
 # Determine if more details are required for the operation to occur.
 def are_more_details_needed(state: AgentState):
-    LogMainSubAgent.agent_steps(f"\t---------Determine if more details are needed to continue.---------")
+    LogDeletionAgent.agent_steps(f"\t---------Determine if more details are needed to continue.---------")
     if state["request_more_details"]:
-        LogMainSubAgent.agent_steps(f"\t---------More details are needed.---------")
+        LogDeletionAgent.agent_steps(f"\t---------More details are needed.---------")
         return "need_more_details"
-    LogMainSubAgent.agent_steps(f"\t---------No more details are needed.---------")
+    LogDeletionAgent.agent_steps(f"\t---------No more details are needed.---------")
     return "enough_details"
 
-class SubAgent(EquipmentDetailsPrompt):
+class SubAgent(BaseAgent, EquipmentDetailsPrompt):
     details_goal = EquipmentGoal
     focus = "equipment"
     sub_agent_title = "Equipment"
     schedule_printer_class = EquipmentSchedulePrinter()
 
-    def __init__(self):
-        self.focus_names = sub_agent_focused_items(self.focus)
+    def focus_list_retriever_agent(self, user_id):
+        return (
+            User_Equipment.query
+            .filter_by(user_id=user_id)
+            .order_by(User_Equipment.equipment_id.asc())
+            .all()
+        )
 
-    # Node to declare that the sub agent has ended.
-    def start_node(self, state):
-        LogMainSubAgent.agent_introductions(f"=========Starting {self.sub_agent_title} Deletion SubAgent=========\n")
-        return {}
+    # Print output.
+    def get_user_list(self, state):
+        LogDeletionAgent.agent_steps(f"\t---------Retrieving All {self.sub_agent_title} Schedules---------")
+
+        schedule_dict = filter_items_by_query(state)
+
+        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
+        LogDeletionAgent.formatted_schedule(formatted_schedule)
+        return {self.focus_names["formatted"]: formatted_schedule}
+
+    # Node to prepare information for altering.
+    def retrieve_information(self, state):
+        LogDeletionAgent.agent_steps(f"\t---------Retrieving Information for Altering---------")
+        items = Equipment_Library.query.all()
+
+        # Create the list of available equipment for the LLM to choose from.
+        equipment_list = [
+            {
+                "id": item.id, 
+                "equipment_name": item.name
+            } for item in items
+        ]
+
+        return {
+            "available_equipment": equipment_list
+        }
 
     def system_prompt_constructor(self, schedule_dict, state):
         available_equipment = list_to_str_for_prompt(state["available_equipment"], newline=True)
@@ -54,7 +84,7 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Request the details required to continue.
     def detail_extraction(self, state, schedule_dict, user_input):
-        LogMainSubAgent.verbose(f"Extract the Edits from the following message: {user_input}")
+        LogDeletionAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         system_prompt = self.system_prompt_constructor(schedule_dict, state)
 
@@ -80,24 +110,14 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Node to extract the information from the initial user request.
     def initial_request_parsing(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieve details from initial request---------")
+        LogDeletionAgent.agent_steps(f"\t---------Retrieve details from initial request---------")
         user_input = state.get("equipment_detail")
         schedule_dict = filter_items_by_query(state)
         return self.detail_extraction(state, schedule_dict, user_input)
 
-    # Print output.
-    def get_user_list(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving All {self.sub_agent_title} Schedules---------")
-
-        schedule_dict = filter_items_by_query(state)
-
-        formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogMainSubAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
-        
     # Delete an old piece of equipment for the user.
     def delete_old(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Delete Old User {self.sub_agent_title}---------")
+        LogDeletionAgent.agent_steps(f"\t---------Delete Old User {self.sub_agent_title}---------")
 
         schedule_dict = delete_singular(state)
 
@@ -136,7 +156,7 @@ class SubAgent(EquipmentDetailsPrompt):
 
     # Request the details required to continue.
     def request_more_details(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Requesting more details to continue---------")
+        LogDeletionAgent.agent_steps(f"\t---------Requesting more details to continue---------")
 
         schedule_dict = filter_items_by_query(state)
         formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
@@ -147,7 +167,7 @@ class SubAgent(EquipmentDetailsPrompt):
             equipment_name = state.get("equipment_name"), 
             equipment_measurement = state.get("equipment_measurement")
         )
-        LogMainSubAgent.system_message(human_task)
+        LogDeletionAgent.system_message(human_task)
 
         result = interrupt({
             "task": human_task
@@ -156,16 +176,11 @@ class SubAgent(EquipmentDetailsPrompt):
         user_input = result["user_input"]
         return self.detail_extraction(state, schedule_dict, user_input)
 
-    # Node to declare that the sub agent has ended.
-    def end_node(self, state):
-        LogMainSubAgent.agent_introductions(f"=========Ending {self.sub_agent_title} Deletion SubAgent=========\n")
-        return {}
-
-
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
+        workflow.add_node("retrieve_information", self.retrieve_information)
         workflow.add_node("initial_request_parsing", self.initial_request_parsing)
         workflow.add_node("delete_old", self.delete_old)
         workflow.add_node("request_more_details", self.request_more_details)
@@ -174,7 +189,8 @@ class SubAgent(EquipmentDetailsPrompt):
 
         # Whether the focus element has been indicated to be impacted.
         workflow.add_edge(START, "start_node")
-        workflow.add_edge("start_node", "initial_request_parsing")
+        workflow.add_edge("start_node", "retrieve_information")
+        workflow.add_edge("retrieve_information", "initial_request_parsing")
         workflow.add_edge("initial_request_parsing", "delete_old")
 
         # Whether more details are needed to delete the piece of equipment.
@@ -189,6 +205,7 @@ class SubAgent(EquipmentDetailsPrompt):
         workflow.add_edge("request_more_details", "delete_old")
 
         workflow.add_edge("get_user_list", "end_node")
+
         workflow.add_edge("end_node", END)
 
         return workflow.compile()
@@ -198,5 +215,3 @@ class SubAgent(EquipmentDetailsPrompt):
 def create_main_agent_graph():
     agent = SubAgent()
     return agent.create_main_agent_graph(AgentState)
-
-

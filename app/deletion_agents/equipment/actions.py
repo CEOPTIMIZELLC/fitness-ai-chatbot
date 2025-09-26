@@ -1,4 +1,4 @@
-from logging_config import LogMainSubAgent
+from logging_config import LogDeletionAgent
 
 from app.db_session import session_scope
 from app.models import User_Equipment
@@ -6,23 +6,23 @@ from app.models import User_Equipment
 def construct_query_filters(user_id, item_id=None, equipment_id=None, measurement=None):
     query_filters = [User_Equipment.user_id == user_id]
 
-    LogMainSubAgent.agent_steps(f"\tFiltering by:")
+    LogDeletionAgent.agent_steps(f"\tFiltering by:")
 
     # If the direct id has been provided, no more filters are needed.
     if item_id:
-        LogMainSubAgent.agent_steps(f"\t\tID = {item_id}")
+        LogDeletionAgent.agent_steps(f"\t\tID = {item_id}")
         query_filters.append(User_Equipment.id == item_id)
         return query_filters
     
     if equipment_id:
-        LogMainSubAgent.agent_steps(f"\t\tEquipment ID = {equipment_id}")
+        LogDeletionAgent.agent_steps(f"\t\tEquipment ID = {equipment_id}")
         query_filters.append(User_Equipment.equipment_id == equipment_id)
     if measurement:
-        LogMainSubAgent.agent_steps(f"\t\tMeasurement = {measurement}")
+        LogDeletionAgent.agent_steps(f"\t\tMeasurement = {measurement}")
         query_filters.append(User_Equipment.measurement == measurement)
     
     if not (item_id or equipment_id or measurement):
-        LogMainSubAgent.agent_steps(f"\t\tAll.")
+        LogDeletionAgent.agent_steps(f"\t\tAll.")
     return query_filters
 
 # Filter the list of user equipment based on user filters.
