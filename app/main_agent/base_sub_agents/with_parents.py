@@ -124,9 +124,9 @@ class BaseAgentWithParents(BaseAgent):
 
         LogMainSubAgent.verbose(f"Extract the goals from the following message: {user_input}")
 
-        updated_state = user_input_information_extraction(user_input)
+        state_updates = user_input_information_extraction(user_input)
 
-        result = agent_state_update(state, updated_state, ignore_section)
+        result = agent_state_update(state, state_updates, ignore_section)
 
         LogMainSubAgent.input_info(f"Goals extracted.")
         for sub_agent_name in sub_agent_names:
