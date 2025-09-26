@@ -71,6 +71,18 @@ class VerbosityConfig:
     # Log results throughout project.
     verbose = True
 
+    # Log updates to the agent state from other requests.
+    other_request_updates = True
+
+    # Log system messages.
+    system_message = True
+
+    # Log human messages.
+    human_message = True
+
+    # Log parsed goals.
+    parsed_goal = True
+
 # Logging configurations options for the database initialization.
 class DatabaseInitVerbosityConfig:
     # Log any items in this configuration set.

@@ -2,7 +2,7 @@ from logging_config import LogAlteringAgent
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from app.main_agent.base_sub_agents.utils import new_input_request
+from app.utils.user_input import new_input_request
 from app.utils.item_to_string import list_to_str_for_prompt
 
 from app.db_session import session_scope
@@ -75,7 +75,6 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
         LogAlteringAgent.agent_steps(f"\t---------Retrieve details from initial request---------")
         user_input = state.get("equipment_detail")
         schedule_dict = filter_items_by_query(state)
-        LogAlteringAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         system_prompt = self.system_prompt_constructor(schedule_dict, state, initial_request=True)
 
@@ -148,14 +147,12 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
             equipment_name = state.get("equipment_name"), 
             equipment_measurement = state.get("equipment_measurement")
         )
-        LogAlteringAgent.system_message(human_task)
 
         result = interrupt({
             "task": human_task
         })
 
         user_input = result["user_input"]
-        LogAlteringAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         system_prompt = self.system_prompt_constructor(schedule_dict, state)
 

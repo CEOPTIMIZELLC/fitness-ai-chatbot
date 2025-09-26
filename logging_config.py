@@ -41,6 +41,13 @@ def verbose_log(enabled: bool, message: str, level=logging.INFO):
 # Partial Functions for Each Verbosity Type
 log_verbose = partial(verbose_log, VerbosityConfig.verbose)
 
+class LogGeneral:
+    verbose = partial(verbose_log, VerbosityConfig.verbose)
+    other_request_updates = partial(verbose_log, VerbosityConfig.other_request_updates)
+    system_message = partial(verbose_log, VerbosityConfig.system_message)
+    human_message = partial(verbose_log, VerbosityConfig.human_message)
+    parsed_goal = partial(verbose_log, VerbosityConfig.parsed_goal)
+
 class LogRoute:
     verbose = partial(verbose_log, RouteVerbosityConfig.verbose)
 

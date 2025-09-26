@@ -8,7 +8,7 @@ from flask import current_app
 
 from app.goal_prompts import goal_extraction_system_prompt
 
-from .base_sub_agents.utils import user_input_information_extraction
+from app.utils.user_input import user_input_information_extraction
 
 from .user_equipment import create_equipment_agent
 from .user_macrocycles import MacrocycleAgentNode
@@ -21,17 +21,7 @@ from .user_weekdays_availability import WeekdayAvailabilityAgentNode
 
 from app.impact_goal_models import RoutineImpactGoals
 from app.agent_states.main_agent_state import MainAgentState as AgentState
-
-sub_agent_names = [
-    "equipment", 
-    "workout_completion", 
-    "availability", 
-    "macrocycle", 
-    "mesocycle", 
-    "microcycle", 
-    "phase_component", 
-    "workout_schedule", 
-]
+from app.utils.global_variables import sub_agent_names
 
 # Resets the value of an item in the state to None if it exists.
 def reset_schedule_item(state, state_item):

@@ -5,7 +5,7 @@ from langgraph.types import interrupt
 from app.db_session import session_scope
 from app.models import Equipment_Library, User_Equipment
 
-from app.main_agent.base_sub_agents.utils import new_input_request
+from app.utils.user_input import new_input_request
 from app.utils.item_to_string import list_to_str_for_prompt
 
 from app.creation_agents.base_sub_agents.base import BaseAgent
@@ -60,8 +60,6 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
 
     # Request the details required to continue.
     def detail_extraction(self, state, user_input):
-        LogCreationAgent.verbose(f"Extract the Edits from the following message: {user_input}")
-
         system_prompt = self.system_prompt_constructor(state)
 
         # Retrieve the details.
@@ -127,7 +125,6 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
             equipment_name = state.get("equipment_name"), 
             equipment_measurement = state.get("equipment_measurement")
         )
-        LogCreationAgent.system_message(human_task)
 
         result = interrupt({
             "task": human_task

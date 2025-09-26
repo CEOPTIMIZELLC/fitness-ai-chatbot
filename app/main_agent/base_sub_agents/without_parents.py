@@ -3,7 +3,7 @@ from logging_config import LogMainSubAgent
 from langgraph.graph import StateGraph, START, END
 
 from .base import BaseAgent, confirm_impact, determine_if_alter, determine_if_read
-from .utils import retrieve_current_agent_focus
+from app.utils.agent_state_helpers import retrieve_current_agent_focus
 
 # ----------------------------------------- Base Sub Agent For Schedule Items Without Parents -----------------------------------------
 

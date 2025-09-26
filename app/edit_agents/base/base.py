@@ -8,8 +8,9 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
 from app.utils.item_to_string import list_to_str
+from app.utils.user_input import new_input_request
 
-from .utils import does_user_allow_schedule, new_input_request
+from .utils import does_user_allow_schedule
 
 class AgentState(TypedDict):
     is_edited: bool
@@ -207,7 +208,6 @@ class BaseSubAgent(ScheduleFormatterMethods):
             "task": f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"
         })
         user_input = result["user_input"]
-        LogEditorAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         # Retrieve the schedule and format it for the prompt.
         schedule_list = state["agent_output"]

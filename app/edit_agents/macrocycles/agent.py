@@ -11,7 +11,7 @@ from app import db
 from app.models import Goal_Library
 from app.schedule_printers import MacrocycleSchedulePrinter
 from app.edit_agents.base.base import ScheduleFormatterMethods
-from app.edit_agents.base.utils import new_input_request
+from app.utils.user_input import new_input_request
 
 from .edit_goal_model import MacrocycleScheduleEditGoal
 from .edit_prompt import MacrocycleEditPrompt
@@ -136,7 +136,6 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
             "task": f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"
         })
         user_input = result["user_input"]
-        LogEditorAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         # Retrieve the schedule and format it for the prompt.
         current_goal = state["agent_output"]

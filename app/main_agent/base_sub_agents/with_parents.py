@@ -7,27 +7,13 @@ from langgraph.types import interrupt
 
 from app import db
 from app.agent_states.main_agent_state import MainAgentState
+from app.utils.user_input import new_input_request, user_input_information_extraction
 
 from .base import BaseAgent, confirm_impact, determine_if_alter, determine_if_read
-from .utils import retrieve_current_agent_focus, sub_agent_focused_items, new_input_request, user_input_information_extraction, agent_state_update
+from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agent_focused_items, agent_state_update
+from app.utils.global_variables import sub_agent_names
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
-
-sub_agent_names = [
-    "equipment", 
-    "workout_completion", 
-    "availability", 
-    "macrocycle", 
-    "mesocycle", 
-    "microcycle", 
-    "phase_component", 
-    "workout_schedule", 
-]
-
-def other_request_item_extraction(result, sub_agent_name):
-    if result.get(f"{sub_agent_name}_is_requested"):
-        LogMainSubAgent.input_info(f"{sub_agent_name}: {result[f"{sub_agent_name}_detail"]}")
-    return None
 
 # Create a generic type variable that must be a subclass of MainAgentState
 TState = TypeVar('TState', bound=MainAgentState)
@@ -144,7 +130,8 @@ class BaseAgentWithParents(BaseAgent):
 
         LogMainSubAgent.input_info(f"Goals extracted.")
         for sub_agent_name in sub_agent_names:
-            other_request_item_extraction(result, sub_agent_name)
+            if result.get(f"{sub_agent_name}_is_requested"):
+                LogMainSubAgent.input_info(f"{sub_agent_name}: {result[f"{sub_agent_name}_detail"]}")
         LogMainSubAgent.input_info("")
 
         # Reset other requests to be empty.
