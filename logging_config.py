@@ -62,7 +62,6 @@ class LogMainAgent:
     agent_introductions = partial(verbose_log, MainAgentVerbosityConfig.agent_introductions)
     agent_steps = partial(verbose_log, MainAgentVerbosityConfig.agent_steps)
     agent_output = partial(verbose_log, MainAgentVerbosityConfig.agent_output)
-    input_info = partial(verbose_log, MainAgentVerbosityConfig.input_info)
     system_message = partial(verbose_log, MainAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, MainAgentVerbosityConfig.formatted_schedule)
 
@@ -72,7 +71,6 @@ class LogMainSubAgent:
     agent_steps = partial(verbose_log, MainSubAgentVerbosityConfig.agent_steps)
     agent_output = partial(verbose_log, MainSubAgentVerbosityConfig.agent_output)
     parsed_goal = partial(verbose_log, MainSubAgentVerbosityConfig.parsed_goal)
-    input_info = partial(verbose_log, MainSubAgentVerbosityConfig.input_info)
     system_message = partial(verbose_log, MainSubAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
     agent_path = partial(verbose_log, MainSubAgentVerbosityConfig.agent_path)

@@ -1,3 +1,5 @@
+from logging_config import LogGeneral
+
 from app.utils.global_variables import sub_agent_names
 
 # Retrieves the last element appended to the path.
@@ -49,3 +51,11 @@ def agent_state_update(old_state, updated_state, ignore_section=None):
         update_bool(state, old_state, updated_state, "equipment_alter_old")
         update_bool(state, old_state, updated_state, "equipment_delete_old")
     return state
+
+def log_extracted_goals(result):
+    LogGeneral.other_request_updates(f"Goals extracted.")
+    for sub_agent_name in sub_agent_names:
+        if result.get(f"{sub_agent_name}_is_requested"):
+            LogGeneral.other_request_updates(f"{sub_agent_name}: {result[f"{sub_agent_name}_detail"]}")
+    LogGeneral.other_request_updates("")
+    return None

@@ -10,7 +10,7 @@ from app.agent_states.main_agent_state import MainAgentState
 from app.utils.user_input import new_input_request, user_input_information_extraction
 
 from .base import BaseAgent, confirm_impact, determine_if_alter, determine_if_read
-from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agent_focused_items, agent_state_update
+from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agent_focused_items, agent_state_update, log_extracted_goals
 from app.utils.global_variables import sub_agent_names
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
@@ -125,14 +125,8 @@ class BaseAgentWithParents(BaseAgent):
         LogMainSubAgent.verbose(f"Extract the goals from the following message: {user_input}")
 
         state_updates = user_input_information_extraction(user_input)
-
         result = agent_state_update(state, state_updates, ignore_section)
-
-        LogMainSubAgent.input_info(f"Goals extracted.")
-        for sub_agent_name in sub_agent_names:
-            if result.get(f"{sub_agent_name}_is_requested"):
-                LogMainSubAgent.input_info(f"{sub_agent_name}: {result[f"{sub_agent_name}_detail"]}")
-        LogMainSubAgent.input_info("")
+        log_extracted_goals(result)
 
         # Reset other requests to be empty.
         state[other_requests] = None

@@ -9,6 +9,7 @@ from flask import current_app
 from app.goal_prompts import goal_extraction_system_prompt
 
 from app.utils.user_input import user_input_information_extraction
+from app.utils.agent_state_helpers import log_extracted_goals
 
 from .user_equipment import create_equipment_agent
 from .user_macrocycles import MacrocycleAgentNode
@@ -88,16 +89,9 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
 
         LogMainAgent.verbose(f"Extract the goals from the following message: {user_input}")
         state_updates = user_input_information_extraction(user_input)
-        for key, value in state_updates.items():
-            state[key] = value
+        log_extracted_goals(state_updates)
 
-        LogMainAgent.input_info(f"Goals extracted.")
-        for sub_agent_name in sub_agent_names:
-            if state[f"{sub_agent_name}_is_requested"]:
-                LogMainAgent.input_info(f"{sub_agent_name}: {state[f"{sub_agent_name}_detail"]}")
-        LogMainAgent.input_info("")
-
-        return state
+        return state_updates
 
     def print_schedule_node(self, state: AgentState):
         LogMainAgent.agent_steps(f"\n=========Printing Schedule=========")

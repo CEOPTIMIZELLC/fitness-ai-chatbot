@@ -116,9 +116,6 @@ class MainAgentVerbosityConfig:
     # Log the output of main agent.
     agent_output = True
 
-    # Log information regarding user input in the main agent.
-    input_info = True
-
     # Log system messages for LLM calls in the main agent.
     system_message = True
 
@@ -138,9 +135,6 @@ class MainSubAgentVerbosityConfig:
 
     # Log the output of the sub agents.
     agent_output = True
-
-    # Log information regarding user input in the sub agents.
-    input_info = True
 
     # Log system messages for LLM calls in the sub agent.
     system_message = False
