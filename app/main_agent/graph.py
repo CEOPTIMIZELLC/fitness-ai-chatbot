@@ -1,15 +1,8 @@
 from config import loop_main_agent
 from logging_config import LogMainAgent
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import StateGraph
 from langgraph.types import interrupt
-from flask import current_app
 
-from app.goal_prompts import goal_extraction_system_prompt
-
-from app.utils.user_input import user_input_information_extraction
-from app.utils.agent_state_helpers import log_extracted_goals
 
 from .user_equipment import create_equipment_agent
 from .user_macrocycles import MacrocycleAgentNode
@@ -20,9 +13,10 @@ from .user_workout_exercises import create_workout_agent
 from .user_workout_completion import create_workout_completion_agent
 from .user_weekdays_availability import WeekdayAvailabilityAgentNode
 
-from app.impact_goal_models import RoutineImpactGoals
 from app.agent_states.main_agent_state import MainAgentState as AgentState
+from app.utils.agent_state_helpers import log_extracted_goals
 from app.utils.global_variables import sub_agent_names
+from app.utils.user_input import user_input_information_extraction
 
 # Resets the value of an item in the state to None if it exists.
 def reset_schedule_item(state, state_item):
