@@ -26,9 +26,6 @@ class BaseAgentWithoutParents(BaseAgent):
     def goal_classifier_parser(self, focus_names, goal_class):
         goal_class_dump = goal_class.model_dump()
         parsed_goal = {
-            focus_names["is_alter"]: True,
-            focus_names["read_plural"]: False,
-            focus_names["read_current"]: False,
             "other_requests": goal_class_dump.pop("other_requests", None)
         }
 

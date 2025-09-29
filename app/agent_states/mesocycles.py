@@ -4,14 +4,16 @@ class AgentState(MainAgentState):
     focus_name: str
     parent_name: str
 
-    temp_mesocycle_is_alter: bool
-    temp_mesocycle_alter_detail: str
-    temp_mesocycle_is_create: bool
-    temp_mesocycle_create_detail: str
-    temp_mesocycle_is_read: bool
-    temp_mesocycle_read_detail: str
-    temp_mesocycle_is_delete: bool
-    temp_mesocycle_delete_detail: str
+    mesocycle_is_alter: bool
+    mesocycle_alter_detail: str
+    mesocycle_is_create: bool
+    mesocycle_create_detail: str
+    mesocycle_is_read: bool
+    mesocycle_read_detail: str
+    mesocycle_read_plural: str
+    mesocycle_read_current: str
+    mesocycle_is_delete: bool
+    mesocycle_delete_detail: str
 
     user_macrocycle: dict
     macrocycle_id: int

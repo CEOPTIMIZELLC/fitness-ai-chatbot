@@ -29,7 +29,7 @@ def confirm_impact(state):
 def determine_if_delete(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to delete {sub_agent_focus}---------")
-    if state.get(f"{sub_agent_focus}_delete_old", False):
+    if state.get(f"{sub_agent_focus}_is_delete", False):
         return "deletion"
     return "not_deletion"
 
@@ -37,7 +37,7 @@ def determine_if_delete(state):
 def determine_if_create(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to create {sub_agent_focus}---------")
-    if state.get(f"{sub_agent_focus}_is_alter", False) and not state.get(f"{sub_agent_focus}_alter_old", False):
+    if state.get(f"{sub_agent_focus}_is_create", False):
         return "create"
     return "not_create"
 
@@ -140,11 +140,13 @@ class BaseAgent():
 
         for operation_check in operations_to_check:
             self.operation_parser(operation_dict, operation_class_dump, operation_check)
+        
+        operation_dict["read_plural"] = True
 
         operation_dict = self.format_operations(operation_dict)
 
         for key, value in operation_dict.items():
-            state_updates["temp_" + self.focus + "_"  + key] = value
+            state_updates[self.focus + "_"  + key] = value
 
         return state_updates
 
@@ -152,9 +154,6 @@ class BaseAgent():
     def goal_classifier_parser(self, focus_names, goal_class):
         goal_class_dump = goal_class.model_dump()
         parsed_goal = {
-            focus_names["is_alter"]: True,
-            focus_names["read_plural"]: False,
-            focus_names["read_current"]: False,
             "other_requests": goal_class_dump.pop("other_requests", None)
         }
 
@@ -175,8 +174,8 @@ class BaseAgent():
 
         end_node_state = {}
         for operation_check in operations_to_check:
-            end_node_state["temp_" + self.focus_names[f"is_{operation_check}"]] = False
-            end_node_state["temp_" + self.focus_names[f"{operation_check}_detail"]] = None
+            end_node_state[self.focus_names[f"is_{operation_check}"]] = False
+            end_node_state[self.focus_names[f"{operation_check}_detail"]] = None
         end_node_state["agent_path"] = agent_path
 
         LogMainSubAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")

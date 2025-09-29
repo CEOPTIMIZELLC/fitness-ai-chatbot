@@ -10,12 +10,6 @@ class EquipmentGoalPart(BaseModel):
     detail: Optional[str] = Field(
         None, description="The portion(s) of the original message that are relevant to the equipment specifically."
     )
-    alter_old: Optional[bool] = Field(
-        default=False, description="Whether the new piece of equipment is altering an old piece of equipment or if a new piece of equipment is requested. Only true if explicitly mentioned. Only applicable if equipment is requested."
-    )
-    delete_old: Optional[bool] = Field(
-        default=False, description="Whether the desired outcome is to delete an old piece of equipment. Only true if explicitly mentioned. Only applicable if equipment is requested."
-    )
 
 # Model to extract information along with additional requests.
 class EquipmentGoal(EquipmentGoalPart):

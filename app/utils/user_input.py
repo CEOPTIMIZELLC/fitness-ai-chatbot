@@ -54,9 +54,5 @@ def user_input_information_extraction(user_input):
     state["attempts"] = 1
     for sub_agent_name in sub_agent_names:
         state = _user_input_sub_extraction(state, sub_agent_name, goal_class[sub_agent_name])
-    state["macrocycle_alter_old"] = goal_class["macrocycle"]["alter_old"]
-    state["equipment_alter_old"] = goal_class["equipment"]["alter_old"]
-    state["equipment_delete_old"] = goal_class["equipment"]["delete_old"]
-
     return state
 

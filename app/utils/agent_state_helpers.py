@@ -51,11 +51,6 @@ def agent_state_update(old_state, updated_state, ignore_section=None):
     state = {}
     for sub_agent_name in sub_agent_names:
         update_state_schedule_section(state, old_state, updated_state, sub_agent_name, ignore_section)
-    if "macrocycle" != ignore_section:
-        update_bool(state, old_state, updated_state, "macrocycle_alter_old")
-    if "equipment" != ignore_section:
-        update_bool(state, old_state, updated_state, "equipment_alter_old")
-        update_bool(state, old_state, updated_state, "equipment_delete_old")
     return state
 
 def log_extracted_goals(result):

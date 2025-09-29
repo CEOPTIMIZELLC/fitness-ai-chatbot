@@ -17,36 +17,21 @@ class AgentNode():
                 "user_input": state["user_input"], 
                 "attempts": state["attempts"], 
                 "macrocycle_is_requested": state["macrocycle_is_requested"], 
-                "macrocycle_is_alter": state["macrocycle_is_alter"], 
-                "macrocycle_is_read": state["macrocycle_is_read"], 
-                "macrocycle_read_plural": state["macrocycle_read_plural"], 
-                "macrocycle_read_current": state["macrocycle_read_current"], 
                 "macrocycle_detail": state["macrocycle_detail"],
                 "macrocycle_perform_with_parent_id": state["macrocycle_perform_with_parent_id"] if "macrocycle_perform_with_parent_id" in state else None,
-                "macrocycle_alter_old": state.get("macrocycle_alter_old", False)
             })
         else:
             result = {
                 "macrocycle_is_requested": False, 
-                "macrocycle_is_alter": False,
-                "macrocycle_is_read": False,
-                "macrocycle_read_plural": False, 
-                "macrocycle_read_current": False, 
                 "macrocycle_detail": None, 
                 "macrocycle_perform_with_parent_id": None, 
                 "macrocycle_formatted": None, 
-                "macrocycle_alter_old": False, 
                 "macrocycle_other_requests": None
             }
         return {
             "macrocycle_is_requested": result["macrocycle_is_requested"], 
-            "macrocycle_is_alter": result["macrocycle_is_alter"], 
-            "macrocycle_is_read": result["macrocycle_is_read"], 
-            "macrocycle_read_plural": result["macrocycle_read_plural"], 
-            "macrocycle_read_current": result["macrocycle_read_current"], 
             "macrocycle_detail": result["macrocycle_detail"], 
             "macrocycle_perform_with_parent_id": result["macrocycle_perform_with_parent_id"] if "macrocycle_perform_with_parent_id" in result else None, 
             "macrocycle_formatted": result["macrocycle_formatted"], 
-            "macrocycle_alter_old": result.get("macrocycle_alter_old", False), 
             "macrocycle_other_requests": result.get("other_requests")
         }

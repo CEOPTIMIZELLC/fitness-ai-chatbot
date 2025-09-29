@@ -23,7 +23,7 @@ from .actions import retrieve_goal_types
 # Determine whether the current macrocycle should be edited or if a new one should be created.
 def which_operation(state: AgentState):
     LogAlteringAgent.agent_steps(f"\t---------Determine whether goal should be new---------")
-    if state["macrocycle_alter_old"] and state["user_macrocycle"]:
+    if state["macrocycle_is_alter"] and state["user_macrocycle"]:
         return "alter_old_macrocycle"
     return "create_new_macrocycle"
 

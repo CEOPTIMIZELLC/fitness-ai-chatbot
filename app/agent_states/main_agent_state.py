@@ -22,8 +22,6 @@ class MainAgentState(TypedDict):
     equipment_detail: str
     equipment_formatted: str
     equipment_perform_with_parent_id: int
-    equipment_alter_old: bool
-    equipment_delete_old: bool
 
     availability_is_requested: bool
     availability_is_alter: bool
@@ -42,7 +40,6 @@ class MainAgentState(TypedDict):
     macrocycle_detail: str
     macrocycle_formatted: str
     macrocycle_perform_with_parent_id: int
-    macrocycle_alter_old: bool
 
     mesocycle_is_requested: bool
     mesocycle_is_alter: bool
