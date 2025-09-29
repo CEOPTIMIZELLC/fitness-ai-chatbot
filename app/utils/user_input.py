@@ -12,7 +12,7 @@ def new_input_request(user_input, item_system_prompt, item_goal):
     LogGeneral.system_message(item_system_prompt)
 
     human = f"Extract the goals from the following message: {user_input}"
-    LogGeneral.human_message(item_system_prompt)
+    LogGeneral.human_message(human)
 
     check_prompt = ChatPromptTemplate.from_messages(
         [
