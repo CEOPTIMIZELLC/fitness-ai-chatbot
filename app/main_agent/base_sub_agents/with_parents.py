@@ -48,6 +48,25 @@ class BaseAgentWithParents(BaseAgent):
     def parent_retriever_agent(self, user_id):
         pass
 
+    # Performs necessary formatting changes for the subagent before changing the state.
+    def format_operations(self, state_updates):
+
+        # Combine the alter and creation requests since they are synonamous for availability.
+        if any(key in state_updates for key in ("is_alter", "is_create")):
+            is_alter = state_updates.pop("is_alter", False) or state_updates.pop("is_create", False)
+            
+            # Combine requests.
+            item_request_list = [state_updates.pop("alter_detail", None), state_updates.pop("create_detail", None)]
+            alter_detail = " ".join(
+                value
+                for value in item_request_list
+                if value != None
+            )
+
+            state_updates["is_alter"] = is_alter
+            state_updates["alter_detail"] = alter_detail
+        return state_updates
+
     # Node to declare that the sub agent has begun.
     def start_node(self, state):
         LogMainSubAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
@@ -146,6 +165,7 @@ class BaseAgentWithParents(BaseAgent):
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
+        workflow.add_node("extract_operations", self.extract_operations)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
@@ -164,9 +184,10 @@ class BaseAgentWithParents(BaseAgent):
             confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
-                "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
+                "impact": "extract_operations"                          # Determine what operations to perform.
             }
         )
+        workflow.add_edge("extract_operations", "retrieve_parent")
 
         # Whether a parent element exists.
         workflow.add_conditional_edges(

@@ -59,6 +59,7 @@ class SubAgent(BaseAgent):
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
+        workflow.add_node("extract_operations", self.extract_operations)
         workflow.add_node("retrieve_availability", self.retrieve_availability)
         workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
         workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
@@ -82,9 +83,10 @@ class SubAgent(BaseAgent):
             confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
-                "impact": "retrieve_availability"                       # Retreive the availability for the alteration.
+                "impact": "extract_operations"                          # Determine what operations to perform.
             }
         )
+        workflow.add_edge("extract_operations", "retrieve_availability")
 
         # Whether an availability for the user exists.
         workflow.add_conditional_edges(

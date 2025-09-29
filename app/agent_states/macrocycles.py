@@ -12,6 +12,16 @@ class AgentState(TypedDict):
     macrocycle_is_requested: bool
     macrocycle_is_altered: bool
     macrocycle_is_read: bool
+
+    temp_macrocycle_is_alter: bool
+    temp_macrocycle_alter_detail: str
+    temp_macrocycle_is_create: bool
+    temp_macrocycle_create_detail: str
+    temp_macrocycle_is_read: bool
+    temp_macrocycle_read_detail: str
+    temp_macrocycle_is_delete: bool
+    temp_macrocycle_delete_detail: str
+
     macrocycle_read_plural: bool
     macrocycle_read_current: bool
     macrocycle_detail: str

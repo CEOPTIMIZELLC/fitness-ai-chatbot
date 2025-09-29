@@ -1,8 +1,20 @@
 from logging_config import LogMainSubAgent
 from flask import abort
+
+from app.goal_prompts.sub_agent_operations import goal_system_prompt
+from app.impact_goal_models.sub_agent_operations import OperationGoals
+
 from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agent_focused_items
+from app.utils.user_input import new_input_request
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------
+
+operations_to_check = [
+    "read", 
+    "alter", 
+    "create", 
+    "delete"
+]
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state):
@@ -96,6 +108,48 @@ class BaseAgent():
             "focus_name": self.focus, 
             "agent_path": agent_path
         }
+    
+    # Extracts the operation requests from the input.
+    def operation_parser(self, state_updates, operation_class, operation_check):
+
+        operation_being_checked = operation_class.get(f"{operation_check}_request", None)
+
+        if operation_being_checked:
+            state_updates[f"is_{operation_check}"] = operation_being_checked.get("is_requested", False)
+            state_updates[f"{operation_check}_detail"] = operation_being_checked.get("detail", None)
+        
+        return state_updates
+    
+    # Performs necessary formatting changes for the subagent before changing the state.
+    def format_operations(self, state_updates):
+        return state_updates
+
+    # Request permission from user to execute the new input.
+    def extract_operations(self, state):
+        LogMainSubAgent.agent_steps(f"\t---------Determine what Operation(s) to Perform for User {self.sub_agent_title}---------")
+        user_input = state[self.focus_names["detail"]]
+
+        LogMainSubAgent.verbose(f"Extract the {self.sub_agent_title} Operations from the following message: {user_input}")
+
+        # Retrieve the new input for the focus item.
+        operation_class = new_input_request(user_input, goal_system_prompt, OperationGoals)
+        operation_class_dump = operation_class.model_dump()
+
+        operation_dict = {}
+        state_updates = {}
+
+        for operation_check in operations_to_check:
+            self.operation_parser(operation_dict, operation_class_dump, operation_check)
+        
+        for key, value in operation_dict.items():
+            print(key, value)
+
+        operation_dict = self.format_operations(operation_dict)
+
+        for key, value in operation_dict.items():
+            state_updates["temp_" + self.focus + "_"  + key] = value
+
+        return state_updates
 
     # Default items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
@@ -122,10 +176,14 @@ class BaseAgent():
         agent_path.pop()
         LogMainSubAgent.agent_path(f"Agent Path: {agent_path}")
 
+        end_node_state = {}
+        for operation_check in operations_to_check:
+            end_node_state["temp_" + self.focus + "_"  + f"is_{operation_check}"] = False
+            end_node_state["temp_" + self.focus + "_"  + f"{operation_check}_detail"] = None
+        end_node_state["agent_path"] = agent_path
+
         LogMainSubAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
-        return {
-            "agent_path": agent_path
-        }
+        return end_node_state
 
     # Create main agent.
     def create_main_agent_graph(self, state_class):

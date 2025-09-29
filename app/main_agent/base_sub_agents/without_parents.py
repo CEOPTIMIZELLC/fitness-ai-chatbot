@@ -29,7 +29,7 @@ class BaseAgentWithoutParents(BaseAgent):
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
-        workflow.add_node("impact_confirmed", self.chained_conditional_inbetween)
+        workflow.add_node("extract_operations", self.extract_operations)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
         workflow.add_node("altering_agent", self.altering_agent)
         workflow.add_node("reading_agent", self.reading_agent)
@@ -42,13 +42,13 @@ class BaseAgentWithoutParents(BaseAgent):
             confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
-                "impact": "impact_confirmed"                            # In between step for if an impact is indicated.
+                "impact": "extract_operations"                          # Determine what operations to perform.
             }
         )
 
         # Whether the goal is to alter user elements.
         workflow.add_conditional_edges(
-            "impact_confirmed",
+            "extract_operations",
             determine_if_alter, 
             {
                 "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.

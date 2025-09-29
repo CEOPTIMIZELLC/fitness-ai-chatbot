@@ -4,6 +4,15 @@ class AgentState(MainAgentState):
     focus_name: str
     parent_name: str
 
+    temp_phase_component_is_alter: bool
+    temp_phase_component_alter_detail: str
+    temp_phase_component_is_create: bool
+    temp_phase_component_create_detail: str
+    temp_phase_component_is_read: bool
+    temp_phase_component_read_detail: str
+    temp_phase_component_is_delete: bool
+    temp_phase_component_delete_detail: str
+
     user_microcycle: dict
     microcycle_id: int
     phase_id: int

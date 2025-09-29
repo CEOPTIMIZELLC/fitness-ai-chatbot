@@ -52,6 +52,7 @@ class SubAgent(BaseAgent):
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
+        workflow.add_node("extract_operations", self.extract_operations)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
@@ -76,9 +77,10 @@ class SubAgent(BaseAgent):
             confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
-                "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
+                "impact": "extract_operations"                          # Determine what operations to perform.
             }
         )
+        workflow.add_edge("extract_operations", "retrieve_parent")
 
         # Whether a parent element exists.
         workflow.add_conditional_edges(

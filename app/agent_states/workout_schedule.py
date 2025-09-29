@@ -4,6 +4,15 @@ class AgentState(MainAgentState):
     focus_name: str
     parent_name: str
 
+    temp_workout_schedule_is_alter: bool
+    temp_workout_schedule_alter_detail: str
+    temp_workout_schedule_is_create: bool
+    temp_workout_schedule_create_detail: str
+    temp_workout_schedule_is_read: bool
+    temp_workout_schedule_read_detail: str
+    temp_workout_schedule_is_delete: bool
+    temp_workout_schedule_delete_detail: str
+
     user_phase_component: dict
     phase_component_id: int
     loading_system_id: int
