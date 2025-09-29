@@ -3,7 +3,7 @@ from logging_config import LogEditorAgent
 from app import db
 from app.models import Weekday_Library
 
-from app.schedule_printers import AvailabilitySchedulePrinter
+from app.schedule_printers.availability import AvailabilitySchedulePrinter
 from app.edit_agents.base.base import BaseSubAgent, TState
 
 from .edit_goal_model import AvailabilityScheduleEditGoal

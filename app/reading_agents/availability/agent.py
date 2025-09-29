@@ -3,7 +3,7 @@ from app.utils.common_table_queries import current_weekday_availability
 
 from app.agent_states.availability import AgentState
 from app.reading_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.schedule_printers import AvailabilitySchedulePrinter
+from app.schedule_printers.availability import AvailabilitySchedulePrinter
 
 # ----------------------------------------- User Availability -----------------------------------------
 

@@ -6,7 +6,7 @@ from app.models import User_Microcycles
 from app.utils.common_table_queries import current_mesocycle
 
 from app.agent_states.microcycles import AgentState
-from app.schedule_printers import MicrocycleSchedulePrinter
+from app.schedule_printers.microcycles import MicrocycleSchedulePrinter
 
 from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 

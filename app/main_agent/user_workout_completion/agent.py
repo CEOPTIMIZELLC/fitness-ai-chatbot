@@ -11,7 +11,7 @@ from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as 
 from app.main_agent.base_sub_agents.base import confirm_impact
 from app.main_agent.base_sub_agents.with_parents import confirm_parent
 
-from app.schedule_printers import WorkoutCompletionSchedulePrinter
+from app.schedule_printers.workout_completion import WorkoutCompletionSchedulePrinter
 
 from app.agent_states.workout_completion import AgentState
 

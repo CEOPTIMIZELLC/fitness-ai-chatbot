@@ -3,7 +3,7 @@ from app.utils.common_table_queries import current_macrocycle
 
 from app.agent_states.macrocycles import AgentState
 from app.reading_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.schedule_printers import MacrocycleSchedulePrinter
+from app.schedule_printers.macrocycles import MacrocycleSchedulePrinter
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 

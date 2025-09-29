@@ -1,4 +1,4 @@
-from app.schedule_printers import MesocycleSchedulePrinter
+from app.schedule_printers.mesocycles import MesocycleSchedulePrinter
 from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate
 
 from .edit_goal_model import MesocycleScheduleEditGoal

@@ -13,7 +13,7 @@ from app.altering_agents.base_sub_agents.base import BaseAgent
 from .actions import extract_sub_goal_class_info, filter_items_by_query, alter_singular
 from .goal_model import EquipmentGoal, EquipmentRequests
 from .prompt import EquipmentDetailsPrompt
-from app.schedule_printers import EquipmentSchedulePrinter
+from app.schedule_printers.equipment import EquipmentSchedulePrinter
 
 from app.agent_states.equipment import AgentState
 

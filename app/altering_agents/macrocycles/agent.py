@@ -9,7 +9,7 @@ from app.utils.common_table_queries import current_macrocycle
 from app.agent_states.macrocycles import AgentState
 from app.goal_prompts.macrocycles import macrocycle_system_prompt
 from app.impact_goal_models.macrocycles import MacrocycleGoal
-from app.schedule_printers import MacrocycleSchedulePrinter
+from app.schedule_printers.macrocycles import MacrocycleSchedulePrinter
 
 from app.altering_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 from app.altering_agents.base_sub_agents.without_parents import confirm_new_input

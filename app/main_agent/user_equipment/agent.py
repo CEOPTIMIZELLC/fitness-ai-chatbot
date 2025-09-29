@@ -5,7 +5,7 @@ from app.db_session import session_scope
 
 from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_if_alter, determine_if_create, determine_if_read
 
-from app.schedule_printers import EquipmentSchedulePrinter
+from app.schedule_printers.equipment import EquipmentSchedulePrinter
 
 from app.agent_states.equipment import AgentState
 

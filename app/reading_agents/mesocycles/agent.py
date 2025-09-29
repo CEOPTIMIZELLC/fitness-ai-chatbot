@@ -2,7 +2,7 @@ from app.models import User_Mesocycles, User_Macrocycles
 from app.utils.common_table_queries import current_macrocycle, current_mesocycle
 
 from app.reading_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.schedule_printers import MesocycleSchedulePrinter
+from app.schedule_printers.mesocycles import MesocycleSchedulePrinter
 
 from app.agent_states.mesocycles import AgentState
 

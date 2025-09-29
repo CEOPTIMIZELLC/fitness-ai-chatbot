@@ -9,7 +9,7 @@ from app.utils.common_table_queries import current_microcycle
 from app.agent_states.availability import AgentState
 from app.impact_goal_models.availability import AvailabilityGoal
 from app.goal_prompts.availability import availability_system_prompt
-from app.schedule_printers import AvailabilitySchedulePrinter
+from app.schedule_printers.availability import AvailabilitySchedulePrinter
 
 from app.altering_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 from app.altering_agents.base_sub_agents.without_parents import confirm_new_input

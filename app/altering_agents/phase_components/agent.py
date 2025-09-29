@@ -5,7 +5,7 @@ from app.models import User_Workout_Components, User_Workout_Days
 from app.utils.common_table_queries import current_microcycle
 
 from app.agent_states.phase_components import AgentState
-from app.schedule_printers import PhaseComponentSchedulePrinter
+from app.schedule_printers.phase_components import PhaseComponentSchedulePrinter
 
 from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.solver_agents.phase_components import Main as phase_component_main

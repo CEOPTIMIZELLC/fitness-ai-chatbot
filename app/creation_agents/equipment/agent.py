@@ -13,7 +13,7 @@ from app.creation_agents.base_sub_agents.base import BaseAgent
 from .actions import filter_items_by_query, create_singular
 from .goal_model import EquipmentGoal
 from .prompt import EquipmentDetailsPrompt
-from app.schedule_printers import EquipmentSchedulePrinter
+from app.schedule_printers.equipment import EquipmentSchedulePrinter
 
 from app.agent_states.equipment import AgentState
 

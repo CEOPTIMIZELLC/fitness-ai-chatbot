@@ -11,8 +11,8 @@ from app.utils.common_table_queries import current_workout_day
 
 from app.reading_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.reading_agents.base_sub_agents.base import determine_read_filter_operation
-from app.schedule_printers import WorkoutScheduleSchedulePrinter
-from app.schedule_printers import WorkoutScheduleListPrinter
+from app.schedule_printers.workout_schedule import WorkoutScheduleSchedulePrinter
+from app.schedule_printers.workout_schedule import WorkoutScheduleListPrinter
 
 from app.agent_states.workout_schedule import AgentState
 
