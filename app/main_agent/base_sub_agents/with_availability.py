@@ -3,8 +3,8 @@ from flask import abort
 
 from langgraph.types import interrupt
 
-from app.goal_prompts import availability_system_prompt
-from app.impact_goal_models import AvailabilityGoal
+from app.goal_prompts.availability import availability_system_prompt
+from app.impact_goal_models.availability import AvailabilityGoal
 from app.main_agent.user_weekdays_availability import WeekdayAvailabilityAgentNode as AvailabilityNode
 from app.utils.user_input import new_input_request
 

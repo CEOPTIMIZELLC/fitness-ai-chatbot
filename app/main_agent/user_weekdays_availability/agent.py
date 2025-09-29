@@ -1,6 +1,6 @@
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.impact_goal_models import AvailabilityGoal
-from app.goal_prompts import availability_system_prompt
+from app.impact_goal_models.availability import AvailabilityGoal
+from app.goal_prompts.availability import availability_system_prompt
 
 from app.agent_states.availability import AgentState
 

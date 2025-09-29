@@ -7,13 +7,13 @@ from app.models import User_Weekday_Availability, User_Workout_Days
 from app.utils.common_table_queries import current_microcycle
 
 from app.agent_states.availability import AgentState
-from app.impact_goal_models import AvailabilityGoal
-from app.goal_prompts import availability_system_prompt
+from app.impact_goal_models.availability import AvailabilityGoal
+from app.goal_prompts.availability import availability_system_prompt
 from app.schedule_printers import AvailabilitySchedulePrinter
 
 from app.altering_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 from app.altering_agents.base_sub_agents.without_parents import confirm_new_input
-from app.edit_agents import create_availability_edit_agent
+from app.edit_agents.availability import create_main_agent_graph as create_availability_edit_agent
 from app.solver_agents.weekday_availability import create_weekday_availability_extraction_graph
 
 from .actions import retrieve_weekday_types, initialize_user_availability, update_user_availability

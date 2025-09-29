@@ -2,8 +2,8 @@ from app.db_session import session_scope
 from app.models import User_Macrocycles
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.impact_goal_models import MacrocycleGoal
-from app.goal_prompts import macrocycle_system_prompt
+from app.impact_goal_models.macrocycles import MacrocycleGoal
+from app.goal_prompts.macrocycles import macrocycle_system_prompt
 
 from app.agent_states.macrocycles import AgentState
 

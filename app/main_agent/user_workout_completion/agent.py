@@ -6,7 +6,7 @@ from app import db
 from app.models import User_Exercises
 from app.utils.common_table_queries import current_workout_day
 
-from app.edit_agents import create_workout_completion_edit_agent
+from app.edit_agents.workout_completion import create_main_agent_graph as create_workout_completion_edit_agent
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.base import confirm_impact
 from app.main_agent.base_sub_agents.with_parents import confirm_parent

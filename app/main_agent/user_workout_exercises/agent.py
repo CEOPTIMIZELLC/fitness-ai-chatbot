@@ -8,8 +8,8 @@ from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alt
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.main_agent.base_sub_agents.with_availability import confirm_availability, confirm_availability_permission
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
-from app.impact_goal_models import PhaseComponentGoal
-from app.goal_prompts import phase_component_system_prompt
+from app.impact_goal_models.phase_components import PhaseComponentGoal
+from app.goal_prompts.phase_components import phase_component_system_prompt
 
 from app.agent_states.workout_schedule import AgentState
 

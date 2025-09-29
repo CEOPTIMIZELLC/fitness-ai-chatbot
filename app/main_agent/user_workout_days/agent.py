@@ -8,8 +8,8 @@ from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alt
 from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.main_agent.base_sub_agents.with_availability import confirm_availability, confirm_availability_permission
 from app.main_agent.user_microcycles import create_microcycle_agent
-from app.impact_goal_models import MicrocycleGoal
-from app.goal_prompts import microcycle_system_prompt
+from app.impact_goal_models.microcycles import MicrocycleGoal
+from app.goal_prompts.microcycles import microcycle_system_prompt
 
 from app.agent_states.phase_components import AgentState
 

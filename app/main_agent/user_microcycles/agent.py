@@ -1,8 +1,8 @@
 from app.utils.common_table_queries import current_mesocycle
 
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.impact_goal_models import MesocycleGoal
-from app.goal_prompts import mesocycle_system_prompt
+from app.impact_goal_models.mesocycles import MesocycleGoal
+from app.goal_prompts.mesocycles import mesocycle_system_prompt
 from app.main_agent.user_mesocycles import create_mesocycle_agent
 
 from app.agent_states.microcycles import AgentState

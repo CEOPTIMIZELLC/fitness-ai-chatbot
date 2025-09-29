@@ -9,7 +9,7 @@ from app.agent_states.workout_schedule import AgentState
 from app.schedule_printers import WorkoutScheduleSchedulePrinter
 
 from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.edit_agents import create_workout_edit_agent
+from app.edit_agents.workout_schedule import create_main_agent_graph as create_workout_edit_agent
 from app.solver_agents.exercises import exercises_main
 
 from .actions import retrieve_parameters

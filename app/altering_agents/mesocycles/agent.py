@@ -11,7 +11,7 @@ from app.agent_states.mesocycles import AgentState
 from app.schedule_printers import MesocycleSchedulePrinter
 
 from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.edit_agents import create_mesocycle_edit_agent
+from app.edit_agents.mesocycles import create_main_agent_graph as create_mesocycle_edit_agent
 from app.solver_agents.phases import Main as phase_main
 
 # ----------------------------------------- User Mesocycles -----------------------------------------

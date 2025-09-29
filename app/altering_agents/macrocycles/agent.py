@@ -7,13 +7,13 @@ from app.models import User_Macrocycles, User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
 from app.agent_states.macrocycles import AgentState
-from app.goal_prompts import macrocycle_system_prompt
-from app.impact_goal_models import MacrocycleGoal
+from app.goal_prompts.macrocycles import macrocycle_system_prompt
+from app.impact_goal_models.macrocycles import MacrocycleGoal
 from app.schedule_printers import MacrocycleSchedulePrinter
 
 from app.altering_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 from app.altering_agents.base_sub_agents.without_parents import confirm_new_input
-from app.edit_agents import create_macrocycle_edit_agent
+from app.edit_agents.macrocycles import create_main_agent_graph as create_macrocycle_edit_agent
 from app.solver_agents.goals import create_goal_classification_graph
 
 from .actions import retrieve_goal_types

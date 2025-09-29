@@ -3,8 +3,8 @@ from flask import current_app
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
-from app.impact_goal_models import RoutineImpactGoals
-from app.goal_prompts import goal_extraction_system_prompt
+from app.impact_goal_models.main_agent import RoutineImpactGoals
+from app.goal_prompts.main_agent import goal_extraction_system_prompt
 from app.utils.global_variables import sub_agent_names
 
 # Request permission from user to execute the parent initialization.
