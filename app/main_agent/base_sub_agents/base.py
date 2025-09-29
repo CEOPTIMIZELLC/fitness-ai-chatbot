@@ -140,9 +140,6 @@ class BaseAgent():
 
         for operation_check in operations_to_check:
             self.operation_parser(operation_dict, operation_class_dump, operation_check)
-        
-        for key, value in operation_dict.items():
-            print(key, value)
 
         operation_dict = self.format_operations(operation_dict)
 
@@ -178,11 +175,6 @@ class BaseAgent():
 
         end_node_state = {}
         for operation_check in operations_to_check:
-            temp_name = self.focus + operation_check
-            temp_is_request = state.get("temp_" + self.focus_names[f"is_{operation_check}"], False)
-            temp_details = state.get("temp_" + self.focus_names[f"{operation_check}_detail"], None)
-            print(temp_name, temp_is_request, temp_details)
-
             end_node_state["temp_" + self.focus_names[f"is_{operation_check}"]] = False
             end_node_state["temp_" + self.focus_names[f"{operation_check}_detail"]] = None
         end_node_state["agent_path"] = agent_path
