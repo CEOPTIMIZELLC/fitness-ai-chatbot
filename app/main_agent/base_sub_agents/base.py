@@ -37,7 +37,7 @@ def determine_if_delete(state):
 def determine_if_create(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to create {sub_agent_focus}---------")
-    if state.get(f"{sub_agent_focus}_is_altered", False) and not state.get(f"{sub_agent_focus}_alter_old", False):
+    if state.get(f"{sub_agent_focus}_is_alter", False) and not state.get(f"{sub_agent_focus}_alter_old", False):
         return "create"
     return "not_create"
 
@@ -45,7 +45,7 @@ def determine_if_create(state):
 def determine_if_alter(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to alter {sub_agent_focus}---------")
-    if state.get(f"{sub_agent_focus}_is_altered", False):
+    if state.get(f"{sub_agent_focus}_is_alter", False):
         return "alter"
     return "not_alter"
 
@@ -155,7 +155,7 @@ class BaseAgent():
     def goal_classifier_parser(self, focus_names, goal_class):
         goal_class_dump = goal_class.model_dump()
         parsed_goal = {
-            focus_names["is_altered"]: True,
+            focus_names["is_alter"]: True,
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False,
             "other_requests": goal_class_dump.pop("other_requests", None)
@@ -178,8 +178,13 @@ class BaseAgent():
 
         end_node_state = {}
         for operation_check in operations_to_check:
-            end_node_state["temp_" + self.focus + "_"  + f"is_{operation_check}"] = False
-            end_node_state["temp_" + self.focus + "_"  + f"{operation_check}_detail"] = None
+            temp_name = self.focus + operation_check
+            temp_is_request = state.get("temp_" + self.focus_names[f"is_{operation_check}"], False)
+            temp_details = state.get("temp_" + self.focus_names[f"{operation_check}_detail"], None)
+            print(temp_name, temp_is_request, temp_details)
+
+            end_node_state["temp_" + self.focus_names[f"is_{operation_check}"]] = False
+            end_node_state["temp_" + self.focus_names[f"{operation_check}_detail"]] = None
         end_node_state["agent_path"] = agent_path
 
         LogMainSubAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")

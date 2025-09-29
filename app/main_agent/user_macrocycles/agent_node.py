@@ -17,7 +17,7 @@ class AgentNode():
                 "user_input": state["user_input"], 
                 "attempts": state["attempts"], 
                 "macrocycle_is_requested": state["macrocycle_is_requested"], 
-                "macrocycle_is_altered": state["macrocycle_is_altered"], 
+                "macrocycle_is_alter": state["macrocycle_is_alter"], 
                 "macrocycle_is_read": state["macrocycle_is_read"], 
                 "macrocycle_read_plural": state["macrocycle_read_plural"], 
                 "macrocycle_read_current": state["macrocycle_read_current"], 
@@ -28,7 +28,7 @@ class AgentNode():
         else:
             result = {
                 "macrocycle_is_requested": False, 
-                "macrocycle_is_altered": False,
+                "macrocycle_is_alter": False,
                 "macrocycle_is_read": False,
                 "macrocycle_read_plural": False, 
                 "macrocycle_read_current": False, 
@@ -40,7 +40,7 @@ class AgentNode():
             }
         return {
             "macrocycle_is_requested": result["macrocycle_is_requested"], 
-            "macrocycle_is_altered": result["macrocycle_is_altered"], 
+            "macrocycle_is_alter": result["macrocycle_is_alter"], 
             "macrocycle_is_read": result["macrocycle_is_read"], 
             "macrocycle_read_plural": result["macrocycle_read_plural"], 
             "macrocycle_read_current": result["macrocycle_read_current"], 

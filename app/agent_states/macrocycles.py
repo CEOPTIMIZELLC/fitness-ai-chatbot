@@ -10,7 +10,7 @@ class AgentState(TypedDict):
     other_requests: str
 
     macrocycle_is_requested: bool
-    macrocycle_is_altered: bool
+    macrocycle_is_alter: bool
     macrocycle_is_read: bool
 
     temp_macrocycle_is_alter: bool

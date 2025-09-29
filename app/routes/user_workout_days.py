@@ -22,7 +22,7 @@ def get_user_workout_days_list():
     state = {
         "user_id": current_user.id,
         "phase_component_is_requested": True,
-        "phase_component_is_altered": False,
+        "phase_component_is_alter": False,
         "phase_component_is_read": True,
         "phase_component_read_plural": True,
         "phase_component_read_current": False,
@@ -44,7 +44,7 @@ def get_user_current_workout_days_list():
     state = {
         "user_id": current_user.id,
         "phase_component_is_requested": True,
-        "phase_component_is_altered": False,
+        "phase_component_is_alter": False,
         "phase_component_is_read": True,
         "phase_component_read_plural": True,
         "phase_component_read_current": True,
@@ -66,7 +66,7 @@ def read_user_current_workout_day():
     state = {
         "user_id": current_user.id,
         "phase_component_is_requested": True,
-        "phase_component_is_altered": False,
+        "phase_component_is_alter": False,
         "phase_component_is_read": True,
         "phase_component_read_plural": False,
         "phase_component_read_current": True,
@@ -88,7 +88,7 @@ def workout_day_initializer():
     state = {
         "user_id": current_user.id,
         "phase_component_is_requested": True,
-        "phase_component_is_altered": True,
+        "phase_component_is_alter": True,
         "phase_component_is_read": True,
         "phase_component_read_plural": False,
         "phase_component_read_current": False,
@@ -106,7 +106,7 @@ def workout_day_initializer_by_id(phase_id):
     state = {
         "user_id": current_user.id,
         "phase_component_is_requested": True,
-        "phase_component_is_altered": True,
+        "phase_component_is_alter": True,
         "phase_component_is_read": True,
         "phase_component_read_plural": False,
         "phase_component_read_current": False,

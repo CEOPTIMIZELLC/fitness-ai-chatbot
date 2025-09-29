@@ -39,7 +39,7 @@ def new_input_request(user_input, item_system_prompt, item_goal):
 # Extract the individual item
 def _user_input_sub_extraction(state, sub_agent_name, sub_agent_pydantic):
     state[f"{sub_agent_name}_is_requested"] = sub_agent_pydantic["is_requested"]
-    state[f"{sub_agent_name}_is_altered"] = True
+    state[f"{sub_agent_name}_is_alter"] = True
     state[f"{sub_agent_name}_is_read"] = True
     state[f"{sub_agent_name}_detail"] = sub_agent_pydantic["detail"]
     return state

@@ -17,7 +17,7 @@ class AgentNode():
                 "user_input": state["user_input"], 
                 "attempts": state["attempts"], 
                 "availability_is_requested": state["availability_is_requested"], 
-                "availability_is_altered": state["availability_is_altered"], 
+                "availability_is_alter": state["availability_is_alter"], 
                 "availability_is_read": state["availability_is_read"], 
                 "availability_read_plural": state["availability_read_plural"], 
                 "availability_read_current": state["availability_read_current"], 
@@ -26,7 +26,7 @@ class AgentNode():
         else:
             result = {
                 "availability_is_requested": False, 
-                "availability_is_altered": False,
+                "availability_is_alter": False,
                 "availability_is_read": False,
                 "availability_read_plural": False, 
                 "availability_read_current": False, 
@@ -36,7 +36,7 @@ class AgentNode():
             }
         return {
             "availability_is_requested": result["availability_is_requested"], 
-            "availability_is_altered": result["availability_is_altered"], 
+            "availability_is_alter": result["availability_is_alter"], 
             "availability_is_read": result["availability_is_read"], 
             "availability_read_plural": result["availability_read_plural"], 
             "availability_read_current": result["availability_read_current"], 

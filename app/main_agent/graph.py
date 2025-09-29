@@ -31,7 +31,7 @@ def reset_schedule_bool(state, state_item):
 # Resets the values related to a schedule section in the state to None.
 def reset_schedule_section(state, schedule_name):
     reset_schedule_bool(state, f"{schedule_name}_is_requested")
-    reset_schedule_bool(state, f"{schedule_name}_is_altered")
+    reset_schedule_bool(state, f"{schedule_name}_is_alter")
     reset_schedule_bool(state, f"{schedule_name}_is_read")
     reset_schedule_bool(state, f"{schedule_name}_read_plural")
     reset_schedule_bool(state, f"{schedule_name}_read_current")

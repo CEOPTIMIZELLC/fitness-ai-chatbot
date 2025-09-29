@@ -20,7 +20,7 @@ def get_user_mesocycles_list():
     state = {
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
-        "mesocycle_is_altered": False,
+        "mesocycle_is_alter": False,
         "mesocycle_is_read": True,
         "mesocycle_read_plural": True,
         "mesocycle_read_current": False,
@@ -38,7 +38,7 @@ def get_user_current_mesocycles_list():
     state = {
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
-        "mesocycle_is_altered": False,
+        "mesocycle_is_alter": False,
         "mesocycle_is_read": True,
         "mesocycle_read_plural": True,
         "mesocycle_read_current": True,
@@ -56,7 +56,7 @@ def read_user_current_mesocycle():
     state = {
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
-        "mesocycle_is_altered": False,
+        "mesocycle_is_alter": False,
         "mesocycle_is_read": True,
         "mesocycle_read_plural": False,
         "mesocycle_read_current": True,
@@ -74,7 +74,7 @@ def mesocycle_phases():
     state = {
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
-        "mesocycle_is_altered": True,
+        "mesocycle_is_alter": True,
         "mesocycle_is_read": True,
         "mesocycle_read_plural": False,
         "mesocycle_read_current": False,
@@ -92,7 +92,7 @@ def add_mesocycle_phases_by_id(goal_id):
     state = {
         "user_id": current_user.id,
         "mesocycle_is_requested": True,
-        "mesocycle_is_altered": True,
+        "mesocycle_is_alter": True,
         "mesocycle_is_read": True,
         "mesocycle_read_plural": False,
         "mesocycle_read_current": False,

@@ -10,7 +10,7 @@ class AgentState(TypedDict):
     other_requests: str
 
     availability_is_requested: bool
-    availability_is_altered: bool
+    availability_is_alter: bool
     availability_is_read: bool
 
     temp_availability_is_alter: bool

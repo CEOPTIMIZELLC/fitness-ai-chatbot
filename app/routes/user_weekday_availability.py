@@ -16,7 +16,7 @@ def get_user_weekday_list():
     state = {
         "user_id": current_user.id,
         "availability_is_requested": True,
-        "availability_is_altered": False,
+        "availability_is_alter": False,
         "availability_is_read": True,
         "availability_read_plural": True,
         "availability_read_current": True,
@@ -37,7 +37,7 @@ def get_user_weekday_current_list():
     state = {
         "user_id": current_user.id,
         "availability_is_requested": True,
-        "availability_is_altered": False,
+        "availability_is_alter": False,
         "availability_is_read": True,
         "availability_read_plural": True,
         "availability_read_current": True,
@@ -58,7 +58,7 @@ def read_user_current_weekday():
     state = {
         "user_id": current_user.id,
         "availability_is_requested": True,
-        "availability_is_altered": False,
+        "availability_is_alter": False,
         "availability_is_read": True,
         "availability_read_plural": False,
         "availability_read_current": True,
@@ -87,7 +87,7 @@ def change_weekday_availability():
     state = {
         "user_id": current_user.id,
         "availability_is_requested": True,
-        "availability_is_altered": True,
+        "availability_is_alter": True,
         "availability_is_read": True,
         "availability_read_plural": False,
         "availability_read_current": False,

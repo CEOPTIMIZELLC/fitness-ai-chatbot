@@ -28,7 +28,7 @@ bp = Blueprint('dev_tests', __name__)
 state_templates = {
     "alter": {
         "is_requested": True, 
-        "is_altered": True, 
+        "is_alter": True, 
         "is_read": True, 
         "read_plural": False, 
         "read_current": False, 
@@ -36,7 +36,7 @@ state_templates = {
     }, 
     "current_list": {
         "is_requested": True, 
-        "is_altered": False, 
+        "is_alter": False, 
         "is_read": False, 
         "read_plural": False, 
         "read_current": True, 
@@ -50,7 +50,7 @@ def sub_agent_state_constructor(state, sub_agent_name, state_template, message=N
         message = f"{state_template["detail"]} {sub_agent_name}."
 
     state[f"{sub_agent_name}_is_requested"] = state_template["is_requested"]
-    state[f"{sub_agent_name}_is_altered"] = state_template["is_altered"]
+    state[f"{sub_agent_name}_is_alter"] = state_template["is_alter"]
     state[f"{sub_agent_name}_read_plural"] = state_template["read_plural"]
     state[f"{sub_agent_name}_read_current"] = state_template["read_current"]
     state[f"{sub_agent_name}_detail"] = message

@@ -61,7 +61,7 @@ def get_user_equipment_list():
     state = {
         "user_id": current_user.id,
         "equipment_is_requested": True,
-        "equipment_is_altered": False,
+        "equipment_is_alter": False,
         "equipment_is_read": True,
         "equipment_read_plural": True,
         "equipment_read_current": True,
@@ -85,7 +85,7 @@ def read_user_equipment(user_equipment_id):
     state = {
         "user_id": current_user.id,
         "equipment_is_requested": True,
-        "equipment_is_altered": False,
+        "equipment_is_alter": False,
         "equipment_is_read": True,
         "equipment_read_plural": True,
         "equipment_read_current": True,
@@ -114,7 +114,7 @@ def add_user_equipment():
     state = {
         "user_id": current_user.id,
         "equipment_is_requested": True,
-        "equipment_is_altered": True,
+        "equipment_is_alter": True,
         "equipment_is_read": True,
         "equipment_read_plural": False,
         "equipment_read_current": False,
@@ -142,7 +142,7 @@ def change_user_equipment():
     state = {
         "user_id": current_user.id,
         "equipment_is_requested": True,
-        "equipment_is_altered": True,
+        "equipment_is_alter": True,
         "equipment_is_read": True,
         "equipment_read_plural": False,
         "equipment_read_current": False,
@@ -170,7 +170,7 @@ def change_user_equipment_by_id(user_equipment_id):
     state = {
         "user_id": current_user.id,
         "equipment_is_requested": True,
-        "equipment_is_altered": True,
+        "equipment_is_alter": True,
         "equipment_is_read": True,
         "equipment_read_plural": False,
         "equipment_read_current": False,

@@ -67,7 +67,7 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
         # Parse the structured output values to a dictionary.
         return {
             self.availability_names["is_requested"]: goal_class.is_requested,
-            self.availability_names["is_altered"]: True,
+            self.availability_names["is_alter"]: True,
             self.availability_names["is_read"]: True,
             self.availability_names["read_plural"]: False,
             self.availability_names["read_current"]: False,

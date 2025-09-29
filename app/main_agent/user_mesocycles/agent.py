@@ -40,7 +40,7 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
     def goal_classifier_parser(self, focus_names, goal_class):
         goal_class_dump = goal_class.model_dump()
         parsed_goal = {
-            focus_names["is_altered"]: True,
+            focus_names["is_alter"]: True,
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False,
             "macrocycle_alter_old": goal_class_dump.pop("alter_old", False), 

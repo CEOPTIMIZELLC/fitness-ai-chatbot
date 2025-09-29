@@ -19,7 +19,7 @@ def get_user_macrocycle_list():
     state = {
         "user_id": current_user.id,
         "macrocycle_is_requested": True,
-        "macrocycle_is_altered": False,
+        "macrocycle_is_alter": False,
         "macrocycle_is_read": True,
         "macrocycle_read_plural": True,
         "macrocycle_read_current": True,
@@ -39,7 +39,7 @@ def read_user_current_macrocycle():
     state = {
         "user_id": current_user.id,
         "macrocycle_is_requested": True,
-        "macrocycle_is_altered": False,
+        "macrocycle_is_alter": False,
         "macrocycle_is_read": True,
         "macrocycle_read_plural": False,
         "macrocycle_read_current": True,
@@ -72,7 +72,7 @@ def change_macrocycle():
     state = {
         "user_id": current_user.id,
         "macrocycle_is_requested": True,
-        "macrocycle_is_altered": True,
+        "macrocycle_is_alter": True,
         "macrocycle_is_read": True,
         "macrocycle_read_plural": False,
         "macrocycle_read_current": False,
@@ -97,7 +97,7 @@ def change_macrocycle_by_id(goal_id):
     state = {
         "user_id": current_user.id,
         "macrocycle_is_requested": True,
-        "macrocycle_is_altered": True,
+        "macrocycle_is_alter": True,
         "macrocycle_is_read": True,
         "macrocycle_read_plural": False,
         "macrocycle_read_current": False,

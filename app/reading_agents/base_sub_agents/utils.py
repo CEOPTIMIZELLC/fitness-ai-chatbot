@@ -8,7 +8,7 @@ def sub_agent_focused_items(sub_agent_focus):
         "entry": f"user_{sub_agent_focus}", 
         "id": f"{sub_agent_focus}_id", 
         "is_requested": f"{sub_agent_focus}_is_requested", 
-        "is_altered": f"{sub_agent_focus}_is_altered", 
+        "is_alter": f"{sub_agent_focus}_is_alter", 
         "is_read": f"{sub_agent_focus}_is_read", 
         "read_plural": f"{sub_agent_focus}_read_plural", 
         "read_current": f"{sub_agent_focus}_read_current", 

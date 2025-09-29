@@ -24,7 +24,7 @@ class SubAgent(BaseAgent):
             is_alter = state_updates.pop("is_alter", False) or state_updates.pop("is_create", False)
             
             # Combine requests.
-            item_request_list = state_updates.pop("alter_detail", None) or state_updates.pop("create_detail", None)
+            item_request_list = [state_updates.pop("alter_detail", None), state_updates.pop("create_detail", None)]
             alter_detail = " ".join(
                 value
                 for value in item_request_list

@@ -12,8 +12,14 @@ def sub_agent_focused_items(sub_agent_focus):
         "entry": f"user_{sub_agent_focus}", 
         "id": f"{sub_agent_focus}_id", 
         "is_requested": f"{sub_agent_focus}_is_requested", 
-        "is_altered": f"{sub_agent_focus}_is_altered", 
+        "is_alter": f"{sub_agent_focus}_is_alter", 
+        "alter_detail": f"{sub_agent_focus}_alter_detail", 
         "is_read": f"{sub_agent_focus}_is_read", 
+        "read_detail": f"{sub_agent_focus}_read_detail", 
+        "is_create": f"{sub_agent_focus}_is_create", 
+        "create_detail": f"{sub_agent_focus}_create_detail", 
+        "is_delete": f"{sub_agent_focus}_is_delete", 
+        "delete_detail": f"{sub_agent_focus}_delete_detail", 
         "read_plural": f"{sub_agent_focus}_read_plural", 
         "read_current": f"{sub_agent_focus}_read_current", 
         "detail": f"{sub_agent_focus}_detail", 
@@ -36,7 +42,7 @@ def update_state_schedule_section(state, old_state, updated_state, section, igno
     if section == ignore_section:
         return state
     update_bool(state, old_state, updated_state, f"{section}_is_requested")
-    update_bool(state, old_state, updated_state, f"{section}_is_altered")
+    update_bool(state, old_state, updated_state, f"{section}_is_alter")
     update_bool(state, old_state, updated_state, f"{section}_is_read")
     update_val(state, old_state, updated_state, f"{section}_detail")
     return state
