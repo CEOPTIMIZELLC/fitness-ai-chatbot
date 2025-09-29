@@ -13,18 +13,22 @@ class AgentState(TypedDict):
 
     macrocycle_is_alter: bool
     macrocycle_alter_detail: str
+
     macrocycle_is_create: bool
     macrocycle_create_detail: str
+
     macrocycle_is_read: bool
-    macrocycle_read_detail: str
     macrocycle_read_plural: str
     macrocycle_read_current: str
+    macrocycle_read_detail: str
+
     macrocycle_is_delete: bool
     macrocycle_delete_detail: str
 
     macrocycle_read_plural: bool
     macrocycle_read_current: bool
     macrocycle_detail: str
+
     macrocycle_formatted: str
     macrocycle_perform_with_parent_id: int
 

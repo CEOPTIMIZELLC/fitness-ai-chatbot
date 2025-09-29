@@ -6,12 +6,15 @@ class AgentState(MainAgentState):
 
     microcycle_is_alter: bool
     microcycle_alter_detail: str
+
     microcycle_is_create: bool
     microcycle_create_detail: str
+
     microcycle_is_read: bool
-    microcycle_read_detail: str
     microcycle_read_plural: str
     microcycle_read_current: str
+    microcycle_read_detail: str
+
     microcycle_is_delete: bool
     microcycle_delete_detail: str
 

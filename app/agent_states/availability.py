@@ -13,18 +13,22 @@ class AgentState(TypedDict):
 
     availability_is_alter: bool
     availability_alter_detail: str
+
     availability_is_create: bool
     availability_create_detail: str
+
     availability_is_read: bool
-    availability_read_detail: str
     availability_read_plural: str
     availability_read_current: str
+    availability_read_detail: str
+
     availability_is_delete: bool
     availability_delete_detail: str
 
     availability_read_plural: bool
     availability_read_current: bool
     availability_detail: str
+
     availability_formatted: str
 
     agent_output: list

@@ -5,12 +5,15 @@ class AgentState(MainAgentState):
 
     equipment_is_alter: bool
     equipment_alter_detail: str
+
     equipment_is_create: bool
     equipment_create_detail: str
+
     equipment_is_read: bool
-    equipment_read_detail: str
     equipment_read_plural: str
     equipment_read_current: str
+    equipment_read_detail: str
+
     equipment_is_delete: bool
     equipment_delete_detail: str
 

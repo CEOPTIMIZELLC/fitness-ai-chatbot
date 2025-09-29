@@ -6,12 +6,15 @@ class AgentState(MainAgentState):
 
     phase_component_is_alter: bool
     phase_component_alter_detail: str
+
     phase_component_is_create: bool
     phase_component_create_detail: str
+
     phase_component_is_read: bool
-    phase_component_read_detail: str
     phase_component_read_plural: str
     phase_component_read_current: str
+    phase_component_read_detail: str
+
     phase_component_is_delete: bool
     phase_component_delete_detail: str
 

@@ -6,12 +6,15 @@ class AgentState(MainAgentState):
 
     mesocycle_is_alter: bool
     mesocycle_alter_detail: str
+
     mesocycle_is_create: bool
     mesocycle_create_detail: str
+
     mesocycle_is_read: bool
-    mesocycle_read_detail: str
     mesocycle_read_plural: str
     mesocycle_read_current: str
+    mesocycle_read_detail: str
+
     mesocycle_is_delete: bool
     mesocycle_delete_detail: str
 
