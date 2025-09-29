@@ -29,8 +29,8 @@ class BaseAgentWithoutParents(BaseAgent):
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
-        workflow.add_node("extract_operations", self.extract_operations)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
+        workflow.add_node("extract_operations", self.extract_operations)
         workflow.add_node("altering_agent", self.altering_agent)
         workflow.add_node("reading_agent", self.reading_agent)
         workflow.add_node("end_node", self.end_node)

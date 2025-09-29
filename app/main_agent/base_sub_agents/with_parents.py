@@ -165,13 +165,13 @@ class BaseAgentWithParents(BaseAgent):
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
-        workflow.add_node("extract_operations", self.extract_operations)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
         workflow.add_node("permission_denied", self.permission_denied)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("parent_retrieved", self.parent_retrieved)
+        workflow.add_node("extract_operations", self.extract_operations)
         workflow.add_node("altering_agent", self.altering_agent)
         workflow.add_node("reading_agent", self.reading_agent)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
@@ -184,10 +184,9 @@ class BaseAgentWithParents(BaseAgent):
             confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
-                "impact": "extract_operations"                          # Determine what operations to perform.
+                "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
             }
         )
-        workflow.add_edge("extract_operations", "retrieve_parent")
 
         # Whether a parent element exists.
         workflow.add_conditional_edges(
@@ -199,9 +198,11 @@ class BaseAgentWithParents(BaseAgent):
             }
         )
 
+        workflow.add_edge("parent_retrieved", "extract_operations")
+
         # Whether the goal is to alter user elements.
         workflow.add_conditional_edges(
-            "parent_retrieved",
+            "extract_operations",
             determine_if_alter, 
             {
                 "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.

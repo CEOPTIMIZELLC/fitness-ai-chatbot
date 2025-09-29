@@ -63,6 +63,11 @@ class BaseAgent():
     focus_system_prompt = None
     focus_goal = None
 
+    altering_agent = None
+    creation_agent = None
+    deletion_agent = None
+    reading_agent = None
+
     def __init__(self):
         self.focus_names = sub_agent_focused_items(self.focus)
 
