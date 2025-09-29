@@ -57,31 +57,6 @@ def determine_if_read(state):
         return "read"
     return "not_read"
 
-# Determine whether the outcome is to read the entire schedule or simply the current item.
-def determine_read_operation(state):
-    sub_agent_focus = retrieve_current_agent_focus(state)
-    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read a list of {sub_agent_focus} or simply a singular item---------")
-    if state.get(f"{sub_agent_focus}_read_plural", False):
-        return "plural"
-    return "singular"
-
-# Determine whether the outcome is to read an item from the current set or all items from the user.
-def determine_read_filter_operation(state):
-    sub_agent_focus = retrieve_current_agent_focus(state)
-    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read all {sub_agent_focus} items for the user or only those currently active---------")
-    if state.get(f"{sub_agent_focus}_read_current", False):
-        return "current"
-    return "all"
-
-# Determine whether the schedule should be regenerated.
-def confirm_regenerate(state):
-    sub_agent_focus = retrieve_current_agent_focus(state)
-    LogMainSubAgent.agent_steps(f"\t---------Determine if the {sub_agent_focus} schedule should be regenerated---------")
-    if state.get("is_regenerated", False):
-        LogMainSubAgent.agent_steps(f"\t---------Is Regenerated---------")
-        return "is_regenerated"
-    return "not_regenerated"
-
 class BaseAgent():
     focus = ""
     sub_agent_title = ""
