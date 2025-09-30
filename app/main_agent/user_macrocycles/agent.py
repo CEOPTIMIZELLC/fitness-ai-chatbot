@@ -1,9 +1,12 @@
+from logging_config import LogMainSubAgent
+
 from langgraph.graph import StateGraph, START, END
 
 from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_create, determine_if_alter, determine_if_read
 from app.impact_goal_models.macrocycles import MacrocycleGoal
 from app.goal_prompts.macrocycles import macrocycle_system_prompt
+from app.utils.common_table_queries import current_macrocycle
 
 from app.agent_states.macrocycles import AgentState
 
@@ -22,10 +25,45 @@ class SubAgent(BaseAgent):
     creation_agent = create_creation_agent()
     reading_agent = create_reading_agent()
 
+    # Node to declare that the sub agent has begun.
+    def correct_alter(self, state):
+        LogMainSubAgent.agent_introductions(f"\n=========Correcting {self.sub_agent_title} Alter Operation to Create if no Item can be Alerted=========")
+
+        is_alter = state.get(self.focus_names["is_alter"], False)
+        if not is_alter:
+            # Operation is not alter.
+            return {}
+
+        user_id = state["user_id"]
+        user_macrocycle = current_macrocycle(user_id)
+        if user_macrocycle:
+            # A macrocycle exists to be altered.
+            return {}
+
+        is_create = is_alter or state.pop(self.focus_names["is_create"], False)
+        
+        # Combine requests.
+        item_request_list = [
+            state.pop(self.focus_names["alter_detail"], None), 
+            state.pop(self.focus_names["create_detail"], None)
+        ]
+
+        create_detail = " ".join(
+            value
+            for value in item_request_list
+            if value != None
+        )
+
+        return {
+            self.focus_names["is_create"]: is_create, 
+            self.focus_names["create_detail"]: create_detail
+        }
+
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
         workflow.add_node("extract_operations", self.extract_operations)
+        workflow.add_node("correct_alter", self.correct_alter)
         workflow.add_node("operation_is_not_create", self.chained_conditional_inbetween)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
         workflow.add_node("creation_agent", self.creation_agent)
@@ -44,9 +82,11 @@ class SubAgent(BaseAgent):
             }
         )
 
+        workflow.add_edge("extract_operations", "correct_alter")
+
         # Whether the goal is to create user elements.
         workflow.add_conditional_edges(
-            "extract_operations",
+            "correct_alter",
             determine_if_create, 
             {
                 "not_create": "operation_is_not_create",                # In between step for if the operation is not create.
