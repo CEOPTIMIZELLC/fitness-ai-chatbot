@@ -21,8 +21,8 @@ class BaseAgentWithoutParents(BaseAgent):
             "operation_is_read",
             determine_read_operation, 
             {
-                "plural": "get_user_list",                              # Read all user elements.
-                "singular": "read_user_current_element"                 # Read the current element.
+                "singular": "read_user_current_element",                # Read the current element.
+                "plural": "get_user_list"                               # Read all user elements.
             }
         )
 
