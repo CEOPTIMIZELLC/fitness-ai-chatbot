@@ -1,10 +1,18 @@
+from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Optional
+
+class ReadMode(str, Enum):
+    plural = "plural"
+    current = "current"
 
 class ReadOperationGoal(BaseModel):
     """Goal extraction from user input regarding if a read operation should be performed."""
     is_requested: bool = Field(
         False, description="True if the user is indicating a desire to read information in their original request."
+    )
+    read_method: ReadMode = Field(
+        None, description="The method that should be performed. Should be None if reading operation isn't requested."
     )
     detail: Optional[str] = Field(
         None, description="The portion(s) of the original message that are relevant to the request for reading specifically."
