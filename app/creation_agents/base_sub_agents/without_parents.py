@@ -6,7 +6,7 @@ from langgraph.types import interrupt
 from app.utils.user_input import new_input_request
 
 from .base import BaseAgent
-from app.utils.agent_state_helpers import retrieve_current_agent_focus
+from app.utils.agent_state_helpers import retrieve_current_agent_focus, goal_classifier_parser
 
 # ----------------------------------------- Base Sub Agent For Schedule Items Without Parents -----------------------------------------
 
@@ -24,17 +24,7 @@ class BaseAgentWithoutParents(BaseAgent):
 
     # Default items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
-        goal_class_dump = goal_class.model_dump()
-        parsed_goal = {
-            "other_requests": goal_class_dump.pop("other_requests", None)
-        }
-
-        # Alter the variables in the state to match those retrieved from the LLM.
-        for key, value in goal_class_dump.items():
-            if value is not None:
-                parsed_goal[focus_names[key]] = value
-
-        return parsed_goal
+        return goal_classifier_parser(focus_names, goal_class)
 
     # Request permission from user to execute the new input.
     def ask_for_new_input(self, state):

@@ -4,7 +4,7 @@ from flask import abort
 from app.goal_prompts.sub_agent_operations import goal_system_prompt
 from app.impact_goal_models.sub_agent_operations import OperationGoals
 
-from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agent_focused_items
+from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agent_focused_items, goal_classifier_parser
 from app.utils.user_input import new_input_request
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------
@@ -132,17 +132,7 @@ class BaseAgent():
 
     # Default items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
-        goal_class_dump = goal_class.model_dump()
-        parsed_goal = {
-            "other_requests": goal_class_dump.pop("other_requests", None)
-        }
-
-        # Alter the variables in the state to match those retrieved from the LLM.
-        for key, value in goal_class_dump.items():
-            if value is not None:
-                parsed_goal[focus_names[key]] = value
-
-        return parsed_goal
+        return goal_classifier_parser(focus_names, goal_class)
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):

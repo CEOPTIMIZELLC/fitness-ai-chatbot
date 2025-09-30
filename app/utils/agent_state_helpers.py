@@ -60,3 +60,16 @@ def log_extracted_goals(result):
             LogGeneral.other_request_updates(f"{sub_agent_name}: {result[f"{sub_agent_name}_detail"]}")
     LogGeneral.other_request_updates("")
     return None
+
+def goal_classifier_parser(focus_names, goal_class):
+    goal_class_dump = goal_class.model_dump()
+    parsed_goal = {
+        "other_requests": goal_class_dump.pop("other_requests", None)
+    }
+
+    # Alter the variables in the state to match those retrieved from the LLM.
+    for key, value in goal_class_dump.items():
+        if value is not None:
+            parsed_goal[focus_names[key]] = value
+
+    return parsed_goal
