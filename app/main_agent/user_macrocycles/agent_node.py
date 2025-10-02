@@ -10,7 +10,7 @@ TState = TypeVar('TState', bound=MainAgentState)
 class AgentNode():
     def macrocycle_node(self, state: TState):
         LogMainSubAgent.agent_introductions(f"\n=========Starting User Macrocycle=========")
-        if state["macrocycle_is_requested"]:
+        if state.get("macrocycle_is_requested", False):
             goal_agent = create_main_agent_graph()
             result = goal_agent.invoke({
                 "user_id": state["user_id"], 

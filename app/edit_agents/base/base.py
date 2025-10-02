@@ -72,7 +72,7 @@ class ScheduleFormatterMethods:
 # Confirm that the desired section should be edited.
 def confirm_edits(state):
     LogEditorAgent.agent_steps(f"\t---------Confirm that the Schedule is Edited---------")
-    if state["is_edited"]:
+    if state.get("is_edited", False):
         LogEditorAgent.agent_steps(f"\t---------Is Edited---------")
         return "is_edited"
     return "not_edited"
@@ -80,7 +80,7 @@ def confirm_edits(state):
 # Confirm that the user wants to move forward with the invalid schedule.
 def confirm_interest(state):
     LogEditorAgent.agent_steps(f"\t---------Confirm Interest in the Invalid Schedule---------")
-    if state["allow_schedule"]:
+    if state.get("allow_schedule", False):
         LogEditorAgent.agent_steps(f"\t---------Allowed the Schedule---------")
         return "allow_schedule"
     LogEditorAgent.agent_steps(f"\t---------Do NOT Allow the Schedule---------")

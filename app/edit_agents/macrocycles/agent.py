@@ -38,7 +38,7 @@ class AgentState(TypedDict):
 # Confirm that the desired section should be edited.
 def confirm_edits(state):
     LogEditorAgent.agent_steps(f"\t---------Confirm that the Schedule is Edited---------")
-    if state["is_edited"]:
+    if state.get("is_edited", False):
         LogEditorAgent.agent_steps(f"\t---------Is Edited---------")
         return "is_edited"
     return "not_edited"

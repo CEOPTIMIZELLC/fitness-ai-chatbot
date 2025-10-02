@@ -20,7 +20,7 @@ from app.agent_states.equipment import AgentState
 # Determine if more details are required for the operation to occur.
 def are_more_details_needed(state: AgentState):
     LogCreationAgent.agent_steps(f"\t---------Determine if more details are needed to continue.---------")
-    if state["request_more_details"]:
+    if state.get("request_more_details", False):
         LogCreationAgent.agent_steps(f"\t---------More details are needed.---------")
         return "need_more_details"
     LogCreationAgent.agent_steps(f"\t---------No more details are needed.---------")

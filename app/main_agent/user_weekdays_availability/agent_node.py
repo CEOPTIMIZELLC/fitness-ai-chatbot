@@ -10,7 +10,7 @@ TState = TypeVar('TState', bound=MainAgentState)
 class AgentNode():
     def availability_node(self, state: TState):
         LogMainSubAgent.agent_introductions(f"\n=========Starting User Availability=========")
-        if state["availability_is_requested"]:
+        if state.get("availability_is_requested", False):
             availability_agent = create_main_agent_graph()
             result = availability_agent.invoke({
                 "user_id": state["user_id"], 
