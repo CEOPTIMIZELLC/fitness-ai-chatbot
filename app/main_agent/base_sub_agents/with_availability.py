@@ -65,11 +65,7 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
         goal_class = new_input_request(user_input, self.availability_system_prompt, self.availability_goal)
 
         # Parse the structured output values to a dictionary.
-        return {
-            self.availability_names["is_requested"]: goal_class.is_requested,
-            self.availability_names["detail"]: goal_class.detail, 
-            "availability_other_requests": goal_class.other_requests,
-        }
+        return self.goal_classifier_parser(self.availability_names, goal_class)
 
     # Request is unique for Availability retrieval
     def availability_requests_extraction(self, state: TState):
