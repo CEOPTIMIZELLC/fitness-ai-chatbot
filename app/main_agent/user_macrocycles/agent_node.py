@@ -14,11 +14,11 @@ class AgentNode():
             goal_agent = create_main_agent_graph()
             result = goal_agent.invoke({
                 "user_id": state["user_id"], 
-                "user_input": state["user_input"], 
-                "attempts": state["attempts"], 
-                "macrocycle_is_requested": state["macrocycle_is_requested"], 
-                "macrocycle_detail": state["macrocycle_detail"],
-                "macrocycle_perform_with_parent_id": state["macrocycle_perform_with_parent_id"] if "macrocycle_perform_with_parent_id" in state else None,
+                "user_input": state.get("user_input", None), 
+                "attempts": state.get("attempts", 0), 
+                "macrocycle_is_requested": state.get("macrocycle_is_requested", False), 
+                "macrocycle_detail": state.get("macrocycle_detail", None),
+                "macrocycle_perform_with_parent_id": state.get("macrocycle_perform_with_parent_id", None),
             })
         else:
             result = {
@@ -29,9 +29,9 @@ class AgentNode():
                 "macrocycle_other_requests": None
             }
         return {
-            "macrocycle_is_requested": result["macrocycle_is_requested"], 
-            "macrocycle_detail": result["macrocycle_detail"], 
-            "macrocycle_perform_with_parent_id": result["macrocycle_perform_with_parent_id"] if "macrocycle_perform_with_parent_id" in result else None, 
-            "macrocycle_formatted": result["macrocycle_formatted"], 
-            "macrocycle_other_requests": result.get("other_requests")
+            "macrocycle_is_requested": result.get("macrocycle_is_requested", False), 
+            "macrocycle_detail": result.get("macrocycle_detail", None), 
+            "macrocycle_perform_with_parent_id": result.get("macrocycle_perform_with_parent_id", None), 
+            "macrocycle_formatted": result.get("macrocycle_formatted", None), 
+            "macrocycle_other_requests": result.get("other_requests", None)
         }
