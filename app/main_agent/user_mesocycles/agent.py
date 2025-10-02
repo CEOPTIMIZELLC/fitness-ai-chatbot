@@ -1,5 +1,6 @@
 from logging_config import LogMainSubAgent
 
+from app.utils.agent_state_helpers import goal_classifier_parser
 from app.utils.common_table_queries import current_macrocycle
 
 from app.main_agent.user_macrocycles import MacrocycleAgentNode
@@ -35,6 +36,10 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         parent_db_entry = self.parent_retriever_agent(user_id)
         parent_db_entry.goal_id = new_parent_id
         return parent_db_entry
+
+    # Default items extracted from the goal classifier
+    def goal_classifier_parser(self, focus_names, goal_class):
+        return goal_classifier_parser(focus_names, goal_class, f"{self.parent}_other_requests")
 
     # Request is unique for Macrocycle for Mesocycle
     def parent_requests_extraction(self, state: AgentState):

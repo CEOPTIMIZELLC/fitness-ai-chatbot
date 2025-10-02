@@ -10,7 +10,7 @@ from app.utils.user_input import new_input_request
 
 from .with_parents import TState
 from .with_parents import BaseAgentWithParents
-from app.utils.agent_state_helpers import sub_agent_focused_items
+from app.utils.agent_state_helpers import sub_agent_focused_items, goal_classifier_parser
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Availability -----------------------------------------
 
@@ -65,7 +65,7 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
         goal_class = new_input_request(user_input, self.availability_system_prompt, self.availability_goal)
 
         # Parse the structured output values to a dictionary.
-        return self.goal_classifier_parser(self.availability_names, goal_class)
+        return goal_classifier_parser(self.availability_names, goal_class, f"availability_other_requests")
 
     # Request is unique for Availability retrieval
     def availability_requests_extraction(self, state: TState):
