@@ -116,9 +116,6 @@ class MainAgentVerbosityConfig:
     # Log the output of main agent.
     agent_output = True
 
-    # Log system messages for LLM calls in the main agent.
-    system_message = True
-
     # Log final formatted schedule produced.
     formatted_schedule = True
 
@@ -135,12 +132,6 @@ class MainSubAgentVerbosityConfig:
 
     # Log the output of the sub agents.
     agent_output = True
-
-    # Log system messages for LLM calls in the sub agent.
-    system_message = False
-
-    # Log the parsed user input for the sub agents.
-    parsed_goal = True
 
     # Log final formatted schedule produced.
     formatted_schedule = True
@@ -163,12 +154,6 @@ class AlteringAgentVerbosityConfig:
     # Log the output of the sub agents.
     agent_output = True
 
-    # Log system messages for LLM calls in the sub agent.
-    system_message = False
-
-    # Log the parsed user input for the sub agents.
-    parsed_goal = True
-
     # Log final formatted schedule produced.
     formatted_schedule = True
 
@@ -187,12 +172,6 @@ class CreationAgentVerbosityConfig:
     # Log the output of the sub agents.
     agent_output = True
 
-    # Log system messages for LLM calls in the sub agent.
-    system_message = False
-
-    # Log the parsed user input for the sub agents.
-    parsed_goal = True
-
     # Log final formatted schedule produced.
     formatted_schedule = True
 
@@ -210,12 +189,6 @@ class DeletionAgentVerbosityConfig:
 
     # Log the output of the sub agents.
     agent_output = True
-
-    # Log system messages for LLM calls in the sub agent.
-    system_message = False
-
-    # Log the parsed user input for the sub agents.
-    parsed_goal = True
 
     # Log final formatted schedule produced.
     formatted_schedule = True
@@ -246,12 +219,6 @@ class EditorAgentVerbosityConfig:
 
     # Log node introductions in the editor agents.
     agent_steps = True
-
-    # Log system messages for LLM calls in the editor agent.
-    system_message = False
-
-    # Log the parsed user input for the editor agents.
-    parsed_goal = True
 
     # Log final formatted schedule produced.
     formatted_schedule = True

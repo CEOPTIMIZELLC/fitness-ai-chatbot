@@ -62,7 +62,6 @@ class LogMainAgent:
     agent_introductions = partial(verbose_log, MainAgentVerbosityConfig.agent_introductions)
     agent_steps = partial(verbose_log, MainAgentVerbosityConfig.agent_steps)
     agent_output = partial(verbose_log, MainAgentVerbosityConfig.agent_output)
-    system_message = partial(verbose_log, MainAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, MainAgentVerbosityConfig.formatted_schedule)
 
 class LogMainSubAgent:
@@ -70,8 +69,6 @@ class LogMainSubAgent:
     agent_introductions = partial(verbose_log, MainSubAgentVerbosityConfig.agent_introductions)
     agent_steps = partial(verbose_log, MainSubAgentVerbosityConfig.agent_steps)
     agent_output = partial(verbose_log, MainSubAgentVerbosityConfig.agent_output)
-    parsed_goal = partial(verbose_log, MainSubAgentVerbosityConfig.parsed_goal)
-    system_message = partial(verbose_log, MainSubAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
     agent_path = partial(verbose_log, MainSubAgentVerbosityConfig.agent_path)
 
@@ -80,7 +77,6 @@ class LogAlteringAgent:
     agent_introductions = partial(verbose_log, AlteringAgentVerbosityConfig.agent_introductions)
     agent_steps = partial(verbose_log, AlteringAgentVerbosityConfig.agent_steps)
     agent_output = partial(verbose_log, AlteringAgentVerbosityConfig.agent_output)
-    system_message = partial(verbose_log, AlteringAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, AlteringAgentVerbosityConfig.formatted_schedule)
 
 class LogCreationAgent:
@@ -88,7 +84,6 @@ class LogCreationAgent:
     agent_introductions = partial(verbose_log, CreationAgentVerbosityConfig.agent_introductions)
     agent_steps = partial(verbose_log, CreationAgentVerbosityConfig.agent_steps)
     agent_output = partial(verbose_log, CreationAgentVerbosityConfig.agent_output)
-    system_message = partial(verbose_log, CreationAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, CreationAgentVerbosityConfig.formatted_schedule)
 
 class LogDeletionAgent:
@@ -96,7 +91,6 @@ class LogDeletionAgent:
     agent_introductions = partial(verbose_log, DeletionAgentVerbosityConfig.agent_introductions)
     agent_steps = partial(verbose_log, DeletionAgentVerbosityConfig.agent_steps)
     agent_output = partial(verbose_log, DeletionAgentVerbosityConfig.agent_output)
-    system_message = partial(verbose_log, DeletionAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, DeletionAgentVerbosityConfig.formatted_schedule)
 
 class LogReadingAgent:
@@ -109,8 +103,6 @@ class LogEditorAgent:
     verbose = partial(verbose_log, EditorAgentVerbosityConfig.verbose)
     agent_introductions = partial(verbose_log, EditorAgentVerbosityConfig.agent_introductions)
     agent_steps = partial(verbose_log, EditorAgentVerbosityConfig.agent_steps)
-    parsed_goal = partial(verbose_log, EditorAgentVerbosityConfig.parsed_goal)
-    system_message = partial(verbose_log, EditorAgentVerbosityConfig.system_message)
     formatted_schedule = partial(verbose_log, EditorAgentVerbosityConfig.formatted_schedule)
 
 class LogSolverPreProcessing:
