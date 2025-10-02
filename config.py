@@ -75,7 +75,7 @@ class VerbosityConfig:
     other_request_updates = True
 
     # Log system messages.
-    system_message = True
+    system_message = False
 
     # Log human messages.
     human_message = True
@@ -131,7 +131,7 @@ class MainSubAgentVerbosityConfig:
     formatted_schedule = True
 
     # Log the current path of the subagents.
-    agent_path = True
+    agent_path = False
 
 
 # Logging configurations options for the altering agents.
@@ -211,10 +211,10 @@ class EditorAgentVerbosityConfig:
 # Logging configurations options for the solver preprocessing verbosity.
 class SchedulerPreProcessingVerbosityConfig:
     # Log any items in this configuration set.
-    verbose = True
+    verbose = False
 
     # Log ALL steps taken when finding the exercises for phase components.
-    exercises_for_pc_steps = True
+    exercises_for_pc_steps = False
 
 # Logging configurations options for the solver agent verbosity.
 class SchedulerVerbosityConfig:
@@ -228,7 +228,7 @@ class SchedulerVerbosityConfig:
     agent_steps = True
 
     # Log final formatted schedule produced.
-    formatted_schedule = True
+    formatted_schedule = False
 
 # Configurations for agent logging.
 class SchedulerLoggingConfig:
