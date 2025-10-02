@@ -109,8 +109,6 @@ class BaseAgent():
         LogMainSubAgent.agent_steps(f"\t---------Determine what Operation(s) to Perform for User {self.sub_agent_title}---------")
         user_input = state[self.focus_names["detail"]]
 
-        LogMainSubAgent.verbose(f"Extract the {self.sub_agent_title} Operations from the following message: {user_input}")
-
         # Retrieve the new input for the focus item.
         operation_class = new_input_request(user_input, goal_system_prompt, OperationGoals)
         operation_class_dump = operation_class.model_dump()

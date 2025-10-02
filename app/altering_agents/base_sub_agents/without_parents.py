@@ -33,7 +33,6 @@ class BaseAgentWithoutParents(BaseAgent):
             "task": f"No current {self.sub_agent_title} exists. Would you like for me to generate a {self.sub_agent_title} for you?"
         })
         user_input = result["user_input"]
-        LogAlteringAgent.verbose(f"Extract the {self.sub_agent_title} Goal the following message: {user_input}")
 
         # Retrieve the new input for the focus item.
         goal_class = new_input_request(user_input, self.focus_system_prompt, self.focus_goal)

@@ -71,17 +71,13 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         result = interrupt({
             "task": f"Hello there! How can I help you today?"
         })
-        user_input = result["user_input"]
-        LogMainAgent.verbose(f"New request: {user_input}")
-        
+        user_input = result["user_input"]        
         state["user_input"] = user_input
         return state
 
     def user_input_information_extraction(self, state: AgentState):
         LogMainAgent.agent_steps(f"\n=========Extract Input=========")
         user_input = state["user_input"]
-
-        LogMainAgent.verbose(f"Extract the goals from the following message: {user_input}")
         state_updates = user_input_information_extraction(user_input)
         log_extracted_goals(state_updates)
 

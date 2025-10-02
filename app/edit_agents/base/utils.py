@@ -1,5 +1,3 @@
-from logging_config import LogEditorAgent
-
 from pydantic import BaseModel, Field
 
 from app.utils.user_input import new_input_request
@@ -29,8 +27,6 @@ You are to extract the structured information from the user's input regarding wh
 
 # Request permission from user to allow edits that aren't advised.
 def does_user_allow_schedule(user_input, is_schedule_invalid=False):
-    LogEditorAgent.verbose(f"Extract the confirmation from the following message: {user_input}")
-
     # Retrieve whether the user wants to move forward with the not reccommended.
     if is_schedule_invalid:
         goal_class = new_input_request(user_input, confirm_invalid_schedule_edit_prompt, MoveForwardWithSchedule)

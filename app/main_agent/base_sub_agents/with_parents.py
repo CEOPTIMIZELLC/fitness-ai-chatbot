@@ -126,7 +126,6 @@ class BaseAgentWithParents(BaseAgent):
             "task": f"No current {self.parent_title} exists for {self.sub_agent_title}. Would you like for me to generate a {self.parent_title} for you?"
         })
         user_input = result["user_input"]
-        LogMainSubAgent.verbose(f"Extract the {self.parent_title} Goal the following message: {user_input}")
 
         # Retrieve the new input for the parent item.
         goal_class = new_input_request(user_input, self.parent_system_prompt, self.parent_goal)
@@ -140,8 +139,6 @@ class BaseAgentWithParents(BaseAgent):
         if not user_input:
             LogMainSubAgent.agent_steps(f"\n---------No Other Requests---------")
             return {}
-
-        LogMainSubAgent.verbose(f"Extract the goals from the following message: {user_input}")
 
         state_updates = user_input_information_extraction(user_input)
         result = agent_state_update(state, state_updates, ignore_section)

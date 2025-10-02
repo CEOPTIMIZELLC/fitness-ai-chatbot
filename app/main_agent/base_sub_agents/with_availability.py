@@ -59,7 +59,6 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
             "task": f"No current {self.availability_title} exists. Would you like for me to generate a {self.availability_title} for you?"
         })
         user_input = result["user_input"]
-        LogMainSubAgent.verbose(f"Extract the {self.availability_title} Goal the following message: {user_input}")
 
         # Retrieve the new input for the focus item.
         goal_class = new_input_request(user_input, self.availability_system_prompt, self.availability_goal)
