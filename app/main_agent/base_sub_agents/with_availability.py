@@ -17,14 +17,14 @@ from app.utils.agent_state_helpers import sub_agent_focused_items, goal_classifi
 # Confirm that a currently active availability exists to attach the a schedule to.
 def confirm_availability(state: TState):
     LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active Availability---------")
-    if not state["user_availability"]:
+    if not state.get("user_availability", None):
         return "no_availability"
     return "availability"
 
 # Router for if permission was granted.
 def confirm_availability_permission(state: TState):
     LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new Availability---------")
-    if not state["availability_is_requested"]:
+    if not state.get("availability_is_requested", False):
         return "permission_denied"
     return "permission_granted"
 

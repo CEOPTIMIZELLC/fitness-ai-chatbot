@@ -8,7 +8,7 @@ from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agen
 def determine_read_operation(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogReadingAgent.agent_steps(f"\t---------Determine if the objective is to read a list of {sub_agent_focus} or simply a singular item---------")
-    if state[f"{sub_agent_focus}_read_plural"]:
+    if state.get(f"{sub_agent_focus}_read_plural", False):
         return "plural"
     return "singular"
 
@@ -16,7 +16,7 @@ def determine_read_operation(state):
 def determine_read_filter_operation(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogReadingAgent.agent_steps(f"\t---------Determine if the objective is to read all {sub_agent_focus} items for the user or only those currently active---------")
-    if state[f"{sub_agent_focus}_read_current"]:
+    if state.get(f"{sub_agent_focus}_read_current", False):
         return "current"
     return "all"
 

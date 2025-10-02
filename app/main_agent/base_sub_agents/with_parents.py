@@ -22,7 +22,7 @@ TState = TypeVar('TState', bound=MainAgentState)
 def confirm_parent(state: TState):
     parent_agent_focus = retrieve_current_agent_focus(state, "parent")
     LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active {parent_agent_focus}---------")
-    if not state[f"user_{parent_agent_focus}"]:
+    if not state.get(f"user_{parent_agent_focus}", None):
         return "no_parent"
     return "parent"
 
@@ -30,7 +30,7 @@ def confirm_parent(state: TState):
 def confirm_permission(state: TState):
     parent_agent_focus = retrieve_current_agent_focus(state, "parent")
     LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new {parent_agent_focus}---------")
-    if not state[f"{parent_agent_focus}_is_requested"]:
+    if not state.get(f"{parent_agent_focus}_is_requested", False):
         return "permission_denied"
     return "permission_granted"
 

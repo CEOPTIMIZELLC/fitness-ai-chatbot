@@ -44,7 +44,7 @@ def reset_schedule_section(state, schedule_name):
 def confirm_input(state):
     LogMainAgent.agent_introductions(f"\n=========Beginning Main Agent=========")
     LogMainAgent.agent_steps(f"---------Confirm that an Input Exists---------")
-    if not state["user_input"]:
+    if not state.get("user_input", None):
         LogMainAgent.agent_steps(f"---------No Input---------")
         return "no_input"
     return "included_input"

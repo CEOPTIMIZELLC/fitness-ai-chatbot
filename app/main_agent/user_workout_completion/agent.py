@@ -20,7 +20,7 @@ from app.agent_states.workout_completion import AgentState
 # Confirm that there is a workout to complete.
 def confirm_children(state: AgentState):
     LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active Workout---------")
-    if not state["agent_output"]:
+    if not state.get("agent_output", None):
         return "no_schedule"
     return "present_schedule"
 

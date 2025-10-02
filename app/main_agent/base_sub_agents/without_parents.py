@@ -20,7 +20,7 @@ def confirm_if_performing_by_id(state):
 def confirm_new_input(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Confirm there is a new {sub_agent_focus} input to be parsed---------")
-    if not state[f"{sub_agent_focus}_detail"]:
+    if not state.get(f"{sub_agent_focus}_detail", None):
         return "no_new_input"
     return "present_new_input"
 
