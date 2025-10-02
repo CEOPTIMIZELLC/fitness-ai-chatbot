@@ -75,8 +75,6 @@ class AlteringAgent(BaseAgent):
         constraints={}
 
         result = phase_component_main(parameters, constraints)
-        LogAlteringAgent.agent_output(result["formatted"])
-
         return {
             "agent_output": result["output"],
             "schedule_printed": result["formatted"]

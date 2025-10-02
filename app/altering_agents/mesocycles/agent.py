@@ -69,8 +69,6 @@ class AlteringAgent(BaseAgent):
         parameters["possible_phases"] = construct_phases_list(int(goal_id))
 
         result = phase_main(parameters, constraints)
-        LogAlteringAgent.agent_output(result["formatted"])
-
         agent_output = result["output"]
         mesocycle_start_date = state["start_date"]
 

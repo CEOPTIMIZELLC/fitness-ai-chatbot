@@ -113,9 +113,6 @@ class MainAgentVerbosityConfig:
     # Log node introductions in the main agent.
     agent_steps = True
 
-    # Log the output of main agent.
-    agent_output = True
-
     # Log final formatted schedule produced.
     formatted_schedule = True
 
@@ -129,9 +126,6 @@ class MainSubAgentVerbosityConfig:
 
     # Log node introductions in the sub agents.
     agent_steps = True
-
-    # Log the output of the sub agents.
-    agent_output = True
 
     # Log final formatted schedule produced.
     formatted_schedule = True
@@ -151,9 +145,6 @@ class AlteringAgentVerbosityConfig:
     # Log node introductions in the sub agents.
     agent_steps = True
 
-    # Log the output of the sub agents.
-    agent_output = True
-
     # Log final formatted schedule produced.
     formatted_schedule = True
 
@@ -169,9 +160,6 @@ class CreationAgentVerbosityConfig:
     # Log node introductions in the sub agents.
     agent_steps = True
 
-    # Log the output of the sub agents.
-    agent_output = True
-
     # Log final formatted schedule produced.
     formatted_schedule = True
 
@@ -186,9 +174,6 @@ class DeletionAgentVerbosityConfig:
 
     # Log node introductions in the sub agents.
     agent_steps = True
-
-    # Log the output of the sub agents.
-    agent_output = True
 
     # Log final formatted schedule produced.
     formatted_schedule = True
@@ -241,9 +226,6 @@ class SchedulerVerbosityConfig:
 
     # Log node introductions in the solver agents.
     agent_steps = True
-
-    # Log the output of the solver agents.
-    agent_output = True
 
     # Log final formatted schedule produced.
     formatted_schedule = True

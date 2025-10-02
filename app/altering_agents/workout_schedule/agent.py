@@ -61,8 +61,6 @@ class AlteringAgent(BaseAgent):
         constraints={"vertical_loading": loading_system_id == 1}
 
         result = exercises_main(parameters, constraints)
-        LogAlteringAgent.agent_output(result["formatted"])
-
         return {"agent_output": result["output"]}
 
     # Convert output from the agent to SQL models.
