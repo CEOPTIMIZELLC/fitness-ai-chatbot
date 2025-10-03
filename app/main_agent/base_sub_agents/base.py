@@ -16,6 +16,32 @@ operations_to_check = [
     "delete"
 ]
 
+# Change state switches depending on desired read operation.
+def include_read_operation_in_dict(operation_dict, read_operation):
+    match(read_operation):
+        case "plural":
+            operation_dict["read_plural"] = True
+            operation_dict["read_current"] = False
+        case "current":
+            operation_dict["read_plural"] = True
+            operation_dict["read_current"] = True
+        case _:
+            operation_dict["read_plural"] = False
+            operation_dict["read_current"] = False
+    return operation_dict
+
+
+def retrieve_read_operation(operation_dict, read_request):
+    # Retrieve if the read agent should view a single item, the current list, or the entire user inventory.
+    read_operation = read_request.get("read_method", None)
+    if read_operation:
+        read_operation = read_operation.value
+    else:
+        read_operation = "singular"
+
+    operation_dict = include_read_operation_in_dict(operation_dict, read_operation)
+    return operation_dict
+
 # Confirm that the desired section should be impacted.
 def confirm_impact(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
@@ -119,7 +145,9 @@ class BaseAgent():
         for operation_check in operations_to_check:
             self.operation_parser(operation_dict, operation_class_dump, operation_check)
         
-        operation_dict["read_plural"] = True
+        read_request = operation_class_dump.get("read_request", None)
+        if read_request:
+            operation_dict = retrieve_read_operation(operation_dict, read_request)
 
         operation_dict = self.format_operations(operation_dict)
 
