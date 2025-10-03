@@ -7,6 +7,7 @@ from config import (
     DatabaseInitVerbosityConfig, 
     MainAgentVerbosityConfig, 
     MainSubAgentVerbosityConfig, 
+    ParentAgentVerbosityConfig, 
     AlteringAgentVerbosityConfig, 
     CreationAgentVerbosityConfig, 
     DeletionAgentVerbosityConfig, 
@@ -69,6 +70,13 @@ class LogMainSubAgent:
     agent_steps = partial(verbose_log, MainSubAgentVerbosityConfig.agent_steps)
     formatted_schedule = partial(verbose_log, MainSubAgentVerbosityConfig.formatted_schedule)
     agent_path = partial(verbose_log, MainSubAgentVerbosityConfig.agent_path)
+
+class LogParentSubAgent:
+    verbose = partial(verbose_log, ParentAgentVerbosityConfig.verbose)
+    agent_introductions = partial(verbose_log, ParentAgentVerbosityConfig.agent_introductions)
+    agent_steps = partial(verbose_log, ParentAgentVerbosityConfig.agent_steps)
+    formatted_schedule = partial(verbose_log, ParentAgentVerbosityConfig.formatted_schedule)
+    agent_path = partial(verbose_log, ParentAgentVerbosityConfig.agent_path)
 
 class LogAlteringAgent:
     verbose = partial(verbose_log, AlteringAgentVerbosityConfig.verbose)

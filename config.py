@@ -134,6 +134,24 @@ class MainSubAgentVerbosityConfig:
     agent_path = False
 
 
+# Logging configurations options for the parent retriever agents.
+class ParentAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the sub agents.
+    agent_introductions = True
+
+    # Log node introductions in the sub agents.
+    agent_steps = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+    # Log the current path of the subagents.
+    agent_path = False
+
+
 # Logging configurations options for the altering agents.
 class AlteringAgentVerbosityConfig:
     # Log any items in this configuration set.

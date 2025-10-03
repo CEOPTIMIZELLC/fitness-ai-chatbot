@@ -4,7 +4,7 @@ from flask import abort
 from app.goal_prompts.sub_agent_operations import goal_system_prompt
 from app.impact_goal_models.sub_agent_operations import OperationGoals
 
-from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agent_focused_items, goal_classifier_parser
+from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agent_focused_items
 from app.utils.user_input import new_input_request
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------
@@ -156,10 +156,6 @@ class BaseAgent():
 
         return state_updates
 
-    # Default items extracted from the goal classifier
-    def goal_classifier_parser(self, focus_names, goal_class):
-        return goal_classifier_parser(focus_names, goal_class)
-
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
 
@@ -170,12 +166,12 @@ class BaseAgent():
 
         # Reset requests to prevent looping requests.
         end_node_state = {}
+        end_node_state["agent_path"] = agent_path
 
         # Resets the operation requests for the subagent.
         for operation_check in operations_to_check:
             end_node_state[self.focus_names[f"is_{operation_check}"]] = False
             end_node_state[self.focus_names[f"{operation_check}_detail"]] = None
-        end_node_state["agent_path"] = agent_path
 
         # Resets the general requests for the subagent.
         end_node_state[self.focus_names[f"is_requested"]] = False

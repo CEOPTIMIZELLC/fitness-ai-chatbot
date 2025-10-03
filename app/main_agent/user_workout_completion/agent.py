@@ -9,7 +9,6 @@ from app.utils.common_table_queries import current_workout_day
 from app.edit_agents.workout_completion import create_main_agent_graph as create_workout_completion_edit_agent
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.base import confirm_impact
-from app.main_agent.base_sub_agents.with_parents import confirm_parent
 
 from app.schedule_printers.workout_completion import WorkoutCompletionSchedulePrinter
 
@@ -24,11 +23,17 @@ def confirm_children(state: AgentState):
         return "no_schedule"
     return "present_schedule"
 
+
+# Confirm that a currently active parent exists to attach the a schedule to.
+def confirm_parent(state: AgentState):
+    LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active workout_day---------")
+    if not state.get("user_workout_day", None):
+        return "no_parent"
+    return "parent"
+
 class SubAgent(BaseAgent):
     focus = "workout_completion"
-    parent = "workout_day"
     sub_agent_title = "Workout Completion"
-    parent_title = "Workout Day"
     focus_edit_agent = create_workout_completion_edit_agent()
     schedule_printer_class = WorkoutCompletionSchedulePrinter()
 
@@ -38,10 +43,19 @@ class SubAgent(BaseAgent):
     def parent_retriever_agent(self, user_id):
         return current_workout_day(user_id)
 
+    # Retrieve parent item that will be used for the current schedule.
+    def retrieve_parent(self, state: AgentState):
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving Current Workout Day---------")
+        user_id = state["user_id"]
+        parent_db_entry = self.parent_retriever_agent(user_id)
+
+        # Return parent.
+        return {"user_workout_day": parent_db_entry.to_dict() if parent_db_entry else None}
+
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Retrieving Information for {self.sub_agent_title}---------")
-        user_workout_day = state[self.parent_names["entry"]]
+        user_workout_day = state["user_workout_day"]
 
         return {
             "agent_output": user_workout_day["exercises"], 
