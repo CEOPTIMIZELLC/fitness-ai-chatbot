@@ -168,11 +168,18 @@ class BaseAgent():
         agent_path.pop()
         LogMainSubAgent.agent_path(f"Agent Path: {agent_path}")
 
+        # Reset requests to prevent looping requests.
         end_node_state = {}
+
+        # Resets the operation requests for the subagent.
         for operation_check in operations_to_check:
             end_node_state[self.focus_names[f"is_{operation_check}"]] = False
             end_node_state[self.focus_names[f"{operation_check}_detail"]] = None
         end_node_state["agent_path"] = agent_path
+
+        # Resets the general requests for the subagent.
+        end_node_state[self.focus_names[f"is_requested"]] = False
+        end_node_state[self.focus_names[f"detail"]] = None
 
         LogMainSubAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
         return end_node_state

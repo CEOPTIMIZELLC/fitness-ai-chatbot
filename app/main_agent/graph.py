@@ -88,8 +88,9 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         LogMainAgent.agent_steps(f"\n=========Printing Schedule=========")
         LogMainAgent.formatted_schedule(f"Schedule Generatted.")
         for sub_agent_name in sub_agent_names:
-            if (f"{sub_agent_name}_formatted" in state) and (state[f"{sub_agent_name}_is_requested"]):
-                LogMainAgent.formatted_schedule(f"{sub_agent_name}: \n{state[f"{sub_agent_name}_formatted"]}")
+            formatted_sub_agent_schedule = state.get(f"{sub_agent_name}_formatted", None)
+            if formatted_sub_agent_schedule:
+                LogMainAgent.formatted_schedule(f"{sub_agent_name}: \n{formatted_sub_agent_schedule}")
         LogMainAgent.formatted_schedule("")
 
         return state
