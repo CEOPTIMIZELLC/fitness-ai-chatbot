@@ -37,22 +37,24 @@ def new_input_request(user_input, item_system_prompt, item_goal):
     return goal_class
 
 # Extract the individual item
-def _user_input_sub_extraction(state, sub_agent_name, sub_agent_pydantic):
-    state[f"{sub_agent_name}_is_requested"] = sub_agent_pydantic["is_requested"]
-    state[f"{sub_agent_name}_is_alter"] = True
-    state[f"{sub_agent_name}_is_read"] = True
-    state[f"{sub_agent_name}_detail"] = sub_agent_pydantic["detail"]
+def _user_input_sub_extraction(state, sub_agent_name, sub_agent_request):
+    if not sub_agent_request:
+        return state
+
+    # Extract the values from the user request.
+    state[f"{sub_agent_name}_is_requested"] = True
+    state[f"{sub_agent_name}_detail"] = sub_agent_request
     return state
 
 def user_input_information_extraction(user_input):
     state={}
 
     goal_class = new_input_request(user_input, goal_extraction_system_prompt, RoutineImpactGoals)
-
-    goal_class = goal_class.model_dump()
+    goal_class_dump = goal_class.model_dump()
 
     state["attempts"] = 1
     for sub_agent_name in sub_agent_names:
-        state = _user_input_sub_extraction(state, sub_agent_name, goal_class[sub_agent_name])
+        state = _user_input_sub_extraction(state, sub_agent_name, goal_class_dump[sub_agent_name])
+
     return state
 
