@@ -88,7 +88,7 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
     def create_new(self, state):
         LogCreationAgent.agent_steps(f"\t---------Creating New {self.sub_agent_title} for User---------")
 
-        schedule_dict = create_singular(state)    
+        schedule_dict = create_singular(state)
 
         # Edit was successful if the created entry is returned.
         if schedule_dict:

@@ -64,7 +64,7 @@ class BaseAgentWithoutParents(BaseAgent):
                 "not_read": "end_node",                                 # End subagent if nothing is requested.
                 "read": "reading_agent"                                 # Start reading subagent.
             }
-        )    
+        )
 
         workflow.add_edge("altering_agent", "end_node")
         workflow.add_edge("reading_agent", "end_node")
