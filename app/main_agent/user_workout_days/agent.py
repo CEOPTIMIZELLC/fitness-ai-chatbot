@@ -26,11 +26,11 @@ class SubAgent(BaseAgent):
         workflow.add_node("start_node", self.start_node)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("availability_agent", self.availability_scheduler_agent)
-
         workflow.add_node("extract_operations", self.extract_operations)
         workflow.add_node("altering_agent", self.altering_agent)
-        workflow.add_node("reading_agent", self.reading_agent)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
+        workflow.add_node("reading_agent", self.reading_agent)
+        workflow.add_node("operation_is_not_read", self.chained_conditional_inbetween)
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
@@ -57,19 +57,20 @@ class SubAgent(BaseAgent):
                 "alter": "altering_agent"                               # Start altering subagent.
             }
         )
+        workflow.add_edge("altering_agent", "operation_is_not_alter")
 
         # Whether the goal is to read user elements.
         workflow.add_conditional_edges(
             "operation_is_not_alter",
             determine_if_read, 
             {
-                "not_read": "end_node",                                 # End subagent if nothing is requested.
+                "not_read": "operation_is_not_read",                    # In between step for if the operation is not read.
                 "read": "reading_agent"                                 # Start reading subagent.
             }
         )
+        workflow.add_edge("reading_agent", "operation_is_not_read")
 
-        workflow.add_edge("altering_agent", "end_node")
-        workflow.add_edge("reading_agent", "end_node")
+        workflow.add_edge("operation_is_not_read", "end_node")
         workflow.add_edge("end_node", END)
 
         return workflow.compile()
