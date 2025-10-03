@@ -1,5 +1,6 @@
 from config import loop_main_agent
 from logging_config import LogMainAgent
+
 from langgraph.graph import StateGraph
 from langgraph.types import interrupt
 
@@ -71,7 +72,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
         result = interrupt({
             "task": f"Hello there! How can I help you today?"
         })
-        user_input = result["user_input"]        
+        user_input = result["user_input"]
         state["user_input"] = user_input
         return state
 
