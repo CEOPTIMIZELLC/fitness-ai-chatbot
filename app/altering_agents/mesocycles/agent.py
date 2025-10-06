@@ -5,7 +5,7 @@ from app import db
 from app.models import User_Mesocycles
 from app.utils.common_table_queries import current_macrocycle
 
-from app.main_agent.utils import construct_phases_list
+from app.construct_lists_from_sql.phases import Main as construct_phases_list
 
 from app.agent_states.mesocycles import AgentState
 from app.schedule_printers.mesocycles import MesocycleSchedulePrinter
