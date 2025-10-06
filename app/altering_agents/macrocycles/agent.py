@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, START, END
 
 from app.db_session import session_scope
 from app.models import User_Macrocycles, User_Mesocycles
-from app.utils.common_table_queries import current_macrocycle
+from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
 from app.agent_states.macrocycles import AgentState
 from app.goal_prompts.macrocycles import macrocycle_system_prompt

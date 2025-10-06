@@ -4,7 +4,8 @@ from langgraph.graph import StateGraph, START, END
 
 from app.db_session import session_scope
 from app.models import User_Weekday_Availability, User_Workout_Days
-from app.utils.common_table_queries import current_microcycle
+from app.common_table_queries.microcycles import currently_active_item as current_microcycle
+
 
 from app.agent_states.availability import AgentState
 from app.impact_goal_models.availability import AvailabilityGoal

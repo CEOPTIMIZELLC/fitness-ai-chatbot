@@ -1,5 +1,5 @@
 from app.models import User_Weekday_Availability
-from app.utils.common_table_queries import current_weekday_availability
+from app.common_table_queries.availability import currently_active_item as current_weekday_availability
 
 from app.agent_states.availability import AgentState
 from app.reading_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent

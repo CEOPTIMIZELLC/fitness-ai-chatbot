@@ -7,7 +7,7 @@ from app.models import User_Weekday_Availability
 
 from app.solver_agents.exercises import exercise_pc_main
 
-from app.utils.common_table_queries import current_workout_day
+from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
 from app.construct_lists_from_sql.exercises import Main as construct_available_exercises_list
 from app.construct_lists_from_sql.general_exercises import Main as construct_available_general_exercises_list

@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from app import db
 from app.models import User_Mesocycles
-from app.utils.common_table_queries import current_macrocycle
+from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
 from app.construct_lists_from_sql.phases import Main as construct_phases_list
 

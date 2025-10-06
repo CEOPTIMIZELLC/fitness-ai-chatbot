@@ -1,7 +1,7 @@
 from logging_config import LogParentSubAgent
 
 from app.utils.agent_state_helpers import goal_classifier_parser
-from app.utils.common_table_queries import current_macrocycle
+from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
 from app.main_agent.user_macrocycles import MacrocycleAgentNode
 from app.parent_retriever_agents.base_sub_agents.base import BaseAgent

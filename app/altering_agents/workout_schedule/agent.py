@@ -3,7 +3,7 @@ from flask import abort
 
 from app import db
 from app.models import User_Workout_Exercises, User_Workout_Days
-from app.utils.common_table_queries import current_workout_day
+from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
 from app.agent_states.workout_schedule import AgentState
 from app.schedule_printers.workout_schedule import WorkoutScheduleSchedulePrinter

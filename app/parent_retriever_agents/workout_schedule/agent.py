@@ -1,5 +1,5 @@
 from app.models import User_Weekday_Availability
-from app.utils.common_table_queries import current_workout_day
+from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
 from app.parent_retriever_agents.base_sub_agents.base import BaseAgent
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent

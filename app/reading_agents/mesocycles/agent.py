@@ -1,5 +1,6 @@
 from app.models import User_Mesocycles, User_Macrocycles
-from app.utils.common_table_queries import current_macrocycle, current_mesocycle
+from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
+from app.common_table_queries.mesocycles import currently_active_item as current_mesocycle
 
 from app.reading_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.schedule_printers.mesocycles import MesocycleSchedulePrinter

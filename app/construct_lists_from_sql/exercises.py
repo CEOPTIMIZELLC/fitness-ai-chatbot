@@ -1,5 +1,5 @@
 from tqdm import tqdm
-from app.utils.common_table_queries import user_possible_exercises_with_user_exercise_info
+from app.common_table_queries.exercises import user_possible_exercises_with_user_exercise_info
 
 dummy_exercise = {
     "id": 0,

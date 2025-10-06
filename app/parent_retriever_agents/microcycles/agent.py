@@ -1,4 +1,4 @@
-from app.utils.common_table_queries import current_mesocycle
+from app.common_table_queries.mesocycles import currently_active_item as current_mesocycle
 
 from app.parent_retriever_agents.base_sub_agents.base import BaseAgent
 from app.impact_goal_models.mesocycles import MesocycleGoal

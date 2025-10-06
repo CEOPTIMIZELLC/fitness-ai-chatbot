@@ -7,7 +7,7 @@ from app import db
 from app.models import User_Workout_Exercises, User_Workout_Days
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 
-from app.utils.common_table_queries import current_workout_day
+from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
 from app.reading_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.reading_agents.base_sub_agents.base import determine_read_filter_operation

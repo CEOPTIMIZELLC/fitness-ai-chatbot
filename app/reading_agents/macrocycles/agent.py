@@ -1,5 +1,5 @@
 from app.models import User_Macrocycles
-from app.utils.common_table_queries import current_macrocycle
+from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
 from app.agent_states.macrocycles import AgentState
 from app.reading_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent

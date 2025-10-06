@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from app import db
 from app.models import User_Microcycles
-from app.utils.common_table_queries import current_mesocycle
+from app.common_table_queries.mesocycles import currently_active_item as current_mesocycle
 
 from app.agent_states.microcycles import AgentState
 from app.schedule_printers.microcycles import MicrocycleSchedulePrinter

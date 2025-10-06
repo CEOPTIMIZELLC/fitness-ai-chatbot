@@ -1,5 +1,6 @@
 from app.models import Weekday_Library, User_Weekday_Availability
-from app.utils.common_table_queries import current_microcycle
+from app.common_table_queries.microcycles import currently_active_item as current_microcycle
+
 
 from app.parent_retriever_agents.base_sub_agents.base import BaseAgent
 from app.main_agent.user_microcycles import create_microcycle_agent

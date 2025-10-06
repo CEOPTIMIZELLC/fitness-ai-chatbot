@@ -5,7 +5,8 @@ from app.models import (
     User_Workout_Days
 )
 
-from app.utils.common_table_queries import current_microcycle, current_workout_day
+from app.common_table_queries.microcycles import currently_active_item as current_microcycle
+from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
 from app.reading_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.schedule_printers.phase_components import PhaseComponentSchedulePrinter

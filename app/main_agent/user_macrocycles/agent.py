@@ -6,7 +6,7 @@ from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParen
 from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_create, determine_if_alter, determine_if_read
 from app.impact_goal_models.macrocycles import MacrocycleGoal
 from app.goal_prompts.macrocycles import macrocycle_system_prompt
-from app.utils.common_table_queries import current_macrocycle
+from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
 from app.agent_states.macrocycles import AgentState
 
