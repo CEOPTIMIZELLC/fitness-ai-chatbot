@@ -37,7 +37,7 @@ keys_to_remove = [
     "component_id", 
 ]
 
-class WorkoutCompleteAgentState(AgentState):
+class WorkoutCompletionAgentState(AgentState):
     workout_day_id: int
 
 class SubAgent(BaseSubAgent, WorkoutCompletionEditPrompt):
@@ -154,4 +154,4 @@ class SubAgent(BaseSubAgent, WorkoutCompletionEditPrompt):
 # Create main agent.
 def create_main_agent_graph():
     agent = SubAgent()
-    return agent.create_main_agent_graph(WorkoutCompleteAgentState)
+    return agent.create_main_agent_graph(WorkoutCompletionAgentState)

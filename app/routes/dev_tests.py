@@ -96,7 +96,7 @@ def run_sub_agents_singular(i, state, sub_agents):
     result["user_microcycles"] = run_schedule_segment(state, sub_agents["microcycle"], segment_name=f"MICROCYCLES RUN {i}")
     result["user_planned_microcycle"] = run_schedule_segment(state, sub_agents["microcycle_scheduler"], segment_name=f"MICROCYCLE PLAN RUN {i}")
     result["user_workout"] = run_schedule_segment(state, sub_agents["workout"], segment_name=f"WORKOUT EXERCISES RUN {i}")
-    result["user_workout_completed"] = run_schedule_segment(state, sub_agents["workout_completion"], segment_name=f"WORKOUT COMPLETED RUN {i}")
+    result["user_workout_completion"] = run_schedule_segment(state, sub_agents["workout_completion"], segment_name=f"WORKOUT COMPLETED RUN {i}")
 
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
