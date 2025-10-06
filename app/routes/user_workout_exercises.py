@@ -5,8 +5,8 @@ from flask_login import current_user, login_required
 
 from app.models import User_Weekday_Availability
 
-from app.main_agent.user_workout_exercises import create_workout_agent
-from app.main_agent.user_workout_completion import create_workout_completion_agent
+from app.main_sub_agents.user_workout_exercises import create_workout_agent
+from app.main_sub_agents.user_workout_completion import create_workout_completion_agent
 from app.altering_agents.workout_schedule.actions import retrieve_parameters
 from app.solver_agents.exercises import exercise_pc_main
 

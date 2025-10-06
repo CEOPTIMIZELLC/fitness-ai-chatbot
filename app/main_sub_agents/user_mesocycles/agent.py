@@ -1,5 +1,5 @@
 # Agent construction imports.
-from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.main_sub_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.agent_states.mesocycles import AgentState
 
 # Sub agent imports.

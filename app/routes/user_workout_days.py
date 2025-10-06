@@ -6,7 +6,7 @@ from flask_login import current_user, login_required
 from app import db
 from app.models import Phase_Library
 
-from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
+from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_agent
 from app.altering_agents.phase_components.actions import retrieve_parameters, retrieve_weekday_availability_information_from_availability
 from app.solver_agents.phase_components import Main as phase_component_main
 

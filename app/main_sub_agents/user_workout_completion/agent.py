@@ -8,8 +8,8 @@ from app.models import User_Exercises
 from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
 # Agent construction imports.
-from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.main_agent.base_sub_agents.base import confirm_impact
+from app.main_sub_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.main_sub_agents.base_sub_agents.base import confirm_impact
 from app.agent_states.workout_completion import AgentState
 from app.schedule_printers.workout_completion import WorkoutCompletionSchedulePrinter
 

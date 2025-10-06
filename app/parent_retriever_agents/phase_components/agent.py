@@ -8,7 +8,7 @@ from app.goal_prompts.microcycles import microcycle_system_prompt
 from app.impact_goal_models.microcycles import MicrocycleGoal
 
 # Sub agent imports.
-from app.main_agent.user_microcycles import create_microcycle_agent
+from app.main_sub_agents.user_microcycles import create_microcycle_agent
 
 # ----------------------------------------- User Workout Days -----------------------------------------
 

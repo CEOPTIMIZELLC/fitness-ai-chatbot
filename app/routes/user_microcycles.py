@@ -1,7 +1,7 @@
 from flask import jsonify, Blueprint
 from flask_login import login_required, current_user
 
-from app.main_agent.user_microcycles import create_microcycle_agent
+from app.main_sub_agents.user_microcycles import create_microcycle_agent
 
 from app.utils.item_to_string import recursively_change_dict_timedeltas
 

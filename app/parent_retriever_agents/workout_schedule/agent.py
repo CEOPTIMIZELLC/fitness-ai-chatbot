@@ -8,7 +8,7 @@ from app.goal_prompts.phase_components import phase_component_system_prompt
 from app.impact_goal_models.phase_components import PhaseComponentGoal
 
 # Sub agent imports.
-from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
+from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_agent
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 

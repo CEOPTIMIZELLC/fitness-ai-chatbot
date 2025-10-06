@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 
-from app.main_agent.user_equipment import create_equipment_agent
+from app.main_sub_agents.user_equipment import create_equipment_agent
 from app.models import Equipment_Library
 
 bp = Blueprint('user_equipment', __name__)

@@ -13,7 +13,7 @@ from app.goal_prompts.macrocycles import macrocycle_system_prompt
 from app.impact_goal_models.macrocycles import MacrocycleGoal
 
 # Sub agent imports.
-from app.main_agent.user_macrocycles import MacrocycleAgentNode
+from app.main_sub_agents.user_macrocycles import MacrocycleAgentNode
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 

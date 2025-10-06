@@ -8,7 +8,7 @@ from app.goal_prompts.mesocycles import mesocycle_system_prompt
 from app.impact_goal_models.mesocycles import MesocycleGoal
 
 # Sub agent imports.
-from app.main_agent.user_mesocycles import create_mesocycle_agent
+from app.main_sub_agents.user_mesocycles import create_mesocycle_agent
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 

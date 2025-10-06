@@ -1,34 +1,33 @@
 from langgraph.graph import StateGraph, START, END
 
 # Agent construction imports.
-from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_if_alter, determine_if_create, determine_if_read
-from app.agent_states.equipment import AgentState
-from app.schedule_printers.equipment import EquipmentSchedulePrinter
+from app.main_sub_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.main_sub_agents.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read
+from app.agent_states.phase_components import AgentState
 
 # Sub agent imports.
-from app.altering_agents.equipment.agent import create_main_agent_graph as create_altering_agent
-from app.creation_agents.equipment.agent import create_main_agent_graph as create_creation_agent
-from app.deletion_agents.equipment.agent import create_main_agent_graph as create_deletion_agent
-from app.reading_agents.equipment.agent import create_main_agent_graph as create_reading_agent
+from app.altering_agents.phase_components.agent import create_main_agent_graph as create_altering_agent
+from app.reading_agents.phase_components.agent import create_main_agent_graph as create_reading_agent
+from app.parent_retriever_agents.phase_components.agent import create_main_agent_graph as create_parent_retriever_agent
+from app.parent_retriever_agents.phase_components.availability import create_main_agent_graph as create_availability_retriever_agent
+
+# ----------------------------------------- User Workout Days -----------------------------------------
 
 class SubAgent(BaseAgent):
-    focus = "equipment"
-    sub_agent_title = "Equipment"
-    schedule_printer_class = EquipmentSchedulePrinter()
+    focus = "phase_component"
+    sub_agent_title = "Phase Component"
+    parent_scheduler_agent = create_parent_retriever_agent()
+    availability_scheduler_agent = create_availability_retriever_agent()
     altering_agent = create_altering_agent()
-    creation_agent = create_creation_agent()
-    deletion_agent = create_deletion_agent()
     reading_agent = create_reading_agent()
 
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
         workflow.add_node("start_node", self.start_node)
+        workflow.add_node("parent_agent", self.parent_scheduler_agent)
+        workflow.add_node("availability_agent", self.availability_scheduler_agent)
         workflow.add_node("extract_operations", self.extract_operations)
-        workflow.add_node("deletion_agent", self.deletion_agent)
-        workflow.add_node("operation_is_not_delete", self.chained_conditional_inbetween)
-        workflow.add_node("creation_agent", self.creation_agent)
-        workflow.add_node("operation_is_not_create", self.chained_conditional_inbetween)
         workflow.add_node("altering_agent", self.altering_agent)
         workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
         workflow.add_node("reading_agent", self.reading_agent)
@@ -42,35 +41,17 @@ class SubAgent(BaseAgent):
             confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
-                "impact": "extract_operations"                          # Determine what operations to perform.
+                "impact": "availability_agent"                          # Retrieve the availability element if an impact is indicated.
             }
         )
 
-        # Whether the goal is to read or alter user elements.
-        workflow.add_conditional_edges(
-            "extract_operations",
-            determine_if_delete, 
-            {
-                "not_deletion": "operation_is_not_delete",              # In between step for if the operation is not delete.
-                "deletion": "deletion_agent"                            # Start deletion subagent.
-            }
-        )
-        workflow.add_edge("deletion_agent", "operation_is_not_delete")
+        workflow.add_edge("availability_agent", "parent_agent")
 
-        # Whether the goal is to create user elements.
-        workflow.add_conditional_edges(
-            "operation_is_not_delete",
-            determine_if_create, 
-            {
-                "not_create": "operation_is_not_create",                # In between step for if the operation is not create.
-                "create": "creation_agent"                              # Start creation subagent.
-            }
-        )
-        workflow.add_edge("creation_agent", "operation_is_not_create")
+        workflow.add_edge("parent_agent", "extract_operations")
 
         # Whether the goal is to alter user elements.
         workflow.add_conditional_edges(
-            "operation_is_not_create",
+            "extract_operations",
             determine_if_alter, 
             {
                 "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.
@@ -94,7 +75,6 @@ class SubAgent(BaseAgent):
         workflow.add_edge("end_node", END)
 
         return workflow.compile()
-
 
 # Create main agent.
 def create_main_agent_graph():

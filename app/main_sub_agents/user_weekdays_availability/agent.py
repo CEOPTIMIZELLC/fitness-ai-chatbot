@@ -1,5 +1,5 @@
 # Agent construction imports.
-from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+from app.main_sub_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 from app.agent_states.availability import AgentState
 from app.goal_prompts.availability import availability_system_prompt
 from app.impact_goal_models.availability import AvailabilityGoal
