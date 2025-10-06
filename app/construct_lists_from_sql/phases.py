@@ -1,12 +1,6 @@
 from tqdm import tqdm
 from app import db
-from app.models import (
-    Goal_Library, 
-    Goal_Phase_Requirements, 
-    Phase_Library, 
-    User_Mesocycles, 
-    User_Macrocycles
-)
+from app.models import Goal_Library, Goal_Phase_Requirements, Phase_Library
 
 # Retrieve the phase types and their corresponding constraints for a goal.
 def retrieve_phase_constraints_for_goal(goal_id):
