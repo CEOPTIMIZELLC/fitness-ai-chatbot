@@ -2,14 +2,17 @@ from logging_config import LogMainSubAgent
 
 from langgraph.graph import StateGraph, START, END
 
-from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_create, determine_if_alter, determine_if_read
-from app.impact_goal_models.macrocycles import MacrocycleGoal
-from app.goal_prompts.macrocycles import macrocycle_system_prompt
+# Database imports.
 from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
+# Agent construction imports.
+from app.main_agent.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_create, determine_if_alter, determine_if_read
 from app.agent_states.macrocycles import AgentState
+from app.goal_prompts.macrocycles import macrocycle_system_prompt
+from app.impact_goal_models.macrocycles import MacrocycleGoal
 
+# Sub agents imports.
 from app.altering_agents.macrocycles.agent import create_main_agent_graph as create_altering_agent
 from app.creation_agents.macrocycles.agent import create_main_agent_graph as create_creation_agent
 from app.reading_agents.macrocycles.agent import create_main_agent_graph as create_reading_agent

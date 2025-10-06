@@ -1,6 +1,8 @@
-from app.schedule_printers.mesocycles import MesocycleSchedulePrinter
+# Agent construction imports.
 from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate
+from app.schedule_printers.mesocycles import MesocycleSchedulePrinter
 
+# Local imports.
 from .edit_goal_model import MesocycleScheduleEditGoal
 from .edit_prompt import MesocycleEditPrompt
 from .validity_check import check_schedule_validity

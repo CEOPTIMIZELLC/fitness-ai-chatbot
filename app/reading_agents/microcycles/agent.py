@@ -1,11 +1,12 @@
+# Database imports.
 from app.models import User_Microcycles, User_Mesocycles, User_Macrocycles
 from app.common_table_queries.mesocycles import currently_active_item as current_mesocycle
 from app.common_table_queries.microcycles import currently_active_item as current_microcycle
 
+# Agent construction imports.
 from app.reading_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
-from app.schedule_printers.microcycles import MicrocycleSchedulePrinter
-
 from app.agent_states.microcycles import AgentState
+from app.schedule_printers.microcycles import MicrocycleSchedulePrinter
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 

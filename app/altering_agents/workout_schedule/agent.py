@@ -1,17 +1,21 @@
 from logging_config import LogAlteringAgent
 from flask import abort
 
+# Database imports.
 from app import db
 from app.models import User_Workout_Exercises, User_Workout_Days
 from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
+# Agent construction imports.
+from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.agent_states.workout_schedule import AgentState
 from app.schedule_printers.workout_schedule import WorkoutScheduleSchedulePrinter
 
-from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+# Sub agent imports.
 from app.edit_agents.workout_schedule import create_main_agent_graph as create_workout_edit_agent
 from app.solver_agents.exercises import exercises_main
 
+# Local imports.
 from .actions import retrieve_parameters
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------

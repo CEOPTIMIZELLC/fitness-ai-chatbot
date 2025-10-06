@@ -1,18 +1,22 @@
 from logging_config import LogAlteringAgent
 
+# Database imports.
 from app.db_session import session_scope
 from app.models import User_Weekday_Availability, User_Workout_Days
 from app.common_table_queries.microcycles import currently_active_item as current_microcycle
 
+# Agent construction imports.
+from app.altering_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
 from app.agent_states.availability import AgentState
-from app.impact_goal_models.availability import AvailabilityGoal
 from app.goal_prompts.availability import availability_system_prompt
+from app.impact_goal_models.availability import AvailabilityGoal
 from app.schedule_printers.availability import AvailabilitySchedulePrinter
 
-from app.altering_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+# Sub agent imports.
 from app.edit_agents.availability import create_main_agent_graph as create_availability_edit_agent
 from app.solver_agents.weekday_availability import create_weekday_availability_extraction_graph
 
+# Local imports.
 from .actions import retrieve_weekday_types, initialize_user_availability, update_user_availability
 
 # ----------------------------------------- User Availability -----------------------------------------

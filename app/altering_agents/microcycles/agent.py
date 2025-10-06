@@ -1,14 +1,15 @@
 from logging_config import LogAlteringAgent
 from datetime import timedelta
 
+# Database imports.
 from app import db
 from app.models import User_Microcycles
 from app.common_table_queries.mesocycles import currently_active_item as current_mesocycle
 
+# Agent construction imports.
+from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.agent_states.microcycles import AgentState
 from app.schedule_printers.microcycles import MicrocycleSchedulePrinter
-
-from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 

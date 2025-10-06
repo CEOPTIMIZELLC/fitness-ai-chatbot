@@ -4,9 +4,11 @@ from flask import abort
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from app.utils.user_input import new_input_request
+# Utils imports.
 from app.utils.agent_state_helpers import retrieve_current_agent_focus, goal_classifier_parser
+from app.utils.user_input import new_input_request
 
+# Local imports.
 from .base import BaseAgent
 
 # ----------------------------------------- Base Sub Agent For Schedule Items Without Parents -----------------------------------------

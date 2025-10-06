@@ -1,7 +1,10 @@
 import math
-from app.schedule_printers.workout_schedule import WorkoutScheduleListPrinter
-from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate, AgentState
 
+# Agent construction imports.
+from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate, AgentState
+from app.schedule_printers.workout_schedule import WorkoutScheduleListPrinter
+
+# Local imports.
 from .edit_goal_model import WorkoutScheduleEditGoal
 from .edit_prompt import WorkoutScheduleEditPrompt
 from .validity_check import check_schedule_validity

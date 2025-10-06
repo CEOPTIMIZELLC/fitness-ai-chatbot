@@ -1,11 +1,12 @@
 from logging_config import LogMainSubAgent
-from flask import abort
 
-from app.goal_prompts.sub_agent_operations import goal_system_prompt
-from app.impact_goal_models.sub_agent_operations import OperationGoals
-
+# Utils imports.
 from app.utils.agent_state_helpers import retrieve_current_agent_focus, sub_agent_focused_items
 from app.utils.user_input import new_input_request
+
+# Agent construction imports.
+from app.goal_prompts.sub_agent_operations import goal_system_prompt
+from app.impact_goal_models.sub_agent_operations import OperationGoals
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------
 

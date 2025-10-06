@@ -3,11 +3,15 @@ from logging_config import LogEditorAgent
 import copy
 import math
 
+# Database imports.
 from app import db
 from app.models import User_Workout_Exercises
-from app.schedule_printers.workout_completion import WorkoutCompletionListPrinter
-from app.edit_agents.base.base import BaseSubAgent, AgentState
 
+# Agent construction imports.
+from app.edit_agents.base.base import BaseSubAgent, AgentState
+from app.schedule_printers.workout_completion import WorkoutCompletionListPrinter
+
+# Local imports.
 from .edit_goal_model import WorkoutCompletionEditGoal
 from .edit_prompt import WorkoutCompletionEditPrompt
 

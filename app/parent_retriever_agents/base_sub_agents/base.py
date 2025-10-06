@@ -5,10 +5,7 @@ from typing_extensions import TypeVar
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from app import db
-from app.agent_states.main_agent_state import MainAgentState
-from app.utils.user_input import new_input_request, user_input_information_extraction
-
+# Utils imports.
 from app.utils.agent_state_helpers import (
     retrieve_current_agent_focus, 
     sub_agent_focused_items, 
@@ -16,6 +13,13 @@ from app.utils.agent_state_helpers import (
     log_extracted_goals, 
     goal_classifier_parser
 )
+from app.utils.user_input import new_input_request, user_input_information_extraction
+
+# Database imports.
+from app import db
+
+# Agent construction imports.
+from app.agent_states.main_agent_state import MainAgentState
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------
 

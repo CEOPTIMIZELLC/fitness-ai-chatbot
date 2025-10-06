@@ -2,20 +2,22 @@ from logging_config import LogDeletionAgent
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from app.db_session import session_scope
-from app.models import Equipment_Library, User_Equipment
-
+# Utils imports.
 from app.utils.user_input import new_input_request
 from app.utils.item_to_string import list_to_str_for_prompt
 
-from app.deletion_agents.base_sub_agents.base import BaseAgent
+# Database imports.
+from app.models import Equipment_Library, User_Equipment
 
+# Agent construction imports.
+from app.deletion_agents.base_sub_agents.base import BaseAgent
+from app.agent_states.equipment import AgentState
+from app.schedule_printers.equipment import EquipmentSchedulePrinter
+
+# Local imports.
 from .actions import filter_items_by_query, delete_singular
 from .goal_model import EquipmentGoal
 from .prompt import EquipmentDetailsPrompt
-from app.schedule_printers.equipment import EquipmentSchedulePrinter
-
-from app.agent_states.equipment import AgentState
 
 # Determine if more details are required for the operation to occur.
 def are_more_details_needed(state: AgentState):

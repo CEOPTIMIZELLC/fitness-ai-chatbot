@@ -1,8 +1,10 @@
+# Database imports.
 from app.models import User_Macrocycles
 from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
-from app.agent_states.macrocycles import AgentState
+# Agent construction imports.
 from app.reading_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+from app.agent_states.macrocycles import AgentState
 from app.schedule_printers.macrocycles import MacrocycleSchedulePrinter
 
 # ----------------------------------------- User Macrocycles -----------------------------------------

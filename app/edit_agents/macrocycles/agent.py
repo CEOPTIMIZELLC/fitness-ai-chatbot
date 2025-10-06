@@ -7,12 +7,18 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
-from app import db
-from app.models import Goal_Library
-from app.schedule_printers.macrocycles import MacrocycleSchedulePrinter
-from app.edit_agents.base.base import ScheduleFormatterMethods
+# Utils imports.
 from app.utils.user_input import new_input_request
 
+# Database imports.
+from app import db
+from app.models import Goal_Library
+
+# Agent construction imports.
+from app.edit_agents.base.base import ScheduleFormatterMethods
+from app.schedule_printers.macrocycles import MacrocycleSchedulePrinter
+
+# Local imports.
 from .edit_goal_model import MacrocycleScheduleEditGoal
 from .edit_prompt import MacrocycleEditPrompt
 

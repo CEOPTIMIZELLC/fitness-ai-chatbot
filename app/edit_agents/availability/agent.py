@@ -1,11 +1,12 @@
-from logging_config import LogEditorAgent
-
+# Database imports.
 from app import db
 from app.models import Weekday_Library
 
-from app.schedule_printers.availability import AvailabilitySchedulePrinter
+# Agent construction imports.
 from app.edit_agents.base.base import BaseSubAgent, TState
+from app.schedule_printers.availability import AvailabilitySchedulePrinter
 
+# Local imports.
 from .edit_goal_model import AvailabilityScheduleEditGoal
 from .edit_prompt import AvailabilityEditPrompt
 from .validity_check import check_schedule_validity

@@ -1,14 +1,19 @@
 from logging_config import LogParentSubAgent
 
+# Utils imports.
 from app.utils.agent_state_helpers import goal_classifier_parser
+
+# Database imports.
 from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
-from app.main_agent.user_macrocycles import MacrocycleAgentNode
+# Agent construction imports.
 from app.parent_retriever_agents.base_sub_agents.base import BaseAgent
-from app.impact_goal_models.macrocycles import MacrocycleGoal
-from app.goal_prompts.macrocycles import macrocycle_system_prompt
-
 from app.agent_states.mesocycles import AgentState
+from app.goal_prompts.macrocycles import macrocycle_system_prompt
+from app.impact_goal_models.macrocycles import MacrocycleGoal
+
+# Sub agent imports.
+from app.main_agent.user_macrocycles import MacrocycleAgentNode
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 

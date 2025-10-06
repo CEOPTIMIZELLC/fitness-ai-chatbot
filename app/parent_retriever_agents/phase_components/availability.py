@@ -1,7 +1,8 @@
+# Database imports.
 from app.models import Weekday_Library, User_Weekday_Availability
 
+# Agent construction imports.
 from app.parent_retriever_agents.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
-
 from app.agent_states.phase_components import AgentState
 
 # ----------------------------------------- User Workout Days -----------------------------------------

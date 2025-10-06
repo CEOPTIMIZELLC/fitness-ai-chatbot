@@ -1,13 +1,17 @@
 from logging_config import LogParentSubAgent
 
+# Utils imports.
 from app.utils.agent_state_helpers import goal_classifier_parser
 
+# Agent construction imports.
 from app.goal_prompts.availability import availability_system_prompt
 from app.impact_goal_models.availability import AvailabilityGoal
+
+# Sub agent imports.
 from app.main_agent.user_weekdays_availability import WeekdayAvailabilityAgentNode as AvailabilityNode
 
-from .base import TState
-from .base import BaseAgent
+# Local imports.
+from .base import BaseAgent, TState
 # ----------------------------------------- Base Sub Agent For Schedule Items With Availability -----------------------------------------
 
 class BaseAgentWithAvailability(AvailabilityNode, BaseAgent):

@@ -2,20 +2,24 @@ from logging_config import LogCreationAgent
 
 from langgraph.graph import StateGraph, START, END
 
+# Database imports.
 from app.db_session import session_scope
 from app.models import User_Macrocycles
 from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
+# Agent construction imports.
+from app.creation_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
+from app.creation_agents.base_sub_agents.without_parents import confirm_new_input
 from app.agent_states.macrocycles import AgentState
 from app.goal_prompts.macrocycles import macrocycle_system_prompt
 from app.impact_goal_models.macrocycles import MacrocycleGoal
 from app.schedule_printers.macrocycles import MacrocycleSchedulePrinter
 
-from app.creation_agents.base_sub_agents.without_parents import BaseAgentWithoutParents as BaseAgent
-from app.creation_agents.base_sub_agents.without_parents import confirm_new_input
+# Sub agent imports.
 from app.edit_agents.macrocycles import create_main_agent_graph as create_macrocycle_edit_agent
 from app.solver_agents.goals import create_goal_classification_graph
 
+# Local imports.
 from .actions import retrieve_goal_types
 
 # ----------------------------------------- User Macrocycles -----------------------------------------

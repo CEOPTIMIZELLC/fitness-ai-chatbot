@@ -1,16 +1,18 @@
 from logging_config import LogAlteringAgent
 from datetime import timedelta
 
+# Database imports.
 from app import db
 from app.models import User_Mesocycles
 from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
-from app.construct_lists_from_sql.phases import Main as construct_phases_list
-
+# Agent construction imports.
+from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.agent_states.mesocycles import AgentState
+from app.construct_lists_from_sql.phases import Main as construct_phases_list
 from app.schedule_printers.mesocycles import MesocycleSchedulePrinter
 
-from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+# Sub agent imports.
 from app.edit_agents.mesocycles import create_main_agent_graph as create_mesocycle_edit_agent
 from app.solver_agents.phases import Main as phase_main
 

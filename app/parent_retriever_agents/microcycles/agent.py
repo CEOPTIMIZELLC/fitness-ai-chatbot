@@ -1,11 +1,14 @@
+# Database imports.
 from app.common_table_queries.mesocycles import currently_active_item as current_mesocycle
 
+# Agent construction imports.
 from app.parent_retriever_agents.base_sub_agents.base import BaseAgent
-from app.impact_goal_models.mesocycles import MesocycleGoal
-from app.goal_prompts.mesocycles import mesocycle_system_prompt
-from app.main_agent.user_mesocycles import create_mesocycle_agent
-
 from app.agent_states.microcycles import AgentState
+from app.goal_prompts.mesocycles import mesocycle_system_prompt
+from app.impact_goal_models.mesocycles import MesocycleGoal
+
+# Sub agent imports.
+from app.main_agent.user_mesocycles import create_mesocycle_agent
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 

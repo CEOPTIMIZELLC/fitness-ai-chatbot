@@ -1,10 +1,11 @@
 from langgraph.graph import StateGraph, START, END
 
+# Agent construction imports.
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.main_agent.base_sub_agents.base import confirm_impact, determine_if_alter, determine_if_read
-
 from app.agent_states.workout_schedule import AgentState
 
+# Sub agent imports.
 from app.altering_agents.workout_schedule.agent import create_main_agent_graph as create_altering_agent
 from app.reading_agents.workout_schedule.agent import create_main_agent_graph as create_reading_agent
 from app.parent_retriever_agents.workout_schedule.agent import create_main_agent_graph as create_parent_retriever_agent

@@ -1,16 +1,19 @@
 from logging_config import LogAlteringAgent
 
+# Database imports.
 from app import db
 from app.models import User_Workout_Components, User_Workout_Days
 from app.common_table_queries.microcycles import currently_active_item as current_microcycle
 
-
+# Agent construction imports.
+from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.agent_states.phase_components import AgentState
 from app.schedule_printers.phase_components import PhaseComponentSchedulePrinter
 
-from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+# Sub agent imports.
 from app.solver_agents.phase_components import Main as phase_component_main
 
+# Local imports.
 from .actions import (
     retrieve_parameters, 
     retrieve_weekday_availability_information_from_availability, 

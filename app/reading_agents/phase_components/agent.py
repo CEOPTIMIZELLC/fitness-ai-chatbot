@@ -1,17 +1,17 @@
+# Database imports.
 from app.models import (
     User_Macrocycles, 
     User_Mesocycles, 
     User_Microcycles, 
     User_Workout_Days
 )
-
 from app.common_table_queries.microcycles import currently_active_item as current_microcycle
 from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
+# Agent construction imports.
+from app.agent_states.phase_components import AgentState
 from app.reading_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.schedule_printers.phase_components import PhaseComponentSchedulePrinter
-
-from app.agent_states.phase_components import AgentState
 
 # ----------------------------------------- User Workout Days -----------------------------------------
 

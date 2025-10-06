@@ -1,14 +1,11 @@
-from logging_config import LogMainSubAgent
 from langgraph.graph import StateGraph, START, END
 
-from app.db_session import session_scope
-
+# Agent construction imports.
 from app.main_agent.base_sub_agents.base import BaseAgent, confirm_impact, determine_if_delete, determine_if_alter, determine_if_create, determine_if_read
-
+from app.agent_states.equipment import AgentState
 from app.schedule_printers.equipment import EquipmentSchedulePrinter
 
-from app.agent_states.equipment import AgentState
-
+# Sub agent imports.
 from app.altering_agents.equipment.agent import create_main_agent_graph as create_altering_agent
 from app.creation_agents.equipment.agent import create_main_agent_graph as create_creation_agent
 from app.deletion_agents.equipment.agent import create_main_agent_graph as create_deletion_agent
