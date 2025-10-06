@@ -13,7 +13,7 @@ from app.impact_goal_models.availability import AvailabilityGoal
 from app.schedule_printers.availability import AvailabilitySchedulePrinter
 
 # Sub agent imports.
-from app.edit_agents.availability import create_main_agent_graph as create_availability_edit_agent
+from app.edit_agents.availability import create_editing_agent
 from app.solver_agents.weekday_availability import create_weekday_availability_extraction_graph
 
 # Local imports.
@@ -26,7 +26,7 @@ class AlteringAgent(BaseAgent):
     sub_agent_title = "Weekday Availability"
     focus_system_prompt = availability_system_prompt
     focus_goal = AvailabilityGoal
-    focus_edit_agent = create_availability_edit_agent()
+    focus_edit_agent = create_editing_agent()
     schedule_printer_class = AvailabilitySchedulePrinter()
 
     def focus_list_retriever_agent(self, user_id):

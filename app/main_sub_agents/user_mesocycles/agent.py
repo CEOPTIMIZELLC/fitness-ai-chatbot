@@ -3,9 +3,9 @@ from app.main_sub_agents.base_sub_agents.with_parents import BaseAgentWithParent
 from app.agent_states.mesocycles import AgentState
 
 # Sub agent imports.
-from app.altering_agents.mesocycles.agent import create_main_agent_graph as create_altering_agent
-from app.reading_agents.mesocycles.agent import create_main_agent_graph as create_reading_agent
-from app.parent_retriever_agents.mesocycles.agent import create_main_agent_graph as create_parent_retriever_agent
+from app.altering_agents.mesocycles import create_altering_agent
+from app.reading_agents.mesocycles import create_reading_agent
+from app.parent_retriever_agents.mesocycles import create_parent_retriever_agent
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 

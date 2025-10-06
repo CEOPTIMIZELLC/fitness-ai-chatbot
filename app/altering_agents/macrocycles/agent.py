@@ -14,7 +14,7 @@ from app.impact_goal_models.macrocycles import MacrocycleGoal
 from app.schedule_printers.macrocycles import MacrocycleSchedulePrinter
 
 # Sub agent imports.
-from app.edit_agents.macrocycles import create_main_agent_graph as create_macrocycle_edit_agent
+from app.edit_agents.macrocycles import create_editing_agent
 from app.solver_agents.goals import create_goal_classification_graph
 
 # Local imports.
@@ -27,7 +27,7 @@ class AlteringAgent(BaseAgent):
     sub_agent_title = "Macrocycle"
     focus_system_prompt = macrocycle_system_prompt
     focus_goal = MacrocycleGoal
-    focus_edit_agent = create_macrocycle_edit_agent()
+    focus_edit_agent = create_editing_agent()
     schedule_printer_class = MacrocycleSchedulePrinter()
 
     def focus_list_retriever_agent(self, user_id):

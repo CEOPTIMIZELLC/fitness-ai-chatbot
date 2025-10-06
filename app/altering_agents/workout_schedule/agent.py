@@ -12,7 +12,7 @@ from app.agent_states.workout_schedule import AgentState
 from app.schedule_printers.workout_schedule import WorkoutScheduleSchedulePrinter
 
 # Sub agent imports.
-from app.edit_agents.workout_schedule import create_main_agent_graph as create_workout_edit_agent
+from app.edit_agents.workout_schedule import create_editing_agent
 from app.solver_agents.exercises import exercises_main
 
 # Local imports.
@@ -24,7 +24,7 @@ class AlteringAgent(BaseAgent):
     focus = "workout_schedule"
     parent = "phase_component"
     sub_agent_title = "User Workout"
-    focus_edit_agent = create_workout_edit_agent()
+    focus_edit_agent = create_editing_agent()
     schedule_printer_class = WorkoutScheduleSchedulePrinter()
     is_edited = True
 

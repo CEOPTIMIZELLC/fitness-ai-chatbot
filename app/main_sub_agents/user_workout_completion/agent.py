@@ -14,7 +14,7 @@ from app.agent_states.workout_completion import AgentState
 from app.schedule_printers.workout_completion import WorkoutCompletionSchedulePrinter
 
 # Sub agent imports.
-from app.edit_agents.workout_completion import create_main_agent_graph as create_workout_completion_edit_agent
+from app.edit_agents.workout_completion import create_editing_agent
 
 # ----------------------------------------- User Workout Completion -----------------------------------------
 
@@ -36,7 +36,7 @@ def confirm_parent(state: AgentState):
 class SubAgent(BaseAgent):
     focus = "workout_completion"
     sub_agent_title = "Workout Completion"
-    focus_edit_agent = create_workout_completion_edit_agent()
+    focus_edit_agent = create_editing_agent()
     schedule_printer_class = WorkoutCompletionSchedulePrinter()
 
     # def focus_retriever_agent(self, user_id):

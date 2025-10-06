@@ -6,10 +6,10 @@ from app.main_sub_agents.base_sub_agents.base import confirm_impact, determine_i
 from app.agent_states.workout_schedule import AgentState
 
 # Sub agent imports.
-from app.altering_agents.workout_schedule.agent import create_main_agent_graph as create_altering_agent
-from app.reading_agents.workout_schedule.agent import create_main_agent_graph as create_reading_agent
-from app.parent_retriever_agents.workout_schedule.agent import create_main_agent_graph as create_parent_retriever_agent
-from app.parent_retriever_agents.workout_schedule.availability import create_main_agent_graph as create_availability_retriever_agent
+from app.altering_agents.workout_schedule import create_altering_agent
+from app.reading_agents.workout_schedule import create_reading_agent
+from app.parent_retriever_agents.workout_schedule import create_parent_retriever_agent
+from app.parent_retriever_agents.workout_schedule import create_availability_retriever_agent
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 

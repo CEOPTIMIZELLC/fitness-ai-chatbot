@@ -13,9 +13,9 @@ from app.goal_prompts.macrocycles import macrocycle_system_prompt
 from app.impact_goal_models.macrocycles import MacrocycleGoal
 
 # Sub agents imports.
-from app.altering_agents.macrocycles.agent import create_main_agent_graph as create_altering_agent
-from app.creation_agents.macrocycles.agent import create_main_agent_graph as create_creation_agent
-from app.reading_agents.macrocycles.agent import create_main_agent_graph as create_reading_agent
+from app.altering_agents.macrocycles import create_altering_agent
+from app.creation_agents.macrocycles import create_creation_agent
+from app.reading_agents.macrocycles import create_reading_agent
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 

@@ -13,7 +13,7 @@ from app.construct_lists_from_sql.phases import Main as construct_phases_list
 from app.schedule_printers.mesocycles import MesocycleSchedulePrinter
 
 # Sub agent imports.
-from app.edit_agents.mesocycles import create_main_agent_graph as create_mesocycle_edit_agent
+from app.edit_agents.mesocycles import create_editing_agent
 from app.solver_agents.phases import Main as phase_main
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
@@ -24,7 +24,7 @@ class AlteringAgent(BaseAgent):
     focus = "mesocycle"
     parent = "macrocycle"
     sub_agent_title = "Mesocycle"
-    focus_edit_agent = create_mesocycle_edit_agent()
+    focus_edit_agent = create_editing_agent()
     schedule_printer_class = MesocycleSchedulePrinter()
     is_edited = True
 

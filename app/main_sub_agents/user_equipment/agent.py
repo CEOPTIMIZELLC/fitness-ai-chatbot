@@ -6,10 +6,10 @@ from app.agent_states.equipment import AgentState
 from app.schedule_printers.equipment import EquipmentSchedulePrinter
 
 # Sub agent imports.
-from app.altering_agents.equipment.agent import create_main_agent_graph as create_altering_agent
-from app.creation_agents.equipment.agent import create_main_agent_graph as create_creation_agent
-from app.deletion_agents.equipment.agent import create_main_agent_graph as create_deletion_agent
-from app.reading_agents.equipment.agent import create_main_agent_graph as create_reading_agent
+from app.altering_agents.equipment import create_altering_agent
+from app.creation_agents.equipment import create_creation_agent
+from app.deletion_agents.equipment import create_deletion_agent
+from app.reading_agents.equipment import create_reading_agent
 
 class SubAgent(BaseAgent):
     focus = "equipment"
