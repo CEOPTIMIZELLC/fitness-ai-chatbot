@@ -1,4 +1,4 @@
-from logging_config import LogAlteringAgent
+from logging_config import LogCreationAgent
 from datetime import timedelta
 
 # Database imports.
@@ -7,13 +7,13 @@ from app.models import User_Microcycles
 from app.common_table_queries.mesocycles import currently_active_item as current_mesocycle
 
 # Agent construction imports.
-from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.creation_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.agent_states.microcycles import AgentState
 from app.schedule_printers.microcycles import MicrocycleSchedulePrinter
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 
-class AlteringAgent(BaseAgent):
+class CreationAgent(BaseAgent):
     focus = "microcycle"
     parent = "mesocycle"
     sub_agent_title = "Microcycle"
@@ -28,7 +28,7 @@ class AlteringAgent(BaseAgent):
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Retrieving Information for Microcycle Scheduling---------")
+        LogCreationAgent.agent_steps(f"\t---------Retrieving Information for Microcycle Scheduling---------")
         user_mesocycle = state["user_mesocycle"]
 
         # Each microcycle must last 1 week.
@@ -56,7 +56,7 @@ class AlteringAgent(BaseAgent):
 
     # Initializes the microcycle schedule for the current mesocycle.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Perform Microcycle Scheduling---------")
+        LogCreationAgent.agent_steps(f"\t---------Perform Microcycle Scheduling---------")
         mesocycle_id = state["mesocycle_id"]
         microcycle_duration = state["microcycle_duration"]
         microcycle_count = state["microcycle_count"]
@@ -85,5 +85,5 @@ class AlteringAgent(BaseAgent):
 
 # Create main agent.
 def create_main_agent_graph():
-    agent = AlteringAgent()
+    agent = CreationAgent()
     return agent.create_main_agent_graph(AgentState)

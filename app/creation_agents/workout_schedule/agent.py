@@ -1,4 +1,4 @@
-from logging_config import LogAlteringAgent
+from logging_config import LogCreationAgent
 from flask import abort
 
 # Database imports.
@@ -7,7 +7,7 @@ from app.models import User_Workout_Exercises, User_Workout_Days
 from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
 # Agent construction imports.
-from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.creation_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.agent_states.workout_schedule import AgentState
 from app.schedule_printers.workout_schedule import WorkoutScheduleSchedulePrinter
 
@@ -20,7 +20,7 @@ from .actions import retrieve_parameters
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
-class AlteringAgent(BaseAgent):
+class CreationAgent(BaseAgent):
     focus = "workout_schedule"
     parent = "phase_component"
     sub_agent_title = "User Workout"
@@ -37,7 +37,7 @@ class AlteringAgent(BaseAgent):
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Retrieving Information for Workout Exercise Scheduling---------")
+        LogCreationAgent.agent_steps(f"\t---------Retrieving Information for Workout Exercise Scheduling---------")
         user_workout_day = state["user_phase_component"]
 
         return {
@@ -52,7 +52,7 @@ class AlteringAgent(BaseAgent):
 
     # Executes the agent to create the phase component schedule for each workout in the current workout_day.
     def perform_scheduler(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Perform Workout Exercise Scheduling---------")
+        LogCreationAgent.agent_steps(f"\t---------Perform Workout Exercise Scheduling---------")
         user_id = state["user_id"]
         workout_day_id = state["phase_component_id"]
         user_workout_day = db.session.get(User_Workout_Days, workout_day_id)
@@ -69,7 +69,7 @@ class AlteringAgent(BaseAgent):
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
+        LogCreationAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         workout_day_id = state["phase_component_id"]
         exercises_output = state["agent_output"]
 
@@ -98,7 +98,7 @@ class AlteringAgent(BaseAgent):
 
     # Print output.
     def get_formatted_list(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        LogCreationAgent.agent_steps(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
         workout_day_id = state["phase_component_id"]
         parent_db_entry = db.session.get(User_Workout_Days, workout_day_id)
         workout_date = str(parent_db_entry.date)
@@ -114,10 +114,10 @@ class AlteringAgent(BaseAgent):
                                     for user_workout_exercise in schedule_from_db]
 
         formatted_schedule = self.schedule_printer_class.run_printer(workout_date, loading_system_id, user_workout_exercises_dict)
-        LogAlteringAgent.formatted_schedule(formatted_schedule)
+        LogCreationAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
 # Create main agent.
 def create_main_agent_graph():
-    agent = AlteringAgent()
+    agent = CreationAgent()
     return agent.create_main_agent_graph(AgentState)

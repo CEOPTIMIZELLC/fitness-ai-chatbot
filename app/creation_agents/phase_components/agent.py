@@ -1,4 +1,4 @@
-from logging_config import LogAlteringAgent
+from logging_config import LogCreationAgent
 
 # Database imports.
 from app import db
@@ -6,7 +6,7 @@ from app.models import User_Workout_Components, User_Workout_Days
 from app.common_table_queries.microcycles import currently_active_item as current_microcycle
 
 # Agent construction imports.
-from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.creation_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.agent_states.phase_components import AgentState
 from app.schedule_printers.phase_components import PhaseComponentSchedulePrinter
 
@@ -23,7 +23,7 @@ from .actions import (
 
 # ----------------------------------------- User Workout Days -----------------------------------------
 
-class AlteringAgent(BaseAgent):
+class CreationAgent(BaseAgent):
     focus = "phase_component"
     parent = "microcycle"
     sub_agent_title = "Phase Component"
@@ -38,7 +38,7 @@ class AlteringAgent(BaseAgent):
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Retrieving Information for Workout Day Scheduling---------")
+        LogCreationAgent.agent_steps(f"\t---------Retrieving Information for Workout Day Scheduling---------")
         user_microcycle = state["user_microcycle"]
         user_availability = state["user_availability"]
         microcycle_id = user_microcycle["id"]
@@ -67,7 +67,7 @@ class AlteringAgent(BaseAgent):
 
     # Executes the agent to create the phase component schedule for each workout in the current microcycle.
     def perform_scheduler(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Perform Workout Day Scheduling---------")
+        LogCreationAgent.agent_steps(f"\t---------Perform Workout Day Scheduling---------")
         user_id = state["user_id"]
         phase_id = state["phase_id"]
         microcycle_weekdays = state["microcycle_weekdays"]
@@ -87,7 +87,7 @@ class AlteringAgent(BaseAgent):
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
+        LogCreationAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         phase_components_output = state["agent_output"]
         user_microcycle = state["user_microcycle"]
         microcycle_id = user_microcycle["id"]
@@ -113,5 +113,5 @@ class AlteringAgent(BaseAgent):
 
 # Create main agent.
 def create_main_agent_graph():
-    agent = AlteringAgent()
+    agent = CreationAgent()
     return agent.create_main_agent_graph(AgentState)

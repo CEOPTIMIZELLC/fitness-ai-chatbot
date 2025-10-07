@@ -6,7 +6,7 @@ from app.models import Weekday_Library, User_Weekday_Availability, User_Workout_
 from app.construct_lists_from_sql.exercises import Main as construct_available_exercises_list
 from app.construct_lists_from_sql.general_exercises import Main as construct_available_general_exercises_list
 from app.construct_lists_from_sql.phase_components import Main as construct_phase_component_list
-from app.altering_agents.utils.agent_pre_processing import verify_pc_information
+from app.creation_agents.utils.agent_pre_processing import verify_pc_information
 
 # ----------------------------------------- Workout Days -----------------------------------------
 

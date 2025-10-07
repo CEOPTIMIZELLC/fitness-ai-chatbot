@@ -7,7 +7,7 @@ from app.models import User_Weekday_Availability
 
 from app.main_sub_agents.user_workout_exercises import create_workout_agent
 from app.main_sub_agents.user_workout_completion import create_workout_completion_agent
-from app.altering_agents.workout_schedule.actions import retrieve_parameters
+from app.creation_agents.workout_schedule.actions import retrieve_parameters
 from app.solver_agents.exercises import exercise_pc_main
 
 from app.common_table_queries.phase_components import currently_active_item as current_workout_day

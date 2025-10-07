@@ -3,7 +3,7 @@ from flask import abort
 from app.construct_lists_from_sql.exercises import Main as construct_available_exercises_list
 from app.construct_lists_from_sql.general_exercises import Main as construct_available_general_exercises_list
 from app.construct_lists_from_sql.user_workout_components import construct_user_workout_components_list
-from app.altering_agents.utils.agent_pre_processing import *
+from app.creation_agents.utils.agent_pre_processing import *
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 

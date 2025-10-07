@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, START, END
 from app.agent_states.main_agent_state import MainAgentState
 
 # Local imports.
-from .base import BaseAgent, confirm_impact, determine_if_alter, determine_if_read
+from .base import BaseAgent, confirm_impact, determine_if_create, determine_if_read
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
 
@@ -21,18 +21,18 @@ class BaseAgentWithParents(BaseAgent):
 
         # Combine the alter and creation requests since they are synonamous for availability.
         if any(key in state_updates for key in ("is_alter", "is_create")):
-            is_alter = state_updates.pop("is_alter", False) or state_updates.pop("is_create", False)
+            is_create = state_updates.pop("is_alter", False) or state_updates.pop("is_create", False)
             
             # Combine requests.
             item_request_list = [state_updates.pop("alter_detail", None), state_updates.pop("create_detail", None)]
-            alter_detail = " ".join(
+            create_detail = " ".join(
                 value
                 for value in item_request_list
                 if value != None
             )
 
-            state_updates["is_alter"] = is_alter
-            state_updates["alter_detail"] = alter_detail
+            state_updates["is_create"] = is_create
+            state_updates["create_detail"] = create_detail
         return state_updates
 
     def create_main_agent_graph(self, state_class):
@@ -40,8 +40,8 @@ class BaseAgentWithParents(BaseAgent):
         workflow.add_node("start_node", self.start_node)
         workflow.add_node("parent_agent", self.parent_scheduler_agent)
         workflow.add_node("extract_operations", self.extract_operations)
-        workflow.add_node("altering_agent", self.altering_agent)
-        workflow.add_node("operation_is_not_alter", self.chained_conditional_inbetween)
+        workflow.add_node("creation_agent", self.creation_agent)
+        workflow.add_node("operation_is_not_create", self.chained_conditional_inbetween)
         workflow.add_node("reading_agent", self.reading_agent)
         workflow.add_node("operation_is_not_read", self.chained_conditional_inbetween)
         workflow.add_node("end_node", self.end_node)
@@ -59,20 +59,20 @@ class BaseAgentWithParents(BaseAgent):
 
         workflow.add_edge("parent_agent", "extract_operations")
 
-        # Whether the goal is to alter user elements.
+        # Whether the goal is to create user elements.
         workflow.add_conditional_edges(
             "extract_operations",
-            determine_if_alter, 
+            determine_if_create, 
             {
-                "not_alter": "operation_is_not_alter",                  # In between step for if the operation is not alter.
-                "alter": "altering_agent"                               # Start altering subagent.
+                "not_create": "operation_is_not_create",                # In between step for if the operation is not create.
+                "create": "creation_agent"                              # Start createing subagent.
             }
         )
-        workflow.add_edge("altering_agent", "operation_is_not_alter")
+        workflow.add_edge("creation_agent", "operation_is_not_create")
 
         # Whether the goal is to read user elements.
         workflow.add_conditional_edges(
-            "operation_is_not_alter",
+            "operation_is_not_create",
             determine_if_read, 
             {
                 "not_read": "operation_is_not_read",                    # In between step for if the operation is not read.

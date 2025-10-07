@@ -1,4 +1,4 @@
-from logging_config import LogAlteringAgent
+from logging_config import LogCreationAgent
 from datetime import timedelta
 
 # Database imports.
@@ -7,7 +7,7 @@ from app.models import User_Mesocycles
 from app.common_table_queries.macrocycles import currently_active_item as current_macrocycle
 
 # Agent construction imports.
-from app.altering_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.creation_agents.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
 from app.agent_states.mesocycles import AgentState
 from app.construct_lists_from_sql.phases import Main as construct_phases_list
 from app.schedule_printers.mesocycles import MesocycleSchedulePrinter
@@ -20,7 +20,7 @@ from app.solver_agents.phases import Main as phase_main
 
 macrocycle_weeks = 26
 
-class AlteringAgent(BaseAgent):
+class CreationAgent(BaseAgent):
     focus = "mesocycle"
     parent = "macrocycle"
     sub_agent_title = "Mesocycle"
@@ -37,7 +37,7 @@ class AlteringAgent(BaseAgent):
 
     # Retrieve necessary information for the schedule creation.
     def retrieve_information(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Retrieving Information for Mesocycle Scheduling---------")
+        LogCreationAgent.agent_steps(f"\t---------Retrieving Information for Mesocycle Scheduling---------")
         user_macrocycle = state["user_macrocycle"]
         macrocycle_id = user_macrocycle["id"]
         goal_id = user_macrocycle["goal_id"]
@@ -59,7 +59,7 @@ class AlteringAgent(BaseAgent):
 
     # Executes the agent to create the mesocycle/phase schedule for the current macrocycle.
     def perform_scheduler(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Perform Mesocycle Scheduling---------")
+        LogCreationAgent.agent_steps(f"\t---------Perform Mesocycle Scheduling---------")
         goal_id = state["goal_id"]
         macrocycle_allowed_weeks = state["macrocycle_allowed_weeks"]
         parameters={
@@ -91,7 +91,7 @@ class AlteringAgent(BaseAgent):
 
     # Convert output from the agent to SQL models.
     def agent_output_to_sqlalchemy_model(self, state: AgentState):
-        LogAlteringAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
+        LogCreationAgent.agent_steps(f"\t---------Convert schedule to SQLAlchemy models.---------")
         phases_output = state["agent_output"]
         macrocycle_id = state["macrocycle_id"]
 
@@ -115,5 +115,5 @@ class AlteringAgent(BaseAgent):
 
 # Create main agent.
 def create_main_agent_graph():
-    agent = AlteringAgent()
+    agent = CreationAgent()
     return agent.create_main_agent_graph(AgentState)
