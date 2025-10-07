@@ -4,7 +4,7 @@ This folder holds the sub agents regarding and related to the creation of new sc
 
 ## [Equipment](equipment/)
 
-The subagent involves the creation of a new piece of equipment for the user. The sub agent will ask in a loop for clarifying details until the user has provided it with enough information (the equipment type and the measurement) to create this new piece of equipment. `Future implementations will not require the measurment when not needed (i.e. when a piece of equipment doesn't typically have a measurement). Future implementations will ideally have multiple measurements when necessary (i.e. when a piece of equipment has a length and a weight)/`
+The subagent involves the creation of a new piece of equipment for the user. The sub agent will ask in a loop for clarifying details until the user has provided it with enough information (the equipment type and the measurement) to create this new piece of equipment. `Future implementations will not require the measurment when not needed (i.e. when a piece of equipment doesn't typically have a measurement). Future implementations will ideally have multiple measurements when necessary (i.e. when a piece of equipment has a length and a weight).`
 
 ## [Macrocycles/Goals](macrocycles/)
 
