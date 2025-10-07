@@ -24,4 +24,4 @@ The subagent involves the assignment of what phase components are to be performe
 
 ## [Exercises/Daily Workout](workout_schedule/)
 
-The subagent involves the creation of a workout for the currently active weekday, determining phase and length for each. `Future implementations will allow the user to create workouts for future microcycles as well.`
+The subagent involves the creation of a workout for the currently active weekday, determining phase and length for each. `Future implementations will allow the user to create workouts for future phase components as well.`
