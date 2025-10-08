@@ -20,10 +20,7 @@ def create_library_crud_blueprint(name, url_prefix, model, response_key):
     def read_item(item_id):
         result = get_item_by_id(model, item_id)
         if not result:
-            return jsonify({
-                "status": "error",
-                "message": f"{response_key[:-1].capitalize()} {item_id} not found."
-            }), 404
+            return jsonify({"status": "error", "message": f"{response_key[:-1].capitalize()} {item_id} not found."}), 404
         return jsonify({"status": "success", response_key: result}), 200
 
     return bp
