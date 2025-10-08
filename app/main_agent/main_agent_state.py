@@ -2,6 +2,7 @@
 from typing_extensions import TypedDict
 class MainAgentState(TypedDict):
     user_id: int
+    agent_path: list
 
     user_input: str
     check: bool

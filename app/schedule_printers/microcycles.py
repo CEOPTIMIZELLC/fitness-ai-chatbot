@@ -2,7 +2,7 @@ from app.utils.longest_string import longest_string_size_for_key
 from .base import BaseSchedulePrinter
 
 class MicrocycleSchedulePrinter(BaseSchedulePrinter):
-    def _create_header_fields(self) -> dict:
+    def _create_header_fields(self, longest_sizes: dict) -> dict:
         """Create all header fields with consistent formatting"""
         return {
             "number": ("Microcycle", 13),
@@ -19,25 +19,8 @@ class MicrocycleSchedulePrinter(BaseSchedulePrinter):
             "duration": f"{str(microcycle["duration"])}"
         }
 
-    def _log_schedule(self, headers, header_line, schedule):
-        schedule_string = ""
-        schedule_string += header_line
-        for user_microcycle in schedule:
-            _line_fields = self._line_fields(user_microcycle)
-            schedule_string += self._formatted_entry_line(headers, _line_fields)
-        return schedule_string
-
-    def run_printer(self, schedule):
-        formatted = ""
-
-        # Create headers
-        formatted += self.schedule_header
-        headers = self._create_header_fields()
-        header_line = self._formatted_header_line(headers)
-
-        formatted += self._log_schedule(headers, header_line, schedule)
-
-        return formatted
+    def _retrieve_longest_schedule_elements(self, schedule):
+        return {}
 
 def Main(schedule):
     mesocycle_schedule_printer = MicrocycleSchedulePrinter()

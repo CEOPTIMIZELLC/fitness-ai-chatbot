@@ -9,6 +9,8 @@ from app.utils.common_table_queries import current_mesocycle, current_microcycle
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_parents import BaseAgentWithParents as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_operation, determine_read_filter_operation
+from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
 from app.impact_goal_models import MesocycleGoal
 from app.goal_prompts import mesocycle_system_prompt
 from app.main_agent.user_mesocycles import create_mesocycle_agent
@@ -18,6 +20,8 @@ from app.schedule_printers import MicrocycleSchedulePrinter
 # ----------------------------------------- User Microcycles -----------------------------------------
 
 class AgentState(MainAgentState):
+    focus_name: str
+    parent_name: str
     user_mesocycle: dict
     mesocycle_id: int
     microcycle_count: int
@@ -112,6 +116,7 @@ class SubAgent(BaseAgent):
 
     def create_main_agent_graph(self, state_class: type[AgentState]):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
@@ -130,9 +135,10 @@ class SubAgent(BaseAgent):
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
@@ -142,7 +148,7 @@ class SubAgent(BaseAgent):
         # Whether a parent element exists.
         workflow.add_conditional_edges(
             "retrieve_parent",
-            self.confirm_parent,
+            confirm_parent, 
             {
                 "no_parent": "ask_for_permission",                      # No parent element exists.
                 "parent": "parent_retrieved"                            # In between step for if a parent element exists.
@@ -152,7 +158,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "parent_retrieved",
-            self.determine_operation,
+            determine_operation, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "retrieve_information"                         # Retrieve the information for the alteration.
@@ -162,7 +168,7 @@ class SubAgent(BaseAgent):
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
-            self.determine_read_operation,
+            determine_read_operation, 
             {
                 "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
                 "singular": "read_user_current_element"                 # Read the current element.
@@ -172,7 +178,7 @@ class SubAgent(BaseAgent):
         # Whether the plural list is for all of the elements or all elements belonging to the user.
         workflow.add_conditional_edges(
             "read_operation_is_plural",
-            self.determine_read_filter_operation,
+            determine_read_filter_operation, 
             {
                 "current": "get_formatted_list",                        # Read the current schedule.
                 "all": "get_user_list"                                  # Read all user elements.
@@ -183,7 +189,7 @@ class SubAgent(BaseAgent):
         workflow.add_edge("ask_for_permission", "parent_requests_extraction")
         workflow.add_conditional_edges(
             "parent_requests_extraction",
-            self.confirm_permission,
+            confirm_permission, 
             {
                 "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
                 "permission_granted": "parent_agent"                    # The agent is allowed to create a parent.

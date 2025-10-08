@@ -13,6 +13,20 @@ from .utils import sub_agent_focused_items, new_input_request
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Availability -----------------------------------------
 
+# Confirm that a currently active availability exists to attach the a schedule to.
+def confirm_availability(state: TState):
+    LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active Availability---------")
+    if not state["user_availability"]:
+        return "no_availability"
+    return "availability"
+
+# Router for if permission was granted.
+def confirm_availability_permission(state: TState):
+    LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new Availability---------")
+    if not state["availability_impacted"]:
+        return "permission_denied"
+    return "permission_granted"
+
 class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
     availability_focus = "availability"
     sub_agent_title = ""
@@ -32,13 +46,6 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
     def retrieve_availability(self, state: TState):
         LogMainSubAgent.agent_steps(f"\t---------Retrieving {self.availability_title} for {self.sub_agent_title} Scheduling---------")
         return self.availability_retriever_agent(state)
-
-    # Confirm that a currently active availability exists to attach the a schedule to.
-    def confirm_availability(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm there is an active {self.availability_title}---------")
-        if not state[self.availability_names["entry"]]:
-            return "no_availability"
-        return "availability"
 
     # Request permission from user to execute the availability initialization.
     def ask_for_availability_permission(self, state: TState):
@@ -70,13 +77,6 @@ class BaseAgentWithAvailability(AvailabilityNode, BaseAgentWithParents):
     def availability_requests_extraction(self, state: TState):
         LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests for Availability---------")
         return self.other_requests_information_extractor(state, self.availability_focus, f"availability_other_requests")
-
-    # Router for if permission was granted.
-    def confirm_availability_permission(self, state: TState):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new {self.availability_title}---------")
-        if not state[self.availability_names["impact"]]:
-            return "permission_denied"
-        return "permission_granted"
 
     # State if the Availability isn't allowed to be requested.
     def availability_permission_denied(self, state: TState):

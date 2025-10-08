@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 
 from app.models import User_Weekday_Availability
 
-from app.agents.exercises import exercise_pc_main
+from app.solver_agents.exercises import exercise_pc_main
 
 from app.utils.common_table_queries import current_workout_day
 

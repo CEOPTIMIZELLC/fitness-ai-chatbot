@@ -3,12 +3,54 @@ from flask import abort
 from typing_extensions import TypeVar
 
 from app.main_agent.main_agent_state import MainAgentState
-from .utils import sub_agent_focused_items
+from .utils import retrieve_current_agent_focus, sub_agent_focused_items
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------
 
 # Create a generic type variable that must be a subclass of MainAgentState
 TState = TypeVar('TState', bound=MainAgentState)
+
+# Confirm that the desired section should be impacted.
+def confirm_impact(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Confirm that the {sub_agent_focus} is Impacted---------")
+    if not state[f"{sub_agent_focus}_impacted"]:
+        LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
+        return "no_impact"
+    return "impact"
+
+# Determine the operation to be performed.
+def determine_operation(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read or write {sub_agent_focus}---------")
+    if state[f"{sub_agent_focus}_is_altered"]:
+        return "alter"
+    return "read"
+
+# Determine whether the outcome is to read the entire schedule or simply the current item.
+def determine_read_operation(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read a list of {sub_agent_focus} or simply a singular item---------")
+    if state[f"{sub_agent_focus}_read_plural"]:
+        return "plural"
+    return "singular"
+
+# Determine whether the outcome is to read an item from the current set or all items from the user.
+def determine_read_filter_operation(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read all {sub_agent_focus} items for the user or only those currently active---------")
+    if state[f"{sub_agent_focus}_read_current"]:
+        return "current"
+    return "all"
+
+# Determine whether the schedule should be regenerated.
+def confirm_regenerate(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the {sub_agent_focus} schedule should be regenerated---------")
+    if state.get("is_regenerated", False):
+        LogMainSubAgent.agent_steps(f"\t---------Is Regenerated---------")
+        return "is_regenerated"
+    return "not_regenerated"
 
 class BaseAgent():
     focus = ""
@@ -32,15 +74,20 @@ class BaseAgent():
     # In between node for chained conditional edges.
     def chained_conditional_inbetween(self, state):
         return {}
-
-    # Confirm that the desired section should be impacted.
-    def confirm_impact(self, state):
+    
+    # Node to declare that the sub agent has begun.
+    def start_node(self, state):
         LogMainSubAgent.agent_introductions(f"\n=========Beginning User {self.sub_agent_title} Sub Agent=========")
-        LogMainSubAgent.agent_steps(f"\t---------Confirm that the {self.sub_agent_title} is Impacted---------")
-        if not state[self.focus_names["impact"]]:
-            LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
-            return "no_impact"
-        return "impact"
+
+        # Append the current sub agent to the path.
+        agent_path = state.get("agent_path", [])
+        agent_path.append({"focus": self.focus})
+        LogMainSubAgent.agent_path(f"Agent Path: {agent_path}")
+
+        return {
+            "focus_name": self.focus, 
+            "agent_path": agent_path
+        }
 
     # Default items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
@@ -52,27 +99,6 @@ class BaseAgent():
             focus_names["message"]: goal_class.detail,
             "other_requests": goal_class.other_requests
         }
-
-    # Determine the operation to be performed.
-    def determine_operation(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read or write {self.sub_agent_title}---------")
-        if state[self.focus_names["is_altered"]]:
-            return "alter"
-        return "read"
-
-    # Determine whether the outcome is to read the entire schedule or simply the current item.
-    def determine_read_operation(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read a list of {self.sub_agent_title} or simply a singular item---------")
-        if state[self.focus_names["read_plural"]]:
-            return "plural"
-        return "singular"
-
-    # Determine whether the outcome is to read an item from the current set or all items from the user.
-    def determine_read_filter_operation(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to read all {self.sub_agent_title} items for the user or only those currently active---------")
-        if state[self.focus_names["read_current"]]:
-            return "current"
-        return "all"
 
     # Retrieve user's current schedule item.
     def read_user_current_element(self, state):
@@ -102,7 +128,7 @@ class BaseAgent():
 
     # Print output.
     def get_user_list(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Retrieving Formatted {self.sub_agent_title} Schedule---------")
+        LogMainSubAgent.agent_steps(f"\t---------Retrieving All {self.sub_agent_title} Schedules---------")
         user_id = state["user_id"]
 
         schedule_from_db = self.user_list_query(user_id)
@@ -117,5 +143,13 @@ class BaseAgent():
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
+
+        # Remove current agent from the path once it is done.
+        agent_path = state.get("agent_path", [])
+        agent_path.pop()
+        LogMainSubAgent.agent_path(f"Agent Path: {agent_path}")
+
         LogMainSubAgent.agent_introductions(f"=========Ending User {self.sub_agent_title} SubAgent=========\n")
-        return {}
+        return {
+            "agent_path": agent_path
+        }

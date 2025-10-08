@@ -30,6 +30,12 @@ loop_main_agent = True
 # Whether the agent should request edits to the schedule after generation.
 request_schedule_edits = True
 
+# Whether the editor agent should request user confirmation before applying the edits.
+confirm_valid_schedule = True
+
+# Whether the editor agent should request user confirmation before applying edits that would result in an invalid schedule.
+confirm_invalid_schedule = True
+
 # Configurations for displayed information for logged schedules.
 class ScheduleDisplayConfig:
     # Whether the logged schedule should include the reason that an exercise has been included.
@@ -128,6 +134,30 @@ class MainSubAgentVerbosityConfig:
     system_message = True
 
     # Log the parsed user input for the sub agents.
+    parsed_goal = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+    # Log the current path of the subagents.
+    agent_path = True
+
+
+# Logging configurations options for the editor agents.
+class EditorAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the editor agents.
+    agent_introductions = True
+
+    # Log node introductions in the editor agents.
+    agent_steps = True
+
+    # Log system messages for LLM calls in the editor agent.
+    system_message = True
+
+    # Log the parsed user input for the editor agents.
     parsed_goal = True
 
     # Log final formatted schedule produced.

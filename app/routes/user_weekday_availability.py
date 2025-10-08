@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 
 from app.main_agent.user_weekdays_availability import create_availability_agent
 
-from app.utils.datetime_to_string import recursively_change_dict_timedeltas
+from app.utils.item_to_string import recursively_change_dict_timedeltas
 
 bp = Blueprint('user_weekday_availability', __name__)
 

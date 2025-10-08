@@ -7,11 +7,14 @@ from app import db
 from app.models import User_Workout_Exercises, User_Workout_Days
 from app.models import User_Macrocycles, User_Mesocycles, User_Microcycles
 
-from app.agents.exercises import exercises_main
+from app.solver_agents.exercises import exercises_main
 from app.utils.common_table_queries import current_workout_day
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_filter_operation, confirm_regenerate
+from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
+from app.main_agent.base_sub_agents.with_availability import confirm_availability, confirm_availability_permission
 from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
 from app.impact_goal_models import PhaseComponentGoal
 from app.goal_prompts import phase_component_system_prompt
@@ -19,11 +22,14 @@ from app.edit_agents import create_workout_edit_agent
 
 from .actions import retrieve_availability_for_day, retrieve_parameters
 from app.schedule_printers import WorkoutScheduleSchedulePrinter
-from app.list_printers import WorkoutScheduleListPrinter
+from app.schedule_printers import WorkoutScheduleListPrinter
 
 # ----------------------------------------- User Workout Exercises -----------------------------------------
 
 class AgentState(MainAgentState):
+    focus_name: str
+    parent_name: str
+
     user_phase_component: dict
     phase_component_id: int
     loading_system_id: int
@@ -31,6 +37,7 @@ class AgentState(MainAgentState):
     user_availability: int
     start_date: any
     agent_output: list
+    should_regenerate: bool
     schedule_printed: str
 
 class SubAgent(BaseAgent):
@@ -177,6 +184,7 @@ class SubAgent(BaseAgent):
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("retrieve_parent", self.retrieve_parent)
         workflow.add_node("ask_for_permission", self.ask_for_permission)
         workflow.add_node("parent_requests_extraction", self.parent_requests_extraction)
@@ -199,9 +207,10 @@ class SubAgent(BaseAgent):
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_parent"                             # Retrieve the parent element if an impact is indicated.
@@ -211,10 +220,10 @@ class SubAgent(BaseAgent):
         # Whether a parent element exists.
         workflow.add_conditional_edges(
             "retrieve_parent",
-            self.confirm_parent,
+            confirm_parent, 
             {
                 "no_parent": "ask_for_permission",                      # No parent element exists.
-                "parent": "parent_retrieved"                            # Retreive the availability for the alteration.
+                "parent": "parent_retrieved"                            # In between step for if a parent element exists.
             }
         )
         workflow.add_edge("parent_retrieved", "retrieve_availability")
@@ -224,7 +233,7 @@ class SubAgent(BaseAgent):
         workflow.add_edge("ask_for_permission", "parent_requests_extraction")
         workflow.add_conditional_edges(
             "parent_requests_extraction",
-            self.confirm_permission,
+            confirm_permission, 
             {
                 "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
                 "permission_granted": "parent_agent"                    # The agent is allowed to create a parent.
@@ -235,7 +244,7 @@ class SubAgent(BaseAgent):
         # Whether an availability for the user exists.
         workflow.add_conditional_edges(
             "retrieve_availability",
-            self.confirm_availability,
+            confirm_availability, 
             {
                 "no_availability": "ask_for_availability_permission",   # No parent element exists.
                 "availability": "retrieve_information"                  # Retrieve the information for the alteration.
@@ -246,7 +255,7 @@ class SubAgent(BaseAgent):
         workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
         workflow.add_conditional_edges(
             "availability_requests_extraction",
-            self.confirm_availability_permission,
+            confirm_availability_permission, 
             {
                 "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
                 "permission_granted": "availability"                    # The agent is allowed to create availability.
@@ -257,7 +266,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "retrieve_information",
-            self.determine_operation,
+            determine_operation, 
             {
                 "read": "read_operation_is_plural",                     # In between step for if the read operation is plural.
                 "alter": "delete_old_children"                          # Delete the old children for the alteration.
@@ -267,7 +276,7 @@ class SubAgent(BaseAgent):
         # Whether the plural list is for all of the elements or all elements belonging to the user.
         workflow.add_conditional_edges(
             "read_operation_is_plural",
-            self.determine_read_filter_operation,
+            determine_read_filter_operation, 
             {
                 "current": "get_formatted_list",                        # Read the current schedule.
                 "all": "get_user_list"                                  # Read all user elements.
@@ -276,7 +285,17 @@ class SubAgent(BaseAgent):
 
         workflow.add_edge("delete_old_children", "perform_scheduler")
         workflow.add_edge("perform_scheduler", "editor_agent")
-        workflow.add_edge("editor_agent", "agent_output_to_sqlalchemy_model")
+
+        # Whether the scheduler should be performed again.
+        workflow.add_conditional_edges(
+            "editor_agent",
+            confirm_regenerate, 
+            {
+                "is_regenerated": "parent_agent",                       # Perform the scheduler again if regenerating.
+                "not_regenerated": "agent_output_to_sqlalchemy_model"   # The agent should move on to adding the information to the database.
+            }
+        )
+
         workflow.add_edge("agent_output_to_sqlalchemy_model", "get_formatted_list")
         workflow.add_edge("permission_denied", "end_node")
         workflow.add_edge("availability_permission_denied", "end_node")

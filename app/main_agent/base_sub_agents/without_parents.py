@@ -4,26 +4,28 @@ from flask import abort
 from langgraph.types import interrupt
 
 from .base import BaseAgent
-from .utils import new_input_request
+from .utils import retrieve_current_agent_focus, new_input_request
 
 # ----------------------------------------- Base Sub Agent For Schedule Items Without Parents -----------------------------------------
 
+# Check if a new goal exists to be classified.
+def confirm_if_performing_by_id(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Confirm that the {sub_agent_focus} input is meant to just use an ID.---------")
+    perform_with_parent_id_key = f"{sub_agent_focus}_perform_with_parent_id"
+    if perform_with_parent_id_key in state and state[perform_with_parent_id_key]:
+        return "present_direct_goal_id"
+    return "no_direct_goal_id"
+
+# Check if a new goal exists to be classified.
+def confirm_new_input(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Confirm there is a new {sub_agent_focus} input to be parsed---------")
+    if not state[f"{sub_agent_focus}_message"]:
+        return "no_new_input"
+    return "present_new_input"
+
 class BaseAgentWithoutParents(BaseAgent):
-    # Check if a new goal exists to be classified.
-    def confirm_if_performing_by_id(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm that the {self.sub_agent_title} input is meant to just use an ID.---------")
-        perform_with_parent_id_key = self.focus_names["perform_with_parent_id"]
-        if perform_with_parent_id_key in state and state[perform_with_parent_id_key]:
-            return "present_direct_goal_id"
-        return "no_direct_goal_id"
-
-    # Check if a new goal exists to be classified.
-    def confirm_new_input(self, state):
-        LogMainSubAgent.agent_steps(f"\t---------Confirm there is a new {self.sub_agent_title} input to be parsed---------")
-        if not state[self.focus_names["message"]]:
-            return "no_new_input"
-        return "present_new_input"
-
     # Request permission from user to execute the new input.
     def ask_for_new_input(self, state):
         LogMainSubAgent.agent_steps(f"\t---------Ask user if a new {self.sub_agent_title} can be made---------")

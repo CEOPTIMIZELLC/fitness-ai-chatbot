@@ -3,7 +3,7 @@ from logging_config import LogMainSubAgent
 from langgraph.graph import StateGraph, START, END
 
 from app import db
-from app.agents.phase_components import Main as phase_component_main
+from app.solver_agents.phase_components import Main as phase_component_main
 from app.models import (
     User_Workout_Components, 
     User_Macrocycles, 
@@ -17,6 +17,9 @@ from app.utils.common_table_queries import current_microcycle, current_workout_d
 
 from app.main_agent.main_agent_state import MainAgentState
 from app.main_agent.base_sub_agents.with_availability import BaseAgentWithAvailability as BaseAgent
+from app.main_agent.base_sub_agents.base import confirm_impact, determine_operation, determine_read_operation, determine_read_filter_operation
+from app.main_agent.base_sub_agents.with_parents import confirm_parent, confirm_permission
+from app.main_agent.base_sub_agents.with_availability import confirm_availability, confirm_availability_permission
 from app.main_agent.user_microcycles import create_microcycle_agent
 from app.impact_goal_models import MicrocycleGoal
 from app.goal_prompts import microcycle_system_prompt
@@ -33,6 +36,9 @@ from app.schedule_printers import PhaseComponentSchedulePrinter
 # ----------------------------------------- User Workout Days -----------------------------------------
 
 class AgentState(MainAgentState):
+    focus_name: str
+    parent_name: str
+
     user_microcycle: dict
     microcycle_id: int
     phase_id: int
@@ -165,6 +171,7 @@ class SubAgent(BaseAgent):
     # Create main agent.
     def create_main_agent_graph(self, state_class):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("retrieve_availability", self.retrieve_availability)
         workflow.add_node("ask_for_availability_permission", self.ask_for_availability_permission)
         workflow.add_node("availability_requests_extraction", self.availability_requests_extraction)
@@ -188,9 +195,10 @@ class SubAgent(BaseAgent):
         workflow.add_node("end_node", self.end_node)
 
         # Whether the focus element has been indicated to be impacted.
+        workflow.add_edge(START, "start_node")
         workflow.add_conditional_edges(
-            START,
-            self.confirm_impact,
+            "start_node",
+            confirm_impact, 
             {
                 "no_impact": "end_node",                                # End the sub agent if no impact is indicated.
                 "impact": "retrieve_availability"                       # Retreive the availability for the alteration.
@@ -200,7 +208,7 @@ class SubAgent(BaseAgent):
         # Whether an availability for the user exists.
         workflow.add_conditional_edges(
             "retrieve_availability",
-            self.confirm_availability,
+            confirm_availability, 
             {
                 "no_availability": "ask_for_availability_permission",   # No parent element exists.
                 "availability": "retrieve_parent"                       # Retrieve the parent element if an availability is found.
@@ -211,7 +219,7 @@ class SubAgent(BaseAgent):
         workflow.add_edge("ask_for_availability_permission", "availability_requests_extraction")
         workflow.add_conditional_edges(
             "availability_requests_extraction",
-            self.confirm_availability_permission,
+            confirm_availability_permission, 
             {
                 "permission_denied": "availability_permission_denied",  # The agent isn't allowed to create availability.
                 "permission_granted": "availability"                    # The agent is allowed to create availability.
@@ -222,7 +230,7 @@ class SubAgent(BaseAgent):
         # Whether a parent element exists.
         workflow.add_conditional_edges(
             "retrieve_parent",
-            self.confirm_parent,
+            confirm_parent, 
             {
                 "no_parent": "ask_for_permission",                      # No parent element exists.
                 "parent": "parent_retrieved"                            # In between step for if a parent element exists.
@@ -232,7 +240,7 @@ class SubAgent(BaseAgent):
         # Whether the goal is to read or alter user elements.
         workflow.add_conditional_edges(
             "parent_retrieved",
-            self.determine_operation,
+            determine_operation, 
             {
                 "read": "operation_is_read",                            # In between step for if the operation is read.
                 "alter": "retrieve_information"                         # Retrieve the information for the alteration.
@@ -242,7 +250,7 @@ class SubAgent(BaseAgent):
         # Whether the read operations is for a single element or plural elements.
         workflow.add_conditional_edges(
             "operation_is_read",
-            self.determine_read_operation,
+            determine_read_operation, 
             {
                 "plural": "read_operation_is_plural",                   # In between step for if the read operation is plural.
                 "singular": "read_user_current_element"                 # Read the current element.
@@ -252,7 +260,7 @@ class SubAgent(BaseAgent):
         # Whether the plural list is for all of the elements or all elements belonging to the user.
         workflow.add_conditional_edges(
             "read_operation_is_plural",
-            self.determine_read_filter_operation,
+            determine_read_filter_operation, 
             {
                 "current": "get_formatted_list",                        # Read the current schedule.
                 "all": "get_user_list"                                  # Read all user elements.
@@ -263,7 +271,7 @@ class SubAgent(BaseAgent):
         workflow.add_edge("ask_for_permission", "parent_requests_extraction")
         workflow.add_conditional_edges(
             "parent_requests_extraction",
-            self.confirm_permission,
+            confirm_permission, 
             {
                 "permission_denied": "permission_denied",               # The agent isn't allowed to create a parent.
                 "permission_granted": "parent_agent"                    # The agent is allowed to create a parent.

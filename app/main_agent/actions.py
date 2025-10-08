@@ -19,7 +19,7 @@ def log_interrupts(snapshot_tasks):
 def enter_main_agent(user_id):
     db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
 
-    # 👇 keep checkpointer alive during invocation
+    # Keep checkpointer alive during invocation
     with PostgresSaver.from_conn_string(db_uri) as checkpointer:
         main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
         
@@ -27,7 +27,7 @@ def enter_main_agent(user_id):
 
         # Invoke with new macrocycle and possible goal types.
         result = main_agent_app.invoke(
-            {"user_id": user_id}, 
+            {"user_id": user_id, "agent_path": []}, 
             config={
                 "recursion_limit": agent_recursion_limit,
                 "configurable": {
@@ -48,7 +48,7 @@ def enter_main_agent(user_id):
 def resume_main_agent(user_id, user_input):
     db_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
 
-    # 👇 keep checkpointer alive during invocation
+    # Keep checkpointer alive during invocation
     with PostgresSaver.from_conn_string(db_uri) as checkpointer:
         main_agent_app = create_main_agent_graph(checkpointer=checkpointer)
         
