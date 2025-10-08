@@ -14,7 +14,11 @@ login_manager.login_view = 'auth.login'
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5173"}})
+    CORS(app, supports_credentials=True, resources={
+        r"/*": {
+            "origins": ["http://localhost:5173", "http://localhost:8080"]
+        }
+    })
     bcrypt.init_app(app)
     db.init_app(app)
     login_manager.init_app(app)
