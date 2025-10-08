@@ -1,3 +1,5 @@
+import json
+
 from flask import request, jsonify, Blueprint, current_app, abort, Response, stream_with_context
 from flask_login import current_user, login_required
 
@@ -143,7 +145,6 @@ def _sse_event(event_type: str, payload: dict) -> str:
     Formats a single Server-Sent-Event line with JSON payload.
     We keep it minimal and newline-delimited for robust streaming over fetch().
     """
-    import json
     # Standard SSE: "event:" and "data:" lines ending with double newline
     return f"event: {event_type}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
