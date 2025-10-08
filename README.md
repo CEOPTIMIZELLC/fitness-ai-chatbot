@@ -207,7 +207,7 @@ localhost:5000/database_manipulation/init_db
 [POST]
 localhost:5000/database_manipulation/init_db
 
-BODY (form-data):
+BODY (raw):
 email: [string; REQUIRED; Must be a valid email address format that doesn't already exist in the database]
 password: [string; REQUIRED; Must be between 8 and 20 characters long, must contain at least one number, and must contain at least one of the following characters: ! @ # $ % ^ & * _ ?]
 password_confirm: [string; REQUIRED; Must be the same as password]
@@ -223,7 +223,7 @@ goal: [string; REQUIRED;]
 [POST]
 localhost:5000/login
 
-BODY (form-data):
+BODY (raw):
 email: [string; REQUIRED; Must be a valid email address that exists in the database]
 password: [string; REQUIRED; Must be the same as the password that was used to register the user with the given email address.]
 ```
@@ -299,7 +299,7 @@ localhost:5000/logout
 [POST]
 localhost:5000/database_manipulation/init_db
 
-BODY (form-data):
+BODY (raw):
 email: [string; REQUIRED; Must be a valid email address format that doesn't already exist in the database]
 password: [string; REQUIRED; Must be between 8 and 20 characters long, must contain at least one number, and must contain at least one of the following characters: ! @ # $ % ^ & * _ ?]
 password_confirm: [string; REQUIRED; Must be the same as password]
@@ -315,7 +315,7 @@ goal: [string; REQUIRED;]
 [POST]
 localhost:5000/login
 
-BODY (form-data):
+BODY (raw):
 email: [string; REQUIRED; Must be a valid email address that exists in the database]
 password: [string; REQUIRED; Must be the same as the password that was used to register the user with the given email address.]
 ```
@@ -351,7 +351,7 @@ localhost:5000/logout
 [POST]
 localhost:5000/database_manipulation/init_db
 
-BODY (form-data):
+BODY (raw):
     email: email2@gmail.com
     password: password?2
     password_confirm: password?2
@@ -367,7 +367,7 @@ BODY (form-data):
 [POST]
 localhost:5000/login
 
-BODY (form-data):
+BODY (raw):
     email: email2@gmail.com
     password: password?2
 ```

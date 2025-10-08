@@ -3,7 +3,7 @@
 > > 
 > > ## Register new user
 > > - Adds new user to the users database. 
-> > - Body type: `form-data`
+> > - Body type: `raw`
 > > - Required inputs: `email`, `password`, `password_confirm`, `first_name`, `last_name`, `age`, `gender`, `goal`
 > > - Returns status message on success or failure.
 > > - Email address must be in a valid email format.
@@ -27,7 +27,7 @@
 > > ```
 > > ## Login user
 > > - Logs in user and stores the current user. 
-> > - Body type: `form-data`
+> > - Body type: `raw`
 > > - Required inputs: `email`, `password`
 > > - Returns status message on success or failure. Doesn't work if already logged in.
 > > - Routes that require user login to access re-route here if no current user.
@@ -45,7 +45,7 @@
 > > ```
 > > ## Delete current user
 > > - Deletes the logged in user and logs them out.
-> > - Body type: `form-data`
+> > - Body type: `raw`
 > > - Required inputs: `password`
 > > - Doing this deletes all inventory, customers, and orders attached to them.
 > > - Requires input of user's password to confirm this.
@@ -67,7 +67,7 @@
 > > ## Create database
 > > - Creates the database. 
 > > - If all information is provided, it will also register a user.
-> > - Body type: `form-data`
+> > - Body type: `raw`
 > > - Required inputs if registering a user: `email`, `password`, `password_confirm`, `first_name`, `last_name`, `age`, `gender`, `goal`
 > > ```
 > > [GET, POST] /create_db
@@ -83,7 +83,7 @@
 > > 
 > > ## Restart database
 > > - Restarts the database by calling the drop and create database functions. 
-> > - Body type: `form-data`
+> > - Body type: `raw`
 > > - Required inputs if registering a user: `email`, `password`, `password_confirm`, `first_name`, `last_name`, `age`, `gender`, `goal`
 > > ```
 > > [GET, POST] /init_db
@@ -113,7 +113,7 @@
 > > ```
 > > 
 > > ## Retrieve all information from a given table. 
-> > - Body type: `form-data`
+> > - Body type: `raw`
 > > - Required inputs: `table_name`
 > > ```
 > > [GET, POST] /read_table

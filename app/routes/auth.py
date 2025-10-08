@@ -12,28 +12,33 @@ bp = Blueprint('auth', __name__)
 # ----------------------------------------- Auth -----------------------------------------
 @bp.route('/register', methods=['GET','POST'])
 def register():
+    # Input is a json.
+    data = request.get_json()
+    if not data:
+        abort(404, description="Invalid request")
+
     if (request.method == 'POST' 
-        and 'email' in request.form 
-        and 'password' in request.form 
-        and 'password_confirm' in request.form
-        and 'first_name' in request.form
-        and 'last_name' in request.form
-        and 'age' in request.form
-        and 'gender' in request.form
-        and 'goal' in request.form):
+        and 'email' in data 
+        and 'password' in data 
+        and 'password_confirm' in data
+        and 'first_name' in data
+        and 'last_name' in data
+        and 'age' in data
+        and 'gender' in data
+        and 'goal' in data):
 
         # Retreive and validate email
-        email = request.form.get("email").strip().lower()
-        
+        email = data.get("email").strip().lower()
+
         if Users.query.filter_by(email=email).first():
             abort(400, description="Account with the email address of " + email + " already exists.")
         
         new_user = Users(
-            first_name = request.form.get("first_name").strip().capitalize(), 
-            last_name = request.form.get("last_name").strip().capitalize(),
-            age = request.form.get("age"),
-            gender = request.form.get("gender").strip().lower(),
-            goal = request.form.get("goal"))
+            first_name = data.get("first_name").strip().capitalize(), 
+            last_name = data.get("last_name").strip().capitalize(),
+            age = data.get("age"),
+            gender = data.get("gender").strip().lower(),
+            goal = data.get("goal"))
 
         # Validate and set email
         email_flag = new_user.set_email(email)
@@ -42,8 +47,8 @@ def register():
         
         # Retrieve and validate password
         password_flag = new_user.set_password(
-            request.form.get("password"), 
-            request.form.get("password_confirm"))
+            data.get("password"), 
+            data.get("password_confirm"))
         if password_flag: 
             abort(400, description=password_flag)
         
@@ -60,9 +65,15 @@ def register():
 def login():
     if current_user.is_authenticated:
         abort(400, description="You are already logged in!")
-    if 'email' in request.form and 'password' in request.form:
-        email = request.form.get("email")
-        password = request.form.get("password")
+
+    # Input is a json.
+    data = request.get_json()
+    if not data:
+        abort(404, description="Invalid request")
+
+    if 'email' in data and 'password' in data:
+        email = data.get("email")
+        password = data.get("password")
         user = Users.query.filter_by(email=email).first()
         
         # Validate user existence and that password matches
@@ -85,9 +96,14 @@ def logout():
 @bp.route('/delete_account', methods=['DELETE'])
 @login_required
 def delete_user():
-    if ('password' in request.form):
+    # Input is a json.
+    data = request.get_json()
+    if not data:
+        abort(404, description="Invalid request")
+
+    if ('password' in data):
         # Retreive and verify password
-        password = request.form.get("password")
+        password = data.get("password")
         if not password: 
             abort(400, description="Please enter current password to confirm change.")
         if not current_user.check_password(password):

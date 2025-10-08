@@ -11,10 +11,10 @@ All endpoints should begin with `localhost:5000`
 | Method | Route | Body | Description |
 | --- | --- | --- | --- |
 | **[GET, POST]** | `/database_manipulation/drop_db` | | Drops current database. |
-| **[GET, POST]** | `/database_manipulation/create_db` | **(form-data)**: `email, password, password_confirm, first_name, last_name, age, gender, goal` | Create infrastructure and populate data for database. If all information is provided, it will also register a user. |
-| **[GET, POST]** | `/database_manipulation/init_db` | **(form-data)**: `email, password, password_confirm, first_name, last_name, age, gender, goal` | Restarts database by calling the drop and create database functions. |
+| **[GET, POST]** | `/database_manipulation/create_db` | **(raw)**: `email, password, password_confirm, first_name, last_name, age, gender, goal` | Create infrastructure and populate data for database. If all information is provided, it will also register a user. |
+| **[GET, POST]** | `/database_manipulation/init_db` | **(raw)**: `email, password, password_confirm, first_name, last_name, age, gender, goal` | Restarts database by calling the drop and create database functions. |
 | **[GET, POST]** | `/database_manipulation/read_all_tables` | | Retrieves all information from all tables. |
-| **[GET, POST]** | `/database_manipulation/read_table` | **(form-data)**: `table_name` | Retrieves all information from a given table. |
+| **[GET, POST]** | `/database_manipulation/read_table` | **(raw)**: `table_name` | Retrieves all information from a given table. |
 
 ### [Dev Tests](routes/dev_tests.py)
 | Method | Route | Body | Description |
@@ -27,10 +27,10 @@ All endpoints should begin with `localhost:5000`
 Routes related to the creation and deletion of accounts and users, as well as logging in and logging out.
 | Method | Route | Body | Description |
 | --- | --- | --- | --- |
-| **[GET, POST]** | `/register` | **(form-data)**: `email, password, password_confirm, first_name, last_name, age, gender, goal` | Register new user |
-| **[POST]** | `/login` | **(form-data)**: `email, password` | Login user |
+| **[GET, POST]** | `/register` | **(raw)**: `email, password, password_confirm, first_name, last_name, age, gender, goal` | Register new user |
+| **[POST]** | `/login` | **(raw)**: `email, password` | Login user |
 | **[POST]** | `/logout` | | Logout current user |
-| **[DELETE]** | `/delete_account` | **(form-data)**: `password` | Delete current user |
+| **[DELETE]** | `/delete_account` | **(raw)**: `password` | Delete current user |
 
 ### [Main Agent](routes/main_agent.py)
 | Method | Route | Body | Description |

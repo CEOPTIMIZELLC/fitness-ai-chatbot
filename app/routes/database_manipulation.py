@@ -58,14 +58,19 @@ def create_db():
 
     import_data_main("OPT Phase Breakdown.xlsx")
 
-    if ('email' in request.form 
-        and 'password' in request.form 
-        and 'password_confirm' in request.form
-        and 'first_name' in request.form
-        and 'last_name' in request.form
-        and 'age' in request.form
-        and 'gender' in request.form
-        and 'goal' in request.form):
+    # Input is a json.
+    data = request.get_json()
+    if not data:
+        abort(404, description="Invalid request")
+
+    if ('email' in data 
+        and 'password' in data 
+        and 'password_confirm' in data
+        and 'first_name' in data
+        and 'last_name' in data
+        and 'age' in data
+        and 'gender' in data
+        and 'goal' in data):
         LogDBInit.introductions(f"Adding User.")
         register()
     
@@ -115,9 +120,14 @@ def read_all_tables():
 # Table Reader
 @bp.route('/read_table', methods=['GET'])
 def read_table():
-    if 'table_name' not in request.form:
+    # Input is a json.
+    data = request.get_json()
+    if not data:
+        abort(404, description="Invalid request")
+
+    if 'table_name' not in data:
         abort(400, description="Please fill out the form!")
-    table_name = request.form.get("table_name")
+    table_name = data.get("table_name")
 
     # Make sure that table with the desired name exists.
     if table_name not in get_table_names():
