@@ -14,7 +14,7 @@ bp = Blueprint('current_user', __name__)
 @login_required
 def get_current_user():
     if current_user.is_authenticated:
-        return jsonify(current_user.to_dict()), 200
+        return jsonify({"status": "success", "response": current_user.to_dict()}), 200
     abort(401, description="User not authenticated")
 
 @bp.route('/', methods=['PATCH'])
@@ -35,7 +35,7 @@ def patch_current_user():
         balance = float(data.get("balance"))
         current_user.balance = balance
     db.session.commit()
-    return jsonify(current_user.to_dict()), 200
+    return jsonify({"status": "success", "response": current_user.to_dict()}), 200
 
 # Update account email.
 @bp.route('/change_email', methods=['PUT', 'PATCH'])
@@ -68,7 +68,7 @@ def change_email():
     # Change email
     current_user.email = new_email
     db.session.commit()
-    return jsonify({"status": "success", "message": "Email changed to: " + new_email}), 200
+    return jsonify({"status": "success", "response": "Email changed to: " + new_email}), 200
 
 # Update account password.
 @bp.route('/change_password', methods=['PUT','PATCH'])
@@ -97,4 +97,4 @@ def change_password():
         abort(400, description=password_flag)
     
     db.session.commit()
-    return jsonify({"status": "success", "message": "Password successfully changed."}), 200
+    return jsonify({"status": "success", "response": "Password successfully changed."}), 200

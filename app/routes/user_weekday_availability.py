@@ -100,4 +100,4 @@ def change_weekday_availability():
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
 
-    return jsonify({"weekdays": result}), 200
+    return jsonify({"status": "success", "weekdays": result}), 200
