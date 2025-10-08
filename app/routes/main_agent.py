@@ -25,11 +25,14 @@ test_cases = [
 
 # Method to retrieve the user input for the user.
 def retrieve_user_input_from_json_input(data):
-    if (not data) or ("message" not in data):
+    if not data:
+        abort(404, description="Invalid request")
+
+    if ("message" not in data) and ("user_input" not in data):
         abort(400, description="No update given.")
 
     else:
-        user_input = data.get("message", "")
+        user_input = data.get("message", data.get("user_input", ""))
     return user_input
 
 # Deletes all current schedule items and availabilities for the current user.
