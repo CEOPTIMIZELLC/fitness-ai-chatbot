@@ -75,7 +75,7 @@ def get_user_equipment_list():
     equipment_agent = create_equipment_agent()
 
     result = equipment_agent.invoke(state)
-    return jsonify({"status": "success", "user_equipment": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 
 # Retrieve current user's equipment
@@ -97,7 +97,7 @@ def read_user_equipment(user_equipment_id):
     equipment_agent = create_equipment_agent()
 
     result = equipment_agent.invoke(state)
-    return jsonify({"status": "success", "user_equipment": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Add current user's equipment
 @bp.route('/', methods=['POST'])
@@ -124,7 +124,7 @@ def add_user_equipment():
     equipment_agent = create_equipment_agent()
 
     result = equipment_agent.invoke(state)
-    return jsonify({"status": "success", "user_equipment": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 
 # Change current user's equipment
@@ -152,7 +152,7 @@ def change_user_equipment():
     equipment_agent = create_equipment_agent()
 
     result = equipment_agent.invoke(state)
-    return jsonify({"status": "success", "user_equipment": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Change current user's equipment
 @bp.route('/<user_equipment_id>', methods=['PATCH'])
@@ -180,4 +180,4 @@ def change_user_equipment_by_id(user_equipment_id):
     equipment_agent = create_equipment_agent()
 
     result = equipment_agent.invoke(state)
-    return jsonify({"status": "success", "user_equipment": result}), 200
+    return jsonify({"status": "success", "response": result}), 200

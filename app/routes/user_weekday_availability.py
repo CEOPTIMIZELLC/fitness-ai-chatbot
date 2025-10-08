@@ -28,7 +28,7 @@ def get_user_weekday_list():
 
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
-    return jsonify({"status": "success", "weekdays": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve current user's weekdays formatted
 @bp.route('/current_list', methods=['GET'])
@@ -49,7 +49,7 @@ def get_user_weekday_current_list():
 
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
-    return jsonify({"status": "success", "weekdays": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve user's current microcycle
 @bp.route('/current', methods=['GET'])
@@ -70,7 +70,7 @@ def read_user_current_weekday():
 
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
-    return jsonify({"status": "success", "weekdays": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Change the current user's weekday.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -100,4 +100,4 @@ def change_weekday_availability():
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
 
-    return jsonify({"status": "success", "weekdays": result}), 200
+    return jsonify({"status": "success", "response": result}), 200

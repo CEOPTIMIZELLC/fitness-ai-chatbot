@@ -32,7 +32,7 @@ def get_user_workout_exercises_list():
     workout_agent = create_workout_agent()
 
     result = workout_agent.invoke(state)
-    return jsonify({"status": "success", "exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve user's current microcycle's workout exercises
 @bp.route('/current_list', methods=['GET'])
@@ -50,7 +50,7 @@ def get_user_current_exercises_list():
     workout_agent = create_workout_agent()
 
     result = workout_agent.invoke(state)
-    return jsonify({"status": "success", "exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Assigns exercises to workouts.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -68,7 +68,7 @@ def exercise_initializer():
     workout_agent = create_workout_agent()
 
     result = workout_agent.invoke(state)
-    return jsonify({"status": "success", "exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Update user exercises if workout is completed.
 @bp.route('/workout_completed', methods=['POST', 'PATCH'])
@@ -86,7 +86,7 @@ def complete_workout():
     workout_completion_agent = create_workout_completion_agent()
 
     result = workout_completion_agent.invoke(state)
-    return jsonify({"status": "success", "exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Combine Exercise Initializer and Complete Workout for testing.
 @bp.route('/initialize_and_complete', methods=['POST', 'PATCH'])
@@ -114,7 +114,7 @@ def initialize_and_complete():
 
     result["workout_exercises"] = workout_agent.invoke(state)
     result["exercises"] = workout_completion_agent.invoke(state)
-    return jsonify({"status": "success", "output": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # ---------- TEST ROUTES --------------
 
@@ -145,7 +145,7 @@ def exercise_phase_components_test():
 
     result = exercise_pc_main(parameters, constraints)
     LogRoute.verbose(result["formatted"])
-    return jsonify({"status": "success", "exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Assigns exercises to workouts.
 @bp.route('/test_pre_processing', methods=['POST', 'PATCH'])
@@ -160,6 +160,6 @@ def exercise_agent_preprocessing_test():
         abort(404, description="No active weekday availability found.")
 
     parameters = retrieve_parameters(current_user.id, user_workout_day, availability)
-    return jsonify({"status": "success", "parameters": parameters}), 200
+    return jsonify({"status": "success", "response": parameters}), 200
 
 

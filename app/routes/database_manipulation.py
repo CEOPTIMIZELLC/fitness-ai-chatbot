@@ -45,7 +45,7 @@ def drop_db():
     LogDBInit.introductions(f"Dropping old database.")
     db.drop_all()
 
-    return jsonify({"status": "success", "message": "Database DROPPED!"}), 200
+    return jsonify({"status": "success", "response": "Database DROPPED!"}), 200
 
 # Database creation
 @bp.route('/create_db', methods=['GET','POST'])
@@ -84,7 +84,7 @@ def create_db():
 
     current_app.table_schema = get_database_schema(db)
 
-    return jsonify({"status": "success", "message": "Database CREATED!"}), 200
+    return jsonify({"status": "success", "response": "Database CREATED!"}), 200
 
 # Database reinitialization
 @bp.route('/init_db', methods=['GET','POST'])
@@ -95,7 +95,7 @@ def initialize_db():
     
     results.append(drop_db()[0].get_json()["message"])
     results.append(create_db()[0].get_json()["message"])
-    return jsonify({"status": "success", "message": results}), 200
+    return jsonify({"status": "success", "response": results}), 200
 
 # Table Reader
 @bp.route('/read_all_tables', methods=['GET'])
@@ -115,7 +115,7 @@ def read_all_tables():
         for i in result:
             print(i)
         final_result[table_name] = result
-    return jsonify({"status": "success", "results": final_result}), 200
+    return jsonify({"status": "success", "response": final_result}), 200
 
 # Table Reader
 @bp.route('/read_table', methods=['GET'])
@@ -146,4 +146,4 @@ def read_table():
     print(f"Table: {table_name}")
     for i in result:
         print(i)
-    return jsonify({"status": "success", "results": result}), 200
+    return jsonify({"status": "success", "response": result}), 200

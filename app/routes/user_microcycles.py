@@ -26,7 +26,7 @@ def get_user_microcycles_list():
 
     result = microcycle_agent.invoke(state)
 
-    return jsonify({"status": "success", "microcycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve user's current macrocycle's mesocycles
 @bp.route('/current_list', methods=['GET'])
@@ -45,7 +45,7 @@ def get_user_current_mesocycles_list():
 
     result = microcycle_agent.invoke(state)
 
-    return jsonify({"status": "success", "microcycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve user's current microcycle
 @bp.route('/current', methods=['GET'])
@@ -64,7 +64,7 @@ def read_user_current_microcycle():
 
     result = microcycle_agent.invoke(state)
 
-    return jsonify({"status": "success", "microcycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Gives four microcycles for mesocycle.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -86,7 +86,7 @@ def microcycle_initializer():
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
 
-    return jsonify({"status": "success", "microcycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Gives four microcycles for mesocycle and gives the parent mesocycle a new id.
 @bp.route('/<phase_id>', methods=['POST', 'PATCH'])
@@ -109,4 +109,4 @@ def microcycle_initializer_by_id(phase_id):
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
 
-    return jsonify({"status": "success", "microcycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200

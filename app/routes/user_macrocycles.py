@@ -29,7 +29,7 @@ def get_user_macrocycle_list():
     goal_agent = create_goal_agent()
 
     result = goal_agent.invoke(state)
-    return jsonify({"status": "success", "macrocycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 
 # Retrieve current user's macrocycles
@@ -49,7 +49,7 @@ def read_user_current_macrocycle():
     goal_agent = create_goal_agent()
 
     result = goal_agent.invoke(state)
-    return jsonify({"status": "success", "macrocycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Change the current user's macrocycle.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -82,7 +82,7 @@ def change_macrocycle():
     goal_agent = create_goal_agent()
 
     result = goal_agent.invoke(state)
-    return jsonify({"status": "success", "macrocycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Change the current user's macrocycle by the id (doesn't restrict what can be assigned).
 @bp.route('/<goal_id>', methods=['POST', 'PATCH'])
@@ -108,7 +108,7 @@ def change_macrocycle_by_id(goal_id):
     goal_agent = create_goal_agent()
 
     result = goal_agent.invoke(state)
-    return jsonify({"status": "success", "macrocycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # ---------- TEST ROUTES --------------
 
@@ -156,5 +156,5 @@ def goal_classification_test():
     for user_goal in user_goals:
         result.append(goal_classification_test_run(goal_app, goal_types, user_goal))
 
-    return jsonify({"status": "success", "test_results": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 

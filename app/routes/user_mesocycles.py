@@ -29,7 +29,7 @@ def get_user_mesocycles_list():
     mesocycle_agent = create_mesocycle_agent()
 
     result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "mesocycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve user's current macrocycle's mesocycles
 @bp.route('/current_list', methods=['GET'])
@@ -47,7 +47,7 @@ def get_user_current_mesocycles_list():
     mesocycle_agent = create_mesocycle_agent()
 
     result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "mesocycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve user's current mesocycle
 @bp.route('/current', methods=['GET'])
@@ -65,7 +65,7 @@ def read_user_current_mesocycle():
     mesocycle_agent = create_mesocycle_agent()
 
     result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "mesocycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Perform parameter programming for mesocycle labeling.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -83,7 +83,7 @@ def mesocycle_phases():
     mesocycle_agent = create_mesocycle_agent()
 
     result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "mesocycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Perform parameter programming for mesocycle labeling.
 @bp.route('/<goal_id>', methods=['POST', 'PATCH'])
@@ -102,7 +102,7 @@ def add_mesocycle_phases_by_id(goal_id):
     mesocycle_agent = create_mesocycle_agent()
 
     result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "mesocycles": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # ---------- TEST ROUTES --------------
 
@@ -164,4 +164,4 @@ def phase_classification_test():
         })
         LogRoute.verbose(f"----------------------\n")
 
-    return jsonify({"status": "success", "test_results": test_results}), 200
+    return jsonify({"status": "success", "response": test_results}), 200

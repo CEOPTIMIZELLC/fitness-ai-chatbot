@@ -55,7 +55,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        return jsonify({"status": "success", "message": "New user added,"}), 200
+        return jsonify({"status": "success", "response": "New user added,"}), 200
         # return redirect(url_for('login'))
     elif request.method == 'POST':
         abort(400, description="Please fill out the form!")
@@ -83,14 +83,14 @@ def login():
             abort(401, description="Password is incorrect.")
         else:
             login_user(user)
-            return jsonify({"status": "success", "message": "Welcome back!"}), 200
+            return jsonify({"status": "success", "response": "Welcome back!"}), 200
     abort(400, description="Please fill out the form!")
 
 @bp.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
     logout_user()
-    return jsonify({"status": "success", "message": "Logged out."}), 200
+    return jsonify({"status": "success", "response": "Logged out."}), 200
 
 # Delete users based on id.
 @bp.route('/delete_account', methods=['DELETE'])
@@ -113,6 +113,6 @@ def delete_user():
             db.session.delete(user)
             db.session.commit()
             logout_user
-            return jsonify({"status": "success", "message": "Account deleted."}), 200
+            return jsonify({"status": "success", "response": "Account deleted."}), 200
         abort(404, description="An account with this id has not been found.")
     abort(400, description="Please fill out the form!")

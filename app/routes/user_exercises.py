@@ -21,7 +21,7 @@ def get_user_exercise_list():
     result = []
     for user_exercise in user_exercises:
         result.append(user_exercise.to_dict())
-    return jsonify({"status": "success", "user_exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve current user's exercises.
 @bp.route('/<exercise_id>', methods=['GET'])
@@ -30,7 +30,7 @@ def read_user_exercise(exercise_id):
     user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise_id})
     if not user_exercise:
         abort(404, description=f"No active exercise of {exercise_id} found for current user.")
-    return jsonify({"status": "success", "user_exercises": user_exercise.to_dict()}), 200
+    return jsonify({"status": "success", "response": user_exercise.to_dict()}), 200
 
 # Retrieve current user's exercises for current workout.
 @bp.route('/current', methods=['GET'])
@@ -43,7 +43,7 @@ def get_user_current_exercise_list():
     for exercise in workout_exercises:
         user_exercise = db.session.get(User_Exercises, {"user_id": current_user.id, "exercise_id": exercise.exercise_id})
         result.append(user_exercise.to_dict())
-    return jsonify({"status": "success", "user_exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve available exercises for the current user
 @bp.route('/available', methods=['GET'])
@@ -52,7 +52,7 @@ def get_available_exercises():
     available_exercises = user_available_exercises(current_user.id)
     result = [exercise.to_dict() 
               for exercise in available_exercises]
-    return jsonify({"status": "success", "exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve current user's exercises.
 @bp.route('/possible', methods=['GET'])
@@ -61,7 +61,7 @@ def get_user_possible_exercise_list():
     available_exercises = user_possible_exercises(current_user.id)
     result = [exercise.to_dict() 
               for exercise in available_exercises]
-    return jsonify({"status": "success", "exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 def exercise_dict(exercise, user_exercise):
     """Format the exercise data."""
@@ -102,4 +102,4 @@ def get_user_possible_exercise_list_with_info():
     user_exercises = user_possible_exercises_with_user_exercise_info(current_user.id)
     result = [exercise_dict(exercise, user_exercise) 
               for exercise, user_exercise in user_exercises]
-    return jsonify({"status": "success", "user_exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200

@@ -7,20 +7,20 @@ def create_library_crud_blueprint(name, url_prefix, model, response_key):
     @bp.route('/', methods=['GET'])
     def list_items():
         result = get_all_items(model)
-        return jsonify({"status": "success", response_key: result}), 200
+        return jsonify({"status": "success", "response": result}), 200
 
     @bp.route('/print', methods=['GET'])
     def print_items():
         result_dict = get_all_items(model)
         result = [item["name"] for item in result_dict]
         print(result)
-        return jsonify({"status": "success", response_key: result}), 200
+        return jsonify({"status": "success", "response": result}), 200
 
     @bp.route('/<item_id>', methods=['GET'])
     def read_item(item_id):
         result = get_item_by_id(model, item_id)
         if not result:
             return jsonify({"status": "error", "message": f"{response_key[:-1].capitalize()} {item_id} not found."}), 404
-        return jsonify({"status": "success", response_key: result}), 200
+        return jsonify({"status": "success", "response": result}), 200
 
     return bp

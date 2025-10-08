@@ -36,7 +36,7 @@ def get_user_workout_days_list():
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
 
-    return jsonify({"status": "success", "phase_components": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve user's current microcycle's phase components
 @bp.route('/current_list', methods=['GET'])
@@ -58,7 +58,7 @@ def get_user_current_workout_days_list():
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
 
-    return jsonify({"status": "success", "phase_components": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Retrieve user's current phase component
 @bp.route('/current', methods=['GET'])
@@ -80,7 +80,7 @@ def read_user_current_workout_day():
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)
 
-    return jsonify({"status": "success", "phase_components": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Assigns phase components to days along with projected length.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -98,7 +98,7 @@ def workout_day_initializer():
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
 
     result = microcycle_scheduler_agent.invoke(state)
-    return jsonify({"status": "success", "phase_components": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # Assigns phase components to days along with projected length.
 @bp.route('/<phase_id>', methods=['POST', 'PATCH'])
@@ -117,7 +117,7 @@ def workout_day_initializer_by_id(phase_id):
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
 
     result = microcycle_scheduler_agent.invoke(state)
-    return jsonify({"status": "success", "phase_components": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 # ---------- TEST ROUTES --------------
 
@@ -167,4 +167,4 @@ def phase_component_classification_test():
         })
         LogRoute.verbose("----------------------")
 
-    return jsonify({"status": "success", "test_results": test_results}), 200
+    return jsonify({"status": "success", "response": test_results}), 200

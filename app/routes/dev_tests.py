@@ -216,7 +216,7 @@ def populate_user_exercises():
     result = []
     for user_exercise in user_exercises:
         result.append(populate_user_exercise(user_exercise))
-    return jsonify({"status": "success", "exercises": result}), 200
+    return jsonify({"status": "success", "response": result}), 200
 
 
 # Testing for the SQL to add and check training equipment.

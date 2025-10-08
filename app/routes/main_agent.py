@@ -53,7 +53,7 @@ def test_enter_main_agent(delete_all_user_schedules=False):
 
     # Results of the inital agent entry.
     results = enter_main_agent(user_id)
-    return jsonify({"status": "success", "states": results}), 200
+    return jsonify({"status": "success", "response": results}), 200
 
 # Enter the main agent with a user input and no pre-existing data.
 @bp.route('/enter/clean', methods=['POST', 'PATCH'])
@@ -73,7 +73,7 @@ def test_resume_main_agent():
 
     # Results of the user input.
     results = resume_main_agent(user_id, user_input)
-    return jsonify({"status": "success", "states": results}), 200
+    return jsonify({"status": "success", "response": results}), 200
 
 # Exit the Main Agent.
 @bp.route('/exit', methods=['POST', 'PATCH'])
@@ -83,7 +83,7 @@ def test_exit_main_agent():
 
     # Results of the user input.
     results = resume_main_agent(user_id, "")
-    return jsonify({"status": "success", "states": results}), 200
+    return jsonify({"status": "success", "response": results}), 200
 
 # Enter the main agent and test it with a user input.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -104,7 +104,7 @@ def test_main_agent(delete_all_user_schedules=False):
 
     # Results of the user input.
     results = resume_main_agent(user_id, user_input)
-    return jsonify({"status": "success", "states": results}), 200
+    return jsonify({"status": "success", "response": results}), 200
 
 # Enter the main agent and test it with a user input and no pre-existing data.
 @bp.route('/clean', methods=['POST', 'PATCH'])
@@ -117,7 +117,7 @@ def test_main_agent_clean():
 @login_required
 def delete_schedules():
     results = run_delete_schedules(current_user.id)
-    return jsonify({"status": "success", "states": results}), 200
+    return jsonify({"status": "success", "response": results}), 200
 
 # Retrieve current state.
 @bp.route('/state', methods=['GET'])
@@ -133,4 +133,4 @@ def get_current_state():
 
         snapshot_of_agent = main_agent_app.get_state(thread)
 
-    return jsonify({"status": "success", "agent_snapshot": snapshot_of_agent}), 200
+    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
