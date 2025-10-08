@@ -6,6 +6,8 @@ from flask import current_app
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.types import interrupt, Command
 
+from app.utils.global_variables import sub_agent_names
+
 from .graph import create_main_agent_graph
 
 def log_interrupts(snapshot_tasks):
@@ -16,6 +18,16 @@ def log_interrupts(snapshot_tasks):
             interrupt_messages.append(interrupt_message)
             log_verbose(f"Interrupt: {interrupt_message}")
     return interrupt_messages
+
+def log_progress(state):
+    progress_messages = [f"Schedule Generated."]
+    for sub_agent_name in sub_agent_names:
+        formatted_sub_agent_schedule = state.get(f"{sub_agent_name}_formatted", None)
+        if formatted_sub_agent_schedule:
+            progress_message = f"{sub_agent_name}: \n{formatted_sub_agent_schedule}"
+            log_verbose(f"Progress: {progress_message}")
+            progress_messages.append(progress_message)
+    return progress_messages
 
 # Enters the main agent.
 def enter_main_agent(user_id):
@@ -37,6 +49,8 @@ def enter_main_agent(user_id):
                 }
             })
 
+        progress_messages = log_progress(result)
+
         # Retrieve the current state of the agent.
         snapshot_of_agent = main_agent_app.get_state(thread)
 
@@ -44,7 +58,9 @@ def enter_main_agent(user_id):
         tasks = snapshot_of_agent.tasks
         if tasks:
             interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
-    return snapshot_of_agent, interrupt_messages
+        else:
+            interrupt_messages = []
+    return progress_messages, interrupt_messages
 
 # Resumes the main agent with user input.
 def resume_main_agent(user_id, user_input):
@@ -62,6 +78,8 @@ def resume_main_agent(user_id, user_input):
             config=snapshot_of_agent.config
         )
 
+        progress_messages = log_progress(result)
+
         # Retrieve the current state of the agent.
         snapshot_of_agent = main_agent_app.get_state(thread)
 
@@ -69,4 +87,6 @@ def resume_main_agent(user_id, user_input):
         tasks = snapshot_of_agent.tasks
         if tasks:
             interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
-    return snapshot_of_agent, interrupt_messages
+        else:
+            interrupt_messages = []
+    return progress_messages, interrupt_messages
