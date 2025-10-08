@@ -34,15 +34,6 @@ class SubAgent(BaseSubAgentRegenerate, MesocycleEditPrompt):
             schedule_item["phase_name"] = schedule_item["name"]
         return schedule_list
 
-    # Retrieves the fields from the Pydantic model output.
-    def edit_model_to_dict(self, goal_edit):
-        return {
-            self.schedule_id_key: goal_edit.id, 
-            "remove": goal_edit.remove, 
-            "start_date": goal_edit.start_date, 
-            "end_date": goal_edit.end_date, 
-        }
-
     # Specific code for extracting information from the edited schedule into the new one.
     def apply_edit_to_schedule_item(self, schedule_item, schedule_edit):
         schedule_item["start_date"] = schedule_edit["start_date"]

@@ -1,23 +1,25 @@
 from logging_config import LogMainSubAgent
 from flask import abort
-from typing_extensions import TypeVar
-
-from app.main_agent.main_agent_state import MainAgentState
 from .utils import retrieve_current_agent_focus, sub_agent_focused_items
 
 # ----------------------------------------- Base Sub Agent For Schedule Items -----------------------------------------
-
-# Create a generic type variable that must be a subclass of MainAgentState
-TState = TypeVar('TState', bound=MainAgentState)
 
 # Confirm that the desired section should be impacted.
 def confirm_impact(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Confirm that the {sub_agent_focus} is Impacted---------")
-    if not state[f"{sub_agent_focus}_impacted"]:
+    if not state[f"{sub_agent_focus}_is_requested"]:
         LogMainSubAgent.agent_steps(f"\t---------No Impact---------")
         return "no_impact"
     return "impact"
+
+# Determine if an item is to be deleted.
+def determine_if_delete(state):
+    sub_agent_focus = retrieve_current_agent_focus(state)
+    LogMainSubAgent.agent_steps(f"\t---------Determine if the objective is to delete {sub_agent_focus}---------")
+    if state[f"{sub_agent_focus}_delete_old"]:
+        return "deletion"
+    return "not_deletion"
 
 # Determine the operation to be performed.
 def determine_operation(state):
@@ -91,14 +93,20 @@ class BaseAgent():
 
     # Default items extracted from the goal classifier
     def goal_classifier_parser(self, focus_names, goal_class):
-        return {
-            focus_names["impact"]: goal_class.is_requested,
+        goal_class_dump = goal_class.model_dump()
+        parsed_goal = {
             focus_names["is_altered"]: True,
             focus_names["read_plural"]: False,
             focus_names["read_current"]: False,
-            focus_names["message"]: goal_class.detail,
-            "other_requests": goal_class.other_requests
+            "other_requests": goal_class_dump.pop("other_requests", None)
         }
+
+        # Alter the variables in the state to match those retrieved from the LLM.
+        for key, value in goal_class_dump.items():
+            if value is not None:
+                parsed_goal[focus_names[key]] = value
+
+        return parsed_goal
 
     # Retrieve user's current schedule item.
     def read_user_current_element(self, state):
@@ -141,6 +149,14 @@ class BaseAgent():
         LogMainSubAgent.formatted_schedule(formatted_schedule)
         return {self.focus_names["formatted"]: formatted_schedule}
 
+    # Delete the old children belonging to the current item.
+    def delete_old_children(self, state):
+        pass
+
+    # Convert output from the agent to SQL models.
+    def agent_output_to_sqlalchemy_model(self, state):
+        pass
+
     # Node to declare that the sub agent has ended.
     def end_node(self, state):
 
@@ -153,3 +169,7 @@ class BaseAgent():
         return {
             "agent_path": agent_path
         }
+
+    # Create main agent.
+    def create_main_agent_graph(self, state_class):
+        pass

@@ -15,11 +15,11 @@ bp = Blueprint('user_weekday_availability', __name__)
 def get_user_weekday_list():
     state = {
         "user_id": current_user.id,
-        "availability_impacted": True,
+        "availability_is_requested": True,
         "availability_is_altered": False,
         "availability_read_plural": True,
         "availability_read_current": True,
-        "availability_message": "Retrieve current availability"
+        "availability_detail": "Retrieve current availability"
     }
     availability_agent = create_availability_agent()
 
@@ -35,11 +35,11 @@ def get_user_weekday_list():
 def get_user_weekday_current_list():
     state = {
         "user_id": current_user.id,
-        "availability_impacted": True,
+        "availability_is_requested": True,
         "availability_is_altered": False,
         "availability_read_plural": True,
         "availability_read_current": True,
-        "availability_message": "Retrieve current availability"
+        "availability_detail": "Retrieve current availability"
     }
     availability_agent = create_availability_agent()
 
@@ -55,11 +55,11 @@ def get_user_weekday_current_list():
 def read_user_current_weekday():
     state = {
         "user_id": current_user.id,
-        "availability_impacted": True,
+        "availability_is_requested": True,
         "availability_is_altered": False,
         "availability_read_plural": False,
         "availability_read_current": True,
-        "availability_message": "Retrieve current availability"
+        "availability_detail": "Retrieve current availability"
     }
     availability_agent = create_availability_agent()
 
@@ -83,11 +83,11 @@ def change_weekday_availability():
 
     state = {
         "user_id": current_user.id,
-        "availability_impacted": True,
+        "availability_is_requested": True,
         "availability_is_altered": True,
         "availability_read_plural": False,
         "availability_read_current": False,
-        "availability_message": data.get("availability", "")
+        "availability_detail": data.get("availability", "")
     }
     availability_agent = create_availability_agent()
 

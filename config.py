@@ -39,7 +39,7 @@ confirm_invalid_schedule = True
 # Configurations for displayed information for logged schedules.
 class ScheduleDisplayConfig:
     # Whether the logged schedule should include the reason that an exercise has been included.
-    specific_true_exercise_flag = True
+    specific_true_exercise_flag = False
 
 # Configurations for exercise performance decay.
 class ExercisePerformanceDecayConfig:
@@ -131,7 +131,7 @@ class MainSubAgentVerbosityConfig:
     input_info = True
 
     # Log system messages for LLM calls in the sub agent.
-    system_message = True
+    system_message = False
 
     # Log the parsed user input for the sub agents.
     parsed_goal = True
@@ -155,7 +155,7 @@ class EditorAgentVerbosityConfig:
     agent_steps = True
 
     # Log system messages for LLM calls in the editor agent.
-    system_message = True
+    system_message = False
 
     # Log the parsed user input for the editor agents.
     parsed_goal = True

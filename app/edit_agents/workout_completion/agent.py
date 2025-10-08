@@ -68,17 +68,6 @@ class SubAgent(BaseSubAgent, WorkoutCompletionEditPrompt):
             schedule_item["id"] = schedule_item[self.schedule_id_key]
         return schedule_list
 
-    # Retrieves the fields from the Pydantic model output.
-    def edit_model_to_dict(self, goal_edit):
-        return {
-            self.schedule_id_key: goal_edit.id, 
-            "remove": goal_edit.remove, 
-            "reps": goal_edit.reps, 
-            "sets": goal_edit.sets, 
-            "rest": goal_edit.rest, 
-            "weight": goal_edit.weight, 
-        }
-
     # Specific code for extracting information from the edited schedule into the new one.
     def apply_edit_to_schedule_item(self, schedule_item, schedule_edit, workout_day_id):
         # If there is a desire to remove the entry, remove it.

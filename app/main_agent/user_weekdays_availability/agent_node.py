@@ -10,34 +10,34 @@ TState = TypeVar('TState', bound=MainAgentState)
 class AgentNode():
     def availability_node(self, state: TState):
         LogMainSubAgent.agent_introductions(f"\n=========Starting User Availability=========")
-        if state["availability_impacted"]:
+        if state["availability_is_requested"]:
             availability_agent = create_main_agent_graph()
             result = availability_agent.invoke({
                 "user_id": state["user_id"], 
                 "user_input": state["user_input"], 
                 "attempts": state["attempts"], 
-                "availability_impacted": state["availability_impacted"], 
+                "availability_is_requested": state["availability_is_requested"], 
                 "availability_is_altered": state["availability_is_altered"], 
                 "availability_read_plural": state["availability_read_plural"], 
                 "availability_read_current": state["availability_read_current"], 
-                "availability_message": state["availability_message"]
+                "availability_detail": state["availability_detail"]
             })
         else:
             result = {
-                "availability_impacted": False, 
+                "availability_is_requested": False, 
                 "availability_is_altered": False,
                 "availability_read_plural": False, 
                 "availability_read_current": False, 
-                "availability_message": None, 
+                "availability_detail": None, 
                 "availability_formatted": None,
                 "availability_other_requests": None
             }
         return {
-            "availability_impacted": result["availability_impacted"], 
+            "availability_is_requested": result["availability_is_requested"], 
             "availability_is_altered": result["availability_is_altered"], 
             "availability_read_plural": result["availability_read_plural"], 
             "availability_read_current": result["availability_read_current"], 
-            "availability_message": result["availability_message"], 
+            "availability_detail": result["availability_detail"], 
             "availability_formatted": result["availability_formatted"], 
             "availability_other_requests": result.get("other_requests")
         }

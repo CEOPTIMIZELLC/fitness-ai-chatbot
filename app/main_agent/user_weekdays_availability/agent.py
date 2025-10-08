@@ -31,11 +31,11 @@ class AgentState(TypedDict):
     attempts: int
     other_requests: str
 
-    availability_impacted: bool
+    availability_is_requested: bool
     availability_is_altered: bool
     availability_read_plural: bool
     availability_read_current: bool
-    availability_message: str
+    availability_detail: str
     availability_formatted: str
 
     agent_output: list
@@ -70,7 +70,7 @@ class SubAgent(BaseAgent):
     # Classify the new goal in one of the possible goal types.
     def perform_input_parser(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\t---------Perform {self.sub_agent_title} Parsing---------")
-        new_availability = state["availability_message"]
+        new_availability = state["availability_detail"]
 
         # There are only so many types a weekday can be classified as, with all of them being stored.
         weekday_types = retrieve_weekday_types()

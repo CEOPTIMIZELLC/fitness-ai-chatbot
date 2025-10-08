@@ -27,31 +27,31 @@ bp = Blueprint('dev_tests', __name__)
 # The various templates used throughout the pipeline.
 state_templates = {
     "alter": {
-        "is_impacted": True, 
+        "is_requested": True, 
         "is_altered": True, 
         "read_plural": False, 
         "read_current": False, 
-        "message": "Perform", 
+        "detail": "Perform", 
     }, 
     "current_list": {
-        "is_impacted": True, 
+        "is_requested": True, 
         "is_altered": False, 
         "read_plural": False, 
         "read_current": True, 
-        "message": "Retrieve", 
+        "detail": "Retrieve", 
     }, 
 }
 
 # Adds the keys necessary for a sub agent to the final state.
 def sub_agent_state_constructor(state, sub_agent_name, state_template, message=None):
     if not message:
-        message = f"{state_template["message"]} {sub_agent_name}."
+        message = f"{state_template["detail"]} {sub_agent_name}."
 
-    state[f"{sub_agent_name}_impacted"] = state_template["is_impacted"]
+    state[f"{sub_agent_name}_is_requested"] = state_template["is_requested"]
     state[f"{sub_agent_name}_is_altered"] = state_template["is_altered"]
     state[f"{sub_agent_name}_read_plural"] = state_template["read_plural"]
     state[f"{sub_agent_name}_read_current"] = state_template["read_current"]
-    state[f"{sub_agent_name}_message"] = message
+    state[f"{sub_agent_name}_detail"] = message
     return state
 
 # Constructs the complete state used by all of the sub agents.

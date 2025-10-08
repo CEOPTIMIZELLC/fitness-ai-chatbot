@@ -13,6 +13,22 @@ from .utils import retrieve_current_agent_focus, sub_agent_focused_items, new_in
 
 # ----------------------------------------- Base Sub Agent For Schedule Items With Parents -----------------------------------------
 
+sub_agent_names = [
+    "equipment", 
+    "workout_completion", 
+    "availability", 
+    "macrocycle", 
+    "mesocycle", 
+    "microcycle", 
+    "phase_component", 
+    "workout_schedule", 
+]
+
+def other_request_item_extraction(result, sub_agent_name):
+    if result.get(f"{sub_agent_name}_is_requested"):
+        LogMainSubAgent.input_info(f"{sub_agent_name}: {result[f"{sub_agent_name}_detail"]}")
+    return None
+
 # Create a generic type variable that must be a subclass of MainAgentState
 TState = TypeVar('TState', bound=MainAgentState)
 
@@ -28,7 +44,7 @@ def confirm_parent(state: TState):
 def confirm_permission(state: TState):
     parent_agent_focus = retrieve_current_agent_focus(state, "parent")
     LogMainSubAgent.agent_steps(f"\t---------Confirm the agent can create a new {parent_agent_focus}---------")
-    if not state[f"{parent_agent_focus}_impacted"]:
+    if not state[f"{parent_agent_focus}_is_requested"]:
         return "permission_denied"
     return "permission_granted"
 
@@ -110,7 +126,7 @@ class BaseAgentWithParents(BaseAgent):
     # Request permission from user to execute the parent initialization.
     def ask_for_permission(self, state: TState):
         # If the permission has already been given, move on ahead.
-        if state[self.parent_names["impact"]]:
+        if state[self.parent_names["is_requested"]]:
             LogMainSubAgent.agent_steps(f"\t---------Permission already granted---------")
             return {}
         LogMainSubAgent.agent_steps(f"\t---------Ask user if a new {self.parent_title} can be made---------")
@@ -140,20 +156,8 @@ class BaseAgentWithParents(BaseAgent):
         result = agent_state_update(state, updated_state, ignore_section)
 
         LogMainSubAgent.input_info(f"Goals extracted.")
-        if result.get("workout_completion_impacted"):
-            LogMainSubAgent.input_info(f"workout_completion: {result["workout_completion_message"]}")
-        if result.get("availability_impacted"):
-            LogMainSubAgent.input_info(f"availability: {result["availability_message"]}")
-        if result.get("macrocycle_impacted"):
-            LogMainSubAgent.input_info(f"macrocycle: {result["macrocycle_message"]}")
-        if result.get("mesocycle_impacted"):
-            LogMainSubAgent.input_info(f"mesocycle: {result["mesocycle_message"]}")
-        if result.get("microcycle_impacted"):
-            LogMainSubAgent.input_info(f"microcycle: {result["microcycle_message"]}")
-        if result.get("phase_component_impacted"):
-            LogMainSubAgent.input_info(f"phase_component: {result["phase_component_message"]}")
-        if result.get("workout_schedule_impacted"):
-            LogMainSubAgent.input_info(f"workout_schedule: {result["workout_schedule_message"]}")
+        for sub_agent_name in sub_agent_names:
+            other_request_item_extraction(result, sub_agent_name)
         LogMainSubAgent.input_info("")
 
         # Reset other requests to be empty.
@@ -188,12 +192,4 @@ class BaseAgentWithParents(BaseAgent):
 
     # Initializes the scheduler for the current parent.
     def perform_scheduler(self, state: TState):
-        pass
-
-    # Convert output from the agent to SQL models.
-    def agent_output_to_sqlalchemy_model(self, state: TState):
-        pass
-
-    # Create main agent.
-    def create_main_agent_graph(self, state_class: type[TState]):
         pass

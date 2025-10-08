@@ -1,4 +1,5 @@
 from .availability import AvailabilityGoal
+from .equipment import EquipmentGoal
 from .macrocycles import MacrocycleGoal
 from .mesocycles import MesocycleGoal
 from .microcycles import MicrocycleGoal

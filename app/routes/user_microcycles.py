@@ -15,11 +15,11 @@ bp = Blueprint('user_microcycles', __name__)
 def get_user_microcycles_list():
     state = {
         "user_id": current_user.id,
-        "microcycle_impacted": True,
+        "microcycle_is_requested": True,
         "microcycle_is_altered": False,
         "microcycle_read_plural": True,
         "microcycle_read_current": False,
-        "microcycle_message": "Perform microcycle scheduling."
+        "microcycle_detail": "Perform microcycle scheduling."
     }
     microcycle_agent = create_microcycle_agent()
 
@@ -33,11 +33,11 @@ def get_user_microcycles_list():
 def get_user_current_mesocycles_list():
     state = {
         "user_id": current_user.id,
-        "microcycle_impacted": True,
+        "microcycle_is_requested": True,
         "microcycle_is_altered": False,
         "microcycle_read_plural": True,
         "microcycle_read_current": True,
-        "microcycle_message": "Perform microcycle scheduling."
+        "microcycle_detail": "Perform microcycle scheduling."
     }
     microcycle_agent = create_microcycle_agent()
 
@@ -51,11 +51,11 @@ def get_user_current_mesocycles_list():
 def read_user_current_microcycle():
     state = {
         "user_id": current_user.id,
-        "microcycle_impacted": True,
+        "microcycle_is_requested": True,
         "microcycle_is_altered": False,
         "microcycle_read_plural": False,
         "microcycle_read_current": True,
-        "microcycle_message": "Perform microcycle scheduling."
+        "microcycle_detail": "Perform microcycle scheduling."
     }
     microcycle_agent = create_microcycle_agent()
 
@@ -69,11 +69,11 @@ def read_user_current_microcycle():
 def microcycle_initializer():
     state = {
         "user_id": current_user.id,
-        "microcycle_impacted": True,
+        "microcycle_is_requested": True,
         "microcycle_is_altered": True,
         "microcycle_read_plural": False,
         "microcycle_read_current": False,
-        "microcycle_message": "Perform microcycle scheduling."
+        "microcycle_detail": "Perform microcycle scheduling."
     }
     microcycle_agent = create_microcycle_agent()
 
@@ -90,11 +90,11 @@ def microcycle_initializer():
 def microcycle_initializer_by_id(phase_id):
     state = {
         "user_id": current_user.id,
-        "microcycle_impacted": True,
+        "microcycle_is_requested": True,
         "microcycle_is_altered": True,
         "microcycle_read_plural": False,
         "microcycle_read_current": False,
-        "microcycle_message": "Perform microcycle scheduling.",
+        "microcycle_detail": "Perform microcycle scheduling.",
         "microcycle_perform_with_parent_id": phase_id
     }
     microcycle_agent = create_microcycle_agent()

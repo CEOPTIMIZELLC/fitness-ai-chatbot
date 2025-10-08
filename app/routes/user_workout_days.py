@@ -21,11 +21,11 @@ bp = Blueprint('user_workout_days', __name__)
 def get_user_workout_days_list():
     state = {
         "user_id": current_user.id,
-        "phase_component_impacted": True,
+        "phase_component_is_requested": True,
         "phase_component_is_altered": False,
         "phase_component_read_plural": True,
         "phase_component_read_current": False,
-        "phase_component_message": "Perform phase component classification."
+        "phase_component_detail": "Perform phase component classification."
     }
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
 
@@ -42,11 +42,11 @@ def get_user_workout_days_list():
 def get_user_current_workout_days_list():
     state = {
         "user_id": current_user.id,
-        "phase_component_impacted": True,
+        "phase_component_is_requested": True,
         "phase_component_is_altered": False,
         "phase_component_read_plural": True,
         "phase_component_read_current": True,
-        "phase_component_message": "Perform phase component classification."
+        "phase_component_detail": "Perform phase component classification."
     }
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
 
@@ -63,11 +63,11 @@ def get_user_current_workout_days_list():
 def read_user_current_workout_day():
     state = {
         "user_id": current_user.id,
-        "phase_component_impacted": True,
+        "phase_component_is_requested": True,
         "phase_component_is_altered": False,
         "phase_component_read_plural": False,
         "phase_component_read_current": True,
-        "phase_component_message": "Perform phase component classification."
+        "phase_component_detail": "Perform phase component classification."
     }
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
 
@@ -84,11 +84,11 @@ def read_user_current_workout_day():
 def workout_day_initializer():
     state = {
         "user_id": current_user.id,
-        "phase_component_impacted": True,
+        "phase_component_is_requested": True,
         "phase_component_is_altered": True,
         "phase_component_read_plural": False,
         "phase_component_read_current": False,
-        "phase_component_message": "Perform phase component classification."
+        "phase_component_detail": "Perform phase component classification."
     }
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()
 
@@ -101,11 +101,11 @@ def workout_day_initializer():
 def workout_day_initializer_by_id(phase_id):
     state = {
         "user_id": current_user.id,
-        "phase_component_impacted": True,
+        "phase_component_is_requested": True,
         "phase_component_is_altered": True,
         "phase_component_read_plural": False,
         "phase_component_read_current": False,
-        "phase_component_message": "Perform phase component classification.",
+        "phase_component_detail": "Perform phase component classification.",
         "phase_component_perform_with_parent_id": phase_id
     }
     microcycle_scheduler_agent = create_microcycle_scheduler_agent()

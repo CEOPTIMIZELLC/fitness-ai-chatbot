@@ -21,7 +21,7 @@ def confirm_if_performing_by_id(state):
 def confirm_new_input(state):
     sub_agent_focus = retrieve_current_agent_focus(state)
     LogMainSubAgent.agent_steps(f"\t---------Confirm there is a new {sub_agent_focus} input to be parsed---------")
-    if not state[f"{sub_agent_focus}_message"]:
+    if not state[f"{sub_agent_focus}_detail"]:
         return "no_new_input"
     return "present_new_input"
 
@@ -48,13 +48,5 @@ class BaseAgentWithoutParents(BaseAgent):
         return {}
 
     def perform_input_parser(self, state):
-        pass
-
-    # Delete the old children belonging to the current item.
-    def delete_old_children(self, state):
-        pass
-
-    # Convert output from the agent to SQL models.
-    def agent_output_to_sqlalchemy_model(self, state):
         pass
 

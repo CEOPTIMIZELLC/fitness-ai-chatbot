@@ -68,18 +68,6 @@ class SubAgent(MacrocycleAgentNode, BaseAgent):
         parent_db_entry.goal_id = new_parent_id
         return parent_db_entry
 
-    # Items extracted from the goal classifier
-    def goal_classifier_parser(self, parent_names, goal_class):
-        return {
-            parent_names["impact"]: goal_class.is_requested,
-            parent_names["is_altered"]: True,
-            parent_names["read_plural"]: False,
-            parent_names["read_current"]: False,
-            parent_names["message"]: goal_class.detail, 
-            "macrocycle_other_requests": goal_class.other_requests,
-            "macrocycle_alter_old": goal_class.alter_old or False
-        }
-
     # Request is unique for Macrocycle for Mesocycle
     def parent_requests_extraction(self, state: AgentState):
         LogMainSubAgent.agent_steps(f"\n---------Extract Other Requests---------")

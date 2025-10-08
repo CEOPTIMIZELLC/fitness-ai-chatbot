@@ -1,4 +1,5 @@
 from .availability import AvailabilitySchedulePrinter
+from .equipment import EquipmentSchedulePrinter
 from .macrocycles import MacrocycleSchedulePrinter
 from .mesocycles import MesocycleSchedulePrinter
 from .microcycles import MicrocycleSchedulePrinter
