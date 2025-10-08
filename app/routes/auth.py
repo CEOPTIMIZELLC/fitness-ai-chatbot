@@ -1,3 +1,5 @@
+from logging_config import LogRoute
+
 from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_user, login_required, logout_user
 from flask_cors import CORS
@@ -55,6 +57,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
+        LogRoute.verbose("Registered new user.")
         return jsonify({"status": "success", "response": "New user added,"}), 200
         # return redirect(url_for('login'))
     elif request.method == 'POST':
@@ -83,6 +86,7 @@ def login():
             abort(401, description="Password is incorrect.")
         else:
             login_user(user)
+            LogRoute.verbose("User logged in.")
             return jsonify({"status": "success", "response": "Welcome back!"}), 200
     abort(400, description="Please fill out the form!")
 
@@ -90,6 +94,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    LogRoute.verbose("User logged out.")
     return jsonify({"status": "success", "response": "Logged out."}), 200
 
 # Delete users based on id.
@@ -113,6 +118,7 @@ def delete_user():
             db.session.delete(user)
             db.session.commit()
             logout_user
+            LogRoute.verbose("User deleted.")
             return jsonify({"status": "success", "response": "Account deleted."}), 200
         abort(404, description="An account with this id has not been found.")
     abort(400, description="Please fill out the form!")
