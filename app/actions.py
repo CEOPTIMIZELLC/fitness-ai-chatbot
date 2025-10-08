@@ -9,11 +9,13 @@ from langgraph.types import interrupt, Command
 from .graph import create_main_agent_graph
 
 def log_interrupts(snapshot_tasks):
+    interrupt_messages = []
     for snapshot_task in snapshot_tasks:
         if snapshot_task.interrupts:
             interrupt_message = snapshot_task.interrupts[0].value["task"]
+            interrupt_messages.append(interrupt_message)
             log_verbose(f"Interrupt: {interrupt_message}")
-    return None
+    return interrupt_messages
 
 # Enters the main agent.
 def enter_main_agent(user_id):
@@ -41,8 +43,8 @@ def enter_main_agent(user_id):
         # Retrieve the current interrupt, if there is one.
         tasks = snapshot_of_agent.tasks
         if tasks:
-            log_interrupts(snapshot_of_agent.tasks)
-    return snapshot_of_agent
+            interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
+    return snapshot_of_agent, interrupt_messages
 
 # Resumes the main agent with user input.
 def resume_main_agent(user_id, user_input):
@@ -66,5 +68,5 @@ def resume_main_agent(user_id, user_input):
         # Retrieve the current interrupt, if there is one.
         tasks = snapshot_of_agent.tasks
         if tasks:
-            log_interrupts(snapshot_of_agent.tasks)
-    return snapshot_of_agent
+            interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
+    return snapshot_of_agent, interrupt_messages

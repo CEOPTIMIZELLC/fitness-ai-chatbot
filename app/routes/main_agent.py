@@ -55,8 +55,8 @@ def test_enter_main_agent(delete_all_user_schedules=False):
         run_delete_schedules(user_id)
 
     # Results of the inital agent entry.
-    results = enter_main_agent(user_id)
-    return jsonify({"status": "success", "response": results}), 200
+    snapshot_of_agent, interrupt_messages = enter_main_agent(user_id)
+    return jsonify({"status": "success", "response": interrupt_messages}), 200
 
 # Enter the main agent with a user input and no pre-existing data.
 @bp.route('/enter/clean', methods=['POST', 'PATCH'])
@@ -75,8 +75,8 @@ def test_resume_main_agent():
     user_input = retrieve_user_input_from_json_input(data)
 
     # Results of the user input.
-    results = resume_main_agent(user_id, user_input)
-    return jsonify({"status": "success", "response": results}), 200
+    snapshot_of_agent, interrupt_messages = resume_main_agent(user_id, user_input)
+    return jsonify({"status": "success", "response": interrupt_messages}), 200
 
 # Exit the Main Agent.
 @bp.route('/exit', methods=['POST', 'PATCH'])
@@ -85,8 +85,8 @@ def test_exit_main_agent():
     user_id = current_user.id
 
     # Results of the user input.
-    results = resume_main_agent(user_id, "")
-    return jsonify({"status": "success", "response": results}), 200
+    snapshot_of_agent, interrupt_messages = resume_main_agent(user_id, "")
+    return jsonify({"status": "success", "response": interrupt_messages}), 200
 
 # Enter the main agent and test it with a user input.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -99,15 +99,15 @@ def test_main_agent(delete_all_user_schedules=False):
         run_delete_schedules(user_id)
 
     # Results of the inital agent entry.
-    results = enter_main_agent(user_id)
+    snapshot_of_agent, interrupt_messages = enter_main_agent(user_id)
 
     # Input is a json.
     data = request.get_json()
     user_input = retrieve_user_input_from_json_input(data)
 
     # Results of the user input.
-    results = resume_main_agent(user_id, user_input)
-    return jsonify({"status": "success", "response": results}), 200
+    snapshot_of_agent, interrupt_messages = resume_main_agent(user_id, user_input)
+    return jsonify({"status": "success", "response": interrupt_messages}), 200
 
 # Enter the main agent and test it with a user input and no pre-existing data.
 @bp.route('/clean', methods=['POST', 'PATCH'])
