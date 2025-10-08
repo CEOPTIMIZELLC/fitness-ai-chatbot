@@ -4,6 +4,7 @@ from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_user, login_required, logout_user
 from flask_cors import CORS
 
+from app.actions import enter_main_agent
 from app.models import Users
 import psycopg2
 
@@ -87,6 +88,10 @@ def login():
         else:
             login_user(user)
             LogRoute.verbose("User logged in.")
+
+            # Start new agent session.
+            snapshot_of_agent, interrupt_messages = enter_main_agent(current_user.id)
+
             return jsonify({"status": "success", "response": "Welcome back!"}), 200
     abort(400, description="Please fill out the form!")
 
