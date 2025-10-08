@@ -34,6 +34,9 @@ def register_blueprints(app):
         from .routes import auth
         app.register_blueprint(auth.bp)
 
+        from .routes import main_app
+        app.register_blueprint(main_app.bp)
+
         from .routes import current_user
         app.register_blueprint(current_user.bp, url_prefix='/current_user')
 

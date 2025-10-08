@@ -1,6 +1,4 @@
-import json
-
-from flask import request, jsonify, Blueprint, current_app, abort, Response, stream_with_context
+from flask import request, jsonify, Blueprint, current_app, abort
 from flask_login import current_user, login_required
 
 bp = Blueprint('main_agent', __name__)
@@ -58,7 +56,7 @@ def test_enter_main_agent(delete_all_user_schedules=False):
 
     # Results of the inital agent entry.
     snapshot_of_agent, interrupt_messages = enter_main_agent(user_id)
-    return jsonify({"status": "success", "response": interrupt_messages}), 200
+    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
 
 # Enter the main agent with a user input and no pre-existing data.
 @bp.route('/enter/clean', methods=['POST', 'PATCH'])
@@ -77,8 +75,8 @@ def test_resume_main_agent():
     user_input = retrieve_user_input_from_json_input(data)
 
     # Results of the user input.
-    snapshot_of_agent, interrupt_messages = resume_main_agent(user_id, user_input)
-    return jsonify({"status": "success", "response": interrupt_messages}), 200
+    snapshot_of_agent, _ = resume_main_agent(user_id, user_input)
+    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
 
 # Exit the Main Agent.
 @bp.route('/exit', methods=['POST', 'PATCH'])
@@ -87,8 +85,8 @@ def test_exit_main_agent():
     user_id = current_user.id
 
     # Results of the user input.
-    snapshot_of_agent, interrupt_messages = resume_main_agent(user_id, "")
-    return jsonify({"status": "success", "response": interrupt_messages}), 200
+    snapshot_of_agent, _ = resume_main_agent(user_id, "")
+    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
 
 # Enter the main agent and test it with a user input.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -101,15 +99,15 @@ def test_main_agent(delete_all_user_schedules=False):
         run_delete_schedules(user_id)
 
     # Results of the inital agent entry.
-    snapshot_of_agent, interrupt_messages = enter_main_agent(user_id)
+    snapshot_of_agent, _ = enter_main_agent(user_id)
 
     # Input is a json.
     data = request.get_json()
     user_input = retrieve_user_input_from_json_input(data)
 
     # Results of the user input.
-    snapshot_of_agent, interrupt_messages = resume_main_agent(user_id, user_input)
-    return jsonify({"status": "success", "response": interrupt_messages}), 200
+    snapshot_of_agent, _ = resume_main_agent(user_id, user_input)
+    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
 
 # Enter the main agent and test it with a user input and no pre-existing data.
 @bp.route('/clean', methods=['POST', 'PATCH'])
@@ -139,40 +137,3 @@ def get_current_state():
         snapshot_of_agent = main_agent_app.get_state(thread)
 
     return jsonify({"status": "success", "response": snapshot_of_agent}), 200
-
-def _sse_event(event_type: str, payload: dict) -> str:
-    """
-    Formats a single Server-Sent-Event line with JSON payload.
-    We keep it minimal and newline-delimited for robust streaming over fetch().
-    """
-    # Standard SSE: "event:" and "data:" lines ending with double newline
-    return f"event: {event_type}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
-
-# New: Streaming endpoint that emits progress / interrupt / final
-@bp.route('/resume_stream', methods=['POST'])
-@login_required
-def resume_stream():
-    user_id = current_user.id
-    data = request.get_json()
-    user_input = retrieve_user_input_from_json_input(data)
-
-    # Call your agent. If this later becomes a generator, you can yield directly here.
-    progress_messages, interrupt_messages = resume_main_agent(user_id, user_input)
-
-    @stream_with_context
-    def generate():
-        # 1) Stream progress messages (continue after each)
-        for msg in (progress_messages or []):
-            yield _sse_event("progress", {"message": msg})
-
-        # 2) If any interrupt messages, stream the first (or all) and stop
-        if interrupt_messages:
-            for msg in interrupt_messages:
-                yield _sse_event("interrupt", {"message": msg})
-            return  # stop streaming; frontend will wait for new user input
-
-        # 3) Otherwise, signal final completion
-        yield _sse_event("final", {"message": "Task completed."})
-
-    # Use an SSE content type for robust streaming over fetch()
-    return Response(generate(), mimetype="text/event-stream")
