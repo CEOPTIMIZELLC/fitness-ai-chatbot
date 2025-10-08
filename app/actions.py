@@ -4,30 +4,40 @@ from logging_config import log_verbose
 from flask import current_app
 
 from langgraph.checkpoint.postgres import PostgresSaver
-from langgraph.types import interrupt, Command
+from langgraph.types import Command
 
 from app.utils.global_variables import sub_agent_names
 
 from .graph import create_main_agent_graph
 
 def log_interrupts(snapshot_tasks):
+    log_verbose(f"Collect Interrupts")
     interrupt_messages = []
     for snapshot_task in snapshot_tasks:
         if snapshot_task.interrupts:
             interrupt_message = snapshot_task.interrupts[0].value["task"]
-            interrupt_messages.append(interrupt_message)
             log_verbose(f"Interrupt: {interrupt_message}")
-    return interrupt_messages
+            interrupt_messages.append(interrupt_message)
 
-def log_progress(state):
-    progress_messages = [f"Schedule Generated."]
+    # Return an empty list without a header if no interrupts are present.
+    if not interrupt_messages:
+        return []
+    return [f"Tasks"] + interrupt_messages
+
+def log_progress(snapshot_values):
+    log_verbose(f"Collect Progress")
+    progress_messages = []
     for sub_agent_name in sub_agent_names:
-        formatted_sub_agent_schedule = state.get(f"{sub_agent_name}_formatted", None)
+        formatted_sub_agent_schedule = snapshot_values.get(f"{sub_agent_name}_formatted", None)
         if formatted_sub_agent_schedule:
             progress_message = f"{sub_agent_name}: \n{formatted_sub_agent_schedule}"
             log_verbose(f"Progress: {progress_message}")
             progress_messages.append(progress_message)
-    return progress_messages
+
+    # Return an empty list without a header if no schedules are present.
+    if not progress_messages:
+        return []
+    return [f"Schedules Generated"] + progress_messages
 
 # Enters the main agent.
 def enter_main_agent(user_id):
@@ -49,18 +59,9 @@ def enter_main_agent(user_id):
                 }
             })
 
-        progress_messages = log_progress(result)
-
         # Retrieve the current state of the agent.
         snapshot_of_agent = main_agent_app.get_state(thread)
-
-        # Retrieve the current interrupt, if there is one.
-        tasks = snapshot_of_agent.tasks
-        if tasks:
-            interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
-        else:
-            interrupt_messages = []
-    return progress_messages, interrupt_messages
+    return snapshot_of_agent
 
 # Resumes the main agent with user input.
 def resume_main_agent(user_id, user_input):
@@ -78,15 +79,7 @@ def resume_main_agent(user_id, user_input):
             config=snapshot_of_agent.config
         )
 
-        progress_messages = log_progress(result)
-
         # Retrieve the current state of the agent.
         snapshot_of_agent = main_agent_app.get_state(thread)
 
-        # Retrieve the current interrupt, if there is one.
-        tasks = snapshot_of_agent.tasks
-        if tasks:
-            interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
-        else:
-            interrupt_messages = []
-    return progress_messages, interrupt_messages
+    return snapshot_of_agent

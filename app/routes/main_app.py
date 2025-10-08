@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 
 bp = Blueprint('main_app', __name__)
 
-from app.actions import resume_main_agent
+from app.actions import resume_main_agent, log_progress, log_interrupts
 
 # ----------------------------------------- Main Agent -----------------------------------------
 
@@ -38,7 +38,9 @@ def main_resume():
     user_input = retrieve_user_input_from_json_input(data)
 
     # Call your agent. If this later becomes a generator, you can yield directly here.
-    progress_messages, interrupt_messages = resume_main_agent(user_id, user_input)
+    snapshot_of_agent = resume_main_agent(user_id, user_input)
+    progress_messages = log_progress(snapshot_of_agent.values)
+    interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
 
     @stream_with_context
     def generate():

@@ -90,7 +90,7 @@ def login():
             LogRoute.verbose("User logged in.")
 
             # Start new agent session.
-            snapshot_of_agent, interrupt_messages = enter_main_agent(current_user.id)
+            _ = enter_main_agent(current_user.id)
 
             return jsonify({"status": "success", "response": "Welcome back!"}), 200
     abort(400, description="Please fill out the form!")

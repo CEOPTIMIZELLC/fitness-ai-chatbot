@@ -9,7 +9,7 @@ from app import db
 from app.models import User_Macrocycles, User_Weekday_Availability
 
 from app.graph import create_main_agent_graph
-from app.actions import enter_main_agent, resume_main_agent
+from app.actions import enter_main_agent, resume_main_agent, log_progress, log_interrupts
 
 # ----------------------------------------- Main Agent -----------------------------------------
 test_cases = [
@@ -55,7 +55,9 @@ def test_enter_main_agent(delete_all_user_schedules=False):
         run_delete_schedules(user_id)
 
     # Results of the inital agent entry.
-    snapshot_of_agent, interrupt_messages = enter_main_agent(user_id)
+    snapshot_of_agent = enter_main_agent(user_id)
+    _ = log_progress(snapshot_of_agent.values)
+    _ = log_interrupts(snapshot_of_agent.tasks)
     return jsonify({"status": "success", "response": snapshot_of_agent}), 200
 
 # Enter the main agent with a user input and no pre-existing data.
@@ -75,7 +77,9 @@ def test_resume_main_agent():
     user_input = retrieve_user_input_from_json_input(data)
 
     # Results of the user input.
-    snapshot_of_agent, _ = resume_main_agent(user_id, user_input)
+    snapshot_of_agent = resume_main_agent(user_id, user_input)
+    _ = log_progress(snapshot_of_agent.values)
+    _ = log_interrupts(snapshot_of_agent.tasks)
     return jsonify({"status": "success", "response": snapshot_of_agent}), 200
 
 # Exit the Main Agent.
@@ -85,7 +89,9 @@ def test_exit_main_agent():
     user_id = current_user.id
 
     # Results of the user input.
-    snapshot_of_agent, _ = resume_main_agent(user_id, "")
+    snapshot_of_agent = resume_main_agent(user_id, "")
+    _ = log_progress(snapshot_of_agent.values)
+    _ = log_interrupts(snapshot_of_agent.tasks)
     return jsonify({"status": "success", "response": snapshot_of_agent}), 200
 
 # Enter the main agent and test it with a user input.
@@ -99,14 +105,16 @@ def test_main_agent(delete_all_user_schedules=False):
         run_delete_schedules(user_id)
 
     # Results of the inital agent entry.
-    snapshot_of_agent, _ = enter_main_agent(user_id)
+    snapshot_of_agent = enter_main_agent(user_id)
 
     # Input is a json.
     data = request.get_json()
     user_input = retrieve_user_input_from_json_input(data)
 
     # Results of the user input.
-    snapshot_of_agent, _ = resume_main_agent(user_id, user_input)
+    snapshot_of_agent = resume_main_agent(user_id, user_input)
+    _ = log_progress(snapshot_of_agent.values)
+    _ = log_interrupts(snapshot_of_agent.tasks)
     return jsonify({"status": "success", "response": snapshot_of_agent}), 200
 
 # Enter the main agent and test it with a user input and no pre-existing data.
