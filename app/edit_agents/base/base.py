@@ -1,5 +1,6 @@
 from config import request_schedule_edits, confirm_valid_schedule, confirm_invalid_schedule
 from logging_config import LogEditorAgent
+
 import copy
 
 from typing_extensions import TypeVar, TypedDict
@@ -7,9 +8,12 @@ from typing_extensions import TypeVar, TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
+# Utils imports.
 from app.utils.item_to_string import list_to_str
+from app.utils.user_input import new_input_request
 
-from .utils import does_user_allow_schedule, new_input_request
+# Local imports.
+from .utils import does_user_allow_schedule
 
 class AgentState(TypedDict):
     is_edited: bool
@@ -71,7 +75,7 @@ class ScheduleFormatterMethods:
 # Confirm that the desired section should be edited.
 def confirm_edits(state):
     LogEditorAgent.agent_steps(f"\t---------Confirm that the Schedule is Edited---------")
-    if state["is_edited"]:
+    if state.get("is_edited", False):
         LogEditorAgent.agent_steps(f"\t---------Is Edited---------")
         return "is_edited"
     return "not_edited"
@@ -79,7 +83,7 @@ def confirm_edits(state):
 # Confirm that the user wants to move forward with the invalid schedule.
 def confirm_interest(state):
     LogEditorAgent.agent_steps(f"\t---------Confirm Interest in the Invalid Schedule---------")
-    if state["allow_schedule"]:
+    if state.get("allow_schedule", False):
         LogEditorAgent.agent_steps(f"\t---------Allowed the Schedule---------")
         return "allow_schedule"
     LogEditorAgent.agent_steps(f"\t---------Do NOT Allow the Schedule---------")
@@ -92,6 +96,11 @@ class BaseSubAgent(ScheduleFormatterMethods):
     # The key used to identify items from the original schedule.
     schedule_id_key = "id"
     schedule_name_key = "name"
+
+    # Node to declare that the sub agent has ended.
+    def start_node(self, state):
+        LogEditorAgent.agent_introductions(f"=========Starting Editor SubAgent=========\n")
+        return {}
 
     # Adds necessary keys for the formatter to the schedule item. 
     def add_necessary_keys_to_schedule_item(self, schedule_list):
@@ -127,7 +136,16 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
     # Retrieves the fields from the Pydantic model output.
     def edit_model_to_dict(self, goal_edit):
-        pass
+        goal_edit_dump = goal_edit.model_dump()
+        parsed_edit = {
+            self.schedule_id_key: goal_edit_dump.pop("id", None)
+        }
+
+        # Alter the variables in the state to match those retrieved from the LLM.
+        for key, value in goal_edit_dump.items():
+            parsed_edit[key] = value
+
+        return parsed_edit
 
     # Items extracted from the edit request.
     def goal_edits_parser(self, goal_edits=None):
@@ -193,7 +211,6 @@ class BaseSubAgent(ScheduleFormatterMethods):
             "task": f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"
         })
         user_input = result["user_input"]
-        LogEditorAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         # Retrieve the schedule and format it for the prompt.
         schedule_list = state["agent_output"]
@@ -279,7 +296,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
 
         # Determine the task given to the user.
         if is_schedule_invalid and confirm_invalid_schedule:
-            violations = list_to_str(state["violations"])
+            violations = list_to_str(state["violations"], newline=True)
             
             user_task = f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\n\nViolations include:\n{violations}\n\nAre you sure you would like for the following schedule to be allowed?\n{formatted_schedule_list}"
         elif confirm_valid_schedule:
@@ -309,6 +326,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
     # Create main agent.
     def create_main_agent_graph(self, state_class: type[TState] = AgentState):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("format_proposed_list", self.format_proposed_list)
         workflow.add_node("ask_for_edits", self.ask_for_edits)
         workflow.add_node("perform_edits", self.perform_edits)
@@ -319,7 +337,8 @@ class BaseSubAgent(ScheduleFormatterMethods):
         workflow.add_node("end_node", self.end_node)
 
         # Create a formatted list for the user to review.
-        workflow.add_edge(START, "format_proposed_list")
+        workflow.add_edge(START, "start_node")
+        workflow.add_edge("start_node", "format_proposed_list")
         workflow.add_edge("format_proposed_list", "ask_for_edits")
 
         # Whether any edits have been applied.

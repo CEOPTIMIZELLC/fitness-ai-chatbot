@@ -10,13 +10,13 @@ from app import db
 from app.utils.sql import sql_app
 from app.utils.table_context_parser import context_retriever_app
 
-from app.main_agent.user_macrocycles import create_goal_agent
-from app.main_agent.user_mesocycles import create_mesocycle_agent
-from app.main_agent.user_microcycles import create_microcycle_agent
-from app.main_agent.user_workout_days import create_microcycle_scheduler_agent
-from app.main_agent.user_workout_exercises import create_workout_agent
-from app.main_agent.user_workout_completion import create_workout_completion_agent
-from app.main_agent.user_weekdays_availability import create_availability_agent
+from app.main_sub_agents.user_macrocycles import create_goal_agent
+from app.main_sub_agents.user_mesocycles import create_mesocycle_agent
+from app.main_sub_agents.user_microcycles import create_microcycle_agent
+from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_agent
+from app.main_sub_agents.user_workout_exercises import create_workout_agent
+from app.main_sub_agents.user_workout_completion import create_workout_completion_agent
+from app.main_sub_agents.user_weekdays_availability import create_availability_agent
 
 from app.utils.item_to_string import recursively_change_dict_timedeltas
 
@@ -27,31 +27,33 @@ bp = Blueprint('dev_tests', __name__)
 # The various templates used throughout the pipeline.
 state_templates = {
     "alter": {
-        "is_impacted": True, 
-        "is_altered": True, 
+        "is_requested": True, 
+        "is_alter": True, 
+        "is_read": True, 
         "read_plural": False, 
         "read_current": False, 
-        "message": "Perform", 
+        "detail": "Perform", 
     }, 
     "current_list": {
-        "is_impacted": True, 
-        "is_altered": False, 
+        "is_requested": True, 
+        "is_alter": False, 
+        "is_read": False, 
         "read_plural": False, 
         "read_current": True, 
-        "message": "Retrieve", 
+        "detail": "Retrieve", 
     }, 
 }
 
 # Adds the keys necessary for a sub agent to the final state.
 def sub_agent_state_constructor(state, sub_agent_name, state_template, message=None):
     if not message:
-        message = f"{state_template["message"]} {sub_agent_name}."
+        message = f"{state_template["detail"]} {sub_agent_name}."
 
-    state[f"{sub_agent_name}_impacted"] = state_template["is_impacted"]
-    state[f"{sub_agent_name}_is_altered"] = state_template["is_altered"]
+    state[f"{sub_agent_name}_is_requested"] = state_template["is_requested"]
+    state[f"{sub_agent_name}_is_alter"] = state_template["is_alter"]
     state[f"{sub_agent_name}_read_plural"] = state_template["read_plural"]
     state[f"{sub_agent_name}_read_current"] = state_template["read_current"]
-    state[f"{sub_agent_name}_message"] = message
+    state[f"{sub_agent_name}_detail"] = message
     return state
 
 # Constructs the complete state used by all of the sub agents.
@@ -94,7 +96,7 @@ def run_sub_agents_singular(i, state, sub_agents):
     result["user_microcycles"] = run_schedule_segment(state, sub_agents["microcycle"], segment_name=f"MICROCYCLES RUN {i}")
     result["user_planned_microcycle"] = run_schedule_segment(state, sub_agents["microcycle_scheduler"], segment_name=f"MICROCYCLE PLAN RUN {i}")
     result["user_workout"] = run_schedule_segment(state, sub_agents["workout"], segment_name=f"WORKOUT EXERCISES RUN {i}")
-    result["user_workout_completed"] = run_schedule_segment(state, sub_agents["workout_completion"], segment_name=f"WORKOUT COMPLETED RUN {i}")
+    result["user_workout_completion"] = run_schedule_segment(state, sub_agents["workout_completion"], segment_name=f"WORKOUT COMPLETED RUN {i}")
 
     # Correct time delta for serializing for JSON output.
     result = recursively_change_dict_timedeltas(result)

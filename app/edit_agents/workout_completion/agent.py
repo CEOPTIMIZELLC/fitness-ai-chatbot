@@ -3,11 +3,15 @@ from logging_config import LogEditorAgent
 import copy
 import math
 
+# Database imports.
 from app import db
 from app.models import User_Workout_Exercises
-from app.schedule_printers import WorkoutCompletionListPrinter
-from app.edit_agents.base.base import BaseSubAgent, AgentState
 
+# Agent construction imports.
+from app.edit_agents.base.base import BaseSubAgent, AgentState
+from app.schedule_printers.workout_completion import WorkoutCompletionListPrinter
+
+# Local imports.
 from .edit_goal_model import WorkoutCompletionEditGoal
 from .edit_prompt import WorkoutCompletionEditPrompt
 
@@ -33,7 +37,7 @@ keys_to_remove = [
     "component_id", 
 ]
 
-class WorkoutCompleteAgentState(AgentState):
+class WorkoutCompletionAgentState(AgentState):
     workout_day_id: int
 
 class SubAgent(BaseSubAgent, WorkoutCompletionEditPrompt):
@@ -67,17 +71,6 @@ class SubAgent(BaseSubAgent, WorkoutCompletionEditPrompt):
         for schedule_item in schedule_list:
             schedule_item["id"] = schedule_item[self.schedule_id_key]
         return schedule_list
-
-    # Retrieves the fields from the Pydantic model output.
-    def edit_model_to_dict(self, goal_edit):
-        return {
-            self.schedule_id_key: goal_edit.id, 
-            "remove": goal_edit.remove, 
-            "reps": goal_edit.reps, 
-            "sets": goal_edit.sets, 
-            "rest": goal_edit.rest, 
-            "weight": goal_edit.weight, 
-        }
 
     # Specific code for extracting information from the edited schedule into the new one.
     def apply_edit_to_schedule_item(self, schedule_item, schedule_edit, workout_day_id):
@@ -161,4 +154,4 @@ class SubAgent(BaseSubAgent, WorkoutCompletionEditPrompt):
 # Create main agent.
 def create_main_agent_graph():
     agent = SubAgent()
-    return agent.create_main_agent_graph(WorkoutCompleteAgentState)
+    return agent.create_main_agent_graph(WorkoutCompletionAgentState)

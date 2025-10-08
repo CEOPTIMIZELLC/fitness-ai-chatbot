@@ -1,11 +1,12 @@
-from logging_config import LogEditorAgent
-
+# Database imports.
 from app import db
 from app.models import Weekday_Library
 
-from app.schedule_printers import AvailabilitySchedulePrinter
+# Agent construction imports.
 from app.edit_agents.base.base import BaseSubAgent, TState
+from app.schedule_printers.availability import AvailabilitySchedulePrinter
 
+# Local imports.
 from .edit_goal_model import AvailabilityScheduleEditGoal
 from .edit_prompt import AvailabilityEditPrompt
 from .validity_check import check_schedule_validity
@@ -35,13 +36,6 @@ class SubAgent(BaseSubAgent, AvailabilityEditPrompt):
             weekday_entry = db.session.get(Weekday_Library, schedule_item["weekday_id"])
             schedule_item["weekday_name"] = weekday_entry.name
         return schedule_list
-
-    # Retrieves the fields from the Pydantic model output.
-    def edit_model_to_dict(self, goal_edit):
-        return {
-            self.schedule_id_key: goal_edit.id, 
-            "availability": goal_edit.availability, 
-        }
 
     # Specific code for extracting information from the edited schedule into the new one.
     def apply_edit_to_schedule_item(self, schedule_item, schedule_edit):

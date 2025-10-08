@@ -4,6 +4,7 @@ from typing_extensions import TypeVar
 
 from langgraph.graph import StateGraph, START, END
 
+# Local imports.
 from .base import BaseSubAgent, confirm_edits, confirm_interest
 from .base import AgentState as BaseAgentState
 
@@ -17,7 +18,7 @@ TState = TypeVar('TState', bound=AgentState)
 # Confirm that the desired section should be edited.
 def confirm_regenerate(state):
     LogEditorAgent.agent_steps(f"\t---------Confirm that the Schedule is Regenerated---------")
-    if state["is_regenerated"]:
+    if state.get("is_regenerated", False):
         LogEditorAgent.agent_steps(f"\t---------Is Regenerated---------")
         return "is_regenerated"
     return "not_regenerated"

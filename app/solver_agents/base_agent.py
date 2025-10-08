@@ -175,6 +175,7 @@ class BaseAgent:
             if SchedulerLoggingConfig.constraints:
                 formatted += self.format_constraint_status(state["constraints"])
 
+        LogSolver.formatted_schedule(formatted)
         return {"formatted": formatted, "output": final_output}
 
     def create_optimization_graph(self, state_class: type[TState]):

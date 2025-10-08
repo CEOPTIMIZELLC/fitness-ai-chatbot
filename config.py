@@ -39,7 +39,7 @@ confirm_invalid_schedule = True
 # Configurations for displayed information for logged schedules.
 class ScheduleDisplayConfig:
     # Whether the logged schedule should include the reason that an exercise has been included.
-    specific_true_exercise_flag = True
+    specific_true_exercise_flag = False
 
 # Configurations for exercise performance decay.
 class ExercisePerformanceDecayConfig:
@@ -71,6 +71,18 @@ class VerbosityConfig:
     # Log results throughout project.
     verbose = True
 
+    # Log updates to the agent state from other requests.
+    other_request_updates = True
+
+    # Log system messages.
+    system_message = False
+
+    # Log human messages.
+    human_message = True
+
+    # Log parsed goals.
+    parsed_goal = True
+
 # Logging configurations options for the database initialization.
 class DatabaseInitVerbosityConfig:
     # Log any items in this configuration set.
@@ -101,15 +113,6 @@ class MainAgentVerbosityConfig:
     # Log node introductions in the main agent.
     agent_steps = True
 
-    # Log the output of main agent.
-    agent_output = True
-
-    # Log information regarding user input in the main agent.
-    input_info = True
-
-    # Log system messages for LLM calls in the main agent.
-    system_message = True
-
     # Log final formatted schedule produced.
     formatted_schedule = True
 
@@ -124,23 +127,89 @@ class MainSubAgentVerbosityConfig:
     # Log node introductions in the sub agents.
     agent_steps = True
 
-    # Log the output of the sub agents.
-    agent_output = True
+    # Log final formatted schedule produced.
+    formatted_schedule = True
 
-    # Log information regarding user input in the sub agents.
-    input_info = True
+    # Log the current path of the subagents.
+    agent_path = False
 
-    # Log system messages for LLM calls in the sub agent.
-    system_message = True
 
-    # Log the parsed user input for the sub agents.
-    parsed_goal = True
+# Logging configurations options for the parent retriever agents.
+class ParentAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the sub agents.
+    agent_introductions = True
+
+    # Log node introductions in the sub agents.
+    agent_steps = True
 
     # Log final formatted schedule produced.
     formatted_schedule = True
 
     # Log the current path of the subagents.
-    agent_path = True
+    agent_path = False
+
+
+# Logging configurations options for the altering agents.
+class AlteringAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the sub agents.
+    agent_introductions = True
+
+    # Log node introductions in the sub agents.
+    agent_steps = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+
+# Logging configurations options for the creation agents.
+class CreationAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the sub agents.
+    agent_introductions = True
+
+    # Log node introductions in the sub agents.
+    agent_steps = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+
+# Logging configurations options for the deletion agents.
+class DeletionAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the sub agents.
+    agent_introductions = True
+
+    # Log node introductions in the sub agents.
+    agent_steps = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
+
+
+# Logging configurations options for the reading agents.
+class ReadingAgentVerbosityConfig:
+    # Log any items in this configuration set.
+    verbose = True
+
+    # Log introduction and end for the sub agents.
+    agent_introductions = True
+
+    # Log node introductions in the sub agents.
+    agent_steps = True
+
+    # Log final formatted schedule produced.
+    formatted_schedule = True
 
 
 # Logging configurations options for the editor agents.
@@ -154,22 +223,16 @@ class EditorAgentVerbosityConfig:
     # Log node introductions in the editor agents.
     agent_steps = True
 
-    # Log system messages for LLM calls in the editor agent.
-    system_message = True
-
-    # Log the parsed user input for the editor agents.
-    parsed_goal = True
-
     # Log final formatted schedule produced.
     formatted_schedule = True
 
 # Logging configurations options for the solver preprocessing verbosity.
 class SchedulerPreProcessingVerbosityConfig:
     # Log any items in this configuration set.
-    verbose = True
+    verbose = False
 
     # Log ALL steps taken when finding the exercises for phase components.
-    exercises_for_pc_steps = True
+    exercises_for_pc_steps = False
 
 # Logging configurations options for the solver agent verbosity.
 class SchedulerVerbosityConfig:
@@ -182,11 +245,8 @@ class SchedulerVerbosityConfig:
     # Log node introductions in the solver agents.
     agent_steps = True
 
-    # Log the output of the solver agents.
-    agent_output = True
-
     # Log final formatted schedule produced.
-    formatted_schedule = True
+    formatted_schedule = False
 
 # Configurations for agent logging.
 class SchedulerLoggingConfig:

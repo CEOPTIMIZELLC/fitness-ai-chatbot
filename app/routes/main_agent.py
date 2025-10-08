@@ -8,8 +8,8 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from app import db
 from app.models import User_Macrocycles, User_Weekday_Availability
 
-from app.main_agent.graph import create_main_agent_graph
-from app.main_agent.actions import enter_main_agent, resume_main_agent
+from app.graph import create_main_agent_graph
+from app.actions import enter_main_agent, resume_main_agent
 
 # ----------------------------------------- Main Agent -----------------------------------------
 test_cases = [

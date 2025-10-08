@@ -1,7 +1,10 @@
 import math
-from app.schedule_printers import WorkoutScheduleListPrinter
-from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate, AgentState
 
+# Agent construction imports.
+from app.edit_agents.base.with_regenerate import BaseSubAgentRegenerate, AgentState
+from app.schedule_printers.workout_schedule import WorkoutScheduleListPrinter
+
+# Local imports.
 from .edit_goal_model import WorkoutScheduleEditGoal
 from .edit_prompt import WorkoutScheduleEditPrompt
 from .validity_check import check_schedule_validity
@@ -69,17 +72,6 @@ class SubAgent(BaseSubAgentRegenerate, WorkoutScheduleEditPrompt):
             schedule_item["bodypart"] = schedule_item["bodypart_name"]
             schedule_item["is_warmup"] = schedule_item["warmup"]
         return schedule_list
-
-    # Retrieves the fields from the Pydantic model output.
-    def edit_model_to_dict(self, goal_edit):
-        return {
-            self.schedule_id_key: goal_edit.id, 
-            "remove": goal_edit.remove, 
-            "reps": goal_edit.reps, 
-            "sets": goal_edit.sets, 
-            "rest": goal_edit.rest, 
-            "weight": goal_edit.weight, 
-        }
 
     # Specific code for extracting information from the edited schedule into the new one.
     def apply_edit_to_schedule_item(self, schedule_item, schedule_edit):

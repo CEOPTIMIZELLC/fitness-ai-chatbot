@@ -12,10 +12,6 @@ For each level, extract:
 - A boolean field (`is_requested`) indicating whether the user's message expresses a desire to change that level.
 - A string field (`detail`) that captures the relevant information or instruction the user gave about that level.
 
-As well, some may have a
-- A boolean field (`alter_old`) indicating whether the user's message expresses a desire to alter the currently existing element. This should only be true if it is explicitly mentioned.
-
-
 If no change is mentioned for a level, mark `is_requested` as `false` and leave the `detail` as `null`.
 
 **Example Input:**

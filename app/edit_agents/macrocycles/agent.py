@@ -7,12 +7,18 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 
+# Utils imports.
+from app.utils.user_input import new_input_request
+
+# Database imports.
 from app import db
 from app.models import Goal_Library
-from app.schedule_printers import MacrocycleSchedulePrinter
-from app.edit_agents.base.base import ScheduleFormatterMethods
-from app.edit_agents.base.utils import new_input_request
 
+# Agent construction imports.
+from app.edit_agents.base.base import ScheduleFormatterMethods
+from app.schedule_printers.macrocycles import MacrocycleSchedulePrinter
+
+# Local imports.
 from .edit_goal_model import MacrocycleScheduleEditGoal
 from .edit_prompt import MacrocycleEditPrompt
 
@@ -29,7 +35,7 @@ class AgentState(TypedDict):
     agent_output: dict
     schedule_printed: str
 
-    macrocycle_message: str
+    macrocycle_detail: str
     goal_id: int
     start_date: any
     end_date: any
@@ -38,7 +44,7 @@ class AgentState(TypedDict):
 # Confirm that the desired section should be edited.
 def confirm_edits(state):
     LogEditorAgent.agent_steps(f"\t---------Confirm that the Schedule is Edited---------")
-    if state["is_edited"]:
+    if state.get("is_edited", False):
         LogEditorAgent.agent_steps(f"\t---------Is Edited---------")
         return "is_edited"
     return "not_edited"
@@ -49,6 +55,11 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
     schedule_id_key = "id"
     schedule_name_key = "goal_name"
     keys_to_remove = keys_to_remove
+
+    # Node to declare that the sub agent has ended.
+    def start_node(self, state):
+        LogEditorAgent.agent_introductions(f"=========Starting Editor SubAgent=========\n")
+        return {}
 
     # Format the structured schedule.
     def construct_agent_output(self, state: AgentState):
@@ -131,7 +142,6 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
             "task": f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"
         })
         user_input = result["user_input"]
-        LogEditorAgent.verbose(f"Extract the Edits from the following message: {user_input}")
 
         # Retrieve the schedule and format it for the prompt.
         current_goal = state["agent_output"]
@@ -197,6 +207,7 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
     # Create main agent.
     def create_main_agent_graph(self, state_class = AgentState):
         workflow = StateGraph(state_class)
+        workflow.add_node("start_node", self.start_node)
         workflow.add_node("construct_agent_output", self.construct_agent_output)
         workflow.add_node("format_proposed_list", self.format_proposed_list)
         workflow.add_node("ask_for_edits", self.ask_for_edits)
@@ -204,7 +215,8 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
         workflow.add_node("end_node", self.end_node)
 
         # Create a formatted list for the user to review.
-        workflow.add_edge(START, "construct_agent_output")
+        workflow.add_edge(START, "start_node")
+        workflow.add_edge("start_node", "construct_agent_output")
         workflow.add_edge("construct_agent_output", "format_proposed_list")
         workflow.add_edge("format_proposed_list", "ask_for_edits")
 

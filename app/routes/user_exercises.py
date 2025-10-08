@@ -4,9 +4,10 @@ from flask_login import current_user, login_required
 from app import db
 from app.models import User_Exercises
 
-from app.utils.common_table_queries import user_possible_exercises, user_possible_exercises_with_user_exercise_info
-from app.utils.common_table_queries import user_available_exercises
-from app.utils.common_table_queries import current_workout_day
+from app.common_table_queries.exercises import user_possible_exercises
+from app.common_table_queries.exercises import user_possible_exercises_with_user_exercise_info
+from app.common_table_queries.exercises import user_available_exercises
+from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
 bp = Blueprint('user_exercises', __name__)
 
