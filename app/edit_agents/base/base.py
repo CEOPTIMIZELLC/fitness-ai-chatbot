@@ -208,7 +208,10 @@ class BaseSubAgent(ScheduleFormatterMethods):
         formatted_schedule_list = state["schedule_printed"]
 
         result = interrupt({
-            "task": [f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"]
+            "task": [
+                f"Are there any edits you would like to make to the schedule?\n\n", 
+                formatted_schedule_list
+            ]
         })
         user_input = result["user_input"]
 
@@ -298,14 +301,17 @@ class BaseSubAgent(ScheduleFormatterMethods):
         if is_schedule_invalid and confirm_invalid_schedule:
             violations = list_to_str(state["violations"], newline=True)
             
-            user_task = f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\n\nViolations include:\n{violations}\n\nAre you sure you would like for the following schedule to be allowed?\n{formatted_schedule_list}"
+            user_task = f"WARNING: THE FOLLOWING SCHEDULE DOES NOT FOLLOW RECOMMENDED GUIDELINES!!!\n\nViolations include:\n{violations}\n\nAre you sure you would like for the following schedule to be allowed?\n"
         elif confirm_valid_schedule:
-            user_task = f"Would you like to move forward with the following schedule?\n\n{formatted_schedule_list}"
+            user_task = f"Would you like to move forward with the following schedule?\n"
         else:
             return {"allow_schedule": True}
 
         result = interrupt({
-            "task": [user_task]
+            "task": [
+                user_task, 
+                formatted_schedule_list
+            ]
         })
 
         return {"allow_schedule": does_user_allow_schedule(result["user_input"], is_schedule_invalid)}

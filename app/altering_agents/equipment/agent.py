@@ -117,7 +117,7 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
             "request_more_details": True, 
         }
 
-    def detail_request_constructor(self, formatted_schedule, **kwargs):
+    def detail_request_constructor(self, **kwargs):
         details_contained = ", ".join(
             f"{key}: {value}"
             for key, value in kwargs.items()
@@ -134,7 +134,7 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
         details_contained_text = f"You have already provided the following details: \n{details_contained}"
         details_needed_text = f"You can still provide the following details: \n{details_needed}"
 
-        return f"{question_text}\n\n{details_contained_text}\n\n{details_needed_text}\n\nHere is the list of your equipment that match this criteria:\n{formatted_schedule}"
+        return f"{question_text}\n\n{details_contained_text}\n\n{details_needed_text}\n\nHere is the list of your equipment that match this criteria:\n"
 
     # Request the details required to continue.
     def request_more_details(self, state):
@@ -144,14 +144,16 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
         formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
 
         human_task = self.detail_request_constructor(
-            formatted_schedule, 
             item_id = state.get("item_id"), 
             equipment_name = state.get("equipment_name"), 
             equipment_measurement = state.get("equipment_measurement")
         )
 
         result = interrupt({
-            "task": human_task
+            "task": [
+                human_task, 
+                formatted_schedule
+            ]
         })
 
         user_input = result["user_input"]
