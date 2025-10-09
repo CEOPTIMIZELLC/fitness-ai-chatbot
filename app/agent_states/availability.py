@@ -30,5 +30,6 @@ class AgentState(TypedDict):
     availability_detail: str
 
     availability_formatted: str
+    availability_list_output: list
 
     agent_output: list

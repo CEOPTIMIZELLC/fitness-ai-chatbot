@@ -29,12 +29,14 @@ class BaseSchedulePrinter:
         pass
 
     def _log_schedule(self, headers, header_line, schedule):
+        schedule_list = []
         schedule_string = ""
         schedule_string += header_line
         for item in schedule:
             _line_fields = self._line_fields(item)
+            schedule_list.append(_line_fields)
             schedule_string += self._formatted_entry_line(headers, _line_fields)
-        return schedule_string
+        return schedule_list, schedule_string
 
     def run_printer(self, schedule):
         formatted = ""
@@ -47,6 +49,10 @@ class BaseSchedulePrinter:
         headers = self._create_header_fields(longest_sizes)
         header_line = self._formatted_header_line(headers)
 
-        formatted += self._log_schedule(headers, header_line, schedule)
+        schedule_list, schedule_string = self._log_schedule(headers, header_line, schedule)
+        formatted += schedule_string
 
-        return formatted
+        return {
+            "formatted": formatted, 
+            "list": schedule_list, 
+        }

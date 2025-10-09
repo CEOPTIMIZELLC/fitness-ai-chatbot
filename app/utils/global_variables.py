@@ -10,3 +10,8 @@ sub_agent_names = [
     "phase_component", 
     "workout_schedule", 
 ]
+
+sub_graph_names = [
+    "phase_component", 
+    "workout_schedule", 
+]

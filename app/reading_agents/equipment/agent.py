@@ -22,8 +22,12 @@ class SubAgent(BaseAgent):
         schedule_dict = filter_items_by_query(state)
 
         formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogReadingAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogReadingAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
     # Create main agent.
     def create_main_agent_graph(self, state_class):

@@ -26,6 +26,7 @@ class AgentNode():
                 "macrocycle_detail": None, 
                 "macrocycle_perform_with_parent_id": None, 
                 "macrocycle_formatted": None, 
+                "macrocycle_list_output": [], 
                 "macrocycle_other_requests": None
             }
         return {
@@ -33,5 +34,6 @@ class AgentNode():
             "macrocycle_detail": result.get("macrocycle_detail", None), 
             "macrocycle_perform_with_parent_id": result.get("macrocycle_perform_with_parent_id", None), 
             "macrocycle_formatted": result.get("macrocycle_formatted", None), 
+            "macrocycle_list_output": result.get("macrocycle_list_output", []), 
             "macrocycle_other_requests": result.get("other_requests", None)
         }

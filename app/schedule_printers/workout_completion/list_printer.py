@@ -61,12 +61,14 @@ class WorkoutCompletionListPrinter(BaseSchedulePrinter):
         }
 
     def _log_schedule(self, headers, header_line, schedule):
+        schedule_list = []
         schedule_string = ""
         schedule_string += header_line
         for i, exericse in enumerate(schedule):
             _line_fields = self._line_fields(i, exericse)
+            schedule_list.append(_line_fields)
             schedule_string += self._formatted_entry_line(headers, _line_fields)
-        return schedule_string
+        return schedule_list, schedule_string
 
     def _retrieve_longest_schedule_elements(self, schedule):
         return {

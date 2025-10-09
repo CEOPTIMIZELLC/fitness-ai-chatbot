@@ -57,8 +57,12 @@ class BaseAgent():
 
         schedule_dict = [entry_from_db.to_dict()]
         formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogReadingAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogReadingAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
     # Print output.
     def get_formatted_list(self, state):
@@ -69,8 +73,12 @@ class BaseAgent():
         schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
 
         formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogReadingAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogReadingAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
     # Print output.
     def get_user_list(self, state):
@@ -82,8 +90,12 @@ class BaseAgent():
         schedule_dict = [schedule_entry.to_dict() for schedule_entry in schedule_from_db]
 
         formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogReadingAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogReadingAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
     # Node to declare that the sub agent has ended.
     def end_node(self, state):

@@ -1,5 +1,6 @@
 class VerticalSchedulePrinter:
     def _log_vertical_sub_schedule(self, sub_schedule_name, headers, header_line, schedule, set_count):
+        sub_schedule_list = []
         sub_schedule_string = ""
         # Create header line
         sub_schedule_string += f"\n| {sub_schedule_name} |\n"
@@ -23,19 +24,23 @@ class VerticalSchedulePrinter:
                 # Check for if the set count for the workout exceeds the set count for the exercise.
                 if exercise["sets"] >= set_count:
                     _line_fields = self._line_fields(component_count, exercise, set_count, superset_var)
+                    sub_schedule_list.append(_line_fields)
                     sub_schedule_string += self._formatted_entry_line(headers, _line_fields)
-        return sub_schedule_string
+        return sub_schedule_list, sub_schedule_string
 
     def _log_vertical_main_schedule(self, headers, header_line, schedule):
+        schedule_list = []
         schedule_string = ""
         max_sets = max(exercise["sets"] if not exercise["is_warmup"] else 1 for exercise in schedule)
 
         for set_count in range(1, max_sets+1):
-            schedule_string += self._log_vertical_sub_schedule(
+            sub_schedule_list, sub_schedule_string = self._log_vertical_sub_schedule(
                 sub_schedule_name=f"Vertical Set {set_count}", 
                 headers=headers, 
                 header_line=header_line, 
                 schedule=schedule, 
                 set_count=set_count
             )
-        return schedule_string
+            schedule_list.append(sub_schedule_list)
+            schedule_string += sub_schedule_string
+        return schedule_list, schedule_string

@@ -24,6 +24,7 @@ def sub_agent_focused_items(sub_agent_focus):
         "read_current": f"{sub_agent_focus}_read_current", 
         "detail": f"{sub_agent_focus}_detail", 
         "formatted": f"{sub_agent_focus}_formatted",
+        "list_output": f"{sub_agent_focus}_list_output",
         "perform_with_parent_id": f"{sub_agent_focus}_perform_with_parent_id",
     }
 

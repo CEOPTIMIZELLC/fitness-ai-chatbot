@@ -55,11 +55,12 @@ class SubAgent(BaseSubAgent, WorkoutCompletionEditPrompt):
         schedule_list = self.add_necessary_keys_to_schedule_item(schedule_list)
 
         formatted_schedule = self.list_printer_class.run_printer(schedule_list)
-        LogEditorAgent.formatted_schedule(formatted_schedule)
+        LogEditorAgent.formatted_schedule(formatted_schedule["formatted"])
 
         return {
             schedule_key: schedule_list, 
-            schedule_printed_key: formatted_schedule
+            schedule_printed_key + "_printed": formatted_schedule["formatted"], 
+            schedule_printed_key + "_output": formatted_schedule["list"], 
         }
 
     # Format the fields of the workout schedule to improve performance from the LLM.

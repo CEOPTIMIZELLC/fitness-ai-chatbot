@@ -74,8 +74,12 @@ class SubAgent(BaseAgent):
                                     for user_workout_exercise in schedule_from_db]
 
         formatted_schedule = self.schedule_printer_class.run_printer(workout_date, loading_system_id, user_workout_exercises_dict)
-        LogReadingAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogReadingAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
 
     # Print output.
@@ -92,8 +96,12 @@ class SubAgent(BaseAgent):
                                     for user_workout_exercise in schedule_from_db]
 
         formatted_schedule = self.list_printer_class.run_printer(user_workout_exercises_dict)
-        LogReadingAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogReadingAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
     # Create main agent.
     def create_main_agent_graph(self, state_class):

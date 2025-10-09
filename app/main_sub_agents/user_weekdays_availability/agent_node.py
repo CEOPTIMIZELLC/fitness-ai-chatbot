@@ -24,11 +24,13 @@ class AgentNode():
                 "availability_is_requested": False, 
                 "availability_detail": None, 
                 "availability_formatted": None,
+                "availability_list_output": [],
                 "availability_other_requests": None
             }
         return {
             "availability_is_requested": result.get("availability_is_requested", False), 
             "availability_detail": result.get("availability_detail", None), 
             "availability_formatted": result.get("availability_formatted", None), 
+            "availability_list_output": result.get("availability_list_output", []), 
             "availability_other_requests": result.get("other_requests", None)
         }

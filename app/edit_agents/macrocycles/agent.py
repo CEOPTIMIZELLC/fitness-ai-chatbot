@@ -33,6 +33,7 @@ class AgentState(TypedDict):
     edits: any
     other_requests: str
     agent_output: dict
+    schedule_output: list
     schedule_printed: str
 
     macrocycle_detail: str
@@ -100,11 +101,12 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
         schedule_list = state["agent_output"]
 
         formatted_schedule = self.list_printer_class.run_printer([schedule_list])
-        LogEditorAgent.formatted_schedule(formatted_schedule)
+        LogEditorAgent.formatted_schedule(formatted_schedule["formatted"])
 
         return {
             "agent_output": schedule_list, 
-            "schedule_printed": formatted_schedule
+            "schedule_printed": formatted_schedule["formatted"], 
+            "schedule_output": formatted_schedule["list"], 
         }
 
     # Create prompt to request schedule edits.
@@ -135,13 +137,11 @@ class SubAgent(ScheduleFormatterMethods, MacrocycleEditPrompt):
                 # "should_regenerate": False,
                 "other_requests": None
             }
-        # Get a copy of the current schedule and remove the items not useful for the AI.
-        formatted_schedule_list = state["schedule_printed"]
 
         result = interrupt({
             "task": [
                 f"Are there any edits you would like to make to the schedule?\n\n", 
-                formatted_schedule_list
+                state["schedule_output"]
             ]
         })
         user_input = result["user_input"]

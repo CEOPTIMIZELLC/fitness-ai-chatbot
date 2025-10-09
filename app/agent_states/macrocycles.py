@@ -30,6 +30,7 @@ class AgentState(TypedDict):
     macrocycle_detail: str
 
     macrocycle_formatted: str
+    macrocycle_list_output: list
     macrocycle_perform_with_parent_id: int
 
     user_macrocycle: dict

@@ -49,8 +49,12 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
         schedule_dict = filter_items_by_query(state)
 
         formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogCreationAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogCreationAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
     def system_prompt_constructor(self, state):
         available_equipment = list_to_str_for_prompt(state["available_equipment"], newline=True)

@@ -23,8 +23,10 @@ class AgentState(TypedDict):
     edits: any
     other_requests: str
     edited_schedule: list
+    edited_schedule_output: list
     edited_schedule_printed: str
     agent_output: list
+    schedule_output: list
     schedule_printed: str
 
 # Create a generic type variable that must be a subclass of MainAgentState
@@ -114,17 +116,18 @@ class BaseSubAgent(ScheduleFormatterMethods):
         schedule_list = self.add_necessary_keys_to_schedule_item(schedule_list)
 
         formatted_schedule = self.list_printer_class.run_printer(schedule_list)
-        LogEditorAgent.formatted_schedule(formatted_schedule)
+        LogEditorAgent.formatted_schedule(formatted_schedule["formatted"])
 
         return {
             schedule_key: schedule_list, 
-            schedule_printed_key: formatted_schedule
+            schedule_printed_key + "_printed": formatted_schedule["formatted"], 
+            schedule_printed_key + "_output": formatted_schedule["list"], 
         }
 
     # Format the structured schedule.
     def format_proposed_list(self, state: TState):
         LogEditorAgent.agent_steps(f"\t---------Format Proposed Workout Schedule---------")
-        return self._get_formatted_proposed_list(state, "agent_output", "schedule_printed")
+        return self._get_formatted_proposed_list(state, "agent_output", "schedule")
 
     # Create prompt to request schedule edits.
     def edit_prompt_creator(self, schedule_list_original, schedule_formatted):
@@ -204,13 +207,11 @@ class BaseSubAgent(ScheduleFormatterMethods):
                 # "should_regenerate": False,
                 "other_requests": None
             }
-        # Get a copy of the current schedule and remove the items not useful for the AI.
-        formatted_schedule_list = state["schedule_printed"]
 
         result = interrupt({
             "task": [
-                f"Are there any edits you would like to make to the schedule?\n\n", 
-                formatted_schedule_list
+                f"Are there any edits you would like to make to the schedule?\n", 
+                state["schedule_output"]
             ]
         })
         user_input = result["user_input"]
@@ -286,14 +287,11 @@ class BaseSubAgent(ScheduleFormatterMethods):
     # Format the structured schedule.
     def format_proposed_edited_list(self, state: TState):
         LogEditorAgent.agent_steps(f"\t---------Format Proposed Edited Workout Schedule---------")
-        return self._get_formatted_proposed_list(state, "edited_schedule", "edited_schedule_printed")
+        return self._get_formatted_proposed_list(state, "edited_schedule", "edited_schedule")
 
     # Request permission from user to apply the requested edits.
     def ask_to_move_forward(self, state: TState):
         LogEditorAgent.agent_steps(f"\t---------Ask user if the new schedule should be applied---------")
-
-        # Get a copy of the current schedule and remove the items not useful for the AI.
-        formatted_schedule_list = state["edited_schedule_printed"]
 
         is_schedule_invalid = not(state["is_valid"])
 
@@ -310,7 +308,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         result = interrupt({
             "task": [
                 user_task, 
-                formatted_schedule_list
+                state["edited_schedule_output"]
             ]
         })
 

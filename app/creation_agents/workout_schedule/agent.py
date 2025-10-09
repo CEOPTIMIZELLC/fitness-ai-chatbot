@@ -114,8 +114,12 @@ class CreationAgent(BaseAgent):
                                     for user_workout_exercise in schedule_from_db]
 
         formatted_schedule = self.schedule_printer_class.run_printer(workout_date, loading_system_id, user_workout_exercises_dict)
-        LogCreationAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogCreationAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
 # Create main agent.
 def create_main_agent_graph():

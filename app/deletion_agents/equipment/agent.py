@@ -49,8 +49,12 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
         schedule_dict = filter_items_by_query(state)
 
         formatted_schedule = self.schedule_printer_class.run_printer(schedule_dict)
-        LogDeletionAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogDeletionAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
     # Node to prepare information for altering.
     def retrieve_information(self, state):
@@ -170,7 +174,7 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
         result = interrupt({
             "task": [
                 human_task, 
-                formatted_schedule
+                formatted_schedule["list"]
             ]
         })
 

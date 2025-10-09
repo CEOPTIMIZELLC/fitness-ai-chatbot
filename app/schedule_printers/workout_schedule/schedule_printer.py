@@ -97,20 +97,23 @@ class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter, HorizontalSchedulePrin
         schedule_string = ""
 
         # Create header line
-        schedule_string += self._log_horizontal_sub_schedule(
+        schedule_list_warmup, schedule_string_entry = self._log_horizontal_sub_schedule(
             sub_schedule_name="Warm-Up", 
             headers=headers, 
             header_line=header_line, 
             schedule=schedule, 
             warmup=True
         )
+        schedule_string += schedule_string_entry
 
         # Different logging method depending on if the schedule is vertical.
         if loading_system_id == 1:
-            schedule_string += self._log_vertical_main_schedule(headers, header_line, schedule)
+            schedule_list, schedule_string_entry = self._log_vertical_main_schedule(headers, header_line, schedule)
         else:
-            schedule_string += self._log_horizontal_main_schedule(headers, header_line, schedule)
-        return schedule_string
+            schedule_list, schedule_string_entry = self._log_horizontal_main_schedule(headers, header_line, schedule)
+
+        schedule_string += schedule_string_entry
+        return schedule_list_warmup + schedule_list, schedule_string
 
     def _log_total_time(self, schedule):
         total_duration = 0
@@ -155,10 +158,14 @@ class WorkoutScheduleSchedulePrinter(BaseSchedulePrinter, HorizontalSchedulePrin
         headers = self._create_header_fields(longest_sizes)
         header_line = self._formatted_header_line(headers)
 
-        formatted += self._log_schedule(headers, header_line, loading_system_id, schedule)
+        schedule_list, schedule_string = self._log_schedule(headers, header_line, loading_system_id, schedule)
+        formatted += schedule_string
         formatted += "\n\n" + self._log_total_time(schedule)
 
-        return formatted
+        return {
+            "formatted": formatted, 
+            "list": schedule_list, 
+        }
 
 def Main(workout_date, loading_system_id, schedule):
     exercise_schedule_printer = WorkoutScheduleSchedulePrinter()

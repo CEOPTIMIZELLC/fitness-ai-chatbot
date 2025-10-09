@@ -112,8 +112,12 @@ class SubAgent(BaseAgent):
         old_user_exercises = state["old_user_exercises"]
 
         formatted_schedule = self.schedule_printer_class.run_printer(old_user_exercises, user_exercises)
-        LogMainSubAgent.formatted_schedule(formatted_schedule)
-        return {self.focus_names["formatted"]: formatted_schedule}
+        LogMainSubAgent.formatted_schedule(formatted_schedule["formatted"])
+
+        return {
+            self.focus_names["formatted"]: formatted_schedule["formatted"], 
+            self.focus_names["list_output"]: formatted_schedule["list"], 
+        }
 
     # Create main agent.
     def create_main_agent_graph(self, state_class):
