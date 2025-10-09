@@ -169,7 +169,7 @@ class SubAgent(BaseAgent, EquipmentDetailsPrompt):
         )
 
         result = interrupt({
-            "task": human_task
+            "task": [human_task]
         })
 
         user_input = result["user_input"]

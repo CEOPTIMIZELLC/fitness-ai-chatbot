@@ -33,7 +33,7 @@ class BaseAgentWithoutParents(BaseAgent):
     def ask_for_new_input(self, state):
         LogAlteringAgent.agent_steps(f"\t---------Ask user if a new {self.sub_agent_title} can be made---------")
         result = interrupt({
-            "task": f"No current {self.sub_agent_title} exists. Would you like for me to generate a {self.sub_agent_title} for you?"
+            "task": [f"No current {self.sub_agent_title} exists. Would you like for me to generate a {self.sub_agent_title} for you?"]
         })
         user_input = result["user_input"]
 

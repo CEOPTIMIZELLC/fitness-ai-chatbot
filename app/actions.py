@@ -15,31 +15,29 @@ def log_interrupts(snapshot_tasks):
     interrupt_messages = []
     for snapshot_task in snapshot_tasks:
         if snapshot_task.interrupts:
-            interrupt_message = snapshot_task.interrupts[0].value["task"]
-            log_verbose(f"Interrupt: {interrupt_message}")
-            interrupt_messages.append(interrupt_message)
+            interrupt_message_task = snapshot_task.interrupts[0].value["task"]
+            for interrupt_message in interrupt_message_task:
+                log_verbose(f"Interrupt: {interrupt_message}")
+                interrupt_messages.append(interrupt_message)
 
     # Return an empty list without a header if no interrupts are present.
-    if not interrupt_messages:
-        return ""
+    if interrupt_messages:
+        interrupt_messages = [f"Tasks"] + interrupt_messages
 
-
-    interrupt_messages = [f"Tasks"] + interrupt_messages
-    interrupt_message_string = "\n\n".join(
-        interrupt_message
-        for interrupt_message in interrupt_messages
-    )
-
-    return [interrupt_message_string]
+    return [interrupt_messages]
 
 def log_progress(snapshot_values):
     log_verbose(f"Collect Progress")
     progress_messages = []
     for sub_agent_name in sub_agent_names:
+        progress_message = []
         formatted_sub_agent_schedule = snapshot_values.get(f"{sub_agent_name}_formatted", None)
         if formatted_sub_agent_schedule:
-            progress_message = f"{sub_agent_name}: \n{formatted_sub_agent_schedule}"
-            log_verbose(f"Progress: {progress_message}")
+            formatted_progress_message = f"{sub_agent_name}: \n{formatted_sub_agent_schedule}"
+            log_verbose(f"Progress: {formatted_progress_message}")
+            progress_message.append(formatted_progress_message)
+
+        if progress_message:
             progress_messages.append(progress_message)
 
     # Return an empty list without a header if no schedules are present.

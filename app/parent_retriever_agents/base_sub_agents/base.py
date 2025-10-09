@@ -125,7 +125,7 @@ class BaseAgent():
             return {}
         LogParentSubAgent.agent_steps(f"\t---------Ask user if a new {self.parent_title} can be made---------")
         result = interrupt({
-            "task": f"No current {self.parent_title} exists for {self.sub_agent_title}. Would you like for me to generate a {self.parent_title} for you?"
+            "task": [f"No current {self.parent_title} exists for {self.sub_agent_title}. Would you like for me to generate a {self.parent_title} for you?"]
         })
         user_input = result["user_input"]
 

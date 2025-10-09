@@ -70,7 +70,7 @@ class MainAgent(WeekdayAvailabilityAgentNode, MacrocycleAgentNode):
     def ask_for_user_request(self, state: AgentState):
         LogMainAgent.agent_steps(f"---------Ask user for a new request---------")
         result = interrupt({
-            "task": f"Hello there! How can I help you today?"
+            "task": [f"Hello there! How can I help you today?"]
         })
         user_input = result["user_input"]
         state["user_input"] = user_input

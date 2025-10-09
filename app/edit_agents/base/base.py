@@ -208,7 +208,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
         formatted_schedule_list = state["schedule_printed"]
 
         result = interrupt({
-            "task": f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"
+            "task": [f"Are there any edits you would like to make to the schedule?\n\n{formatted_schedule_list}"]
         })
         user_input = result["user_input"]
 
@@ -305,7 +305,7 @@ class BaseSubAgent(ScheduleFormatterMethods):
             return {"allow_schedule": True}
 
         result = interrupt({
-            "task": user_task
+            "task": [user_task]
         })
 
         return {"allow_schedule": does_user_allow_schedule(result["user_input"], is_schedule_invalid)}
