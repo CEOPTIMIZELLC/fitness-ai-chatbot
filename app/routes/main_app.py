@@ -1,3 +1,5 @@
+from logging_config import log_verbose
+
 import json
 
 from flask import request, Blueprint, abort, Response, stream_with_context
@@ -46,11 +48,15 @@ def main_resume():
     def generate():
         # 1) Stream progress messages (continue after each)
         for msg in (progress_messages or []):
+            for msg_part in msg:
+                log_verbose("Progress:" + str(msg_part))
             yield _sse_event("progress", {"message": msg})
 
         # 2) If any interrupt messages, stream the first (or all) and stop
         if interrupt_messages:
             for msg in interrupt_messages:
+                for msg_part in msg:
+                    log_verbose("Interrupt:" + str(msg_part))
                 yield _sse_event("interrupt", {"message": msg})
             return  # stop streaming; frontend will wait for new user input
 

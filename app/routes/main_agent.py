@@ -56,9 +56,14 @@ def test_enter_main_agent(delete_all_user_schedules=False):
 
     # Results of the inital agent entry.
     snapshot_of_agent = enter_main_agent(user_id)
-    _ = log_progress(snapshot_of_agent.values)
-    _ = log_interrupts(snapshot_of_agent.tasks)
-    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
+    progress_messages = log_progress(snapshot_of_agent.values)
+    interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
+    return jsonify({
+        "status": "success", 
+        "progress_messages": progress_messages, 
+        "interrupt_messages": interrupt_messages, 
+        "response": snapshot_of_agent
+    }), 200
 
 # Enter the main agent with a user input and no pre-existing data.
 @bp.route('/enter/clean', methods=['POST', 'PATCH'])
@@ -78,9 +83,14 @@ def test_resume_main_agent():
 
     # Results of the user input.
     snapshot_of_agent = resume_main_agent(user_id, user_input)
-    _ = log_progress(snapshot_of_agent.values)
-    _ = log_interrupts(snapshot_of_agent.tasks)
-    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
+    progress_messages = log_progress(snapshot_of_agent.values)
+    interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
+    return jsonify({
+        "status": "success", 
+        "progress_messages": progress_messages, 
+        "interrupt_messages": interrupt_messages, 
+        "response": snapshot_of_agent
+    }), 200
 
 # Exit the Main Agent.
 @bp.route('/exit', methods=['POST', 'PATCH'])
@@ -90,9 +100,14 @@ def test_exit_main_agent():
 
     # Results of the user input.
     snapshot_of_agent = resume_main_agent(user_id, "")
-    _ = log_progress(snapshot_of_agent.values)
-    _ = log_interrupts(snapshot_of_agent.tasks)
-    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
+    progress_messages = log_progress(snapshot_of_agent.values)
+    interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
+    return jsonify({
+        "status": "success", 
+        "progress_messages": progress_messages, 
+        "interrupt_messages": interrupt_messages, 
+        "response": snapshot_of_agent
+    }), 200
 
 # Enter the main agent and test it with a user input.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -113,9 +128,14 @@ def test_main_agent(delete_all_user_schedules=False):
 
     # Results of the user input.
     snapshot_of_agent = resume_main_agent(user_id, user_input)
-    _ = log_progress(snapshot_of_agent.values)
-    _ = log_interrupts(snapshot_of_agent.tasks)
-    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
+    progress_messages = log_progress(snapshot_of_agent.values)
+    interrupt_messages = log_interrupts(snapshot_of_agent.tasks)
+    return jsonify({
+        "status": "success", 
+        "progress_messages": progress_messages, 
+        "interrupt_messages": interrupt_messages, 
+        "response": snapshot_of_agent
+    }), 200
 
 # Enter the main agent and test it with a user input and no pre-existing data.
 @bp.route('/clean', methods=['POST', 'PATCH'])
@@ -144,4 +164,6 @@ def get_current_state():
 
         snapshot_of_agent = main_agent_app.get_state(thread)
 
-    return jsonify({"status": "success", "response": snapshot_of_agent}), 200
+    return jsonify({
+        "status": "success", "response": snapshot_of_agent
+    }), 200
