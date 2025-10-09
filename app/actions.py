@@ -21,8 +21,16 @@ def log_interrupts(snapshot_tasks):
 
     # Return an empty list without a header if no interrupts are present.
     if not interrupt_messages:
-        return []
-    return [f"Tasks"] + interrupt_messages
+        return ""
+
+
+    interrupt_messages = [f"Tasks"] + interrupt_messages
+    interrupt_message_string = "\n\n".join(
+        interrupt_message
+        for interrupt_message in interrupt_messages
+    )
+
+    return [interrupt_message_string]
 
 def log_progress(snapshot_values):
     log_verbose(f"Collect Progress")
