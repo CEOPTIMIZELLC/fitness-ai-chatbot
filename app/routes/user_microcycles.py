@@ -1,7 +1,7 @@
 from flask import jsonify, Blueprint
 from flask_login import login_required, current_user
 
-from app.main_sub_agents.user_microcycles import create_microcycle_agent
+from app.main_sub_agents.user_microcycles import create_microcycle_agent as create_agent
 
 from app.utils.item_to_string import recursively_change_dict_timedeltas
 
@@ -22,7 +22,7 @@ def get_user_microcycles_list():
         "microcycle_read_current": False,
         "microcycle_detail": "Perform microcycle scheduling."
     }
-    microcycle_agent = create_microcycle_agent()
+    microcycle_agent = create_agent()
 
     result = microcycle_agent.invoke(state)
 
@@ -41,7 +41,7 @@ def get_user_current_mesocycles_list():
         "microcycle_read_current": True,
         "microcycle_detail": "Perform microcycle scheduling."
     }
-    microcycle_agent = create_microcycle_agent()
+    microcycle_agent = create_agent()
 
     result = microcycle_agent.invoke(state)
 
@@ -60,7 +60,7 @@ def read_user_current_microcycle():
         "microcycle_read_current": True,
         "microcycle_detail": "Perform microcycle scheduling."
     }
-    microcycle_agent = create_microcycle_agent()
+    microcycle_agent = create_agent()
 
     result = microcycle_agent.invoke(state)
 
@@ -79,7 +79,7 @@ def microcycle_initializer():
         "microcycle_read_current": False,
         "microcycle_detail": "Perform microcycle scheduling."
     }
-    microcycle_agent = create_microcycle_agent()
+    microcycle_agent = create_agent()
 
     result = microcycle_agent.invoke(state)
 
@@ -102,7 +102,7 @@ def microcycle_initializer_by_id(phase_id):
         "microcycle_detail": "Perform microcycle scheduling.",
         "microcycle_perform_with_parent_id": phase_id
     }
-    microcycle_agent = create_microcycle_agent()
+    microcycle_agent = create_agent()
 
     result = microcycle_agent.invoke(state)
 

@@ -6,7 +6,7 @@ from flask_login import current_user, login_required
 from app import db
 from app.models import Phase_Library
 
-from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_agent
+from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_agent as create_agent
 from app.creation_agents.phase_components.actions import retrieve_parameters, retrieve_weekday_availability_information_from_availability
 from app.solver_agents.phase_components import Main as phase_component_main
 
@@ -29,7 +29,7 @@ def get_user_workout_days_list():
         "phase_component_read_current": False,
         "phase_component_detail": "Perform phase component classification."
     }
-    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+    microcycle_scheduler_agent = create_agent()
 
     result = microcycle_scheduler_agent.invoke(state)
 
@@ -51,7 +51,7 @@ def get_user_current_workout_days_list():
         "phase_component_read_current": True,
         "phase_component_detail": "Perform phase component classification."
     }
-    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+    microcycle_scheduler_agent = create_agent()
 
     result = microcycle_scheduler_agent.invoke(state)
 
@@ -73,7 +73,7 @@ def read_user_current_workout_day():
         "phase_component_read_current": True,
         "phase_component_detail": "Perform phase component classification."
     }
-    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+    microcycle_scheduler_agent = create_agent()
 
     result = microcycle_scheduler_agent.invoke(state)
 
@@ -95,7 +95,7 @@ def workout_day_initializer():
         "phase_component_read_current": False,
         "phase_component_detail": "Perform phase component classification."
     }
-    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+    microcycle_scheduler_agent = create_agent()
 
     result = microcycle_scheduler_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -114,7 +114,7 @@ def workout_day_initializer_by_id(phase_id):
         "phase_component_detail": "Perform phase component classification.",
         "phase_component_perform_with_parent_id": phase_id
     }
-    microcycle_scheduler_agent = create_microcycle_scheduler_agent()
+    microcycle_scheduler_agent = create_agent()
 
     result = microcycle_scheduler_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200

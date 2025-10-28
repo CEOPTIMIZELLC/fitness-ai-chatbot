@@ -7,7 +7,7 @@ from app.models import Goal_Library, Goal_Phase_Requirements
 
 from app.solver_agents.phases import Main as phase_main
 from app.construct_lists_from_sql.phases import Main as construct_phases_list
-from app.main_sub_agents.user_mesocycles import create_mesocycle_agent
+from app.main_sub_agents.user_mesocycles import create_mesocycle_agent as create_agent
 
 bp = Blueprint('user_mesocycles', __name__)
 
@@ -26,7 +26,7 @@ def get_user_mesocycles_list():
         "mesocycle_read_current": False,
         "mesocycle_detail": "Retrieve mesocycle scheduling."
     }
-    mesocycle_agent = create_mesocycle_agent()
+    mesocycle_agent = create_agent()
 
     result = mesocycle_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -44,7 +44,7 @@ def get_user_current_mesocycles_list():
         "mesocycle_read_current": True,
         "mesocycle_detail": "Retrieve mesocycle scheduling."
     }
-    mesocycle_agent = create_mesocycle_agent()
+    mesocycle_agent = create_agent()
 
     result = mesocycle_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -62,7 +62,7 @@ def read_user_current_mesocycle():
         "mesocycle_read_current": True,
         "mesocycle_detail": "Retrieve mesocycle scheduling."
     }
-    mesocycle_agent = create_mesocycle_agent()
+    mesocycle_agent = create_agent()
 
     result = mesocycle_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -80,7 +80,7 @@ def mesocycle_phases():
         "mesocycle_read_current": False,
         "mesocycle_detail": "Perform mesocycle scheduling."
     }
-    mesocycle_agent = create_mesocycle_agent()
+    mesocycle_agent = create_agent()
 
     result = mesocycle_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -99,7 +99,7 @@ def add_mesocycle_phases_by_id(goal_id):
         "mesocycle_detail": "Perform mesocycle scheduling.",
         "mesocycle_perform_with_parent_id": goal_id
     }
-    mesocycle_agent = create_mesocycle_agent()
+    mesocycle_agent = create_agent()
 
     result = mesocycle_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200

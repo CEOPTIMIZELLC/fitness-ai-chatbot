@@ -6,7 +6,7 @@ from app import db
 from app.models import Goal_Library
 
 from app.solver_agents.goals import create_goal_classification_graph
-from app.main_sub_agents.user_macrocycles import create_goal_agent
+from app.main_sub_agents.user_macrocycles import create_goal_agent as create_agent
 
 bp = Blueprint('user_macrocycles', __name__)
 
@@ -26,7 +26,7 @@ def get_user_macrocycle_list():
         "macrocycle_detail": "Retrieve current macrocycle.",
         "macrocycle_alter_old": None
     }
-    goal_agent = create_goal_agent()
+    goal_agent = create_agent()
 
     result = goal_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -46,7 +46,7 @@ def read_user_current_macrocycle():
         "macrocycle_detail": "Retrieve current macrocycle.",
         "macrocycle_alter_old": None
     }
-    goal_agent = create_goal_agent()
+    goal_agent = create_agent()
 
     result = goal_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -79,7 +79,7 @@ def change_macrocycle():
         "macrocycle_detail": data.get("goal", ""),
         "macrocycle_alter_old": alter_old
     }
-    goal_agent = create_goal_agent()
+    goal_agent = create_agent()
 
     result = goal_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -105,7 +105,7 @@ def change_macrocycle_by_id(goal_id):
         "macrocycle_perform_with_parent_id": goal_id,
         "macrocycle_alter_old": alter_old,
     }
-    goal_agent = create_goal_agent()
+    goal_agent = create_agent()
 
     result = goal_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200

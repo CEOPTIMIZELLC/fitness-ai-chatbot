@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 
-from app.main_sub_agents.user_weekdays_availability import create_availability_agent
+from app.main_sub_agents.user_weekdays_availability import create_availability_agent as create_agent
 
 from app.utils.item_to_string import recursively_change_dict_timedeltas
 
@@ -22,7 +22,7 @@ def get_user_weekday_list():
         "availability_read_current": True,
         "availability_detail": "Retrieve current availability"
     }
-    availability_agent = create_availability_agent()
+    availability_agent = create_agent()
 
     result = availability_agent.invoke(state)
 
@@ -43,7 +43,7 @@ def get_user_weekday_current_list():
         "availability_read_current": True,
         "availability_detail": "Retrieve current availability"
     }
-    availability_agent = create_availability_agent()
+    availability_agent = create_agent()
 
     result = availability_agent.invoke(state)
 
@@ -64,7 +64,7 @@ def read_user_current_weekday():
         "availability_read_current": True,
         "availability_detail": "Retrieve current availability"
     }
-    availability_agent = create_availability_agent()
+    availability_agent = create_agent()
 
     result = availability_agent.invoke(state)
 
@@ -93,7 +93,7 @@ def change_weekday_availability():
         "availability_read_current": False,
         "availability_detail": data.get("availability", "")
     }
-    availability_agent = create_availability_agent()
+    availability_agent = create_agent()
 
     result = availability_agent.invoke(state)
 

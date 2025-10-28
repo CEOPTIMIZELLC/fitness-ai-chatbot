@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 
 from app.models import User_Weekday_Availability
 
-from app.main_sub_agents.user_workout_exercises import create_workout_agent
+from app.main_sub_agents.user_workout_exercises import create_workout_agent as create_agent
 from app.main_sub_agents.user_workout_completion import create_workout_completion_agent
 from app.creation_agents.workout_schedule.actions import retrieve_parameters
 from app.solver_agents.exercises import exercise_pc_main
@@ -29,7 +29,7 @@ def get_user_workout_exercises_list():
         "workout_schedule_read_current": False,
         "workout_schedule_detail": "Perform workout scheduling."
     }
-    workout_agent = create_workout_agent()
+    workout_agent = create_agent()
 
     result = workout_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -47,7 +47,7 @@ def get_user_current_exercises_list():
         "workout_schedule_read_current": True,
         "workout_schedule_detail": "Perform workout scheduling."
     }
-    workout_agent = create_workout_agent()
+    workout_agent = create_agent()
 
     result = workout_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -65,7 +65,7 @@ def exercise_initializer():
         "workout_schedule_read_current": False,
         "workout_schedule_detail": "Perform workout scheduling."
     }
-    workout_agent = create_workout_agent()
+    workout_agent = create_agent()
 
     result = workout_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -109,7 +109,7 @@ def initialize_and_complete():
         "workout_completion_read_current": False,
         "workout_completion_detail": "Perform workout scheduling."
     }
-    workout_agent = create_workout_agent()
+    workout_agent = create_agent()
     workout_completion_agent = create_workout_completion_agent()
 
     result["workout_exercises"] = workout_agent.invoke(state)

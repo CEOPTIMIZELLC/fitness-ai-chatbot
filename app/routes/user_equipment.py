@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint, abort
 from flask_login import current_user, login_required
 
-from app.main_sub_agents.user_equipment import create_equipment_agent
+from app.main_sub_agents.user_equipment import create_equipment_agent as create_agent
 from app.models import Equipment_Library
 
 bp = Blueprint('user_equipment', __name__)
@@ -72,7 +72,7 @@ def get_user_equipment_list():
         "equipment_id": data.get("equipment_id"), 
         "equipment_measurement": data.get("measurement"), 
     }
-    equipment_agent = create_equipment_agent()
+    equipment_agent = create_agent()
 
     result = equipment_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -94,7 +94,7 @@ def read_user_equipment(user_equipment_id):
 
         "item_id": user_equipment_id, 
     }
-    equipment_agent = create_equipment_agent()
+    equipment_agent = create_agent()
 
     result = equipment_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -121,7 +121,7 @@ def add_user_equipment():
         "equipment_detail": request_message,
         "equipment_alter_old": False, 
     }
-    equipment_agent = create_equipment_agent()
+    equipment_agent = create_agent()
 
     result = equipment_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -149,7 +149,7 @@ def change_user_equipment():
         "equipment_detail": request_message,
         "equipment_alter_old": True, 
     }
-    equipment_agent = create_equipment_agent()
+    equipment_agent = create_agent()
 
     result = equipment_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
@@ -177,7 +177,7 @@ def change_user_equipment_by_id(user_equipment_id):
         "equipment_detail": request_message,
         "equipment_alter_old": True, 
     }
-    equipment_agent = create_equipment_agent()
+    equipment_agent = create_agent()
 
     result = equipment_agent.invoke(state)
     return jsonify({"status": "success", "response": result}), 200
