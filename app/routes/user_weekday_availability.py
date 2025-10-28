@@ -7,70 +7,27 @@ from app.utils.item_to_string import recursively_change_dict_timedeltas
 
 bp = Blueprint('user_weekday_availability', __name__)
 
+from .blueprint_factories import get_user_current_list, read_user_current, item_initializer
+
 # ----------------------------------------- User Weekday Availability -----------------------------------------
 
 # Retrieve current user's weekdays
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_weekday_list():
-    state = {
-        "user_id": current_user.id,
-        "availability_is_requested": True,
-        "availability_is_alter": False,
-        "availability_is_read": True,
-        "availability_read_plural": True,
-        "availability_read_current": True,
-        "availability_detail": "Retrieve current availability"
-    }
-    availability_agent = create_agent()
-
-    result = availability_agent.invoke(state)
-
-    # Correct time delta for serializing for JSON output.
-    result = recursively_change_dict_timedeltas(result)
-    return jsonify({"status": "success", "response": result}), 200
+    return get_user_current_list(focus_name="availability", agent_creation_caller=create_agent)
 
 # Retrieve current user's weekdays formatted
 @bp.route('/current_list', methods=['GET'])
 @login_required
 def get_user_weekday_current_list():
-    state = {
-        "user_id": current_user.id,
-        "availability_is_requested": True,
-        "availability_is_alter": False,
-        "availability_is_read": True,
-        "availability_read_plural": True,
-        "availability_read_current": True,
-        "availability_detail": "Retrieve current availability"
-    }
-    availability_agent = create_agent()
-
-    result = availability_agent.invoke(state)
-
-    # Correct time delta for serializing for JSON output.
-    result = recursively_change_dict_timedeltas(result)
-    return jsonify({"status": "success", "response": result}), 200
+    return get_user_current_list(focus_name="availability", agent_creation_caller=create_agent)
 
 # Retrieve user's current microcycle
 @bp.route('/current', methods=['GET'])
 @login_required
 def read_user_current_weekday():
-    state = {
-        "user_id": current_user.id,
-        "availability_is_requested": True,
-        "availability_is_alter": False,
-        "availability_is_read": True,
-        "availability_read_plural": False,
-        "availability_read_current": True,
-        "availability_detail": "Retrieve current availability"
-    }
-    availability_agent = create_agent()
-
-    result = availability_agent.invoke(state)
-
-    # Correct time delta for serializing for JSON output.
-    result = recursively_change_dict_timedeltas(result)
-    return jsonify({"status": "success", "response": result}), 200
+    return read_user_current(focus_name="availability", agent_creation_caller=create_agent)
 
 # Change the current user's weekday.
 @bp.route('/', methods=['POST', 'PATCH'])
@@ -84,20 +41,4 @@ def change_weekday_availability():
     if ('availability' not in data):
         abort(400, description="Please fill out the form!")
 
-    state = {
-        "user_id": current_user.id,
-        "availability_is_requested": True,
-        "availability_is_alter": True,
-        "availability_is_read": True,
-        "availability_read_plural": False,
-        "availability_read_current": False,
-        "availability_detail": data.get("availability", "")
-    }
-    availability_agent = create_agent()
-
-    result = availability_agent.invoke(state)
-
-    # Correct time delta for serializing for JSON output.
-    result = recursively_change_dict_timedeltas(result)
-
-    return jsonify({"status": "success", "response": result}), 200
+    return item_initializer(focus_name="availability", agent_creation_caller=create_agent, user_message=data.get("availability", ""))

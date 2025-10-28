@@ -1,6 +1,6 @@
 from logging_config import LogRoute
 from flask import jsonify, Blueprint
-from flask_login import login_required, current_user
+from flask_login import login_required
 
 from app import db
 from app.models import Goal_Library, Goal_Phase_Requirements
@@ -11,98 +11,39 @@ from app.main_sub_agents.user_mesocycles import create_mesocycle_agent as create
 
 bp = Blueprint('user_mesocycles', __name__)
 
+from .blueprint_factories import get_user_list, get_user_current_list, read_user_current, item_initializer, item_initializer_with_parent_id
+
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
 # Retrieve current user's mesocycles
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_mesocycles_list():
-    state = {
-        "user_id": current_user.id,
-        "mesocycle_is_requested": True,
-        "mesocycle_is_alter": False,
-        "mesocycle_is_read": True,
-        "mesocycle_read_plural": True,
-        "mesocycle_read_current": False,
-        "mesocycle_detail": "Retrieve mesocycle scheduling."
-    }
-    mesocycle_agent = create_agent()
-
-    result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+    return get_user_list(focus_name="mesocycle", agent_creation_caller=create_agent)
 
 # Retrieve user's current macrocycle's mesocycles
 @bp.route('/current_list', methods=['GET'])
 @login_required
 def get_user_current_mesocycles_list():
-    state = {
-        "user_id": current_user.id,
-        "mesocycle_is_requested": True,
-        "mesocycle_is_alter": False,
-        "mesocycle_is_read": True,
-        "mesocycle_read_plural": True,
-        "mesocycle_read_current": True,
-        "mesocycle_detail": "Retrieve mesocycle scheduling."
-    }
-    mesocycle_agent = create_agent()
-
-    result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+    return get_user_current_list(focus_name="mesocycle", agent_creation_caller=create_agent)
 
 # Retrieve user's current mesocycle
 @bp.route('/current', methods=['GET'])
 @login_required
 def read_user_current_mesocycle():
-    state = {
-        "user_id": current_user.id,
-        "mesocycle_is_requested": True,
-        "mesocycle_is_alter": False,
-        "mesocycle_is_read": True,
-        "mesocycle_read_plural": False,
-        "mesocycle_read_current": True,
-        "mesocycle_detail": "Retrieve mesocycle scheduling."
-    }
-    mesocycle_agent = create_agent()
-
-    result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+    return read_user_current(focus_name="mesocycle", agent_creation_caller=create_agent)
 
 # Perform parameter programming for mesocycle labeling.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def mesocycle_phases():
-    state = {
-        "user_id": current_user.id,
-        "mesocycle_is_requested": True,
-        "mesocycle_is_alter": True,
-        "mesocycle_is_read": True,
-        "mesocycle_read_plural": False,
-        "mesocycle_read_current": False,
-        "mesocycle_detail": "Perform mesocycle scheduling."
-    }
-    mesocycle_agent = create_agent()
-
-    result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+    return item_initializer(focus_name="mesocycle", agent_creation_caller=create_agent)
 
 # Perform parameter programming for mesocycle labeling.
 @bp.route('/<goal_id>', methods=['POST', 'PATCH'])
 @login_required
 def add_mesocycle_phases_by_id(goal_id):
-    state = {
-        "user_id": current_user.id,
-        "mesocycle_is_requested": True,
-        "mesocycle_is_alter": True,
-        "mesocycle_is_read": True,
-        "mesocycle_read_plural": False,
-        "mesocycle_read_current": False,
-        "mesocycle_detail": "Perform mesocycle scheduling.",
-        "mesocycle_perform_with_parent_id": goal_id
-    }
-    mesocycle_agent = create_agent()
-
-    result = mesocycle_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+    return item_initializer_with_parent_id(focus_name="mesocycle", agent_creation_caller=create_agent, parent_id=goal_id)
 
 # ---------- TEST ROUTES --------------
 

@@ -10,9 +10,9 @@ from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_ag
 from app.creation_agents.phase_components.actions import retrieve_parameters, retrieve_weekday_availability_information_from_availability
 from app.solver_agents.phase_components import Main as phase_component_main
 
-from app.utils.item_to_string import recursively_change_dict_timedeltas
-
 bp = Blueprint('user_workout_days', __name__)
+
+from .blueprint_factories import get_user_list, get_user_current_list, read_user_current, item_initializer, item_initializer_with_parent_id
 
 # ----------------------------------------- Workout Days -----------------------------------------
 
@@ -20,104 +20,31 @@ bp = Blueprint('user_workout_days', __name__)
 @bp.route('/', methods=['GET'])
 @login_required
 def get_user_workout_days_list():
-    state = {
-        "user_id": current_user.id,
-        "phase_component_is_requested": True,
-        "phase_component_is_alter": False,
-        "phase_component_is_read": True,
-        "phase_component_read_plural": True,
-        "phase_component_read_current": False,
-        "phase_component_detail": "Perform phase component classification."
-    }
-    microcycle_scheduler_agent = create_agent()
-
-    result = microcycle_scheduler_agent.invoke(state)
-
-    # Correct time delta for serializing for JSON output.
-    result = recursively_change_dict_timedeltas(result)
-
-    return jsonify({"status": "success", "response": result}), 200
+    return get_user_list(focus_name="phase_component", agent_creation_caller=create_agent)
 
 # Retrieve user's current microcycle's phase components
 @bp.route('/current_list', methods=['GET'])
 @login_required
 def get_user_current_workout_days_list():
-    state = {
-        "user_id": current_user.id,
-        "phase_component_is_requested": True,
-        "phase_component_is_alter": False,
-        "phase_component_is_read": True,
-        "phase_component_read_plural": True,
-        "phase_component_read_current": True,
-        "phase_component_detail": "Perform phase component classification."
-    }
-    microcycle_scheduler_agent = create_agent()
-
-    result = microcycle_scheduler_agent.invoke(state)
-
-    # Correct time delta for serializing for JSON output.
-    result = recursively_change_dict_timedeltas(result)
-
-    return jsonify({"status": "success", "response": result}), 200
+    return get_user_current_list(focus_name="phase_component", agent_creation_caller=create_agent)
 
 # Retrieve user's current phase component
 @bp.route('/current', methods=['GET'])
 @login_required
 def read_user_current_workout_day():
-    state = {
-        "user_id": current_user.id,
-        "phase_component_is_requested": True,
-        "phase_component_is_alter": False,
-        "phase_component_is_read": True,
-        "phase_component_read_plural": False,
-        "phase_component_read_current": True,
-        "phase_component_detail": "Perform phase component classification."
-    }
-    microcycle_scheduler_agent = create_agent()
-
-    result = microcycle_scheduler_agent.invoke(state)
-
-    # Correct time delta for serializing for JSON output.
-    result = recursively_change_dict_timedeltas(result)
-
-    return jsonify({"status": "success", "response": result}), 200
+    return read_user_current(focus_name="phase_component", agent_creation_caller=create_agent)
 
 # Assigns phase components to days along with projected length.
 @bp.route('/', methods=['POST', 'PATCH'])
 @login_required
 def workout_day_initializer():
-    state = {
-        "user_id": current_user.id,
-        "phase_component_is_requested": True,
-        "phase_component_is_alter": True,
-        "phase_component_is_read": True,
-        "phase_component_read_plural": False,
-        "phase_component_read_current": False,
-        "phase_component_detail": "Perform phase component classification."
-    }
-    microcycle_scheduler_agent = create_agent()
-
-    result = microcycle_scheduler_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+    return item_initializer(focus_name="phase_component", agent_creation_caller=create_agent)
 
 # Assigns phase components to days along with projected length.
 @bp.route('/<phase_id>', methods=['POST', 'PATCH'])
 @login_required
 def workout_day_initializer_by_id(phase_id):
-    state = {
-        "user_id": current_user.id,
-        "phase_component_is_requested": True,
-        "phase_component_is_alter": True,
-        "phase_component_is_read": True,
-        "phase_component_read_plural": False,
-        "phase_component_read_current": False,
-        "phase_component_detail": "Perform phase component classification.",
-        "phase_component_perform_with_parent_id": phase_id
-    }
-    microcycle_scheduler_agent = create_agent()
-
-    result = microcycle_scheduler_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+    return item_initializer_with_parent_id(focus_name="phase_component", agent_creation_caller=create_agent, parent_id=phase_id)
 
 # ---------- TEST ROUTES --------------
 
