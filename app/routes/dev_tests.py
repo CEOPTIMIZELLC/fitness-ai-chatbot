@@ -48,6 +48,8 @@ state_templates = {
 def sub_agent_state_constructor(state, sub_agent_name, state_template, message=None):
     if not message:
         message = f"{state_template["detail"]} {sub_agent_name}."
+        if state_template["is_alter"]:
+            message += " scheduling."
 
     state[f"{sub_agent_name}_is_requested"] = state_template["is_requested"]
     state[f"{sub_agent_name}_is_alter"] = state_template["is_alter"]
