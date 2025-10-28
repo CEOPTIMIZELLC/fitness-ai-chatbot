@@ -1,6 +1,6 @@
 from logging_config import LogRoute
 
-from flask import jsonify, Blueprint, abort
+from flask import jsonify, abort
 from flask_login import current_user, login_required
 
 from app.models import User_Weekday_Availability
@@ -12,35 +12,29 @@ from app.solver_agents.exercises import exercise_pc_main
 
 from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
-bp = Blueprint('user_workout_exercises', __name__)
-
-from .blueprint_factories import get_user_list, get_user_current_list, item_initializer
+from .blueprint_factories import create_subagent_crud_blueprint
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 
-# Retrieve current user's workout exercises
-@bp.route('/', methods=['GET'])
-@login_required
-def get_user_workout_exercises_list():
-    return get_user_list(focus_name="workout_schedule", agent_creation_caller=create_agent)
-
-# Retrieve user's current microcycle's workout exercises
-@bp.route('/current_list', methods=['GET'])
-@login_required
-def get_user_current_exercises_list():
-    return get_user_current_list(focus_name="workout_schedule", agent_creation_caller=create_agent)
-
-# Assigns exercises to workouts.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def exercise_initializer():
-    return item_initializer(focus_name="workout_schedule", agent_creation_caller=create_agent)
+bp = create_subagent_crud_blueprint('user_workout_exercises', 'workout_schedule', '/user_workout_exercises', create_agent)
 
 # Update user exercises if workout is completed.
 @bp.route('/workout_completed', methods=['POST', 'PATCH'])
 @login_required
 def complete_workout():
-    return item_initializer(focus_name="workout_completion", agent_creation_caller=create_workout_completion_agent)
+    state = {
+        "user_id": current_user.id,
+        "workout_completion_is_requested": True,
+        "workout_completion_is_alter": True,
+        "workout_completion_is_read": True,
+        "workout_completion_read_plural": False,
+        "workout_completion_read_current": False,
+        "workout_completion_detail": "Perform workout scheduling."
+    }
+    workout_completion_agent = create_workout_completion_agent()
+
+    result = workout_completion_agent.invoke(state)
+    return jsonify({"status": "success", "response": result}), 200
 
 # Combine Exercise Initializer and Complete Workout for testing.
 @bp.route('/initialize_and_complete', methods=['POST', 'PATCH'])

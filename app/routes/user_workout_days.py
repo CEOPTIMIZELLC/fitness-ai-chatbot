@@ -1,6 +1,6 @@
 from logging_config import LogRoute
 
-from flask import jsonify, Blueprint
+from flask import jsonify
 from flask_login import current_user, login_required
 
 from app import db
@@ -10,41 +10,11 @@ from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_ag
 from app.creation_agents.phase_components.actions import retrieve_parameters, retrieve_weekday_availability_information_from_availability
 from app.solver_agents.phase_components import Main as phase_component_main
 
-bp = Blueprint('user_workout_days', __name__)
-
-from .blueprint_factories import get_user_list, get_user_current_list, read_user_current, item_initializer, item_initializer_with_parent_id
+from .blueprint_factories import create_subagent_crud_blueprint
 
 # ----------------------------------------- Workout Days -----------------------------------------
 
-# Retrieve current user's phase components
-@bp.route('/', methods=['GET'])
-@login_required
-def get_user_workout_days_list():
-    return get_user_list(focus_name="phase_component", agent_creation_caller=create_agent)
-
-# Retrieve user's current microcycle's phase components
-@bp.route('/current_list', methods=['GET'])
-@login_required
-def get_user_current_workout_days_list():
-    return get_user_current_list(focus_name="phase_component", agent_creation_caller=create_agent)
-
-# Retrieve user's current phase component
-@bp.route('/current', methods=['GET'])
-@login_required
-def read_user_current_workout_day():
-    return read_user_current(focus_name="phase_component", agent_creation_caller=create_agent)
-
-# Assigns phase components to days along with projected length.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def workout_day_initializer():
-    return item_initializer(focus_name="phase_component", agent_creation_caller=create_agent)
-
-# Assigns phase components to days along with projected length.
-@bp.route('/<phase_id>', methods=['POST', 'PATCH'])
-@login_required
-def workout_day_initializer_by_id(phase_id):
-    return item_initializer_with_parent_id(focus_name="phase_component", agent_creation_caller=create_agent, parent_id=phase_id)
+bp = create_subagent_crud_blueprint('user_workout_days', 'phase_component', '/user_workout_days', create_agent)
 
 # ---------- TEST ROUTES --------------
 
@@ -58,6 +28,7 @@ def perform_workout_day_selection(phase_id, microcycle_weekdays, total_availabil
 
 # Testing for the parameter programming for phase component assignment.
 @bp.route('/test', methods=['GET', 'POST'])
+@login_required
 def phase_component_classification_test():
     test_results = []
 
