@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from app.routes.blueprint_factories import create_library_crud_blueprint
+from app.routes.blueprint_factories.libraries import create_library_crud_blueprint
 from app.models import (
     Component_Library, 
     Equipment_Library, 

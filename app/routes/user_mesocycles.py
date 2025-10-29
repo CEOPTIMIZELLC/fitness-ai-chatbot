@@ -10,7 +10,7 @@ from app.main_sub_agents.user_mesocycles import create_mesocycle_agent as create
 
 from app.database_to_frontend.user_mesocycles import ItemRetriever, CurrentRetriever
 
-from .blueprint_factories import create_subagent_crud_blueprint, add_current_retrievers_to_subagent_crud_blueprint, add_test_retrievers_to_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
+from .blueprint_factories.subagent_items import *
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 

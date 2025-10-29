@@ -6,7 +6,7 @@ from app.models import Equipment_Library
 
 from app.database_to_frontend.user_equipment import ItemRetriever
 
-from .blueprint_factories import create_subagent_crud_blueprint
+from .blueprint_factories.subagent_items import create_subagent_crud_blueprint
 
 # ----------------------------------------- User Equipment -----------------------------------------
 

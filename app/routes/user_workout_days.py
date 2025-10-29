@@ -12,7 +12,7 @@ from app.solver_agents.phase_components import Main as phase_component_main
 
 from app.database_to_frontend.user_workout_days import ItemRetriever, CurrentRetriever
 
-from .blueprint_factories import create_subagent_crud_blueprint, add_current_retrievers_to_subagent_crud_blueprint, add_test_retrievers_to_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
+from .blueprint_factories.subagent_items import *
 
 # ----------------------------------------- Workout Days -----------------------------------------
 

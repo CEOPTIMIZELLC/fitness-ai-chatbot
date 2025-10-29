@@ -1,33 +1,7 @@
 from flask import request, jsonify, Blueprint, abort
 from flask_login import login_required, current_user
 
-from app.utils.db_helpers import get_all_items, get_item_by_id
 from app.utils.item_to_string import recursively_change_dict_timedeltas
-
-def create_library_crud_blueprint(name, url_prefix, model, response_key):
-    bp = Blueprint(name, __name__, url_prefix=url_prefix)
-
-    @bp.route('/', methods=['GET'])
-    def list_items():
-        result = get_all_items(model)
-        return jsonify({"status": "success", "response": result}), 200
-
-    @bp.route('/print', methods=['GET'])
-    def print_items():
-        result_dict = get_all_items(model)
-        result = [item["name"] for item in result_dict]
-        print(result)
-        return jsonify({"status": "success", "response": result}), 200
-
-    @bp.route('/<item_id>', methods=['GET'])
-    def read_item(item_id):
-        result = get_item_by_id(model, item_id)
-        if not result:
-            return jsonify({"status": "error", "message": f"{response_key[:-1].capitalize()} {item_id} not found."}), 404
-        return jsonify({"status": "success", "response": result}), 200
-
-    return bp
-
 
 # Retrieves the user input, if there is one.
 def _input_retriever(focus_name, request):
@@ -63,7 +37,7 @@ def _state_name_retriever(focus_name):
         "detail_initializer": f"Perform {focus_name} scheduling.",
     }
 
-
+# Creates the initial blueprint for routes relating to the retrieval of subagent items from the database.
 def create_subagent_crud_blueprint(name, url_prefix, item_class):
     bp = Blueprint(name, __name__, url_prefix=url_prefix)
 
@@ -147,8 +121,6 @@ def add_test_retrievers_to_subagent_crud_blueprint(bp, focus_name, agent_creatio
         return _agent_invoker(agent_creation_caller, state)
     
     return bp
-
-
 
 # Adds the subagent calls that will initialize the items.
 def add_initializer_to_subagent_crud_blueprint(bp, focus_name, agent_creation_caller):

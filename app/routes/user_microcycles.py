@@ -1,6 +1,6 @@
 from app.main_sub_agents.user_microcycles import create_microcycle_agent as create_agent
 from app.database_to_frontend.user_microcycles import ItemRetriever, CurrentRetriever
-from .blueprint_factories import create_subagent_crud_blueprint, add_current_retrievers_to_subagent_crud_blueprint, add_test_retrievers_to_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
+from .blueprint_factories.subagent_items import *
 
 # ----------------------------------------- User Microcycles -----------------------------------------
 
