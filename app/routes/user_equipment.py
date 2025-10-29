@@ -108,7 +108,7 @@ def read_user_equipment(user_equipment_id):
     return jsonify({"status": "success", "response": result}), 200
 
 # Add current user's equipment
-@bp.route('/sub_agent_test/', methods=['POST'])
+@bp.route('/', methods=['POST'])
 @login_required
 def add_user_equipment():
     # Input is a json.
@@ -136,7 +136,7 @@ def add_user_equipment():
 
 
 # Change current user's equipment
-@bp.route('/sub_agent_test/', methods=['PATCH'])
+@bp.route('/', methods=['PATCH'])
 @login_required
 def change_user_equipment():
     # Input is a json.
@@ -163,7 +163,7 @@ def change_user_equipment():
     return jsonify({"status": "success", "response": result}), 200
 
 # Change current user's equipment
-@bp.route('/sub_agent_test/<user_equipment_id>', methods=['PATCH'])
+@bp.route('/<user_equipment_id>', methods=['PATCH'])
 @login_required
 def change_user_equipment_by_id(user_equipment_id):
     # Input is a json.
