@@ -48,11 +48,9 @@ def _agent_invoker(agent_creation_caller, state):
 
     return jsonify({"status": "success", "response": result}), 200
 
-
-def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_caller):
-    bp = Blueprint(name, __name__, url_prefix=url_prefix)
-
-    state_names = {
+# Repeated method that invokes the agent.
+def _state_name_retriever(focus_name):
+    return {
         "is_requested": f"{focus_name}_is_requested",
         "is_alter": f"{focus_name}_is_alter",
         "is_read": f"{focus_name}_is_read",
@@ -64,6 +62,12 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
         "detail_read_current": f"Retrieve my current {focus_name}.",
         "detail_initializer": f"Perform {focus_name} scheduling.",
     }
+
+
+def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_caller):
+    bp = Blueprint(name, __name__, url_prefix=url_prefix)
+
+    state_names = _state_name_retriever(focus_name)
 
     # Retrieve current user's list of items.
     @bp.route('/', methods=['GET'])
@@ -116,18 +120,7 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
 
 # Adds the subagent calls that will initialize the items.
 def add_initializer_to_subagent_crud_blueprint(bp, focus_name, agent_creation_caller):
-    state_names = {
-        "is_requested": f"{focus_name}_is_requested",
-        "is_alter": f"{focus_name}_is_alter",
-        "is_read": f"{focus_name}_is_read",
-        "read_plural": f"{focus_name}_read_plural",
-        "read_current": f"{focus_name}_read_current",
-        "detail": f"{focus_name}_detail",
-        "detail_read_list": f"Retrieve all of my {focus_name}s.",
-        "detail_read_current_list": f"Retrieve all current {focus_name}.",
-        "detail_read_current": f"Retrieve my current {focus_name}.",
-        "detail_initializer": f"Perform {focus_name} scheduling.",
-    }
+    state_names = _state_name_retriever(focus_name)
 
     # Initialize user's list of items for the current parent.
     @bp.route('/', methods=['POST', 'PATCH'])
