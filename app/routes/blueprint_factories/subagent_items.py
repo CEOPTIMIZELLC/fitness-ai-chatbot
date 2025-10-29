@@ -1,3 +1,5 @@
+from logging_config import LogRoute
+
 from flask import request, jsonify, Blueprint, abort
 from flask_login import login_required, current_user
 
@@ -30,6 +32,7 @@ def _state_name_retriever(focus_name):
         "is_read": f"{focus_name}_is_read",
         "read_plural": f"{focus_name}_read_plural",
         "read_current": f"{focus_name}_read_current",
+        "perform_with_parent_id": f"{focus_name}_perform_with_parent_id",
         "detail": f"{focus_name}_detail",
         "detail_read_list": f"Retrieve all of my {focus_name}s.",
         "detail_read_current_list": f"Retrieve all current {focus_name}.",
@@ -72,9 +75,7 @@ def add_current_retrievers_to_subagent_crud_blueprint(bp, item_class):
     return bp
 
 # Adds the subagent calls that will read the items.
-def add_test_retrievers_to_subagent_crud_blueprint(bp, focus_name, agent_creation_caller):
-    state_names = _state_name_retriever(focus_name)
-
+def add_test_retrievers_to_subagent_crud_blueprint(bp, state_names, agent_creation_caller):
     # Retrieve current user's list of items.
     @bp.route('/sub_agent_test', methods=['GET'])
     @login_required
@@ -123,9 +124,7 @@ def add_test_retrievers_to_subagent_crud_blueprint(bp, focus_name, agent_creatio
     return bp
 
 # Adds the subagent calls that will initialize the items.
-def add_initializer_to_subagent_crud_blueprint(bp, focus_name, agent_creation_caller):
-    state_names = _state_name_retriever(focus_name)
-
+def add_initializer_to_subagent_crud_blueprint(bp, state_names, agent_creation_caller, request_name):
     # Initialize user's list of items for the current parent.
     @bp.route('/', methods=['POST', 'PATCH'])
     @login_required
@@ -137,7 +136,7 @@ def add_initializer_to_subagent_crud_blueprint(bp, focus_name, agent_creation_ca
             state_names["is_read"]: True,
             state_names["read_plural"]: False,
             state_names["read_current"]: False,
-            f"{focus_name}_detail": _input_retriever(focus_name, request)
+            state_names["detail"]: _input_retriever(request_name, request)
         }
         return _agent_invoker(agent_creation_caller, state)
 
@@ -152,10 +151,56 @@ def add_initializer_to_subagent_crud_blueprint(bp, focus_name, agent_creation_ca
             state_names["is_read"]: True,
             state_names["read_plural"]: False,
             state_names["read_current"]: False,
-            f"{focus_name}_perform_with_parent_id": parent_id, 
-            f"{focus_name}_detail": _input_retriever(focus_name, request)
+            state_names["perform_with_parent_id"]: parent_id, 
+            state_names["detail"]: _input_retriever(request_name, request)
         }
         return _agent_invoker(agent_creation_caller, state)
 
+    return bp
+
+
+import inspect
+
+def create_item_blueprint(item_name, focus_name, item_retriever, current_retriever, create_agent, add_test_retrievers=False, add_initializers=False, request_name=None):
+    if not request_name:
+        request_name = focus_name
+
+    state_names = _state_name_retriever(focus_name)
+
+    # Initial blueprint creation.
+    LogRoute.bps(f"Subagent CRUD blueprint for {item_name}.")
+    bp = create_subagent_crud_blueprint(
+        name = item_name, 
+        url_prefix = "/" + item_name, 
+        item_class = item_retriever
+    )
+
+    # Add retrievers for current items.
+    if inspect.isclass(current_retriever):
+        LogRoute.bps(f"Added current item retrievers for {item_name}.")
+        bp = add_current_retrievers_to_subagent_crud_blueprint(
+            bp = bp, 
+            item_class = current_retriever
+        )
+
+    # Add the endpoints for the sub agent retrievers.
+    if add_test_retrievers and inspect.isfunction(create_agent):
+        LogRoute.bps(f"Added sub agent driven retrievers for {item_name}.")
+        bp = add_test_retrievers_to_subagent_crud_blueprint(
+            bp = bp, 
+            state_names = state_names, 
+            agent_creation_caller = create_agent
+        )
+    
+    # Add the endpoints for the sub agent schedule initializer.
+    if add_initializers and inspect.isfunction(create_agent):
+        LogRoute.bps(f"Added sub agent driven initialization for {item_name}.")
+        bp = add_initializer_to_subagent_crud_blueprint(
+            bp = bp, 
+            state_names = state_names, 
+            request_name = request_name, 
+            agent_creation_caller = create_agent
+        )
+    
     return bp
 

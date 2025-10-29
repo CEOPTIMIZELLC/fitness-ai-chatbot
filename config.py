@@ -102,6 +102,9 @@ class RouteVerbosityConfig:
     # Log route outputs.
     verbose = True
 
+    # Log what endpoints are added to blueprints.
+    bps = True
+
 # Logging configurations options for the main agent.
 class MainAgentVerbosityConfig:
     # Log any items in this configuration set.

@@ -12,31 +12,20 @@ from app.solver_agents.phase_components import Main as phase_component_main
 
 from app.database_to_frontend.user_workout_days import ItemRetriever, CurrentRetriever
 
-from .blueprint_factories.subagent_items import *
+from .blueprint_factories.subagent_items import create_item_blueprint
 
 # ----------------------------------------- Workout Days -----------------------------------------
 
 item_name = "user_workout_days"
 focus_name = "phase_component"
 
-bp = create_subagent_crud_blueprint(
-    name = item_name, 
-    url_prefix = "/" + item_name, 
-    item_class = ItemRetriever
-)
-bp = add_current_retrievers_to_subagent_crud_blueprint(
-    bp = bp, 
-    item_class = CurrentRetriever
-)
-bp = add_test_retrievers_to_subagent_crud_blueprint(
-    bp = bp, 
-    focus_name = focus_name, 
-    agent_creation_caller = create_agent
-)
-bp = add_initializer_to_subagent_crud_blueprint(
-    bp = bp, 
-    focus_name = focus_name, 
-    agent_creation_caller = create_agent
+bp = create_item_blueprint(
+    item_name, focus_name, 
+    item_retriever = ItemRetriever, 
+    current_retriever = CurrentRetriever, 
+    create_agent = create_agent, 
+    add_test_retrievers = True, 
+    add_initializers = True
 )
 
 # ---------- TEST ROUTES --------------

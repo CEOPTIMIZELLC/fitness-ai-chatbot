@@ -1,6 +1,5 @@
 from logging_config import LogRoute
-from flask import request, jsonify, abort
-from flask_login import login_required, current_user
+from flask import jsonify
 
 from app import db
 from app.models import Goal_Library
@@ -10,86 +9,21 @@ from app.main_sub_agents.user_macrocycles import create_goal_agent as create_age
 
 from app.database_to_frontend.user_macrocycles import ItemRetriever, CurrentRetriever
 
-from .blueprint_factories.subagent_items import *
+from .blueprint_factories.subagent_items import create_item_blueprint
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 
 item_name = "user_macrocycles"
 focus_name = "macrocycle"
 
-bp = create_subagent_crud_blueprint(
-    name = item_name, 
-    url_prefix = "/" + item_name, 
-    item_class = ItemRetriever
+bp = create_item_blueprint(
+    item_name, focus_name, request_name = "goal", 
+    item_retriever = ItemRetriever, 
+    current_retriever = CurrentRetriever, 
+    create_agent = create_agent, 
+    add_test_retrievers = True, 
+    add_initializers = True
 )
-bp = add_current_retrievers_to_subagent_crud_blueprint(
-    bp = bp, 
-    item_class = CurrentRetriever
-)
-bp = add_test_retrievers_to_subagent_crud_blueprint(
-    bp = bp, 
-    focus_name = focus_name, 
-    agent_creation_caller = create_agent
-)
-
-# Change the current user's macrocycle.
-@bp.route('/', methods=['POST', 'PATCH'])
-@login_required
-def change_macrocycle():
-    # Input is a json.
-    data = request.get_json()
-    if not data:
-        abort(404, description="Invalid request")
-    
-    if ('goal' not in data):
-        abort(400, description="Please fill out the form!")
-    
-    # Determine if a new macrocycle should be made instead of changing the current one.
-    if (request.method == 'PATCH'):
-        alter_old = True
-    else:
-        alter_old = False
-
-    state = {
-        "user_id": current_user.id,
-        "macrocycle_is_requested": True,
-        "macrocycle_is_alter": True,
-        "macrocycle_is_read": True,
-        "macrocycle_read_plural": False,
-        "macrocycle_read_current": False,
-        "macrocycle_detail": data.get("goal", ""),
-        "macrocycle_alter_old": alter_old
-    }
-    goal_agent = create_agent()
-
-    result = goal_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
-
-# Change the current user's macrocycle by the id (doesn't restrict what can be assigned).
-@bp.route('/<goal_id>', methods=['POST', 'PATCH'])
-@login_required
-def change_macrocycle_by_id(goal_id):
-    # Determine if a new macrocycle should be made instead of changing the current one.
-    if (request.method == 'PATCH'):
-        alter_old = True
-    else:
-        alter_old = False
-
-    state = {
-        "user_id": current_user.id,
-        "macrocycle_is_requested": True,
-        "macrocycle_is_alter": True,
-        "macrocycle_is_read": True,
-        "macrocycle_read_plural": False,
-        "macrocycle_read_current": False,
-        "macrocycle_detail": f"Goal of id {goal_id}.",
-        "macrocycle_perform_with_parent_id": goal_id,
-        "macrocycle_alter_old": alter_old,
-    }
-    goal_agent = create_agent()
-
-    result = goal_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
 
 # ---------- TEST ROUTES --------------
 

@@ -51,6 +51,7 @@ class LogGeneral:
 
 class LogRoute:
     verbose = partial(verbose_log, RouteVerbosityConfig.verbose)
+    bps = partial(verbose_log, RouteVerbosityConfig.bps)
 
 class LogDBInit:
     verbose = partial(verbose_log, DatabaseInitVerbosityConfig.verbose)
