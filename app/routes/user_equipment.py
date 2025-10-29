@@ -6,21 +6,27 @@ from app.models import Equipment_Library
 
 from app.database_to_frontend.user_equipment import ItemRetriever
 
-from .blueprint_factories.subagent_items import create_subagent_crud_blueprint
+from .blueprint_factories.subagent_items import create_item_blueprint
 
 # ----------------------------------------- User Equipment -----------------------------------------
 
 item_name = "user_equipment"
 focus_name = "equipment"
 
-bp = create_subagent_crud_blueprint(
-    name = item_name, 
-    url_prefix = "/" + item_name, 
-    item_class = ItemRetriever
+bp = create_item_blueprint(
+    item_name, focus_name, 
+    item_retriever = ItemRetriever, 
+    current_retriever = None, 
+    create_agent = create_agent, 
+    add_test_retrievers = False, 
+    add_initializers = False
 )
 
 # Constructs the message relating to the piece of equipment.
-def item_request_constructor(i_id, i_name, i_measurement):
+def item_request_constructor(unique_id=None, i_id=None, i_name=None, i_measurement=None):
+    if unique_id:
+        return f"equipment of id {unique_id}"
+
     item_request_message = "piece of equipment"
 
     # Get the name of the equipment for the request.
@@ -39,25 +45,21 @@ def item_request_constructor(i_id, i_name, i_measurement):
     return item_request_message
 
 # Constructs a request message for the agent based on endpoint inputs.
-def example_request_creator(data, alter_old):
-    equipment_id = data.get("equipment_id")
-    equipment_name = data.get("equipment_name")
-    equipment_measurement = data.get("measurement")
-    equipment_request_message = item_request_constructor(equipment_id, equipment_name, equipment_measurement)
+def alter_request_creator(data):
+    equipment_request_message = item_request_constructor(
+        i_id = data.get("equipment_id"), 
+        i_name = data.get("equipment_name"), 
+        i_measurement = data.get("measurement"), 
+        unique_id = data.get("user_equipment_id")
+    )
 
-    if alter_old:
-        user_equipment_id = data.get("user_equipment_id")
-        if user_equipment_id:
-            equipment_request_message = f"equipment of id {user_equipment_id}"
-            
-        new_equipment_id = data.get("new_equipment_id")
-        new_equipment_name = data.get("new_equipment_name")
-        new_equipment_measurement = data.get("new_measurement")
-        new_equipment_request_message = item_request_constructor(new_equipment_id, new_equipment_name, new_equipment_measurement)
+    new_equipment_request_message = item_request_constructor(
+        i_id = data.get("new_equipment_id"), 
+        i_name = data.get("new_equipment_name"), 
+        i_measurement = data.get("new_measurement")
+    )
 
-        return f"I would like to change my {equipment_request_message} to a {new_equipment_request_message}."
-
-    return f"I would like to add a {equipment_request_message}."
+    return f"I would like to change my {equipment_request_message} to a {new_equipment_request_message}."
 
 # Retrieve current user's equipment
 @bp.route('/sub_agent_test', methods=['GET'])
@@ -69,6 +71,15 @@ def get_user_equipment_list():
     else:
         data = request.get_json()
 
+    equipment_request_message = item_request_constructor(
+        i_id = data.get("equipment_id"), 
+        i_name = data.get("equipment_name"), 
+        i_measurement = data.get("measurement"), 
+        unique_id = data.get("user_equipment_id")
+    )
+
+    request_message = f"I would like to look at my {equipment_request_message}."
+
     state = {
         "user_id": current_user.id,
         "equipment_is_requested": True,
@@ -76,7 +87,7 @@ def get_user_equipment_list():
         "equipment_is_read": True,
         "equipment_read_plural": True,
         "equipment_read_current": True,
-        "equipment_detail": "Retrieve current equipment.",
+        "equipment_detail": request_message,
         "equipment_alter_old": None, 
 
         "item_id": data.get("user_equipment_id"), 
@@ -93,6 +104,12 @@ def get_user_equipment_list():
 @bp.route('/sub_agent_test/<user_equipment_id>', methods=['GET'])
 @login_required
 def read_user_equipment(user_equipment_id):
+    equipment_request_message = item_request_constructor(
+        unique_id = user_equipment_id
+    )
+
+    request_message = f"I would like to look at my {equipment_request_message}."
+
     state = {
         "user_id": current_user.id,
         "equipment_is_requested": True,
@@ -100,7 +117,7 @@ def read_user_equipment(user_equipment_id):
         "equipment_is_read": True,
         "equipment_read_plural": True,
         "equipment_read_current": True,
-        "equipment_detail": "Retrieve current equipment.",
+        "equipment_detail": request_message,
         "equipment_alter_old": None, 
 
         "item_id": user_equipment_id, 
@@ -120,7 +137,14 @@ def add_user_equipment():
     else:
         data = request.get_json()
 
-    request_message = example_request_creator(data, alter_old=False)
+    equipment_request_message = item_request_constructor(
+        i_id = data.get("equipment_id"), 
+        i_name = data.get("equipment_name"), 
+        i_measurement = data.get("measurement"), 
+        unique_id = data.get("user_equipment_id")
+    )
+
+    request_message = f"I would like to add a {equipment_request_message}."
 
     state = {
         "user_id": current_user.id,
@@ -148,7 +172,7 @@ def change_user_equipment():
     else:
         data = request.get_json()
 
-    request_message = example_request_creator(data, alter_old=True)
+    request_message = alter_request_creator(data)
 
     state = {
         "user_id": current_user.id,
@@ -176,7 +200,7 @@ def change_user_equipment_by_id(user_equipment_id):
         data = request.get_json()
     data["user_equipment_id"] = user_equipment_id
 
-    request_message = example_request_creator(data, alter_old=True)
+    request_message = alter_request_creator(data)
 
     state = {
         "user_id": current_user.id,
