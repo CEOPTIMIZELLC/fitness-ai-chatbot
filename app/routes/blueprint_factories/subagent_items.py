@@ -1,5 +1,7 @@
 from logging_config import LogRoute
 
+import inspect
+
 from flask import request, jsonify, Blueprint, abort
 from flask_login import login_required, current_user
 
@@ -157,9 +159,6 @@ def add_initializer_to_subagent_crud_blueprint(bp, state_names, agent_creation_c
         return _agent_invoker(agent_creation_caller, state)
 
     return bp
-
-
-import inspect
 
 def create_item_blueprint(item_name, focus_name, item_retriever, current_retriever, create_agent, add_test_retrievers=False, add_initializers=False, request_name=None):
     if not request_name:
