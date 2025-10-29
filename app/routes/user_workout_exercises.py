@@ -12,11 +12,21 @@ from app.solver_agents.exercises import exercise_pc_main
 
 from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
-from .blueprint_factories import create_subagent_crud_blueprint
+from .blueprint_factories import create_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 
-bp = create_subagent_crud_blueprint('user_workout_exercises', 'workout_schedule', '/user_workout_exercises', create_agent)
+bp = create_subagent_crud_blueprint(
+    name = 'user_workout_exercises', 
+    focus_name = 'workout_schedule', 
+    url_prefix = '/user_workout_exercises', 
+    agent_creation_caller = create_agent
+)
+bp = add_initializer_to_subagent_crud_blueprint(
+    bp = bp, 
+    focus_name = 'workout_schedule', 
+    agent_creation_caller = create_agent
+)
 
 # Update user exercises if workout is completed.
 @bp.route('/workout_completed', methods=['POST', 'PATCH'])

@@ -8,48 +8,16 @@ from app.models import Goal_Library
 from app.solver_agents.goals import create_goal_classification_graph
 from app.main_sub_agents.user_macrocycles import create_goal_agent as create_agent
 
-bp = Blueprint('user_macrocycles', __name__)
+from .blueprint_factories import create_subagent_crud_blueprint
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 
-# Retrieve current user's macrocycles
-@bp.route('/', methods=['GET'])
-@login_required
-def get_user_macrocycle_list():
-    state = {
-        "user_id": current_user.id,
-        "macrocycle_is_requested": True,
-        "macrocycle_is_alter": False,
-        "macrocycle_is_read": True,
-        "macrocycle_read_plural": True,
-        "macrocycle_read_current": True,
-        "macrocycle_detail": "Retrieve current macrocycle.",
-        "macrocycle_alter_old": None
-    }
-    goal_agent = create_agent()
-
-    result = goal_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
-
-
-# Retrieve current user's macrocycles
-@bp.route('/current', methods=['GET'])
-@login_required
-def read_user_current_macrocycle():
-    state = {
-        "user_id": current_user.id,
-        "macrocycle_is_requested": True,
-        "macrocycle_is_alter": False,
-        "macrocycle_is_read": True,
-        "macrocycle_read_plural": False,
-        "macrocycle_read_current": True,
-        "macrocycle_detail": "Retrieve current macrocycle.",
-        "macrocycle_alter_old": None
-    }
-    goal_agent = create_agent()
-
-    result = goal_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+bp = create_subagent_crud_blueprint(
+    name = 'user_macrocycles', 
+    focus_name = 'macrocycle', 
+    url_prefix = '/user_macrocycles', 
+    agent_creation_caller = create_agent
+)
 
 # Change the current user's macrocycle.
 @bp.route('/', methods=['POST', 'PATCH'])

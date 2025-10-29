@@ -29,6 +29,26 @@ def create_library_crud_blueprint(name, url_prefix, model, response_key):
     return bp
 
 
+# Retrieves the user input, if there is one.
+def input_retriever(focus_name, request):
+    # Input is a json.
+    if request.is_json:
+        data = request.get_json()
+        return data.get(focus_name, f"Perform {focus_name} scheduling.")
+    return f"Perform {focus_name} scheduling."
+
+# Repeated method that invokes the agent.
+def agent_invoker(agent_creation_caller, state):
+    subagent = agent_creation_caller()
+
+    result = subagent.invoke(state)
+
+    # Correct time delta for serializing for JSON output.
+    result = recursively_change_dict_timedeltas(result)
+
+    return jsonify({"status": "success", "response": result}), 200
+
+
 def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_caller):
     bp = Blueprint(name, __name__, url_prefix=url_prefix)
 
@@ -45,24 +65,6 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
         "detail_initializer": f"Perform {focus_name} scheduling.",
     }
 
-    # Retrieves the user input, if there is one.
-    def input_retriever(request):
-        # Input is a json.
-        if request.is_json:
-            data = request.get_json()
-            return data.get(focus_name, f"Perform {focus_name} scheduling.")
-        return f"Perform {focus_name} scheduling."
-
-    def agent_invoker(state):
-        subagent = agent_creation_caller()
-
-        result = subagent.invoke(state)
-
-        # Correct time delta for serializing for JSON output.
-        result = recursively_change_dict_timedeltas(result)
-
-        return jsonify({"status": "success", "response": result}), 200
-
     # Retrieve current user's list of items.
     @bp.route('/', methods=['GET'])
     @login_required
@@ -76,7 +78,7 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
             state_names["read_current"]: False,
             state_names["detail"]: state_names["detail_read_list"]
         }
-        return agent_invoker(state)
+        return agent_invoker(agent_creation_caller, state)
 
     # Retrieve user's list of items for the current parent.
     @bp.route('/current_list', methods=['GET'])
@@ -91,7 +93,7 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
             state_names["read_current"]: True,
             state_names["detail"]: state_names["detail_read_current_list"]
         }
-        return agent_invoker(state)
+        return agent_invoker(agent_creation_caller, state)
 
     # Retrieve user's current item.
     @bp.route('/current', methods=['GET'])
@@ -106,7 +108,24 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
             state_names["read_current"]: True,
             state_names["detail"]: state_names["detail_read_current"]
         }
-        return agent_invoker(state)
+        return agent_invoker(agent_creation_caller, state)
+    
+    return bp
+
+
+def add_initializer_to_subagent_crud_blueprint(bp, focus_name, agent_creation_caller):
+    state_names = {
+        "is_requested": f"{focus_name}_is_requested",
+        "is_alter": f"{focus_name}_is_alter",
+        "is_read": f"{focus_name}_is_read",
+        "read_plural": f"{focus_name}_read_plural",
+        "read_current": f"{focus_name}_read_current",
+        "detail": f"{focus_name}_detail",
+        "detail_read_list": f"Retrieve all of my {focus_name}s.",
+        "detail_read_current_list": f"Retrieve all current {focus_name}.",
+        "detail_read_current": f"Retrieve my current {focus_name}.",
+        "detail_initializer": f"Perform {focus_name} scheduling.",
+    }
 
     # Initialize user's list of items for the current parent.
     @bp.route('/', methods=['POST', 'PATCH'])
@@ -119,9 +138,9 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
             state_names["is_read"]: True,
             state_names["read_plural"]: False,
             state_names["read_current"]: False,
-            f"{focus_name}_detail": input_retriever(request)
+            f"{focus_name}_detail": input_retriever(focus_name, request)
         }
-        return agent_invoker(state)
+        return agent_invoker(agent_creation_caller, state)
 
     # Initialize user's list of items for the current parent.
     @bp.route('/<parent_id>', methods=['POST', 'PATCH'])
@@ -135,10 +154,9 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
             state_names["read_plural"]: False,
             state_names["read_current"]: False,
             f"{focus_name}_perform_with_parent_id": parent_id, 
-            f"{focus_name}_detail": input_retriever(request)
+            f"{focus_name}_detail": input_retriever(focus_name, request)
         }
-        return agent_invoker(state)
+        return agent_invoker(agent_creation_caller, state)
 
     return bp
-
 
