@@ -2,9 +2,9 @@ from app.models import User_Equipment
 
 from .base import BaseRetriever
 
-# ----------------------------------------- User Mesocycles -----------------------------------------
+# ----------------------------------------- User Equipment -----------------------------------------
 
-focus_name = "mesocycle"
+focus_name = "equipment"
 
 class ItemRetriever(BaseRetriever):
     focus_name = focus_name
@@ -21,9 +21,11 @@ class ItemRetriever(BaseRetriever):
         )
 
     @classmethod
-    def item_list_query(self, user_id):
+    def item_list_query(cls, user_id):
         return (
             User_Equipment.query
-            .filter_by(user_id=user_id)
+            .filter(
+                User_Equipment.user_id == user_id
+            )
             .all()
         )
