@@ -30,7 +30,7 @@ def create_library_crud_blueprint(name, url_prefix, model, response_key):
 
 
 # Retrieves the user input, if there is one.
-def input_retriever(focus_name, request):
+def _input_retriever(focus_name, request):
     # Input is a json.
     if request.is_json:
         data = request.get_json()
@@ -38,7 +38,7 @@ def input_retriever(focus_name, request):
     return f"Perform {focus_name} scheduling."
 
 # Repeated method that invokes the agent.
-def agent_invoker(agent_creation_caller, state):
+def _agent_invoker(agent_creation_caller, state):
     subagent = agent_creation_caller()
 
     result = subagent.invoke(state)
@@ -78,7 +78,7 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
             state_names["read_current"]: False,
             state_names["detail"]: state_names["detail_read_list"]
         }
-        return agent_invoker(agent_creation_caller, state)
+        return _agent_invoker(agent_creation_caller, state)
 
     # Retrieve user's list of items for the current parent.
     @bp.route('/current_list', methods=['GET'])
@@ -93,7 +93,7 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
             state_names["read_current"]: True,
             state_names["detail"]: state_names["detail_read_current_list"]
         }
-        return agent_invoker(agent_creation_caller, state)
+        return _agent_invoker(agent_creation_caller, state)
 
     # Retrieve user's current item.
     @bp.route('/current', methods=['GET'])
@@ -108,11 +108,13 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
             state_names["read_current"]: True,
             state_names["detail"]: state_names["detail_read_current"]
         }
-        return agent_invoker(agent_creation_caller, state)
+        return _agent_invoker(agent_creation_caller, state)
     
     return bp
 
 
+
+# Adds the subagent calls that will initialize the items.
 def add_initializer_to_subagent_crud_blueprint(bp, focus_name, agent_creation_caller):
     state_names = {
         "is_requested": f"{focus_name}_is_requested",
@@ -138,9 +140,9 @@ def add_initializer_to_subagent_crud_blueprint(bp, focus_name, agent_creation_ca
             state_names["is_read"]: True,
             state_names["read_plural"]: False,
             state_names["read_current"]: False,
-            f"{focus_name}_detail": input_retriever(focus_name, request)
+            f"{focus_name}_detail": _input_retriever(focus_name, request)
         }
-        return agent_invoker(agent_creation_caller, state)
+        return _agent_invoker(agent_creation_caller, state)
 
     # Initialize user's list of items for the current parent.
     @bp.route('/<parent_id>', methods=['POST', 'PATCH'])
@@ -154,9 +156,9 @@ def add_initializer_to_subagent_crud_blueprint(bp, focus_name, agent_creation_ca
             state_names["read_plural"]: False,
             state_names["read_current"]: False,
             f"{focus_name}_perform_with_parent_id": parent_id, 
-            f"{focus_name}_detail": input_retriever(focus_name, request)
+            f"{focus_name}_detail": _input_retriever(focus_name, request)
         }
-        return agent_invoker(agent_creation_caller, state)
+        return _agent_invoker(agent_creation_caller, state)
 
     return bp
 
