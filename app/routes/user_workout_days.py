@@ -16,9 +16,12 @@ from .blueprint_factories.subagent_items import *
 
 # ----------------------------------------- Workout Days -----------------------------------------
 
+item_name = "user_workout_days"
+focus_name = "phase_component"
+
 bp = create_subagent_crud_blueprint(
-    name = 'user_workout_days', 
-    url_prefix = '/user_workout_days', 
+    name = item_name, 
+    url_prefix = "/" + item_name, 
     item_class = ItemRetriever
 )
 bp = add_current_retrievers_to_subagent_crud_blueprint(
@@ -27,12 +30,12 @@ bp = add_current_retrievers_to_subagent_crud_blueprint(
 )
 bp = add_test_retrievers_to_subagent_crud_blueprint(
     bp = bp, 
-    focus_name = 'phase_component', 
+    focus_name = focus_name, 
     agent_creation_caller = create_agent
 )
 bp = add_initializer_to_subagent_crud_blueprint(
     bp = bp, 
-    focus_name = 'phase_component', 
+    focus_name = focus_name, 
     agent_creation_caller = create_agent
 )
 

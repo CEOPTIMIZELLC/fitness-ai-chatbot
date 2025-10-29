@@ -10,9 +10,12 @@ from .blueprint_factories.subagent_items import create_subagent_crud_blueprint
 
 # ----------------------------------------- User Equipment -----------------------------------------
 
+item_name = "user_equipment"
+focus_name = "equipment"
+
 bp = create_subagent_crud_blueprint(
-    name = 'user_equipment', 
-    url_prefix = '/user_equipment', 
+    name = item_name, 
+    url_prefix = "/" + item_name, 
     item_class = ItemRetriever
 )
 

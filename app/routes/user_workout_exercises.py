@@ -18,9 +18,12 @@ from .blueprint_factories.subagent_items import *
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 
+item_name = "user_workout_exercises"
+focus_name = "workout_schedule"
+
 bp = create_subagent_crud_blueprint(
-    name = 'user_workout_exercises', 
-    url_prefix = '/user_workout_exercises', 
+    name = item_name, 
+    url_prefix = "/" + item_name, 
     item_class = ItemRetriever
 )
 bp = add_current_retrievers_to_subagent_crud_blueprint(
@@ -29,12 +32,12 @@ bp = add_current_retrievers_to_subagent_crud_blueprint(
 )
 bp = add_test_retrievers_to_subagent_crud_blueprint(
     bp = bp, 
-    focus_name = 'workout_schedule', 
+    focus_name = focus_name, 
     agent_creation_caller = create_agent
 )
 bp = add_initializer_to_subagent_crud_blueprint(
     bp = bp, 
-    focus_name = 'workout_schedule', 
+    focus_name = focus_name, 
     agent_creation_caller = create_agent
 )
 

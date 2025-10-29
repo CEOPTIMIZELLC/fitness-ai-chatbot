@@ -14,9 +14,12 @@ from .blueprint_factories.subagent_items import *
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 
+item_name = "user_macrocycles"
+focus_name = "macrocycle"
+
 bp = create_subagent_crud_blueprint(
-    name = 'user_macrocycles', 
-    url_prefix = '/user_macrocycles', 
+    name = item_name, 
+    url_prefix = "/" + item_name, 
     item_class = ItemRetriever
 )
 bp = add_current_retrievers_to_subagent_crud_blueprint(
@@ -25,7 +28,7 @@ bp = add_current_retrievers_to_subagent_crud_blueprint(
 )
 bp = add_test_retrievers_to_subagent_crud_blueprint(
     bp = bp, 
-    focus_name = 'macrocycle', 
+    focus_name = focus_name, 
     agent_creation_caller = create_agent
 )
 
