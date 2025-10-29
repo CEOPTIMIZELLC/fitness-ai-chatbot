@@ -10,14 +10,24 @@ from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_ag
 from app.creation_agents.phase_components.actions import retrieve_parameters, retrieve_weekday_availability_information_from_availability
 from app.solver_agents.phase_components import Main as phase_component_main
 
-from .blueprint_factories import create_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
+from app.database_to_frontend.user_workout_days import ItemRetriever, CurrentRetriever
+
+from .blueprint_factories import create_subagent_crud_blueprint, add_current_retrievers_to_subagent_crud_blueprint, add_test_retrievers_to_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
 
 # ----------------------------------------- Workout Days -----------------------------------------
 
 bp = create_subagent_crud_blueprint(
     name = 'user_workout_days', 
-    focus_name = 'phase_component', 
     url_prefix = '/user_workout_days', 
+    item_class = ItemRetriever
+)
+bp = add_current_retrievers_to_subagent_crud_blueprint(
+    bp = bp, 
+    item_class = CurrentRetriever
+)
+bp = add_test_retrievers_to_subagent_crud_blueprint(
+    bp = bp, 
+    focus_name = 'phase_component', 
     agent_creation_caller = create_agent
 )
 bp = add_initializer_to_subagent_crud_blueprint(

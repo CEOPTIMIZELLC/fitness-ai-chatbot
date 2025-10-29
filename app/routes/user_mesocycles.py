@@ -8,14 +8,24 @@ from app.solver_agents.phases import Main as phase_main
 from app.construct_lists_from_sql.phases import Main as construct_phases_list
 from app.main_sub_agents.user_mesocycles import create_mesocycle_agent as create_agent
 
-from .blueprint_factories import create_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
+from app.database_to_frontend.user_mesocycles import ItemRetriever, CurrentRetriever
+
+from .blueprint_factories import create_subagent_crud_blueprint, add_current_retrievers_to_subagent_crud_blueprint, add_test_retrievers_to_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
 
 # ----------------------------------------- User Mesocycles -----------------------------------------
 
 bp = create_subagent_crud_blueprint(
     name = 'user_mesocycles', 
-    focus_name = 'mesocycle', 
     url_prefix = '/user_mesocycles', 
+    item_class = ItemRetriever
+)
+bp = add_current_retrievers_to_subagent_crud_blueprint(
+    bp = bp, 
+    item_class = CurrentRetriever
+)
+bp = add_test_retrievers_to_subagent_crud_blueprint(
+    bp = bp, 
+    focus_name = 'mesocycle', 
     agent_creation_caller = create_agent
 )
 bp = add_initializer_to_subagent_crud_blueprint(

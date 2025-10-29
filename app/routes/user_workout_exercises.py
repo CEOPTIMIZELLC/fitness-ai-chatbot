@@ -12,14 +12,24 @@ from app.solver_agents.exercises import exercise_pc_main
 
 from app.common_table_queries.phase_components import currently_active_item as current_workout_day
 
-from .blueprint_factories import create_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
+from app.database_to_frontend.user_workout_exercises import ItemRetriever, CurrentRetriever
+
+from .blueprint_factories import create_subagent_crud_blueprint, add_current_retrievers_to_subagent_crud_blueprint, add_test_retrievers_to_subagent_crud_blueprint, add_initializer_to_subagent_crud_blueprint
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 
 bp = create_subagent_crud_blueprint(
     name = 'user_workout_exercises', 
-    focus_name = 'workout_schedule', 
     url_prefix = '/user_workout_exercises', 
+    item_class = ItemRetriever
+)
+bp = add_current_retrievers_to_subagent_crud_blueprint(
+    bp = bp, 
+    item_class = CurrentRetriever
+)
+bp = add_test_retrievers_to_subagent_crud_blueprint(
+    bp = bp, 
+    focus_name = 'workout_schedule', 
     agent_creation_caller = create_agent
 )
 bp = add_initializer_to_subagent_crud_blueprint(

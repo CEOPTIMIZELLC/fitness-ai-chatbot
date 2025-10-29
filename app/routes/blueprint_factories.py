@@ -64,15 +64,47 @@ def _state_name_retriever(focus_name):
     }
 
 
-def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_caller):
+def create_subagent_crud_blueprint(name, url_prefix, item_class):
     bp = Blueprint(name, __name__, url_prefix=url_prefix)
-
-    state_names = _state_name_retriever(focus_name)
 
     # Retrieve current user's list of items.
     @bp.route('/', methods=['GET'])
     @login_required
     def get_user_list():
+        return item_class.list_items(current_user.id)
+
+    # Retrieve current user's list of items.
+    @bp.route('/<item_id>', methods=['GET'])
+    @login_required
+    def read_user_item(item_id):
+        return item_class.get_item(current_user.id, item_id)
+
+    return bp
+
+# Adds the routes to retrieve the currently active element(s).
+def add_current_retrievers_to_subagent_crud_blueprint(bp, item_class):
+    # Retrieve user's list of items for the current parent.
+    @bp.route('/current_list', methods=['GET'])
+    @login_required
+    def get_user_current_list():
+        return item_class.list_items_from_current_parent(current_user.id)
+
+    # Retrieve user's current item.
+    @bp.route('/current', methods=['GET'])
+    @login_required
+    def read_user_current():
+        return item_class.read_current_item(current_user.id)
+
+    return bp
+
+# Adds the subagent calls that will read the items.
+def add_test_retrievers_to_subagent_crud_blueprint(bp, focus_name, agent_creation_caller):
+    state_names = _state_name_retriever(focus_name)
+
+    # Retrieve current user's list of items.
+    @bp.route('/sub_agent_test', methods=['GET'])
+    @login_required
+    def get_user_list_sub_agent_call():
         state = {
             "user_id": current_user.id,
             state_names["is_requested"]: True,
@@ -85,9 +117,9 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
         return _agent_invoker(agent_creation_caller, state)
 
     # Retrieve user's list of items for the current parent.
-    @bp.route('/current_list', methods=['GET'])
+    @bp.route('/sub_agent_test/current_list', methods=['GET'])
     @login_required
-    def get_user_current_list():
+    def get_user_current_list_sub_agent_call():
         state = {
             "user_id": current_user.id,
             state_names["is_requested"]: True,
@@ -100,9 +132,9 @@ def create_subagent_crud_blueprint(name, focus_name, url_prefix, agent_creation_
         return _agent_invoker(agent_creation_caller, state)
 
     # Retrieve user's current item.
-    @bp.route('/current', methods=['GET'])
+    @bp.route('/sub_agent_test/current', methods=['GET'])
     @login_required
-    def read_user_current():
+    def read_user_current_sub_agent_call():
         state = {
             "user_id": current_user.id,
             state_names["is_requested"]: True,

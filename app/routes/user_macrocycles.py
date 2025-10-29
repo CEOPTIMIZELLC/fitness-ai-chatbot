@@ -1,5 +1,5 @@
 from logging_config import LogRoute
-from flask import request, jsonify, Blueprint, abort
+from flask import request, jsonify, abort
 from flask_login import login_required, current_user
 
 from app import db
@@ -8,14 +8,24 @@ from app.models import Goal_Library
 from app.solver_agents.goals import create_goal_classification_graph
 from app.main_sub_agents.user_macrocycles import create_goal_agent as create_agent
 
-from .blueprint_factories import create_subagent_crud_blueprint
+from app.database_to_frontend.user_macrocycles import ItemRetriever, CurrentRetriever
+
+from .blueprint_factories import create_subagent_crud_blueprint, add_current_retrievers_to_subagent_crud_blueprint, add_test_retrievers_to_subagent_crud_blueprint
 
 # ----------------------------------------- User Macrocycles -----------------------------------------
 
 bp = create_subagent_crud_blueprint(
     name = 'user_macrocycles', 
-    focus_name = 'macrocycle', 
     url_prefix = '/user_macrocycles', 
+    item_class = ItemRetriever
+)
+bp = add_current_retrievers_to_subagent_crud_blueprint(
+    bp = bp, 
+    item_class = CurrentRetriever
+)
+bp = add_test_retrievers_to_subagent_crud_blueprint(
+    bp = bp, 
+    focus_name = 'macrocycle', 
     agent_creation_caller = create_agent
 )
 

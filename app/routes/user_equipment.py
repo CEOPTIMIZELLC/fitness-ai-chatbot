@@ -1,12 +1,20 @@
-from flask import request, jsonify, Blueprint, abort
+from flask import request, jsonify
 from flask_login import current_user, login_required
 
 from app.main_sub_agents.user_equipment import create_equipment_agent as create_agent
 from app.models import Equipment_Library
 
-bp = Blueprint('user_equipment', __name__)
+from app.database_to_frontend.user_equipment import ItemRetriever
+
+from .blueprint_factories import create_subagent_crud_blueprint
 
 # ----------------------------------------- User Equipment -----------------------------------------
+
+bp = create_subagent_crud_blueprint(
+    name = 'user_equipment', 
+    url_prefix = '/user_equipment', 
+    item_class = ItemRetriever
+)
 
 # Constructs the message relating to the piece of equipment.
 def item_request_constructor(i_id, i_name, i_measurement):
@@ -49,7 +57,7 @@ def example_request_creator(data, alter_old):
     return f"I would like to add a {equipment_request_message}."
 
 # Retrieve current user's equipment
-@bp.route('/', methods=['GET'])
+@bp.route('/sub_agent_test', methods=['GET'])
 @login_required
 def get_user_equipment_list():
     # Input is a json.
@@ -79,7 +87,7 @@ def get_user_equipment_list():
 
 
 # Retrieve current user's equipment
-@bp.route('/<user_equipment_id>', methods=['GET'])
+@bp.route('/sub_agent_test/<user_equipment_id>', methods=['GET'])
 @login_required
 def read_user_equipment(user_equipment_id):
     state = {
@@ -100,7 +108,7 @@ def read_user_equipment(user_equipment_id):
     return jsonify({"status": "success", "response": result}), 200
 
 # Add current user's equipment
-@bp.route('/', methods=['POST'])
+@bp.route('/sub_agent_test/', methods=['POST'])
 @login_required
 def add_user_equipment():
     # Input is a json.
@@ -128,7 +136,7 @@ def add_user_equipment():
 
 
 # Change current user's equipment
-@bp.route('/', methods=['PATCH'])
+@bp.route('/sub_agent_test/', methods=['PATCH'])
 @login_required
 def change_user_equipment():
     # Input is a json.
@@ -155,7 +163,7 @@ def change_user_equipment():
     return jsonify({"status": "success", "response": result}), 200
 
 # Change current user's equipment
-@bp.route('/<user_equipment_id>', methods=['PATCH'])
+@bp.route('/sub_agent_test/<user_equipment_id>', methods=['PATCH'])
 @login_required
 def change_user_equipment_by_id(user_equipment_id):
     # Input is a json.
