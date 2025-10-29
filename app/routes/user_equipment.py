@@ -44,38 +44,12 @@ def item_request_constructor(unique_id=None, i_id=None, i_name=None, i_measureme
         item_request_message += f" measuring {i_measurement}"
     return item_request_message
 
-# Constructs a request message for the agent based on endpoint inputs.
-def alter_request_creator(data):
+def get_request(data):
     equipment_request_message = item_request_constructor(
+        unique_id = data.get("user_equipment_id"), 
         i_id = data.get("equipment_id"), 
         i_name = data.get("equipment_name"), 
         i_measurement = data.get("measurement"), 
-        unique_id = data.get("user_equipment_id")
-    )
-
-    new_equipment_request_message = item_request_constructor(
-        i_id = data.get("new_equipment_id"), 
-        i_name = data.get("new_equipment_name"), 
-        i_measurement = data.get("new_measurement")
-    )
-
-    return f"I would like to change my {equipment_request_message} to a {new_equipment_request_message}."
-
-# Retrieve current user's equipment
-@bp.route('/sub_agent_test', methods=['GET'])
-@login_required
-def get_user_equipment_list():
-    # Input is a json.
-    if not request.is_json:
-        data={}
-    else:
-        data = request.get_json()
-
-    equipment_request_message = item_request_constructor(
-        i_id = data.get("equipment_id"), 
-        i_name = data.get("equipment_name"), 
-        i_measurement = data.get("measurement"), 
-        unique_id = data.get("user_equipment_id")
     )
 
     request_message = f"I would like to look at my {equipment_request_message}."
@@ -89,59 +63,17 @@ def get_user_equipment_list():
         "equipment_read_current": True,
         "equipment_detail": request_message,
         "equipment_alter_old": None, 
-
-        "item_id": data.get("user_equipment_id"), 
-        "equipment_id": data.get("equipment_id"), 
-        "equipment_measurement": data.get("measurement"), 
     }
     equipment_agent = create_agent()
 
     result = equipment_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+    return result
 
-
-# Retrieve current user's equipment
-@bp.route('/sub_agent_test/<user_equipment_id>', methods=['GET'])
-@login_required
-def read_user_equipment(user_equipment_id):
-    equipment_request_message = item_request_constructor(
-        unique_id = user_equipment_id
-    )
-
-    request_message = f"I would like to look at my {equipment_request_message}."
-
-    state = {
-        "user_id": current_user.id,
-        "equipment_is_requested": True,
-        "equipment_is_alter": False,
-        "equipment_is_read": True,
-        "equipment_read_plural": True,
-        "equipment_read_current": True,
-        "equipment_detail": request_message,
-        "equipment_alter_old": None, 
-
-        "item_id": user_equipment_id, 
-    }
-    equipment_agent = create_agent()
-
-    result = equipment_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
-
-# Add current user's equipment
-@bp.route('/', methods=['POST'])
-@login_required
-def add_user_equipment():
-    # Input is a json.
-    if not request.is_json:
-        data={}
-    else:
-        data = request.get_json()
-
+def creation_request(data):
     equipment_request_message = item_request_constructor(
         i_id = data.get("equipment_id"), 
         i_name = data.get("equipment_name"), 
         i_measurement = data.get("measurement"), 
-        unique_id = data.get("user_equipment_id")
     )
 
     request_message = f"I would like to add a {equipment_request_message}."
@@ -159,20 +91,23 @@ def add_user_equipment():
     equipment_agent = create_agent()
 
     result = equipment_agent.invoke(state)
-    return jsonify({"status": "success", "response": result}), 200
+    return result
 
+def alter_request(data):
+    equipment_request_message = item_request_constructor(
+        i_id = data.get("equipment_id"), 
+        i_name = data.get("equipment_name"), 
+        i_measurement = data.get("measurement"), 
+        unique_id = data.get("user_equipment_id")
+    )
 
-# Change current user's equipment
-@bp.route('/', methods=['PATCH'])
-@login_required
-def change_user_equipment():
-    # Input is a json.
-    if not request.is_json:
-        data={}
-    else:
-        data = request.get_json()
+    new_equipment_request_message = item_request_constructor(
+        i_id = data.get("new_equipment_id"), 
+        i_name = data.get("new_equipment_name"), 
+        i_measurement = data.get("new_measurement")
+    )
 
-    request_message = alter_request_creator(data)
+    request_message = f"I would like to change my {equipment_request_message} to a {new_equipment_request_message}."
 
     state = {
         "user_id": current_user.id,
@@ -187,6 +122,57 @@ def change_user_equipment():
     equipment_agent = create_agent()
 
     result = equipment_agent.invoke(state)
+    return result
+
+# Retrieve current user's equipment
+@bp.route('/sub_agent_test', methods=['GET'])
+@login_required
+def get_user_equipment_list():
+    # Input is a json.
+    if not request.is_json:
+        data={}
+    else:
+        data = request.get_json()
+
+    result = get_request(data)
+    return jsonify({"status": "success", "response": result}), 200
+
+
+# Retrieve current user's equipment
+@bp.route('/sub_agent_test/<user_equipment_id>', methods=['GET'])
+@login_required
+def read_user_equipment(user_equipment_id):
+    data = {
+        "user_equipment_id": user_equipment_id
+    }
+
+    result = get_request(data)
+    return jsonify({"status": "success", "response": result}), 200
+
+# Add current user's equipment
+@bp.route('/', methods=['POST'])
+@login_required
+def add_user_equipment():
+    # Input is a json.
+    if not request.is_json:
+        data={}
+    else:
+        data = request.get_json()
+
+    result = creation_request(data)
+    return jsonify({"status": "success", "response": result}), 200
+
+# Change current user's equipment
+@bp.route('/', methods=['PATCH'])
+@login_required
+def change_user_equipment():
+    # Input is a json.
+    if not request.is_json:
+        data={}
+    else:
+        data = request.get_json()
+
+    result = alter_request(data)
     return jsonify({"status": "success", "response": result}), 200
 
 # Change current user's equipment
@@ -200,19 +186,5 @@ def change_user_equipment_by_id(user_equipment_id):
         data = request.get_json()
     data["user_equipment_id"] = user_equipment_id
 
-    request_message = alter_request_creator(data)
-
-    state = {
-        "user_id": current_user.id,
-        "equipment_is_requested": True,
-        "equipment_is_alter": True,
-        "equipment_is_read": True,
-        "equipment_read_plural": False,
-        "equipment_read_current": False,
-        "equipment_detail": request_message,
-        "equipment_alter_old": True, 
-    }
-    equipment_agent = create_agent()
-
-    result = equipment_agent.invoke(state)
+    result = alter_request(data)
     return jsonify({"status": "success", "response": result}), 200
