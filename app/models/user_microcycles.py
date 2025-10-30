@@ -15,7 +15,7 @@ class User_Microcycles(BaseModel, TableNameMixin, DateRangeMixin, OrderedMixin):
         db.Date, 
         default=db.func.current_timestamp() + timedelta(weeks=1), 
         nullable=False, 
-        comment='Date that the microcyc should end.')
+        comment='Date that the microcycle should end.')
 
     # Relationships
     mesocycles = db.relationship("User_Mesocycles", back_populates="microcycles")
