@@ -1,11 +1,25 @@
 from flask import jsonify
 
+from app.models import User_Macrocycles 
+
 class BaseRetriever():
     focus_name = ""
+    searched_table = User_Macrocycles
+
+    @classmethod
+    def base_item_query(cls):
+        return cls.searched_table.query
 
     @classmethod
     def item_query(cls, user_id, item_id):
-        pass
+        return (
+            cls.base_item_query()
+            .filter(
+                cls.searched_table.user_id == user_id, 
+                cls.searched_table.id == item_id
+            )
+            .first()
+        )
 
     # Retrieve current user's requested item.
     @classmethod
@@ -19,7 +33,13 @@ class BaseRetriever():
 
     @classmethod
     def item_list_query(cls, user_id):
-        pass
+        return (
+            cls.base_item_query()
+            .filter(
+                cls.searched_table.user_id == user_id
+            )
+            .all()
+        )
 
     # Retrieve current user's list of items.
     @classmethod
@@ -32,6 +52,29 @@ class BaseRetriever():
         ]
 
         return jsonify({"status": "success", f"user_{cls.focus_name}": result}), 200
+
+
+class SchedulerBaseRetriever(BaseRetriever):
+    @classmethod
+    def item_query(cls, user_id, item_id):
+        return (
+            cls.base_item_query()
+            .filter(
+                User_Macrocycles.user_id == user_id, 
+                cls.searched_table.id == item_id
+            )
+            .first()
+        )
+
+    @classmethod
+    def item_list_query(cls, user_id):
+        return (
+            cls.base_item_query()
+            .filter(
+                User_Macrocycles.user_id == user_id
+            )
+            .all()
+        )
 
 
 class BaseCurrentRetriever():

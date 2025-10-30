@@ -11,31 +11,13 @@ focus_name = "availability"
 
 class ItemRetriever(BaseRetriever):
     focus_name = focus_name
-
-    @classmethod
-    def item_query(cls, user_id, item_id):
-        return (
-            User_Weekday_Availability.query
-            .filter(
-                User_Weekday_Availability.user_id == user_id, 
-                User_Weekday_Availability.weekday_id == item_id
-            )
-            .first()
-        )
-
-    @classmethod
-    def item_list_query(self, user_id):
-        return (
-            User_Weekday_Availability.query
-            .filter_by(user_id=user_id)
-            .all()
-        )
+    searched_table = User_Weekday_Availability
 
 class CurrentRetriever(BaseCurrentRetriever):
     focus_name = focus_name
 
     @classmethod
-    def current_item(self, user_id):
+    def current_item(cls, user_id):
         return current_item(user_id)
 
     # Retrieve user's list of items for the current parent.

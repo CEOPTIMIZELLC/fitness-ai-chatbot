@@ -11,31 +11,13 @@ focus_name = "macrocycle"
 
 class ItemRetriever(BaseRetriever):
     focus_name = focus_name
-
-    @classmethod
-    def item_query(cls, user_id, item_id):
-        return (
-            User_Macrocycles.query
-            .filter(
-                User_Macrocycles.user_id == user_id, 
-                User_Macrocycles.id == item_id
-            )
-            .first()
-        )
-
-    @classmethod
-    def item_list_query(self, user_id):
-        return (
-            User_Macrocycles.query
-            .filter_by(user_id=user_id)
-            .all()
-        )
+    searched_table = User_Macrocycles
 
 class CurrentRetriever(BaseCurrentRetriever):
     focus_name = focus_name
 
     @classmethod
-    def current_item(self, user_id):
+    def current_item(cls, user_id):
         return current_item(user_id)
 
     # Retrieve user's list of items for the current parent.

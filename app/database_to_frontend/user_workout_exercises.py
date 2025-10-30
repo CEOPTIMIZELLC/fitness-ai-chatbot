@@ -10,7 +10,7 @@ from app.models import (
 
 from app.common_table_queries.phase_components import currently_active_item as current_parent
 
-from .base import BaseRetriever, BaseCurrentRetriever
+from .base import SchedulerBaseRetriever as BaseRetriever, BaseCurrentRetriever
 
 # ----------------------------------------- Workout Exercises -----------------------------------------
 
@@ -18,43 +18,27 @@ focus_name = "workout_schedule"
 
 class ItemRetriever(BaseRetriever):
     focus_name = focus_name
+    searched_table = User_Workout_Exercises
 
     @classmethod
-    def item_query(cls, user_id, item_id):
+    def base_item_query(cls):
         return (
             User_Workout_Exercises.query
             .join(User_Workout_Days)
             .join(User_Microcycles)
             .join(User_Mesocycles)
             .join(User_Macrocycles)
-            .filter(
-                User_Macrocycles.user_id == user_id, 
-                User_Workout_Exercises.id == item_id
-            )
-            .first()
-        )
-
-    @classmethod
-    def item_list_query(self, user_id):
-        return (
-            User_Workout_Exercises.query
-            .join(User_Workout_Days)
-            .join(User_Microcycles)
-            .join(User_Mesocycles)
-            .join(User_Macrocycles)
-            .filter_by(user_id=user_id)
-            .all()
         )
 
 class CurrentRetriever(BaseCurrentRetriever):
     focus_name = focus_name
 
     @classmethod
-    def current_parent(self, user_id):
+    def current_parent(cls, user_id):
         return current_parent(user_id)
 
     @classmethod
-    def retrieve_children(self, parent_item):
+    def retrieve_children(cls, parent_item):
         return parent_item.exercises
 
     # Retrieve user's current item.
