@@ -7,10 +7,6 @@ class BaseRetriever():
     def item_query(cls, user_id, item_id):
         pass
 
-    @classmethod
-    def item_list_query(cls, user_id):
-        pass
-
     # Retrieve current user's requested item.
     @classmethod
     def get_item(cls, user_id, item_id):
@@ -20,6 +16,10 @@ class BaseRetriever():
 
         result = schedule_item.to_dict() 
         return jsonify({"status": "success", f"user_{cls.focus_name}": result}), 200
+
+    @classmethod
+    def item_list_query(cls, user_id):
+        pass
 
     # Retrieve current user's list of items.
     @classmethod
@@ -45,10 +45,6 @@ class BaseCurrentRetriever():
     def retrieve_children(cls, parent_item):
         pass
 
-    @classmethod
-    def current_item(cls, user_id):
-        pass
-
     # Retrieve user's list of items for the current parent.
     @classmethod
     def list_items_from_current_parent(cls, user_id):
@@ -64,6 +60,10 @@ class BaseCurrentRetriever():
         ]
 
         return jsonify({"status": "success", f"user_{cls.focus_name}": result}), 200
+
+    @classmethod
+    def current_item(cls, user_id):
+        pass
 
     # Retrieve user's current item.
     @classmethod
