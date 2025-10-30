@@ -6,10 +6,12 @@ class BaseRetriever():
     focus_name = ""
     searched_table = User_Macrocycles
 
+    # Base query that will be called by all other queries.
     @classmethod
     def base_item_query(cls):
         return cls.searched_table.query
 
+    # Query to find a specific item belonging to a user.
     @classmethod
     def item_query(cls, user_id, item_id):
         return (
@@ -21,7 +23,7 @@ class BaseRetriever():
             .first()
         )
 
-    # Retrieve current user's requested item.
+    # Retrieves an item belonging to the user and converts it to a json output.
     @classmethod
     def get_item(cls, user_id, item_id):
         schedule_item = cls.item_query(user_id, item_id)
@@ -31,6 +33,7 @@ class BaseRetriever():
         result = schedule_item.to_dict() 
         return jsonify({"status": "success", f"user_{cls.focus_name}": result}), 200
 
+    # Query to find all items belonging to a user.
     @classmethod
     def item_list_query(cls, user_id):
         return (
@@ -41,7 +44,7 @@ class BaseRetriever():
             .all()
         )
 
-    # Retrieve current user's list of items.
+    # Retrieves all items belonging to the user and converts them to a json output.
     @classmethod
     def list_items(cls, user_id):
         schedule_items = cls.item_list_query(user_id)
@@ -55,6 +58,8 @@ class BaseRetriever():
 
 
 class SchedulerBaseRetriever(BaseRetriever):
+    # Query to find a specific item belonging to a user.
+    # The user macrocycle's user id determines whether its children belong to the user.
     @classmethod
     def item_query(cls, user_id, item_id):
         return (
@@ -66,6 +71,8 @@ class SchedulerBaseRetriever(BaseRetriever):
             .first()
         )
 
+    # Query to find all items belonging to a user.
+    # The user macrocycle's user id determines whether its children belong to the user.
     @classmethod
     def item_list_query(cls, user_id):
         return (
