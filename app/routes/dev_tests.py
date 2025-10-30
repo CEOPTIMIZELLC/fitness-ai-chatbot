@@ -16,7 +16,7 @@ from app.main_sub_agents.user_microcycles import create_microcycle_agent
 from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_agent
 from app.main_sub_agents.user_workout_exercises import create_workout_agent
 from app.main_sub_agents.user_workout_completion import create_workout_completion_agent
-from app.main_sub_agents.user_weekdays_availability import create_availability_agent
+from app.main_sub_agents.user_weekday_availability import create_availability_agent
 
 from app.utils.item_to_string import recursively_change_dict_timedeltas
 

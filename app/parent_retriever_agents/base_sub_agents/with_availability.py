@@ -8,7 +8,7 @@ from app.goal_prompts.availability import availability_system_prompt
 from app.impact_goal_models.availability import AvailabilityGoal
 
 # Sub agent imports.
-from app.main_sub_agents.user_weekdays_availability import WeekdayAvailabilityAgentNode as AvailabilityNode
+from app.main_sub_agents.user_weekday_availability import WeekdayAvailabilityAgentNode as AvailabilityNode
 
 # Local imports.
 from .base import BaseAgent, TState

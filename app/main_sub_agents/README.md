@@ -6,7 +6,7 @@ This folder holds the main schedule sub agents that will control whether reading
 
 The subagent controls the pipeline for deletion, creation, altering, and/or reading of the user's equipment.
 
-## [Availability](user_weekdays_availability/)
+## [Availability](user_weekday_availability/)
 
 The subagent controls the pipeline for altering and/or reading of the user's availability for each workday.
 

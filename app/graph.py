@@ -12,7 +12,7 @@ from app.main_sub_agents.user_microcycles import create_microcycle_agent
 from app.main_sub_agents.user_workout_days import create_microcycle_scheduler_agent
 from app.main_sub_agents.user_workout_exercises import create_workout_agent
 from app.main_sub_agents.user_workout_completion import create_workout_completion_agent
-from app.main_sub_agents.user_weekdays_availability import WeekdayAvailabilityAgentNode
+from app.main_sub_agents.user_weekday_availability import WeekdayAvailabilityAgentNode
 
 from app.agent_states.main_agent_state import MainAgentState as AgentState
 from app.utils.agent_state_helpers import log_extracted_goals

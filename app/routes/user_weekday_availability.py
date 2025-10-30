@@ -1,4 +1,4 @@
-from app.main_sub_agents.user_weekdays_availability import create_availability_agent as create_agent
+from app.main_sub_agents.user_weekday_availability import create_availability_agent as create_agent
 from app.database_to_frontend.user_weekday_availability import ItemRetriever, CurrentRetriever
 from .blueprint_factories.subagent_items import create_item_blueprint
 
