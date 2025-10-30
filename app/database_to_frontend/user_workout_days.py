@@ -7,6 +7,7 @@ from app.models import (
 
 from app.common_table_queries.microcycles import currently_active_item as current_parent
 from app.common_table_queries.phase_components import currently_active_item as current_item
+from app.utils.type_conversion import convert_value_and_alter_to_date
 
 from .base import SchedulerBaseRetriever as BaseRetriever, BaseCurrentRetriever
 
@@ -26,6 +27,28 @@ class ItemRetriever(BaseRetriever):
             .join(User_Mesocycles)
             .join(User_Macrocycles)
         )
+
+    @classmethod
+    def filter_preformatting(cls, filters):
+        convert_value_and_alter_to_date(filters, "date")
+        convert_value_and_alter_to_date(filters, "date_min")
+        convert_value_and_alter_to_date(filters, "date_max")
+        return filters
+
+    @classmethod
+    def construct_query_filters(cls, filters):
+        query_filters = []
+
+        # ID Filters
+        query_filters = cls.add_id_filter(query_filters, filters, "id", User_Workout_Days.id)
+        query_filters = cls.add_id_filter(query_filters, filters, "microcycle_id", User_Workout_Days.microcycle_id)
+        query_filters = cls.add_id_filter(query_filters, filters, "weekday_id", User_Workout_Days.weekday_id)
+        query_filters = cls.add_id_filter(query_filters, filters, "loading_system_id", User_Workout_Days.loading_system_id)
+
+        # Value Filters
+        query_filters = cls.add_bound_to_filter(query_filters, filters, "date", User_Workout_Days.date)
+
+        return query_filters
 
 class CurrentRetriever(BaseCurrentRetriever):
     focus_name = focus_name

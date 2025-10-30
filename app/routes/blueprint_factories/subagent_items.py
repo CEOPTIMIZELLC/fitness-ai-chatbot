@@ -58,6 +58,18 @@ def create_subagent_crud_blueprint(name, url_prefix, item_class):
     def read_user_item(item_id):
         return item_class.get_item(current_user.id, item_id)
 
+    # Retrieve current user's list of items.
+    @bp.route('/filter', methods=['GET'])
+    @login_required
+    def filter_user_list():
+        # Input is a json.
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = {}
+
+        return item_class.filter_items(current_user.id, data)
+
     return bp
 
 # Adds the routes to retrieve the currently active element(s).

@@ -30,6 +30,17 @@ class ItemRetriever(BaseRetriever):
             .join(User_Macrocycles)
         )
 
+    @classmethod
+    def construct_query_filters(cls, filters):
+        query_filters = []
+
+        # ID Filters
+        query_filters = cls.add_id_filter(query_filters, filters, "id", User_Workout_Exercises.id)
+        query_filters = cls.add_id_filter(query_filters, filters, "phase_component_id", User_Workout_Exercises.phase_component_id)
+        query_filters = cls.add_id_filter(query_filters, filters, "bodypart_id", User_Workout_Exercises.bodypart_id)
+        query_filters = cls.add_id_filter(query_filters, filters, "exercise_id", User_Workout_Exercises.exercise_id)
+        return query_filters
+
 class CurrentRetriever(BaseCurrentRetriever):
     focus_name = focus_name
 
